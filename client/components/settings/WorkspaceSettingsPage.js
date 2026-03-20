@@ -1,0 +1,445 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Bell,
+  Building2,
+  Globe,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  SlidersHorizontal,
+  Smartphone,
+  User,
+  Users,
+} from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
+import * as z from "zod";
+import ThemeToggle from "@/components/ThemeToggle";
+import CountryPhoneField from "@/components/CountryPhoneField";
+import { useUpdateMeMutation } from "@/store/api/authApi";
+import { setCurrentUser } from "@/store/slices/authSlice";
+import { formatRoleLabel, resolveUserPermissions, ROLES } from "@/utils/roles";
+import { getLocalPhoneNumber } from "@/utils/phone";
+import { cn } from "@/lib/utils";
+import {
+  PERSON_NAME_REGEX,
+  PHONE_DIGIT_MAX,
+  PHONE_DIGIT_MIN,
+  normalizeEmailInput,
+  normalizeTextInput,
+  toDigitsOnly,
+} from "@/utils/formValidation";
+
+const settingsSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Full name is required")
+    .max(120, "Name is too long")
+    .regex(
+      PERSON_NAME_REGEX,
+      "Full name can only include letters, spaces, apostrophes, dots, or hyphens"
+    ),
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email address"),
+  mobileCountryCode: z
+    .string()
+    .trim()
+    .refine((value) => !value || /^\+\d{1,3}$/.test(value), "Use format like +91"),
+  mobile: z
+    .string()
+    .trim()
+    .refine(
+      (value) => !value || toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
+      "Enter a valid mobile number"
+    )
+    .refine(
+      (value) => !value || toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
+      "Mobile number is too long"
+    ),
+});
+
+const labelClassName = "mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200";
+const inputClassName =
+  "w-full rounded-[1.25rem] border-2 border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_14px_32px_rgba(59,130,246,0.10)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/80 dark:border-white/80 dark:bg-white dark:text-slate-950 dark:shadow-[0_16px_30px_rgba(2,6,23,0.28)] dark:focus:ring-blue-500/20";
+const errorInputClassName =
+  "border-rose-400 bg-rose-50/80 focus:border-rose-500 focus:ring-rose-500/10";
+
+const formatValue = (value, fallback = "-") => {
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value);
+};
+
+const getFormDefaults = (user) => ({
+  name: user?.name || "",
+  email: user?.email || "",
+  mobileCountryCode: user?.mobileCountryCode || "",
+  mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode),
+});
+
+function DetailCard({ icon: Icon, label, value }) {
+  return (
+    <div className="light-glow-soft rounded-[1.5rem] border border-white/70 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-200">
+          <Icon size={18} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+            {label}
+          </p>
+          <p className="mt-1 truncate text-sm font-semibold text-slate-900 dark:text-white">
+            {value}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreferenceCard({ icon: Icon, title, value, children }) {
+  return (
+    <div className="light-glow-soft rounded-[1.5rem] border border-white/70 bg-white/90 p-5 dark:border-slate-800 dark:bg-slate-950/75">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+          <Icon size={18} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-black text-slate-900 dark:text-white">{title}</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{value}</p>
+          {children ? <div className="mt-4">{children}</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function WorkspaceSettingsPage() {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const roleLabel = formatRoleLabel(user?.role);
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+  const permissionsCount = resolveUserPermissions(user).length;
+  const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || null;
+  const workspaceCity = user?.city || user?.organization?.city || null;
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors, isDirty },
+  } = useForm({
+    resolver: zodResolver(settingsSchema),
+    mode: "onChange",
+    defaultValues: getFormDefaults(user),
+  });
+
+  useEffect(() => {
+    reset(getFormDefaults(user));
+  }, [user, reset]);
+
+  const formValues = useWatch({ control });
+  const previewName = formValues.name || user?.name || "Workspace User";
+  const previewEmail = formValues.email || user?.email || "-";
+  const previewMobile =
+    formValues.mobile || user?.mobile
+      ? `${formValues.mobileCountryCode || user?.mobileCountryCode || ""}${formValues.mobile || getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode)}`
+      : "-";
+  const userInitial = String(previewName).trim().charAt(0).toUpperCase() || "U";
+
+  const detailCards = useMemo(
+    () => [
+      { icon: User, label: "Full Name", value: formatValue(previewName) },
+      { icon: Mail, label: "Email", value: formatValue(previewEmail) },
+      { icon: Smartphone, label: "Mobile", value: formatValue(previewMobile) },
+      { icon: ShieldCheck, label: "Role", value: roleLabel },
+      {
+        icon: isSuperAdmin ? Globe : Building2,
+        label: isSuperAdmin ? "Access Scope" : "Organization Code",
+        value: isSuperAdmin ? "Platform-wide" : formatValue(workspaceCode),
+      },
+      { icon: Users, label: "Permissions", value: `${permissionsCount} Enabled` },
+    ],
+    [isSuperAdmin, permissionsCount, previewEmail, previewMobile, previewName, roleLabel, workspaceCode]
+  );
+
+  const resetForm = () => {
+    reset(getFormDefaults(user));
+    setFeedback({ type: "", message: "" });
+  };
+
+  const onSubmit = async (values) => {
+    setFeedback({ type: "", message: "" });
+
+    const nextMobile = values.mobile.trim();
+    const nextMobileCountryCode = values.mobileCountryCode.trim();
+    const payload = {
+      name: normalizeTextInput(values.name),
+      email: normalizeEmailInput(values.email),
+    };
+
+    if (nextMobile || user?.mobile) {
+      payload.mobile = toDigitsOnly(nextMobile) || user?.mobile || "";
+      payload.mobileCountryCode = nextMobileCountryCode || user?.mobileCountryCode || "";
+    }
+
+    try {
+      const result = await updateMe(payload).unwrap();
+      dispatch(setCurrentUser(result.user));
+      reset(getFormDefaults(result.user));
+      setFeedback({
+        type: "success",
+        message: result?.message || "Profile updated successfully.",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error?.data?.message || error?.message || "Failed to update profile.",
+      });
+    }
+  };
+
+  return (
+    <section className="space-y-6">
+      <div className="light-glow-card-static rounded-[1.75rem] p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.75rem] bg-gradient-to-br from-blue-600 to-indigo-600 text-2xl font-black text-white shadow-[0_20px_46px_rgba(59,130,246,0.24)]">
+              {userInitial}
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
+                Account Settings
+              </p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                {previewName}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                Edit your profile details and keep your workspace preferences in sync.
+              </p>
+            </div>
+          </div>
+
+          <div className="inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-600 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+            <ShieldCheck size={14} className="text-blue-600 dark:text-blue-300" />
+            {roleLabel}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {detailCards.map((item) => (
+          <DetailCard key={item.label} icon={item.icon} label={item.label} value={item.value} />
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="light-glow-card-static rounded-[1.75rem] p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                Editable Profile
+              </h3>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                Update your personal details here. Changes appear across the dashboard right away.
+              </p>
+            </div>
+            <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+              {isDirty ? "Unsaved Changes" : "Up to Date"}
+            </div>
+          </div>
+
+          {feedback.message ? (
+            <p
+              className={cn(
+                "mt-4 rounded-2xl border px-4 py-3 text-sm font-medium",
+                feedback.type === "error"
+                  ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+              )}
+            >
+              {feedback.message}
+            </p>
+          ) : null}
+
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label htmlFor="settings-name" className={labelClassName}>
+                  Full Name
+                </label>
+                <input
+                  id="settings-name"
+                  type="text"
+                  placeholder="Your full name"
+                  aria-invalid={errors.name ? "true" : "false"}
+                  className={cn(inputClassName, errors.name ? errorInputClassName : "")}
+                  {...register("name")}
+                />
+                {errors.name ? (
+                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
+                    {errors.name.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="settings-email" className={labelClassName}>
+                  Email Address
+                </label>
+                <input
+                  id="settings-email"
+                  type="email"
+                  placeholder="name@company.com"
+                  aria-invalid={errors.email ? "true" : "false"}
+                  className={cn(inputClassName, errors.email ? errorInputClassName : "")}
+                  {...register("email")}
+                />
+                {errors.email ? (
+                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
+                    {errors.email.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <CountryPhoneField
+                label="Mobile Number"
+                countryCode={formValues.mobileCountryCode || ""}
+                phone={formValues.mobile || ""}
+                onCountryCodeChange={(event) =>
+                  setValue("mobileCountryCode", event.target.value, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                onPhoneChange={(event) =>
+                  setValue("mobile", event.target.value.replace(/[^\d]/g, ""), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                countryCodeError={errors.mobileCountryCode?.message}
+                phoneError={errors.mobile?.message}
+                helpText="Select the country code, then enter your mobile number."
+                containerClassName="md:col-span-2"
+                labelClassName={labelClassName}
+              />
+              <input type="hidden" {...register("mobileCountryCode")} />
+              <input type="hidden" {...register("mobile")} />
+            </div>
+
+            <div className="grid gap-4 rounded-[1.5rem] bg-slate-50/90 p-4 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:bg-slate-900/80">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                    Role
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    {roleLabel}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                    Workspace Code
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                    {isSuperAdmin ? "Platform-wide" : formatValue(workspaceCode, "Not available")}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Role and workspace scope are managed by the platform or organization admin.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={resetForm}
+                disabled={isSaving || !isDirty}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:text-blue-200"
+              >
+                <RotateCcw size={16} />
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving || !isDirty}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-[0_20px_46px_rgba(59,130,246,0.24)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300"
+              >
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="space-y-4">
+          <PreferenceCard
+            icon={SlidersHorizontal}
+            title="Appearance"
+            value="Choose the theme that feels best for your workspace."
+          >
+            <ThemeToggle showLabel className="w-full justify-center" />
+          </PreferenceCard>
+
+          <PreferenceCard
+            icon={Bell}
+            title="Notifications"
+            value="Workspace activity alerts stay enabled for important updates."
+          />
+
+          <PreferenceCard
+            icon={LockKeyhole}
+            title="Security"
+            value="Your account is protected by role-based access and secure sessions."
+          />
+
+          <div className="light-glow-card-static rounded-[1.75rem] p-6">
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+              Workspace Details
+            </h3>
+            <div className="mt-4 grid gap-4">
+              <div className="rounded-[1.5rem] bg-slate-50/90 p-5 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:bg-slate-900">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                  Location
+                </p>
+                <div className="mt-3 flex items-center gap-3">
+                  <MapPin size={18} className="text-blue-600 dark:text-blue-300" />
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {formatValue(workspaceCity, "Not set")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[1.5rem] bg-slate-50/90 p-5 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:bg-slate-900">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                  Workspace
+                </p>
+                <div className="mt-3 flex items-center gap-3">
+                  <Globe size={18} className="text-blue-600 dark:text-blue-300" />
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {isSuperAdmin ? "Global Control Panel" : "Organization Workspace"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

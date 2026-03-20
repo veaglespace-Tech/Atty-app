@@ -1,0 +1,98 @@
+"use client";
+
+import { Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { COUNTRY_PHONE_OPTIONS, getDefaultCountryCode } from "@/utils/phone";
+
+export default function CountryPhoneField({
+  label = "Mobile Number",
+  countryCode,
+  phone,
+  onCountryCodeChange,
+  onPhoneChange,
+  countryCodeName = "countryCode",
+  phoneName = "phone",
+  phonePlaceholder = "9876543210",
+  countryCodeError = "",
+  phoneError = "",
+  helpText = "",
+  disabled = false,
+  required = false,
+  icon: Icon = Phone,
+  containerClassName = "",
+  labelClassName = "",
+  groupClassName = "",
+  selectClassName = "",
+  inputClassName = "",
+  messageClassName = "",
+  iconClassName = "",
+}) {
+  const hasError = Boolean(countryCodeError || phoneError);
+
+  return (
+    <div className={containerClassName}>
+      <label className={labelClassName}>
+        {label}
+        {required ? <span className="ml-1 text-rose-500">*</span> : null}
+      </label>
+
+      <div
+        className={cn(
+          "relative flex overflow-hidden rounded-[1.4rem] border-2 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.08)] transition-all duration-300 focus-within:-translate-y-0.5 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100/80 dark:border-white/75 dark:bg-white dark:focus:border-blue-500 dark:focus:ring-blue-500/20",
+          hasError
+            ? "border-red-400 bg-red-50/70 focus-within:border-red-500 focus-within:ring-red-500/10 dark:border-red-300"
+            : "border-slate-200 hover:border-slate-300 dark:border-white/80",
+          groupClassName
+        )}
+      >
+        {Icon ? (
+          <div className="pointer-events-none flex items-center justify-center border-r border-slate-200 px-3 text-slate-400 dark:border-slate-200">
+            <Icon size={18} className={iconClassName} />
+          </div>
+        ) : null}
+
+        <select
+          name={countryCodeName}
+          value={getDefaultCountryCode(countryCode)}
+          onChange={onCountryCodeChange}
+          disabled={disabled}
+          className={cn(
+            "w-28 shrink-0 border-r border-slate-200 bg-white px-3 py-4 text-sm font-semibold text-slate-900 outline-none dark:border-slate-200 dark:bg-white dark:text-slate-950",
+            selectClassName
+          )}
+        >
+          {COUNTRY_PHONE_OPTIONS.map((option) => (
+            <option key={`${option.iso}-${option.code}`} value={option.code}>
+              {option.iso} {option.code}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          name={phoneName}
+          value={phone}
+          onChange={onPhoneChange}
+          disabled={disabled}
+          placeholder={phonePlaceholder}
+          className={cn(
+            "min-w-0 flex-1 bg-white px-4 py-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:bg-white dark:text-slate-950 dark:placeholder:text-slate-900",
+            inputClassName
+          )}
+        />
+      </div>
+
+      {hasError ? (
+        <p className={cn("ml-1 mt-1.5 text-xs font-medium text-red-500", messageClassName)}>
+          {countryCodeError || phoneError}
+        </p>
+      ) : helpText ? (
+        <p className={cn("ml-1 mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500", messageClassName)}>
+          {helpText}
+        </p>
+      ) : null}
+    </div>
+  );
+}

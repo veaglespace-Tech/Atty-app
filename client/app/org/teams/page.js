@@ -1,0 +1,627 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Plus,
+  RefreshCcw,
+  Search,
+  ShieldAlert,
+  Trash2,
+  UsersRound,
+  X,
+} from "lucide-react";
+import {
+  useCreateOrgTeamMutation,
+  useDeleteOrgTeamMutation,
+  useGetOrgTeamsQuery,
+  useGetOrgUsersQuery,
+  usePatchOrgTeamMutation,
+} from "@/store/api/orgApi";
+import { ROLES, formatRoleLabel, normalizeRole } from "@/utils/roles";
+import {
+  getErrorMessage,
+  normalizeTextInput,
+  validateTeamForm,
+} from "@/utils/formValidation";
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
+};
+
+const summaryMapFromArray = (summary) => {
+  const map = new Map();
+  for (const item of summary || []) {
+    if (item?.label) map.set(item.label, item.value);
+  }
+  return map;
+};
+
+export default function OrgTeamsPage() {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [actionTeamId, setActionTeamId] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [leaderOpen, setLeaderOpen] = useState(false);
+  const [memberOpen, setMemberOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [leaderSearch, setLeaderSearch] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    attendanceRadius: "25",
+    leaderId: "",
+    memberIds: [],
+  });
+  const shouldLoadUsers = createOpen;
+
+  const {
+    data: teamsData,
+    isFetching: teamsLoading,
+    isLoading: teamsInitialLoading,
+    refetch: refetchTeams,
+  } = useGetOrgTeamsQuery(200);
+
+  const {
+    data: usersData,
+    isFetching: usersLoading,
+    refetch: refetchUsers,
+  } = useGetOrgUsersQuery(500, { skip: !shouldLoadUsers });
+
+  const [createTeamMutation] = useCreateOrgTeamMutation();
+  const [patchTeamMutation] = usePatchOrgTeamMutation();
+  const [deleteTeamMutation] = useDeleteOrgTeamMutation();
+
+  const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
+  const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
+  const summary = useMemo(() => (Array.isArray(teamsData?.summary) ? teamsData.summary : []), [teamsData]);
+  const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+
+  const leaderOptions = useMemo(
+    () =>
+      users.filter((user) => {
+        const role = normalizeRole(user.role);
+        return [ROLES.TEAM_LEADER, ROLES.SUB_ADMIN, ROLES.ORG_ADMIN].includes(role) && user.active;
+      }),
+    [users]
+  );
+
+  const memberOptions = useMemo(
+    () =>
+      users.filter((user) => {
+        const role = normalizeRole(user.role);
+        return [ROLES.MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN].includes(role) && user.active;
+      }),
+    [users]
+  );
+
+  const filteredLeaders = useMemo(() => {
+    const query = leaderSearch.trim().toLowerCase();
+    if (!query) return leaderOptions;
+    return leaderOptions.filter(
+      (user) =>
+        String(user.name || "").toLowerCase().includes(query) ||
+        String(user.email || "").toLowerCase().includes(query)
+    );
+  }, [leaderOptions, leaderSearch]);
+
+  const filteredMembers = useMemo(() => {
+    const query = memberSearch.trim().toLowerCase();
+    return memberOptions.filter((user) => {
+      if (form.memberIds.includes(String(user.id))) return false;
+      if (!query) return true;
+      return (
+        String(user.name || "").toLowerCase().includes(query) ||
+        String(user.email || "").toLowerCase().includes(query)
+      );
+    });
+  }, [memberOptions, memberSearch, form.memberIds]);
+
+  const selectedLeader = useMemo(
+    () => leaderOptions.find((user) => String(user.id) === String(form.leaderId)) || null,
+    [form.leaderId, leaderOptions]
+  );
+
+  const selectedMembers = useMemo(
+    () => memberOptions.filter((user) => form.memberIds.includes(String(user.id))),
+    [form.memberIds, memberOptions]
+  );
+
+  const resetForm = () => {
+    setForm({
+      name: "",
+      description: "",
+      attendanceRadius: "25",
+      leaderId: "",
+      memberIds: [],
+    });
+    setLeaderSearch("");
+    setMemberSearch("");
+    setLeaderOpen(false);
+    setMemberOpen(false);
+  };
+
+  const onInputChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleLeader = (leaderId) => {
+    const id = String(leaderId);
+    setForm((prev) => ({
+      ...prev,
+      leaderId: String(prev.leaderId) === id ? "" : id,
+    }));
+  };
+
+  const addMember = (memberId) => {
+    const id = String(memberId);
+    setForm((prev) => ({
+      ...prev,
+      memberIds: prev.memberIds.includes(id) ? prev.memberIds : [...prev.memberIds, id],
+    }));
+  };
+
+  const removeMember = (memberId) => {
+    const id = String(memberId);
+    setForm((prev) => ({
+      ...prev,
+      memberIds: prev.memberIds.filter((value) => value !== id),
+    }));
+  };
+
+  const refreshAll = async () => {
+    const tasks = [refetchTeams()];
+    if (shouldLoadUsers) {
+      tasks.push(refetchUsers());
+    }
+    await Promise.all(tasks);
+  };
+
+  const createTeam = async (event) => {
+    event.preventDefault();
+
+    const validationError = validateTeamForm({
+      name: form.name,
+      description: form.description,
+      attendanceRadius: form.attendanceRadius,
+      longitude: "",
+      latitude: "",
+      requireCoordinates: false,
+    });
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError("");
+      setMessage("");
+
+      await createTeamMutation({
+        name: normalizeTextInput(form.name),
+        description: normalizeTextInput(form.description),
+        attendanceRadius: Number(form.attendanceRadius || 25),
+        leaderId: form.leaderId || null,
+        memberIds: form.memberIds,
+      }).unwrap();
+
+      setMessage("Team created successfully");
+      resetForm();
+      setCreateOpen(false);
+      await refetchTeams();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to create team"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const applyAction = async (teamId, action) => {
+    try {
+      setActionTeamId(String(teamId));
+      setError("");
+      setMessage("");
+      await action();
+      await refetchTeams();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Action failed"));
+    } finally {
+      setActionTeamId("");
+    }
+  };
+
+  const toggleTeamActive = (team) =>
+    applyAction(team.id, () =>
+      patchTeamMutation({
+        teamId: team.id,
+        isActive: !team.isActive,
+      }).unwrap()
+    );
+
+  const deleteTeam = (team) => {
+    const confirmed = window.confirm(`Delete team ${team.name}?`);
+    if (!confirmed) return;
+
+    return applyAction(team.id, () => deleteTeamMutation(team.id).unwrap());
+  };
+
+  const loading = teamsLoading || usersLoading;
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900">Organization Teams</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Create teams, assign leader and members, and open each team for full management.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCreateOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+            >
+              <Plus size={15} />
+              Create Team
+              {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            <button
+              type="button"
+              onClick={refreshAll}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        ) : null}
+
+        {message ? (
+          <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>
+        ) : null}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MetricCard label="Teams" value={summaryMap.get("Teams") || 0} />
+        <MetricCard label="Assigned Members" value={summaryMap.get("Total Members Assigned") || 0} />
+        <MetricCard label="Teams With Leader" value={summaryMap.get("Teams With Leader") || 0} />
+      </div>
+
+      {createOpen ? (
+        <div className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create Team</h3>
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setCreateOpen(false);
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600"
+            >
+              <X size={13} /> Close
+            </button>
+          </div>
+
+          <form onSubmit={createTeam} className="mt-4 grid gap-4 md:grid-cols-2">
+            <input
+              name="name"
+              value={form.name}
+              onChange={onInputChange}
+              placeholder="Team name"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+              required
+            />
+
+            <input
+              name="attendanceRadius"
+              type="number"
+              min="5"
+              value={form.attendanceRadius}
+              onChange={onInputChange}
+              placeholder="Attendance radius"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+            />
+
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={onInputChange}
+              placeholder="Team description"
+              className="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+              rows={3}
+            />
+
+            <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Leader</p>
+              <div className="mt-2 relative">
+                <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                <input
+                  value={leaderSearch}
+                  onFocus={() => setLeaderOpen(true)}
+                  onChange={(event) => {
+                    setLeaderOpen(true);
+                    setLeaderSearch(event.target.value);
+                  }}
+                  placeholder="Search leader"
+                  className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setLeaderOpen((prev) => !prev)}
+                  className="absolute right-2 top-2 text-slate-500"
+                >
+                  {leaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              </div>
+
+              {selectedLeader ? (
+                <div className="mt-2 rounded-lg bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700">
+                  Selected: {selectedLeader.name}
+                </div>
+              ) : (
+                <div className="mt-2 rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">
+                  No leader selected
+                </div>
+              )}
+
+              {leaderOpen ? (
+                <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
+                  {filteredLeaders.map((leader) => {
+                    const active = String(form.leaderId) === String(leader.id);
+                    return (
+                      <button
+                        key={leader.id}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => toggleLeader(leader.id)}
+                        className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
+                          active
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span>{leader.name}</span>
+                        <span className="ml-2 text-xs opacity-80">{formatRoleLabel(leader.role)}</span>
+                      </button>
+                    );
+                  })}
+                  {filteredLeaders.length === 0 ? (
+                    <p className="px-2 py-2 text-xs font-semibold text-slate-500">No leader found</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Members</p>
+              <div className="mt-2 relative">
+                <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                <input
+                  value={memberSearch}
+                  onFocus={() => setMemberOpen(true)}
+                  onChange={(event) => {
+                    setMemberOpen(true);
+                    setMemberSearch(event.target.value);
+                  }}
+                  placeholder="Search members"
+                  className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMemberOpen((prev) => !prev)}
+                  className="absolute right-2 top-2 text-slate-500"
+                >
+                  {memberOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              </div>
+
+              <p className="mt-2 text-xs font-semibold text-slate-600">Selected: {form.memberIds.length}</p>
+
+              {selectedMembers.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedMembers.map((member) => (
+                    <button
+                      key={`selected-${member.id}`}
+                      type="button"
+                      onClick={() => removeMember(member.id)}
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2 py-1 text-xs font-semibold text-white"
+                    >
+                      {member.name}
+                      <X size={12} />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {memberOpen ? (
+                <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
+                  {filteredMembers.map((member) => {
+                    const active = form.memberIds.includes(String(member.id));
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => addMember(member.id)}
+                        className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
+                          active
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span>{member.name}</span>
+                        <span className="ml-2 text-xs opacity-80">{formatRoleLabel(member.role)}</span>
+                      </button>
+                    );
+                  })}
+                  {filteredMembers.length === 0 ? (
+                    <p className="px-2 py-2 text-xs font-semibold text-slate-500">No member found</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <UsersRound size={16} />}
+                Create Team
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {teams.slice(0, 6).map((team) => (
+          <button
+            type="button"
+            key={`card-${team.id}`}
+            onClick={() => router.push(`/org/teams/${team.id}`)}
+            className="rounded-2xl border border-slate-300 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-black text-slate-900">{team.name}</h4>
+              <span
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
+                  team.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {team.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <p className="mt-2 text-sm font-bold text-slate-700">
+              Leader: <span className="text-slate-900">{team.leaderName || "Unassigned"}</span>
+            </p>
+            <p className="mt-1 text-sm font-bold text-slate-700">
+              Members: <span className="text-slate-900">{team.memberCount || 0}</span>
+            </p>
+            <p className="mt-3 inline-flex items-center gap-1 text-xs font-black uppercase tracking-wide text-blue-600">
+              Open Team <ArrowRight size={12} />
+            </p>
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Directory</h3>
+
+        {teamsInitialLoading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-slate-500">
+            <Loader2 className="animate-spin" size={18} />
+            <span className="text-sm font-medium">Loading teams...</span>
+          </div>
+        ) : teams.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-500">No teams found.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Name</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Leader</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Members</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Radius</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Active</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Created</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {teams.map((team) => {
+                  const busy = actionTeamId === String(team.id);
+                  return (
+                    <tr
+                      key={team.id}
+                      onClick={() => router.push(`/org/teams/${team.id}`)}
+                      className="cursor-pointer transition hover:bg-slate-50"
+                    >
+                      <td className="px-3 py-2 font-bold text-slate-900">{team.name}</td>
+                      <td className="px-3 py-2 font-medium text-slate-700">{team.leaderName || "Unassigned"}</td>
+                      <td className="px-3 py-2 font-bold text-slate-800">{team.memberCount || 0}</td>
+                      <td className="px-3 py-2 text-slate-700">{team.attendanceRadius}</td>
+                      <td className="px-3 py-2 text-slate-700">{team.isActive ? "Yes" : "No"}</td>
+                      <td className="px-3 py-2 text-slate-600">{formatDate(team.createdAt)}</td>
+                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                        <div className="flex flex-wrap gap-2">
+                          <ActionButton
+                            label={team.isActive ? "Deactivate" : "Activate"}
+                            icon={<ShieldAlert size={14} />}
+                            onClick={() => toggleTeamActive(team)}
+                            disabled={busy}
+                            tone={team.isActive ? "danger" : "default"}
+                          />
+                          <ActionButton
+                            label="Delete"
+                            icon={<Trash2 size={14} />}
+                            onClick={() => deleteTeam(team)}
+                            disabled={busy}
+                            tone="danger"
+                          />
+                          {busy ? <Loader2 size={14} className="animate-spin text-slate-500" /> : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-300 bg-white p-4">
+      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
+  const style =
+    tone === "danger"
+      ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold transition disabled:opacity-60 ${style}`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
