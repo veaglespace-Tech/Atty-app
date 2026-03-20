@@ -1,0 +1,111 @@
+const { normalizeRole } = require("./rbac");
+
+const PERMISSION_KEYS = Object.freeze({
+  TEAM_VIEW: "TEAM_VIEW",
+  TEAM_CREATE: "TEAM_CREATE",
+  TEAM_UPDATE: "TEAM_UPDATE",
+  TEAM_DELETE: "TEAM_DELETE",
+  TEAM_ASSIGN_MEMBERS: "TEAM_ASSIGN_MEMBERS",
+  ATTENDANCE_VIEW: "ATTENDANCE_VIEW",
+  ATTENDANCE_MANAGE: "ATTENDANCE_MANAGE",
+  REPORTS_VIEW: "REPORTS_VIEW",
+  USERS_CREATE: "USERS_CREATE",
+  USERS_STATUS_UPDATE: "USERS_STATUS_UPDATE",
+  USERS_ACTIVE_TOGGLE: "USERS_ACTIVE_TOGGLE",
+  USERS_DELETE: "USERS_DELETE",
+  SUBSCRIPTION_VIEW: "SUBSCRIPTION_VIEW",
+});
+
+const ALL_PERMISSIONS = Object.freeze(Object.values(PERMISSION_KEYS));
+
+const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
+  SUPER_ADMIN: ALL_PERMISSIONS,
+  ORG_ADMIN: ALL_PERMISSIONS,
+  SUB_ADMIN: Object.freeze([
+    PERMISSION_KEYS.TEAM_VIEW,
+    PERMISSION_KEYS.ATTENDANCE_VIEW,
+    PERMISSION_KEYS.ATTENDANCE_MANAGE,
+    PERMISSION_KEYS.REPORTS_VIEW,
+    PERMISSION_KEYS.USERS_CREATE,
+    PERMISSION_KEYS.USERS_STATUS_UPDATE,
+    PERMISSION_KEYS.USERS_ACTIVE_TOGGLE,
+  ]),
+  TEAM_LEADER: Object.freeze([
+    PERMISSION_KEYS.TEAM_VIEW,
+    PERMISSION_KEYS.ATTENDANCE_VIEW,
+    PERMISSION_KEYS.REPORTS_VIEW,
+  ]),
+  MEMBER: Object.freeze([PERMISSION_KEYS.ATTENDANCE_VIEW]),
+});
+
+const ASSIGNABLE_PERMISSIONS_BY_ROLE = Object.freeze({
+  ORG_ADMIN: ALL_PERMISSIONS,
+  SUB_ADMIN: Object.freeze([
+    PERMISSION_KEYS.TEAM_VIEW,
+    PERMISSION_KEYS.ATTENDANCE_VIEW,
+    PERMISSION_KEYS.REPORTS_VIEW,
+  ]),
+  TEAM_LEADER: Object.freeze([]),
+  MEMBER: Object.freeze([]),
+  SUPER_ADMIN: ALL_PERMISSIONS,
+});
+
+const normalizePermission = (permission) => {
+  if (!permission) return null;
+  const normalized = String(permission).toUpperCase().trim().replace(/[\s-]+/g, "_");
+  return ALL_PERMISSIONS.includes(normalized) ? normalized : null;
+};
+
+const normalizePermissionList = (permissions = []) => {
+  if (!Array.isArray(permissions)) return [];
+  return [...new Set(permissions.map(normalizePermission).filter(Boolean))];
+};
+
+const getDefaultPermissionsForRole = (role) => {
+  const normalizedRole = normalizeRole(role);
+  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || [])];
+};
+
+const getAssignablePermissionsByRole = (role) => {
+  const normalizedRole = normalizeRole(role);
+  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
+};
+
+const resolveUserPermissions = (user) => {
+  if (!user) return [];
+
+  const normalizedRole =
+    typeof user === "string" ? normalizeRole(user) : normalizeRole(user.role);
+
+  if (normalizedRole === "SUPER_ADMIN" || normalizedRole === "ORG_ADMIN") {
+    return [...ALL_PERMISSIONS];
+  }
+
+  const explicitPermissions = normalizePermissionList(user.permissions);
+  if (explicitPermissions.length > 0) {
+    return explicitPermissions;
+  }
+
+  return getDefaultPermissionsForRole(normalizedRole);
+};
+
+const hasPermission = (user, permission) => {
+  const normalizedPermission = normalizePermission(permission);
+  if (!normalizedPermission) return false;
+
+  const resolvedPermissions = resolveUserPermissions(user);
+  return resolvedPermissions.includes(normalizedPermission);
+};
+
+module.exports = {
+  PERMISSION_KEYS,
+  ALL_PERMISSIONS,
+  ROLE_DEFAULT_PERMISSIONS,
+  ASSIGNABLE_PERMISSIONS_BY_ROLE,
+  normalizePermission,
+  normalizePermissionList,
+  getDefaultPermissionsForRole,
+  getAssignablePermissionsByRole,
+  resolveUserPermissions,
+  hasPermission,
+};
