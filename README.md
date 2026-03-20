@@ -1,0 +1,186 @@
+# Veagle Space Attendance SaaS
+
+Veagle Space is a multi-tenant attendance and workforce management platform built for organizations, team leaders, members, and super admins.
+
+It includes organization onboarding, plan selection, payment integration, attendance tracking, team management, reporting, and role-based dashboards.
+
+## Tech Stack
+
+- Frontend: Next.js 16, React 19, Redux Toolkit, Tailwind CSS, Framer Motion
+- Backend: Node.js, Express, Prisma
+- Database: MySQL
+- Payments: Razorpay
+- Auth: JWT + cookie support
+
+## Main Modules
+
+- Public website: home, pricing, about, contact
+- Authentication: login, member signup, org onboarding flow
+- Organization portal: users, teams, attendance, reports, notifications, subscription
+- Team leader portal: attendance, reports, team management
+- Member portal: dashboard, attendance, settings
+- Super admin portal: analytics, organizations, plans, payments, settings
+
+## Project Structure
+
+```text
+Atendee/
+|- client/   # Next.js frontend
+|- server/   # Express + Prisma backend
+`- README.md
+```
+
+## Prerequisites
+
+- Node.js 20+
+- npm 10+
+- MySQL database
+
+## Environment Variables
+
+### Server
+
+Create `server/.env` and set values like:
+
+```env
+PORT=5000
+DATABASE_URL="mysql://USER:PASSWORD@HOST:3306/DB_NAME"
+JWT_KEY="your-jwt-secret"
+CLIENT_URL="http://localhost:3000"
+CLIENT_ORIGINS="http://localhost:3000"
+
+RAZORPAY_KEY_ID=""
+RAZORPAY_KEY_SECRET=""
+
+EMAIL_SERVICE="gmail"
+EMAIL_USER=""
+EMAIL_PASS=""
+
+SENTRY_DSN=""
+SENTRY_TRACES_SAMPLE_RATE=0
+```
+
+Optional values used by helper scripts:
+
+```env
+SUPER_ADMIN_NAME="Super Admin"
+SUPER_ADMIN_EMAIL="superadmin@veagle.com"
+SUPER_ADMIN_PASSWORD="password123"
+SUPER_ADMIN_COUNTRY_CODE="+91"
+SUPER_ADMIN_MOBILE="9999999999"
+```
+
+### Client
+
+Create `client/.env.local` only if you want to override the default API URL:
+
+```env
+NEXT_PUBLIC_API_URL="http://localhost:5000/api"
+```
+
+## Installation
+
+### 1. Install backend dependencies
+
+```bash
+cd server
+npm install
+```
+
+### 2. Install frontend dependencies
+
+```bash
+cd ../client
+npm install
+```
+
+## Database Setup
+
+From `server/`:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed:plans
+```
+
+If needed, create the super admin:
+
+```bash
+npm run create:super-admin
+```
+
+## Run Locally
+
+### Start backend
+
+```bash
+cd server
+npm start
+```
+
+Backend runs on `http://localhost:5000`.
+
+### Start frontend
+
+```bash
+cd client
+npm run dev
+```
+
+Frontend runs on `http://localhost:3000`.
+
+## Useful Scripts
+
+### Client
+
+```bash
+npm run dev
+npm run dev:turbo
+npm run build
+npm run start
+npm run lint
+```
+
+### Server
+
+```bash
+npm start
+npm test
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed:plans
+npm run create:super-admin
+```
+
+## API Areas
+
+- `/api/auth`
+- `/api/org`
+- `/api/attendance`
+- `/api/dashboard`
+- `/api/payment`
+- `/api/plans`
+- `/api/super-admin`
+- `/api/team-leader`
+- `/api/member`
+
+## Notes
+
+- CORS already allows localhost frontend development by default.
+- Plan data should be seeded before testing organization onboarding.
+- Razorpay and email features require valid credentials to work fully.
+- Prisma schema is located at `server/prisma/schema.prisma`.
+
+## Testing
+
+From `server/`:
+
+```bash
+npm test
+```
+
+## Repository
+
+- Remote: `https://github.com/veaglespace-Tech/attendee.git`
+- Branch: `main`
