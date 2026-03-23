@@ -3,7 +3,7 @@ import { Manrope, Space_Grotesk } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { StoreProvider } from "@/components/StoreProvider";
-
+import AttyWidget from "@/components/AttyWidget";
 const bodyFont = Manrope({
   subsets: ["latin"],
   variable: "--font-body",
@@ -18,7 +18,8 @@ const displayFont = Space_Grotesk({
 
 export const metadata = {
   title: "Veagle Space - Attendance Management Simplified",
-  description: "Modern multi-tenant attendance management system for organizations.",
+  description:
+    "Modern multi-tenant attendance management system for organizations.",
 };
 
 export default function RootLayout({ children }) {
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
           <StoreProvider>
             <Navbar />
             <main className="overflow-x-clip">{children}</main>
+            <AttyWidget />
           </StoreProvider>
         </ThemeProvider>
       </body>

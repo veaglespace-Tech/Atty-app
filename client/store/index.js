@@ -10,7 +10,7 @@ import { dashboardApi } from "./api/dashboardApi";
 import { attendanceApi } from "./api/attendanceApi";
 import { paymentApi } from "./api/paymentApi";
 import { utilityApi } from "./api/utilityApi";
-
+import { attyApi } from "./api/attyApi"; //ADDED
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -24,6 +24,7 @@ export const store = configureStore({
     [attendanceApi.reducerPath]: attendanceApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
     [utilityApi.reducerPath]: utilityApi.reducer,
+    [attyApi.reducerPath]: attyApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -36,6 +37,7 @@ export const store = configureStore({
       dashboardApi.middleware,
       attendanceApi.middleware,
       paymentApi.middleware,
-      utilityApi.middleware
+      utilityApi.middleware,
+      attyApi.middleware,
     ),
 });

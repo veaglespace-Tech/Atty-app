@@ -1,5 +1,8 @@
 const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, ".env"), override: true });
+require("dotenv").config({
+  path: path.resolve(__dirname, ".env"),
+  override: true,
+});
 const Sentry = require("@sentry/node");
 const express = require("express");
 const compression = require("compression");
@@ -39,7 +42,8 @@ const allowedOrigins = new Set([
   ...envAllowedOrigins,
 ]);
 
-const localOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+const localOriginPattern =
+  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -68,7 +72,7 @@ app.use(helmet());
 app.use(
   compression({
     threshold: 1024,
-  })
+  }),
 );
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -85,6 +89,7 @@ app.use("/api/plans", require("./routes/plan.route"));
 app.use("/api/super-admin", require("./routes/super-admin.route"));
 app.use("/api/team-leader", require("./routes/team-leader.route"));
 app.use("/api/member", require("./routes/member.route"));
+app.use("/api/atty", require("./routes/atty.route")); //ADDED
 
 app.use("*", (req, res) => {
   res.status(404).json({ message: "resource not found" });
@@ -125,7 +130,9 @@ const startServer = async () => {
 if (process.env.NODE_ENV !== "test" && require.main === module) {
   startServer().catch(async (error) => {
     if (error?.code === "EADDRINUSE") {
-      console.error(`Failed to start server: port ${PORT} is already in use. Stop the existing process or set PORT to a free port.`);
+      console.error(
+        `Failed to start server: port ${PORT} is already in use. Stop the existing process or set PORT to a free port.`,
+      );
     } else {
       console.error("Failed to start server:", error.message);
     }
