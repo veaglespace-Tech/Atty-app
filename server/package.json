@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "start": "node index.js",
     "test": "cross-env NODE_ENV=test jest --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "db:sync-missing": "node scripts/sync-missing-schema.js",
     "seed:plans": "node setup_plans.js",
     "cleanup:paid-monthly-plans": "node scripts/remove-paid-monthly-plans.js",
     "create:super-admin": "node scripts/create-super-admin.js"

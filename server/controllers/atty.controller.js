@@ -3,6 +3,9 @@ const prisma = require("../lib/prisma");
 const { buildAttyContext } = require("../services/atty.context");
 const { askOpenAI } = require("../services/atty.openai");
 const { sendSupportEmail } = require("../services/atty.email");
+const {
+  ensureSupportTicketsTable,
+} = require("../utils/ensure-support-tickets-table");
 
 // POST /api/atty/chat
 const attyChat = asyncHandler(async (req, res) => {
@@ -59,6 +62,8 @@ const attySupport = asyncHandler(async (req, res) => {
       resolvedOrgName = org?.name || null;
     } catch (_) {}
   }
+
+  await ensureSupportTicketsTable();
 
   await prisma.$executeRaw`
     INSERT INTO support_tickets (name, email, role, subject, message, status, orgId, userId, createdAt, updatedAt)

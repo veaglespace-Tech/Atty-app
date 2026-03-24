@@ -7,7 +7,6 @@ import {
   useLazyGetPaymentPublicKeyQuery,
   useVerifyAndRegisterPaymentMutation,
 } from "@/services/api/paymentApi";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   CreditCard,

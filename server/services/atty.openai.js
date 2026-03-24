@@ -1,6 +1,11 @@
-const Cerebras = require("@cerebras/cerebras_cloud_sdk");
+const loadCerebrasClient = () => {
+  const sdk = require("@cerebras/cerebras_cloud_sdk");
+  return sdk?.default || sdk?.Cerebras || sdk;
+};
 
 const getClient = () => {
+  const Cerebras = loadCerebrasClient();
+
   if (!process.env.CEREBRAS_API_KEY) {
     throw new Error("CEREBRAS_API_KEY is not set in .env");
   }

@@ -30,7 +30,7 @@ const STATUS_OPTIONS = ["APPROVED", "PENDING"];
 const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
 const fieldClassName =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500";
+  "w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -193,8 +193,8 @@ export default function OrgUsersPage() {
       <div className={sectionCardClassName}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-black text-slate-900 sm:text-2xl">Organization Users</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Users</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Directory keeps core fields simple. Click a user row to open full profile and actions.
             </p>
           </div>
@@ -230,7 +230,7 @@ export default function OrgUsersPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Total" value={summaryMap.get("Total Users") || 0} />
         <MetricCard label="Approved" value={summaryMap.get("Approved") || 0} />
         <MetricCard label="Pending" value={summaryMap.get("Pending") || 0} />
@@ -240,7 +240,7 @@ export default function OrgUsersPage() {
       {createOpen ? (
       <div className={sectionCardClassName}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create User</h3>
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Create User</h3>
           <button
             type="button"
             onClick={() => setCreateOpen(false)}
@@ -250,7 +250,7 @@ export default function OrgUsersPage() {
           </button>
         </div>
 
-        <form onSubmit={createUser} className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <form onSubmit={createUser} className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <input
             name="name"
             value={form.name}
@@ -327,17 +327,20 @@ export default function OrgUsersPage() {
             className={fieldClassName}
           />
 
-          <div className="sm:col-span-2 xl:col-span-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 p-3 sm:p-4">
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Permissions</p>
-            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          <div className="sm:col-span-2 xl:col-span-3 rounded-[1.45rem] border border-slate-200 bg-slate-50/90 p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Permissions</p>
+            <div className="mt-3 grid gap-3 xl:grid-cols-2">
               {permissionGroups.map((group) => (
-                <div key={group.key} className="rounded-xl border border-slate-200 bg-white p-3">
-                  <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{group.label}</p>
+                <div
+                  key={group.key}
+                  className="rounded-[1.15rem] border border-slate-200 bg-white/95 p-3 dark:border-slate-700 dark:bg-slate-950/80"
+                >
+                  <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{group.label}</p>
                   <div className="mt-2 space-y-2">
                     {group.items.map((permission) => (
                       <label
                         key={permission}
-                        className="flex items-center gap-2 text-xs font-semibold text-slate-700"
+                        className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200"
                       >
                         <input
                           type="checkbox"
@@ -369,25 +372,25 @@ export default function OrgUsersPage() {
       ) : null}
 
       <div className={sectionCardClassName}>
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">User Directory</h3>
+        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">User Directory</h3>
 
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-10 text-slate-500">
+          <div className="flex items-center justify-center gap-2 py-10 text-slate-500 dark:text-slate-400">
             <Loader2 className="animate-spin" size={18} />
             <span className="text-sm font-medium">Loading users...</span>
           </div>
         ) : users.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">No users found.</p>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No users found.</p>
         ) : (
           <div className="mt-4 space-y-3">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <div className="relative md:col-span-2 xl:col-span-1">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="relative sm:col-span-2 xl:col-span-1">
                 <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Search by name, mobile, email"
-                  className="w-full rounded-xl border border-slate-300 py-2.5 pl-8 pr-3 text-sm outline-none transition focus:border-blue-500"
+                  className="w-full rounded-[1.1rem] border border-slate-200 bg-white/95 py-3 pl-8 pr-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10"
                 />
               </div>
 
@@ -426,12 +429,12 @@ export default function OrgUsersPage() {
               </select>
             </div>
 
-            <p className="text-xs font-semibold text-slate-500">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Showing {filteredUsers.length} of {users.length} users
             </p>
 
             {filteredUsers.length === 0 ? (
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+              <p className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
                 No users match current filters.
               </p>
             ) : (
@@ -446,14 +449,14 @@ export default function OrgUsersPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-base font-black text-slate-900">{user.name}</p>
-                          <p className="mt-1 break-all text-xs text-slate-500">{user.email}</p>
+                          <p className="truncate text-base font-black text-slate-900 dark:text-white">{user.name}</p>
+                          <p className="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
                         </div>
                         <span
                           className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
                             user.active
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-slate-200 text-slate-700"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
+                              : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                           }`}
                         >
                           {user.active ? "Active" : "Blocked"}
@@ -471,35 +474,35 @@ export default function OrgUsersPage() {
                 </div>
 
                 <div className="hidden overflow-x-auto md:block">
-                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
                     <thead>
                       <tr>
-                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Name</th>
-                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Mobile</th>
-                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
-                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Active</th>
-                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Name</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Mobile</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Role</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Active</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {filteredUsers.map((user) => (
                         <tr
                           key={user.id}
                           onClick={() => router.push(`/org/users/${user.id}`)}
-                          className="cursor-pointer transition hover:bg-slate-50"
+                          className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                         >
                           <td className="px-3 py-3">
-                            <p className="font-bold text-slate-900">{user.name}</p>
-                            <p className="text-xs text-slate-500">{user.email}</p>
+                            <p className="font-bold text-slate-900 dark:text-white">{user.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
                           </td>
-                          <td className="px-3 py-3 font-medium text-slate-700">{user.mobile || "-"}</td>
-                          <td className="px-3 py-3 font-semibold text-slate-700">{formatRoleLabel(user.role)}</td>
+                          <td className="px-3 py-3 font-medium text-slate-700 dark:text-slate-200">{user.mobile || "-"}</td>
+                          <td className="px-3 py-3 font-semibold text-slate-700 dark:text-slate-200">{formatRoleLabel(user.role)}</td>
                           <td className="px-3 py-3">
                             <span
                               className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
                                 user.active
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-200 text-slate-700"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
+                                  : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                               }`}
                             >
                               {user.active ? "Active" : "Blocked"}
@@ -509,10 +512,10 @@ export default function OrgUsersPage() {
                             <span
                               className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
                                 user.approvalStatus === "APPROVED"
-                                  ? "bg-blue-100 text-blue-700"
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-200"
                                   : user.approvalStatus === "PENDING"
-                                    ? "bg-amber-100 text-amber-700"
-                                    : "bg-rose-100 text-rose-700"
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200"
+                                    : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200"
                               }`}
                             >
                               {user.approvalStatus}
@@ -534,9 +537,9 @@ export default function OrgUsersPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
-      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+    <div className="light-glow-soft flex min-h-[7.75rem] flex-col justify-between rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -544,8 +547,8 @@ function MetricCard({ label, value }) {
 function DetailPill({ label, value }) {
   return (
     <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</p>
     </div>
   );
 }

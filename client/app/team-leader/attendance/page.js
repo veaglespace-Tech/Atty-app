@@ -12,6 +12,7 @@ import {
   validateAttendanceSettingsForm,
   validateDateWindow,
 } from "@/utils/formValidation";
+import * as locationUtils from "@/utils/location";
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -60,6 +61,22 @@ const DEFAULT_FILTERS = Object.freeze({
   to: "",
 });
 
+const getPermissionState = async () => {
+  if (typeof locationUtils.getGeolocationPermissionState === "function") {
+    return locationUtils.getGeolocationPermissionState();
+  }
+
+  return "unknown";
+};
+
+const getCoordinates = async () => {
+  if (typeof locationUtils.getCurrentCoordinates === "function") {
+    return locationUtils.getCurrentCoordinates();
+  }
+
+  throw new Error("Location helper is unavailable. Refresh the page and try again.");
+};
+
 export default function TeamLeaderAttendancePage() {
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
@@ -70,6 +87,7 @@ export default function TeamLeaderAttendancePage() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
   const [settingsError, setSettingsError] = useState("");
+  const [geoPermissionState, setGeoPermissionState] = useState("unknown");
 
   const [settings, setSettings] = useState({
     attendanceRadius: "25",
@@ -100,12 +118,46 @@ export default function TeamLeaderAttendancePage() {
       });
     }
   }, [currentTeam]);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncPermissionState = async () => {
+      const nextState = await getPermissionState();
+      if (active) {
+        setGeoPermissionState(nextState);
+      }
+    };
+
+    syncPermissionState();
+
+    return () => {
+      active = false;
+    };
+  }, []);
   const records = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const meta = data?.meta || null;
   const loading = isLoading || isFetching;
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+
+  const geoPermissionMessage = useMemo(() => {
+    switch (geoPermissionState) {
+      case "granted":
+        return "Current location access is already enabled for this browser.";
+      case "prompt":
+        return "Browser will ask for location access when you tap Use Current Location.";
+      case "denied":
+        return "Location access is blocked for this site. Allow it in browser settings, then try again.";
+      case "insecure":
+        return "Current location works only on localhost or HTTPS. Open this page securely and try again.";
+      case "unsupported":
+        return "This browser does not support current location.";
+      default:
+        return "Use current location to auto-fill longitude and latitude.";
+    }
+  }, [geoPermissionState]);
 
   const filteredRecords = useMemo(() => {
     const query = String(filters.search || "").trim().toLowerCase();
@@ -165,21 +217,30 @@ export default function TeamLeaderAttendancePage() {
     try {
       setGeoLoading(true);
       setSettingsError("");
-      const coordinates = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve([pos.coords.longitude, pos.coords.latitude]),
-          (err) => reject(new Error("Location permission denied")),
-          { enableHighAccuracy: true }
-        );
-      });
+      setSettingsMessage("");
+
+      const permissionBefore = await getPermissionState();
+      setGeoPermissionState(permissionBefore);
+
+      const coordinates = await getCoordinates();
+
+      const permissionAfter = await getPermissionState();
+      setGeoPermissionState(permissionAfter);
+
       setSettings((prev) => ({
         ...prev,
         longitude: String(coordinates[0].toFixed(6)),
         latitude: String(coordinates[1].toFixed(6)),
       }));
-      setSettingsMessage("Detected current location.");
+      setSettingsMessage(
+        permissionBefore === "prompt"
+          ? "Browser location permission approved. Current location detected."
+          : "Detected current location.",
+      );
     } catch (err) {
-      setSettingsError(err.message);
+      const latestPermissionState = await getPermissionState();
+      setGeoPermissionState(latestPermissionState);
+      setSettingsError(err.message || "Failed to detect current location.");
     } finally {
       setGeoLoading(false);
     }
@@ -426,7 +487,11 @@ export default function TeamLeaderAttendancePage() {
           <button
             type="button"
             onClick={onUseCurrentLocation}
-            disabled={geoLoading}
+            disabled={
+              geoLoading ||
+              geoPermissionState === "unsupported" ||
+              geoPermissionState === "insecure"
+            }
             className="brand-btn brand-btn-secondary brand-btn-md w-full"
           >
             {geoLoading ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
@@ -453,6 +518,18 @@ export default function TeamLeaderAttendancePage() {
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
             />
           </div>
+
+          <p
+            className={`md:col-span-2 text-xs font-semibold ${
+              geoPermissionState === "denied" ||
+              geoPermissionState === "unsupported" ||
+              geoPermissionState === "insecure"
+                ? "text-amber-600"
+                : "text-slate-500"
+            }`}
+          >
+            {geoPermissionMessage}
+          </p>
 
           {settingsError && <p className="md:col-span-2 text-xs font-semibold text-red-600">{settingsError}</p>}
           {settingsMessage && <p className="md:col-span-2 text-xs font-semibold text-emerald-600">{settingsMessage}</p>}

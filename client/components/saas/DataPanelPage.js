@@ -198,6 +198,7 @@ const CENTER_ALIGNED_KEYS = new Set([
 
 const RIGHT_ALIGNED_KEYS = new Set(["amount", "revenue"]);
 const MOBILE_RECORD_PREVIEW_COUNT = 8;
+const DEFAULT_TABLE_COLUMN_MIN_WIDTH = 112;
 const getColumnPreset = (keyHint = "") => COLUMN_PRESETS[normalizeKey(keyHint)] || null;
 
 const toReadableLabel = (key) =>
@@ -454,14 +455,16 @@ const getSummaryDisplay = (card) => {
 
 const resolveTableColumns = (items, tableColumns) => {
   if (Array.isArray(tableColumns) && tableColumns.length > 0) {
-    return tableColumns.map((column) =>
-      typeof column === "string"
-        ? { key: column, label: toReadableLabel(column) }
-        : {
-            label: toReadableLabel(column.key),
-            ...column,
-          }
-    );
+    return tableColumns.map((column) => {
+      const normalizedColumn = typeof column === "string" ? { key: column } : column;
+      const preset = getColumnPreset(normalizedColumn?.key);
+
+      return {
+        ...preset,
+        ...normalizedColumn,
+        label: normalizedColumn?.label || toReadableLabel(normalizedColumn?.key),
+      };
+    });
   }
 
   const firstRow = Array.isArray(items) && items.length > 0 ? items[0] : null;
@@ -469,10 +472,15 @@ const resolveTableColumns = (items, tableColumns) => {
 
   return Object.keys(firstRow)
     .filter((key) => key !== "id" && key !== "_id")
-    .map((key) => ({
-      key,
-      label: toReadableLabel(key),
-    }));
+    .map((key) => {
+      const preset = getColumnPreset(key);
+
+      return {
+        ...preset,
+        key,
+        label: toReadableLabel(key),
+      };
+    });
 };
 
 const getTableBadgeTone = (value) => {
@@ -493,7 +501,58 @@ const getTableBadgeTone = (value) => {
   return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
 };
 
-const renderTableCell = (column, row) => {
+const formatCompactTableValue = (value, column = {}) => {
+  if (value === null || value === undefined || value === "") return "-";
+
+  if (column.type === "currency") {
+    return formatCurrencyValue(value, column.currency || "INR");
+  }
+
+  if (column.type === "date") return formatDateOnlyValue(value);
+  if (column.type === "datetime") return formatDateTimeValue(value);
+  if (column.type === "coordinates") return formatCoordinatesValue(value);
+  if (column.type === "location") return formatLocationValue(value);
+
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") return Number.isInteger(value) ? value.toLocaleString("en-IN") : value.toFixed(2);
+
+  if (typeof value === "string") {
+    if (DATETIME_PATTERN.test(value)) return formatDateTimeValue(value);
+    if (DATE_ONLY_PATTERN.test(value)) return formatDateOnlyValue(value);
+    if (shouldHumanizeString(value, column.key)) return toPlainTokenText(value);
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    if (isCoordinatePair(value)) return formatCoordinatesValue(value);
+    return value
+      .slice(0, 3)
+      .map((entry) => formatCompactTableValue(entry, column))
+      .join(", ");
+  }
+
+  if (typeof value === "object") {
+    const structuredEntries = buildStructuredEntries(value, column.key);
+    if (structuredEntries.length > 0) {
+      return structuredEntries[0]?.value || "-";
+    }
+
+    const firstPrimitive = Object.values(value).find(
+      (entry) => typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean"
+    );
+
+    if (firstPrimitive !== undefined) {
+      return formatCompactTableValue(firstPrimitive, column);
+    }
+
+    return `${Object.keys(value).length} fields`;
+  }
+
+  return String(value);
+};
+
+const renderTableCell = (column, row, options = {}) => {
+  const { compact = false } = options;
   let value = row?.[column.key];
 
   if (column.badgeMap) {
@@ -548,7 +607,23 @@ const renderTableCell = (column, row) => {
   }
 
   if (column.type === "location") {
+    if (compact) {
+      return (
+        <span className="block max-w-full truncate">
+          {formatCompactTableValue(value, column)}
+        </span>
+      );
+    }
+
     return renderStructuredEntries(buildStructuredEntries(value, column.key));
+  }
+
+  if (compact && value && typeof value === "object") {
+    return (
+      <span className="block max-w-full truncate">
+        {formatCompactTableValue(value, column)}
+      </span>
+    );
   }
 
   return (
@@ -576,8 +651,35 @@ const getAlignmentClasses = (alignment) => {
   return "text-left";
 };
 
-const getCellWrapClass = (alignment) =>
-  alignment === "left" ? "break-words whitespace-normal" : "whitespace-nowrap";
+const getCellWrapClass = (column = {}, alignment) => {
+  if (column.wrap === "nowrap") return "whitespace-nowrap";
+  if (column.wrap === "wrap") return "break-words whitespace-normal";
+  return alignment === "left" ? "break-words whitespace-normal" : "whitespace-nowrap";
+};
+
+const getColumnMinWidth = (column = {}) => {
+  if (Number.isFinite(column.minWidth)) return column.minWidth;
+
+  const labelLength = String(column.label || column.key || "").trim().length;
+  return Math.min(Math.max(labelLength * 10, DEFAULT_TABLE_COLUMN_MIN_WIDTH), 208);
+};
+
+const getColumnStyle = (column = {}) => {
+  const minWidth = getColumnMinWidth(column);
+  const style = {
+    minWidth: `${minWidth}px`,
+    width: `${minWidth}px`,
+  };
+
+  if (Number.isFinite(column.maxWidth)) {
+    style.maxWidth = `${column.maxWidth}px`;
+  }
+
+  return style;
+};
+
+const getDesktopTableMinWidth = (columns = []) =>
+  columns.reduce((total, column) => total + getColumnMinWidth(column), 0);
 
 const getRecordPresentation = (row, index) => {
   const entries = Object.entries(row || {}).filter(([key]) => key !== "id" && key !== "_id");
@@ -855,7 +957,7 @@ export default function DataPanelPage({
             </h3>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
               {recordsView === "table"
-                ? "Detailed entries presented in a compact table."
+                ? "Detailed entries arranged in a roomy table for easier scanning."
                 : "Detailed entries presented as quick-scan cards."}
             </p>
           </div>
@@ -941,9 +1043,18 @@ export default function DataPanelPage({
               })}
             </div>
 
-            <div className="hidden overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70 md:block">
-              <table className="min-w-[760px] w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-                <thead className="bg-slate-50/90 dark:bg-slate-900/85">
+            <div className="hidden overflow-x-auto md:block">
+              <table
+                className="min-w-full table-auto divide-y divide-slate-200 text-sm dark:divide-slate-800"
+                style={{ minWidth: `${Math.max(getDesktopTableMinWidth(resolvedTableColumns), 720)}px` }}
+              >
+                <colgroup>
+                  {resolvedTableColumns.map((column) => (
+                    <col key={`col-${column.key}`} style={getColumnStyle(column)} />
+                  ))}
+                </colgroup>
+
+                <thead>
                   <tr>
                     {resolvedTableColumns.map((column) => {
                       const alignment = getColumnAlignment(column);
@@ -951,7 +1062,7 @@ export default function DataPanelPage({
                       return (
                         <th
                           key={column.key}
-                          className={`px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500 ${getAlignmentClasses(
+                          className={`px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 ${getAlignmentClasses(
                             alignment
                           )} whitespace-nowrap`}
                         >
@@ -965,7 +1076,7 @@ export default function DataPanelPage({
                   {items.map((row, rowIndex) => (
                     <tr
                       key={row.id || row._id || `${endpoint}-${rowIndex}`}
-                      className="align-top transition hover:bg-slate-50/80 dark:hover:bg-slate-900/55"
+                      className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
                     >
                       {resolvedTableColumns.map((column, columnIndex) => {
                         const alignment = getColumnAlignment(column);
@@ -973,13 +1084,16 @@ export default function DataPanelPage({
                         return (
                           <td
                             key={`${row.id || row._id || rowIndex}-${column.key}`}
-                            className={`px-3 py-3 ${getCellWrapClass(alignment)} ${getAlignmentClasses(alignment)} ${
+                            className={`px-3 py-2 align-top ${getCellWrapClass(
+                              column,
+                              alignment
+                            )} ${getAlignmentClasses(alignment)} ${
                               columnIndex === 0
                                 ? "font-semibold text-slate-900 dark:text-white"
                                 : "text-slate-700 dark:text-slate-200"
                             }`}
                           >
-                            {renderTableCell(column, row)}
+                            {renderTableCell(column, row, { compact: true })}
                           </td>
                         );
                       })}

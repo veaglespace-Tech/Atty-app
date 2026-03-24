@@ -44,6 +44,12 @@ const summaryMapFromArray = (summary) => {
   return map;
 };
 
+const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
+const fieldClassName =
+  "w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
+const selectorCardClassName =
+  "rounded-[1.35rem] border border-slate-200 bg-slate-50/90 p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70";
+
 export default function OrgTeamsPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -261,16 +267,16 @@ export default function OrgTeamsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className={sectionCardClassName}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Organization Teams</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Teams</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Create teams, assign leader and members, and open each team for full management.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
             <button
               type="button"
               onClick={() => setCreateOpen((prev) => !prev)}
@@ -302,16 +308,16 @@ export default function OrgTeamsPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Teams" value={summaryMap.get("Teams") || 0} />
         <MetricCard label="Assigned Members" value={summaryMap.get("Total Members Assigned") || 0} />
         <MetricCard label="Teams With Leader" value={summaryMap.get("Teams With Leader") || 0} />
       </div>
 
       {createOpen ? (
-        <div className="light-glow-card-static rounded-[1.9rem] p-6">
+        <div className={sectionCardClassName}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create Team</h3>
+            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Create Team</h3>
             <button
               type="button"
               onClick={() => {
@@ -324,13 +330,13 @@ export default function OrgTeamsPage() {
             </button>
           </div>
 
-          <form onSubmit={createTeam} className="mt-4 grid gap-4 lg:grid-cols-2">
+          <form onSubmit={createTeam} className="mt-5 grid gap-3 sm:gap-4 xl:grid-cols-2">
             <input
               name="name"
               value={form.name}
               onChange={onInputChange}
               placeholder="Team name"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+              className={fieldClassName}
               required
             />
 
@@ -341,7 +347,7 @@ export default function OrgTeamsPage() {
               value={form.attendanceRadius}
               onChange={onInputChange}
               placeholder="Attendance radius"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+              className={fieldClassName}
             />
 
             <textarea
@@ -349,12 +355,12 @@ export default function OrgTeamsPage() {
               value={form.description}
               onChange={onInputChange}
               placeholder="Team description"
-              className="lg:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+              className="xl:col-span-2 w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10"
               rows={3}
             />
 
-            <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
-              <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Leader</p>
+            <div className={selectorCardClassName}>
+              <p className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Team Leader</p>
               <div className="mt-2 relative">
                 <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
                 <input
@@ -365,29 +371,29 @@ export default function OrgTeamsPage() {
                     setLeaderSearch(event.target.value);
                   }}
                   placeholder="Search leader"
-                  className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+                  className={fieldClassName}
                 />
                 <button
                   type="button"
                   onClick={() => setLeaderOpen((prev) => !prev)}
-                  className="absolute right-2 top-2 text-slate-500"
+                  className="absolute right-3 top-3 text-slate-500 dark:text-slate-400"
                 >
                   {leaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
               </div>
 
               {selectedLeader ? (
-                <div className="mt-2 rounded-lg bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700">
+                <div className="mt-2 rounded-[1rem] bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700 dark:bg-blue-500/15 dark:text-blue-200">
                   Selected: {selectedLeader.name}
                 </div>
               ) : (
-                <div className="mt-2 rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">
+                <div className="mt-2 rounded-[1rem] bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   No leader selected
                 </div>
               )}
 
               {leaderOpen ? (
-                <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
+                <div className="mt-2 max-h-52 space-y-1 overflow-auto rounded-[1.1rem] border border-slate-200 bg-white/95 p-1 pr-1 shadow-[0_18px_40px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/95">
                   {filteredLeaders.map((leader) => {
                     const active = String(form.leaderId) === String(leader.id);
                     return (
@@ -399,7 +405,7 @@ export default function OrgTeamsPage() {
                         className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
                           active
                             ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                            : "border-slate-300 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-blue-500/30 dark:hover:bg-slate-900"
                         }`}
                       >
                         <span>{leader.name}</span>
@@ -408,14 +414,14 @@ export default function OrgTeamsPage() {
                     );
                   })}
                   {filteredLeaders.length === 0 ? (
-                    <p className="px-2 py-2 text-xs font-semibold text-slate-500">No leader found</p>
+                    <p className="px-2 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400">No leader found</p>
                   ) : null}
                 </div>
               ) : null}
             </div>
 
-            <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
-              <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Members</p>
+            <div className={selectorCardClassName}>
+              <p className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Team Members</p>
               <div className="mt-2 relative">
                 <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
                 <input
@@ -426,18 +432,18 @@ export default function OrgTeamsPage() {
                     setMemberSearch(event.target.value);
                   }}
                   placeholder="Search members"
-                  className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+                  className={fieldClassName}
                 />
                 <button
                   type="button"
                   onClick={() => setMemberOpen((prev) => !prev)}
-                  className="absolute right-2 top-2 text-slate-500"
+                  className="absolute right-3 top-3 text-slate-500 dark:text-slate-400"
                 >
                   {memberOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
               </div>
 
-              <p className="mt-2 text-xs font-semibold text-slate-600">Selected: {form.memberIds.length}</p>
+              <p className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-400">Selected: {form.memberIds.length}</p>
 
               {selectedMembers.length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -456,7 +462,7 @@ export default function OrgTeamsPage() {
               ) : null}
 
               {memberOpen ? (
-                <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
+                <div className="mt-2 max-h-52 space-y-1 overflow-auto rounded-[1.1rem] border border-slate-200 bg-white/95 p-1 pr-1 shadow-[0_18px_40px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/95">
                   {filteredMembers.map((member) => {
                     const active = form.memberIds.includes(String(member.id));
                     return (
@@ -468,7 +474,7 @@ export default function OrgTeamsPage() {
                         className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
                           active
                             ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                            : "border-slate-300 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-blue-500/30 dark:hover:bg-slate-900"
                         }`}
                       >
                         <span>{member.name}</span>
@@ -477,13 +483,13 @@ export default function OrgTeamsPage() {
                     );
                   })}
                   {filteredMembers.length === 0 ? (
-                    <p className="px-2 py-2 text-xs font-semibold text-slate-500">No member found</p>
+                    <p className="px-2 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400">No member found</p>
                   ) : null}
                 </div>
               ) : null}
             </div>
 
-            <div className="lg:col-span-2 flex justify-stretch sm:justify-end">
+            <div className="xl:col-span-2 flex justify-stretch sm:justify-end">
               <button
                 type="submit"
                 disabled={submitting}
@@ -506,38 +512,40 @@ export default function OrgTeamsPage() {
             className="light-glow-soft rounded-[1.75rem] border border-white/80 bg-white/90 p-5 text-left transition dark:border-slate-800 dark:bg-slate-950/75"
           >
             <div className="flex items-center justify-between">
-              <h4 className="text-lg font-black text-slate-900">{team.name}</h4>
+              <h4 className="text-lg font-black text-slate-900 dark:text-white">{team.name}</h4>
               <span
                 className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
-                  team.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
+                  team.isActive
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
+                    : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 }`}
               >
                 {team.isActive ? "Active" : "Inactive"}
               </span>
             </div>
-            <p className="mt-2 text-sm font-bold text-slate-700">
-              Leader: <span className="text-slate-900">{team.leaderName || "Unassigned"}</span>
+            <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+              Leader: <span className="text-slate-900 dark:text-white">{team.leaderName || "Unassigned"}</span>
             </p>
-            <p className="mt-1 text-sm font-bold text-slate-700">
-              Members: <span className="text-slate-900">{team.memberCount || 0}</span>
+            <p className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-300">
+              Members: <span className="text-slate-900 dark:text-white">{team.memberCount || 0}</span>
             </p>
-            <p className="mt-3 inline-flex items-center gap-1 text-xs font-black uppercase tracking-wide text-blue-600">
+            <p className="mt-3 inline-flex items-center gap-1 text-xs font-black uppercase tracking-wide text-blue-600 dark:text-blue-200">
               Open Team <ArrowRight size={12} />
             </p>
           </button>
         ))}
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Directory</h3>
+      <div className={sectionCardClassName}>
+        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Team Directory</h3>
 
         {teamsInitialLoading ? (
-          <div className="flex items-center justify-center gap-2 py-10 text-slate-500">
+          <div className="flex items-center justify-center gap-2 py-10 text-slate-500 dark:text-slate-400">
             <Loader2 className="animate-spin" size={18} />
             <span className="text-sm font-medium">Loading teams...</span>
           </div>
         ) : teams.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">No teams found.</p>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No teams found.</p>
         ) : (
           <div className="mt-4 space-y-4">
             <div className="grid gap-3 md:hidden">
@@ -556,14 +564,16 @@ export default function OrgTeamsPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h4 className="truncate text-base font-black text-slate-900">{team.name}</h4>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <h4 className="truncate text-base font-black text-slate-900 dark:text-white">{team.name}</h4>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                             Leader: {team.leaderName || "Unassigned"}
                           </p>
                         </div>
                         <span
                           className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
-                            team.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
+                            team.isActive
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
+                              : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                           }`}
                         >
                           {team.isActive ? "Active" : "Inactive"}
@@ -601,33 +611,33 @@ export default function OrgTeamsPage() {
             </div>
 
             <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
                 <thead>
                   <tr>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Name</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Leader</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Members</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Radius</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Active</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Created</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Actions</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Name</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Leader</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Members</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Radius</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Active</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Created</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {teams.map((team) => {
                     const busy = actionTeamId === String(team.id);
                     return (
                       <tr
                         key={team.id}
                         onClick={() => router.push(`/org/teams/${team.id}`)}
-                        className="cursor-pointer transition hover:bg-slate-50"
+                        className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                       >
-                        <td className="px-3 py-2 font-bold text-slate-900">{team.name}</td>
-                        <td className="px-3 py-2 font-medium text-slate-700">{team.leaderName || "Unassigned"}</td>
-                        <td className="px-3 py-2 font-bold text-slate-800">{team.memberCount || 0}</td>
-                        <td className="px-3 py-2 text-slate-700">{team.attendanceRadius}</td>
-                        <td className="px-3 py-2 text-slate-700">{team.isActive ? "Yes" : "No"}</td>
-                        <td className="px-3 py-2 text-slate-600">{formatDate(team.createdAt)}</td>
+                        <td className="px-3 py-2 font-bold text-slate-900 dark:text-white">{team.name}</td>
+                        <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-200">{team.leaderName || "Unassigned"}</td>
+                        <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-100">{team.memberCount || 0}</td>
+                        <td className="px-3 py-2 text-slate-700 dark:text-slate-200">{team.attendanceRadius}</td>
+                        <td className="px-3 py-2 text-slate-700 dark:text-slate-200">{team.isActive ? "Yes" : "No"}</td>
+                        <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{formatDate(team.createdAt)}</td>
                         <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                           <div className="flex flex-wrap gap-2">
                             <ActionButton
@@ -662,9 +672,9 @@ export default function OrgTeamsPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
-      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+    <div className="light-glow-soft flex min-h-[7.75rem] flex-col justify-between rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -677,7 +687,7 @@ function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`brand-btn brand-btn-sm ${style}`}
+      className={`brand-btn brand-btn-sm w-full sm:w-auto ${style}`}
     >
       {icon}
       {label}
@@ -688,8 +698,8 @@ function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
 function DetailTile({ label, value }) {
   return (
     <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</p>
     </div>
   );
 }

@@ -29,7 +29,9 @@ const secondaryButtonClassName =
 const inputClassName =
   "rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 shadow-[0_10px_24px_rgba(59,130,246,0.08)] outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/80 dark:border-white/80 dark:bg-white dark:text-slate-950 dark:shadow-[0_16px_30px_rgba(2,6,23,0.30)] dark:focus:ring-blue-500/20";
 const filterShellClassName =
-  "rounded-[1.45rem] border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/70";
+  "rounded-[1.7rem] border border-slate-200/80 bg-white/76 p-4 shadow-[0_20px_46px_rgba(59,130,246,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_56px_rgba(2,6,23,0.30)]";
+const filterFieldClassName =
+  "rounded-[1.3rem] border border-slate-200/80 bg-white/88 p-3 shadow-[0_14px_28px_rgba(59,130,246,0.06)] dark:border-slate-800 dark:bg-slate-950/68 dark:shadow-none";
 const tableSelectClassName =
   "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-400";
 const actionButtonBaseClassName =
@@ -326,58 +328,78 @@ export default function SuperAdminOrganizationsPage() {
           </p>
         ) : (
           <div className="mt-5 space-y-4">
-            <div className={`${filterShellClassName} grid gap-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]`}>
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by name, code, phone, email"
-                  className={`${inputClassName} w-full py-3 pl-9 pr-3 text-sm`}
-                />
+            <div className={`${filterShellClassName} space-y-4`}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                    Search & Filters
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                    Keep the list focused with only the controls you need.
+                  </p>
+                </div>
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/88 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/82 dark:text-slate-300 dark:shadow-none">
+                  {filteredOrganizations.length} / {organizations.length} visible
+                </div>
               </div>
 
-              <select
-                value={subscriptionFilter}
-                onChange={(event) => setSubscriptionFilter(event.target.value)}
-                className={`${inputClassName} py-3 text-sm`}
-              >
-                <option value="ALL">All Subscription</option>
-                {SUBSCRIPTION_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.8fr)_repeat(3,minmax(0,0.9fr))]">
+                <FilterField label="Find organization">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Name, code, phone, email"
+                      className={`${inputClassName} w-full py-3 pl-9 pr-3 text-sm`}
+                    />
+                  </div>
+                </FilterField>
 
-              <select
-                value={accessFilter}
-                onChange={(event) => setAccessFilter(event.target.value)}
-                className={`${inputClassName} py-3 text-sm`}
-              >
-                {ACCESS_FILTER_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status === "ALL" ? "All Access" : status}
-                  </option>
-                ))}
-              </select>
+                <FilterField label="Subscription">
+                  <select
+                    value={subscriptionFilter}
+                    onChange={(event) => setSubscriptionFilter(event.target.value)}
+                    className={`${inputClassName} w-full py-3 text-sm`}
+                  >
+                    <option value="ALL">All Subscription</option>
+                    {SUBSCRIPTION_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </FilterField>
 
-              <select
-                value={blockFilter}
-                onChange={(event) => setBlockFilter(event.target.value)}
-                className={`${inputClassName} py-3 text-sm`}
-              >
-                {BLOCK_FILTER_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status === "ALL" ? "All Block States" : status}
-                  </option>
-                ))}
-              </select>
+                <FilterField label="Access">
+                  <select
+                    value={accessFilter}
+                    onChange={(event) => setAccessFilter(event.target.value)}
+                    className={`${inputClassName} w-full py-3 text-sm`}
+                  >
+                    {ACCESS_FILTER_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status === "ALL" ? "All Access" : status}
+                      </option>
+                    ))}
+                  </select>
+                </FilterField>
+
+                <FilterField label="Block state">
+                  <select
+                    value={blockFilter}
+                    onChange={(event) => setBlockFilter(event.target.value)}
+                    className={`${inputClassName} w-full py-3 text-sm`}
+                  >
+                    {BLOCK_FILTER_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status === "ALL" ? "All Block States" : status}
+                      </option>
+                    ))}
+                  </select>
+                </FilterField>
+              </div>
             </div>
-
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Showing {filteredOrganizations.length} of {organizations.length} organizations
-            </p>
 
             {filteredOrganizations.length === 0 ? (
               <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
@@ -620,5 +642,16 @@ function ActionButton({ icon: Icon, label, tone, ...props }) {
       <Icon size={14} />
       {label}
     </button>
+  );
+}
+
+function FilterField({ label, children }) {
+  return (
+    <div className={filterFieldClassName}>
+      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+        {label}
+      </p>
+      {children}
+    </div>
   );
 }
