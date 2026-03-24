@@ -5,17 +5,18 @@ import {
   useCreatePaymentOrderMutation,
   useLazyGetPaymentPublicKeyQuery,
   useVerifyAndRegisterPaymentMutation,
-} from "@/services/api/paymentApi";
+} from "@/store/api/paymentApi";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
 import {
-  CreditCard, 
-  ShieldCheck, 
-  CheckCircle2, 
-  ChevronRight, 
-  Loader2, 
-  Sparkles, 
-  Lock, 
-  Building, 
+  CreditCard,
+  ShieldCheck,
+  CheckCircle2,
+  ChevronRight,
+  Loader2,
+  Sparkles,
+  Lock,
+  Building,
   Zap,
   Mail,
   Moon,
@@ -88,7 +89,25 @@ export default function PaymentPage() {
   const [createPaymentOrder] = useCreatePaymentOrderMutation();
   const [verifyAndRegisterPayment] = useVerifyAndRegisterPaymentMutation();
   const [getPaymentPublicKey] = useLazyGetPaymentPublicKeyQuery();
+  const [archiveFailedRegistration] = useArchiveFailedRegistrationMutation();
   const { isDarkMode, toggleTheme } = useTheme();
+
+  const handleArchive = async (reason = "Registration abandoned") => {
+    try {
+      const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
+      const admin = JSON.parse(localStorage.getItem("adminData") || "null");
+
+      if (organization && admin) {
+        await archiveFailedRegistration({
+          organization,
+          admin,
+          reason
+        }).unwrap();
+      }
+    } catch (err) {
+      console.error("Failed to archive registration attempt", err);
+    }
+  };
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("selectedPlan");
@@ -165,6 +184,7 @@ export default function PaymentPage() {
         }).unwrap();
 
         if (!verifyResult?.success) {
+          await handleArchive("Free trial activation failed");
           throw new Error("Free trial activation failed.");
         }
         finalizeSuccess({
@@ -217,6 +237,7 @@ export default function PaymentPage() {
           ondismiss: () => {
             setPaymentStatus("Payment cancelled.");
             setLoading(false);
+            handleArchive("Payment dismissed by user");
           },
         },
         handler: async (response) => {
@@ -230,6 +251,7 @@ export default function PaymentPage() {
             }).unwrap();
 
             if (!verifyResult?.success) {
+              await handleArchive("Payment verified but registration step failed");
               throw new Error("Payment verified but registration failed.");
             }
             setPaymentStatus("Activation successful! Redirecting...");
@@ -251,6 +273,7 @@ export default function PaymentPage() {
         alert(response?.error?.description || "Payment failed. Please try again.");
         setPaymentStatus(response?.error?.description || "Payment failed.");
         setLoading(false);
+        handleArchive(`Payment failed: ${response?.error?.description}`);
       });
 
       paymentObject.open();
@@ -287,9 +310,9 @@ export default function PaymentPage() {
 
   return (
     <div className={`min-h-screen flex justify-center items-center relative overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-700 ${theme.bg}`}>
-      
+
       {/* Theme Toggle Button */}
-      <button 
+      <button
         onClick={toggleTheme}
         className="absolute top-6 right-6 lg:top-8 lg:right-8 z-50 p-3 lg:p-4 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-xl border shadow-xl group bg-white/90 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 text-indigo-600 dark:text-amber-300 hover:bg-white dark:hover:bg-slate-700 hover:shadow-indigo-500/20 dark:hover:shadow-amber-500/10"
         aria-label="Toggle Dark Mode"
@@ -484,7 +507,7 @@ export default function PaymentPage() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className={`h-[1px] w-full my-5 transition-colors duration-500 ${theme.divider}`} />
 
                       <div className="flex flex-col gap-3">

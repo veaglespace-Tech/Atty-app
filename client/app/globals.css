@@ -5,6 +5,8 @@
 @layer base {
   :root {
     --radius: 0.625rem;
+    --font-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
     --background: 244 249 255;
     --foreground: 8 28 70;

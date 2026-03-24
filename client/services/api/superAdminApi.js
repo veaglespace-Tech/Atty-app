@@ -74,7 +74,7 @@ export const superAdminApi = createApi({
     }),
     getSuperAdminAnalytics: builder.query({
       query: () => "/super-admin/analytics",
-      providesTags: ["SAAnalytics"],
+      providesTags: ["SAAnalytics"],  
     }),
   }),
 });

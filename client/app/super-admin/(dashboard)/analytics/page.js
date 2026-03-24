@@ -1,4 +1,4 @@
-import DataPanelPage from "@/components/saas/DataPanelPage";
+import DataPanelPage from "@/components/saas/DataPanelPage"
 
 export default function Page() {
   return (
@@ -17,5 +17,5 @@ export default function Page() {
         { key: "revenue", label: "Revenue", type: "currency", currency: "INR" },
       ]}
     />
-  );
+  )
 }

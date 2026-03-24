@@ -22,6 +22,13 @@ export const paymentApi = createApi({
         body: payload,
       }),
     }),
+    archiveFailedRegistration: builder.mutation({
+      query: (payload) => ({
+        url: "/payment/archive-failed-registration",
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -30,5 +37,6 @@ export const {
   useLazyGetPaymentPublicKeyQuery,
   useCreatePaymentOrderMutation,
   useVerifyAndRegisterPaymentMutation,
+  useArchiveFailedRegistrationMutation,
 } = paymentApi;
 

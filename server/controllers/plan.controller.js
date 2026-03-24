@@ -110,7 +110,7 @@ exports.createPlan = asyncHandler(async (req, res) => {
   }
 
   const parsedMaxUsers =
-    limits && limits.maxUsers !== undefined && limits.maxUsers !== null
+    limits && limits.maxUsers !== undefined && limits.maxUsers !== null 
       ? Number(limits.maxUsers)
       : parsedMemberLimit;
 

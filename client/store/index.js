@@ -1,15 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
-import { authApi } from "@/services/api/authApi";
-import { planApi } from "@/services/api/planApi";
-import { orgApi } from "@/services/api/orgApi";
-import { teamLeaderApi } from "@/services/api/teamLeaderApi";
-import { memberApi } from "@/services/api/memberApi";
-import { superAdminApi } from "@/services/api/superAdminApi";
-import { dashboardApi } from "@/services/api/dashboardApi";
-import { attendanceApi } from "@/services/api/attendanceApi";
-import { paymentApi } from "@/services/api/paymentApi";
-import { utilityApi } from "@/services/api/utilityApi";
+import { authApi } from "./api/authApi";
+import { planApi } from "./api/planApi";
+import { orgApi } from "./api/orgApi";
+import { teamLeaderApi } from "./api/teamLeaderApi";
+import { memberApi } from "./api/memberApi";
+import { superAdminApi } from "./api/superAdminApi";
+import { dashboardApi } from "./api/dashboardApi";
+import { attendanceApi } from "./api/attendanceApi";
+import { paymentApi } from "./api/paymentApi";
+import { utilityApi } from "./api/utilityApi";
+import { postApi } from "./api/postApi";
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ export const store = configureStore({
     [attendanceApi.reducerPath]: attendanceApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
     [utilityApi.reducerPath]: utilityApi.reducer,
+    [postApi.reducerPath]: postApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -39,6 +41,7 @@ export const store = configureStore({
       dashboardApi.middleware,
       attendanceApi.middleware,
       paymentApi.middleware,
-      utilityApi.middleware
+      utilityApi.middleware,
+      postApi.middleware
     ),
 });

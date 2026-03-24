@@ -85,6 +85,7 @@ app.use("/api/plans", require("./routes/plan.route"));
 app.use("/api/super-admin", require("./routes/super-admin.route"));
 app.use("/api/team-leader", require("./routes/team-leader.route"));
 app.use("/api/member", require("./routes/member.route"));
+app.use("/api/posts", require("./routes/post.route"));
 
 app.use("*", (req, res) => {
   res.status(404).json({ message: "resource not found" });

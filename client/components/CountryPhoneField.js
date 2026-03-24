@@ -12,7 +12,7 @@ export default function CountryPhoneField({
   onPhoneChange,
   countryCodeName = "countryCode",
   phoneName = "phone",
-  phonePlaceholder = "9876543210",
+  phonePlaceholder = " ",
   countryCodeError = "",
   phoneError = "",
   helpText = "",
