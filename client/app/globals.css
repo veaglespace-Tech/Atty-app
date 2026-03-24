@@ -1502,4 +1502,43 @@
   .dark .dark\:text-blue-300 {
     color: rgb(214 244 255) !important;
   }
+
+  .atty-widget--light :where(input, textarea) {
+    background-color: rgb(255 255 255) !important;
+    color: rgb(15 23 42) !important;
+    border-color: rgb(229 231 235) !important;
+    box-shadow: none !important;
+    color-scheme: light;
+  }
+
+  .atty-widget--light :where(input, textarea)::placeholder {
+    color: rgb(156 163 175) !important;
+    opacity: 1;
+  }
+
+  .dark .atty-widget--light :where(input, textarea) {
+    background-color: rgb(255 255 255) !important;
+    color: rgb(15 23 42) !important;
+    border-color: rgb(229 231 235) !important;
+    box-shadow: none !important;
+    color-scheme: light;
+  }
+
+  .dark .atty-widget--light :where(input, textarea)::placeholder {
+    color: rgb(156 163 175) !important;
+    opacity: 1;
+  }
+
+  .atty-widget--dark :where(input, textarea) {
+    background-color: rgb(17 24 39) !important;
+    color: rgb(229 238 251) !important;
+    border-color: rgb(36 48 65) !important;
+    box-shadow: none !important;
+    color-scheme: dark;
+  }
+
+  .atty-widget--dark :where(input, textarea)::placeholder {
+    color: rgb(124 138 160) !important;
+    opacity: 1;
+  }
 }

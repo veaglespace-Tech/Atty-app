@@ -10,7 +10,7 @@ import {
   Calendar, 
   User 
 } from "lucide-react";
-import { useGetOrgPostsQuery } from "@/store/api/postApi";
+import { useGetOrgPostsQuery } from "@/services/api/postApi";
 
 const POST_TYPES = {
   NOTIFICATION: { label: "Notification", icon: Megaphone, color: "text-blue-600 bg-blue-50 border-blue-100" },

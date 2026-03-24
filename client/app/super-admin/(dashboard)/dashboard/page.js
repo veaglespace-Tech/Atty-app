@@ -5,7 +5,7 @@ import DataPanelPage from "@/components/saas/DataPanelPage";
 import {
   useDownloadSuperAdminDashboardExcelMutation,
   useDownloadSuperAdminDashboardPdfMutation,
-} from "@/store/api/superAdminApi";
+} from "@/services/api/superAdminApi";
 import { downloadBlobFile } from "@/utils/download";
 import { getErrorMessage } from "@/utils/formValidation";
 

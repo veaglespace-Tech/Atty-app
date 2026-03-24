@@ -356,3 +356,21 @@ model Post {
   @@index([type])
   @@map("posts")
 }
+
+model SupportTicket {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  role      String   @default("MEMBER")
+  subject   String   @default("Support Query")
+  message   String   @db.Text
+  status    String   @default("PENDING")
+  orgId     Int?
+  userId    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId])
+  @@index([status])
+  @@map("support_tickets")
+}

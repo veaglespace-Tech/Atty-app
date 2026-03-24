@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  useArchiveFailedRegistrationMutation,
   useCreatePaymentOrderMutation,
   useLazyGetPaymentPublicKeyQuery,
   useVerifyAndRegisterPaymentMutation,
-} from "@/store/api/paymentApi";
+} from "@/services/api/paymentApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
 import {

@@ -6,7 +6,7 @@ import {
   useDownloadOrgReportPdfMutation,
   useDownloadOrgReportExcelMutation,
   useGetOrgReportsQuery,
-} from "@/store/api/orgApi";
+} from "@/services/api/orgApi";
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },

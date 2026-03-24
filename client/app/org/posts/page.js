@@ -18,7 +18,7 @@ import {
   useCreatePostMutation, 
   useUpdatePostMutation, 
   useDeletePostMutation 
-} from "@/store/api/postApi";
+} from "@/services/api/postApi";
 import { getErrorMessage } from "@/utils/formValidation";
 import { PostForm } from "./_components/PostForm";
 import { PostCard } from "./_components/PostCard";
