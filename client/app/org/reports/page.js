@@ -1,43 +1,43 @@
-"use client";
+"use client"
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileText, Loader2, RefreshCcw, ChevronDown, FileBox, FileArchive, FilePen, FileJson } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Download, FileText, Loader2, RefreshCcw, ChevronDown, FileBox, FileArchive, FilePen, FileJson } from "lucide-react"
 import {
   useDownloadOrgReportPdfMutation,
   useDownloadOrgReportExcelMutation,
   useGetOrgReportsQuery,
-} from "@/store/api/orgApi";
+} from "@/store/api/orgApi"
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
-];
+]
 
 const summaryMapFromArray = (summary) => {
-  const map = new Map();
+  const map = new Map()
   for (const item of summary || []) {
     if (item?.label) {
-      map.set(item.label, item.value);
+      map.set(item.label, item.value)
     }
   }
-  return map;
-};
+  return map
+}
 
 const formatRange = (meta) => {
-  if (!meta?.from || !meta?.to) return "-";
-  return `${meta.from} to ${meta.to}`;
-};
+  if (!meta?.from || !meta?.to) return "-"
+  return `${meta.from} to ${meta.to}`
+}
 
 const getErrorMessage = (error, fallback) =>
-  error?.data?.message || error?.error || fallback;
+  error?.data?.message || error?.error || fallback
 
 export default function OrgReportsPage() {
-  const [period, setPeriod] = useState("monthly");
-  const [downloadError, setDownloadError] = useState("");
-  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
-  const downloadMenuRef = useRef(null);
-  const queryString = `period=${period}`;
+  const [period, setPeriod] = useState("monthly")
+  const [downloadError, setDownloadError] = useState("")
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const downloadMenuRef = useRef(null)
+  const queryString = `period=${period}`
 
   const {
     data,
@@ -45,60 +45,60 @@ export default function OrgReportsPage() {
     isFetching,
     refetch,
     error,
-  } = useGetOrgReportsQuery(queryString);
+  } = useGetOrgReportsQuery(queryString)
 
-  const [downloadOrgReportPdf, { isLoading: downloading }] = useDownloadOrgReportPdfMutation();
-  const [downloadOrgReportExcel, { isLoading: downloadingExcel }] = useDownloadOrgReportExcelMutation();
+  const [downloadOrgReportPdf, { isLoading: downloading }] = useDownloadOrgReportPdfMutation()
+  const [downloadOrgReportExcel, { isLoading: downloadingExcel }] = useDownloadOrgReportExcelMutation()
 
-  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
-  const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
-  const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data])
+  const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data])
+  const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary])
 
   const onDownloadPdf = async () => {
     try {
-      setDownloadError("");
-      const blob = await downloadOrgReportPdf(queryString).unwrap();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `attendance-report-${period}.pdf`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      setDownloadError("")
+      const blob = await downloadOrgReportPdf(queryString).unwrap()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `attendance-report-${period}.pdf`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
     } catch (err) {
-      setDownloadError(getErrorMessage(err, "Failed to download report PDF"));
+      setDownloadError(getErrorMessage(err, "Failed to download report PDF"))
     }
-  };
+  }
 
   const onDownloadExcel = async () => {
     try {
-      setDownloadError("");
-      const blob = await downloadOrgReportExcel(queryString).unwrap();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `attendance-report-${period}.xlsx`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      setDownloadError("")
+      const blob = await downloadOrgReportExcel(queryString).unwrap()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `attendance-report-${period}.xlsx`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
     } catch (err) {
-      setDownloadError(getErrorMessage(err, "Failed to download report Excel"));
+      setDownloadError(getErrorMessage(err, "Failed to download report Excel"))
     }
-  };
+  }
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
-        setShowDownloadMenu(false);
+        setShowDownloadMenu(false)
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-  const loading = isLoading || isFetching;
+  const loading = isLoading || isFetching
 
   return (
     <section className="space-y-6">
@@ -139,8 +139,8 @@ export default function OrgReportsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      onDownloadPdf();
-                      setShowDownloadMenu(false);
+                      onDownloadPdf()
+                      setShowDownloadMenu(false)
                     }}
                     disabled={downloading}
                     className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
@@ -156,8 +156,8 @@ export default function OrgReportsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      onDownloadExcel();
-                      setShowDownloadMenu(false);
+                      onDownloadExcel()
+                      setShowDownloadMenu(false)
                     }}
                     disabled={downloadingExcel}
                     className="flex w-full items-center gap-3 border-t border-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
@@ -177,7 +177,7 @@ export default function OrgReportsPage() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((option) => {
-            const active = period === option.value;
+            const active = period === option.value
             return (
               <button
                 key={option.value}
@@ -191,7 +191,7 @@ export default function OrgReportsPage() {
               >
                 {option.label}
               </button>
-            );
+            )
           })}
         </div>
 
@@ -259,7 +259,7 @@ export default function OrgReportsPage() {
         )}
       </div>
     </section>
-  );
+  )
 }
 
 function MetricCard({ label, value }) {
@@ -268,5 +268,5 @@ function MetricCard({ label, value }) {
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>
-  );
+  )
 }

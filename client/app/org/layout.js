@@ -7,6 +7,7 @@ const navItems = [
   { label: "Users", href: "/org/users", permission: PERMISSIONS.USERS_CREATE },
   { label: "Teams", href: "/org/teams", permission: PERMISSIONS.TEAM_VIEW },
   { label: "Attendance", href: "/org/attendance", permission: PERMISSIONS.ATTENDANCE_VIEW },
+  { label: "Posts", href: "/org/posts" },
   { label: "Reports", href: "/org/reports", permission: PERMISSIONS.REPORTS_VIEW },
   { label: "Subscription", href: "/org/subscription", permission: PERMISSIONS.SUBSCRIPTION_VIEW },
 ];

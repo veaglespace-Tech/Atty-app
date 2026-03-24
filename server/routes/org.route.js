@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const { onboardOrganization } = require("../controllers/org.controller");
 const {
-  onboardOrganization,
   getOrgUsers,
   getOrgUserById,
   createOrgUser,
@@ -10,16 +10,21 @@ const {
   toggleOrgUserActive,
   deleteOrgUser,
   getOrgNotifications,
+} = require("../controllers/org-user.controller");
+const {
   getOrgTeams,
   getOrgTeamById,
   getOrgTeamMembers,
   createOrgTeam,
   patchOrgTeam,
   deleteOrgTeam,
+} = require("../controllers/org-team.controller");
+const {
   getOrgAttendance,
   getOrgAttendanceSettings,
   updateOrgAttendanceSettings,
-} = require("../controllers/org.controller");
+} = require("../controllers/org-attendance.controller");
+
 const {
   getOrgDashboard,
   getOrgReports,

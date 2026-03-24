@@ -9,6 +9,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
 const sendEmail = require("../utils/email");
 const { truncateText, formatDate } = require("../services/common.service");
+const { archiveFailedRegistration } = require("../services/archive.service");
 
 const FALLBACK_PLANS = {
   BASIC: {
@@ -652,4 +653,34 @@ Veagle Space Team`;
         : `Failed to finalize registration: ${dbError?.message || "Unknown error"}`
     );
   }
+});
+
+// @desc    Archive Failed Registration Attempt
+// @route   POST /api/payment/archive-failed-registration
+// @access  Public
+exports.archiveFailedRegistrationAttempt = asyncHandler(async (req, res) => {
+  const { organization, admin, reason, metadata } = req.body;
+
+  if (!organization || !admin) {
+    res.status(400);
+    throw new Error("Organization and admin details are required for archiving");
+  }
+
+  const results = await archiveFailedRegistration({
+    organization,
+    admin,
+    reason: reason || "User abandoned or registration failed",
+    metadata: metadata || {},
+  });
+
+  if (!results) {
+    res.status(500);
+    throw new Error("Failed to archive registration attempt");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Registration attempt archived successfully",
+    archivedId: results.archivedOrg.id,
+  });
 });

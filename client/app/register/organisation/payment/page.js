@@ -6,6 +6,7 @@ import {
   useCreatePaymentOrderMutation,
   useLazyGetPaymentPublicKeyQuery,
   useVerifyAndRegisterPaymentMutation,
+  useArchiveFailedRegistrationMutation,
 } from "@/store/api/paymentApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/ThemeProvider";
@@ -69,7 +70,25 @@ export default function PaymentPage() {
   const [createPaymentOrder] = useCreatePaymentOrderMutation();
   const [verifyAndRegisterPayment] = useVerifyAndRegisterPaymentMutation();
   const [getPaymentPublicKey] = useLazyGetPaymentPublicKeyQuery();
+  const [archiveFailedRegistration] = useArchiveFailedRegistrationMutation();
   const { isDarkMode, toggleTheme } = useTheme();
+
+  const handleArchive = async (reason = "Registration abandoned") => {
+    try {
+      const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
+      const admin = JSON.parse(localStorage.getItem("adminData") || "null");
+      
+      if (organization && admin) {
+        await archiveFailedRegistration({
+          organization,
+          admin,
+          reason
+        }).unwrap();
+      }
+    } catch (err) {
+      console.error("Failed to archive registration attempt", err);
+    }
+  };
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("selectedPlan");
@@ -146,6 +165,7 @@ export default function PaymentPage() {
         }).unwrap();
 
         if (!verifyResult?.success) {
+          await handleArchive("Free trial activation failed");
           throw new Error("Free trial activation failed.");
         }
         finalizeSuccess({
@@ -198,6 +218,7 @@ export default function PaymentPage() {
           ondismiss: () => {
             setPaymentStatus("Payment cancelled.");
             setLoading(false);
+            handleArchive("Payment dismissed by user");
           },
         },
         handler: async (response) => {
@@ -211,6 +232,7 @@ export default function PaymentPage() {
             }).unwrap();
 
             if (!verifyResult?.success) {
+              await handleArchive("Payment verified but registration step failed");
               throw new Error("Payment verified but registration failed.");
             }
             setPaymentStatus("Activation successful! Redirecting...");
@@ -232,6 +254,7 @@ export default function PaymentPage() {
         alert(response?.error?.description || "Payment failed. Please try again.");
         setPaymentStatus(response?.error?.description || "Payment failed.");
         setLoading(false);
+        handleArchive(`Payment failed: ${response?.error?.description}`);
       });
 
       paymentObject.open();

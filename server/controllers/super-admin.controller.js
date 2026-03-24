@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { parseBoolean, parseId, parseLimit, toSummaryItem } = require("../services/common.service");
+const { archiveOrganization, restoreOrganizationFromArchive } = require("../services/archive.service");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const xlsx = require("xlsx");
 
@@ -383,6 +384,63 @@ exports.updateOrganizationAccess = asyncHandler(async (req, res) => {
       active: Boolean(updated.isActive),
       createdAt: updated.createdAt,
     },
+  });
+});
+
+// @desc    Archive Organization (Full Move)
+// @route   POST /api/super-admin/organizations/:organizationId/archive
+// @access  Super Admin
+exports.archiveOrganizationAction = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  const { reason } = req.body;
+
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  const archived = await archiveOrganization({
+    orgId: organizationId,
+    reason: reason || "Archived by Super Admin",
+    archivedById: Number(req.user.id),
+  });
+
+  if (!archived) {
+    res.status(500);
+    throw new Error("Failed to archive organization");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Organization moved to archive successfully",
+    archivedId: archived.id,
+  });
+});
+
+// @desc    Restore Organization from Archive
+// @route   POST /api/super-admin/organizations/:organizationId/restore
+// @access  Super Admin
+exports.restoreOrganizationAction = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  const restored = await restoreOrganizationFromArchive({
+    orgId: organizationId,
+  });
+
+  if (!restored) {
+    res.status(500);
+    throw new Error("Failed to restore organization from archive");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Organization restored successfully",
+    id: restored.id,
   });
 });
 

@@ -1,71 +1,71 @@
-const asyncHandler = require("express-async-handler");
-const prisma = require("../lib/prisma");
-const { ensureOrganizationId, parseLimit, toSummaryItem, todayKey } = require("../services/common.service");
-const { mapAttendanceRecord } = require("../services/attendance-query.service");
-const { buildAttendanceReport } = require("../services/report-query.service");
+const asyncHandler = require("express-async-handler")
+const prisma = require("../lib/prisma")
+const { ensureOrganizationId, parseLimit, toSummaryItem, todayKey } = require("../services/common.service")
+const { mapAttendanceRecord } = require("../services/attendance-query.service")
+const { buildAttendanceReport } = require("../services/report-query.service")
 const {
   attendanceRecordSelect,
   organizationDashboardSelect,
   organizationSubscriptionSelect,
   reportPdfUserSelect,
-} = require("../services/prisma-selects.service");
-const { buildAttendanceDetailedPdf, minutesToDuration } = require("../utils/pdf-report");
-const xlsx = require("xlsx");
+} = require("../services/prisma-selects.service")
+const { buildAttendanceDetailedPdf, minutesToDuration } = require("../utils/pdf-report")
+const xlsx = require("xlsx")
 
 const defaultRange = () => {
-  const now = new Date();
-  const from = new Date(now);
-  from.setUTCDate(from.getUTCDate() - 29);
+  const now = new Date()
+  const from = new Date(now)
+  from.setUTCDate(from.getUTCDate() - 29)
   return {
     from: from.toISOString().split("T")[0],
     to: now.toISOString().split("T")[0],
-  };
-};
+  }
+}
 
 const rangeFromPeriod = (period = "monthly") => {
-  const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const normalized = String(period || "monthly").trim().toLowerCase();
+  const now = new Date()
+  const today = now.toISOString().split("T")[0]
+  const normalized = String(period || "monthly").trim().toLowerCase()
 
   if (normalized === "daily") {
-    return { from: today, to: today, periodLabel: "Daily" };
+    return { from: today, to: today, periodLabel: "Daily" }
   }
 
   if (normalized === "weekly") {
-    const from = new Date(now);
-    from.setUTCDate(from.getUTCDate() - 6);
+    const from = new Date(now)
+    from.setUTCDate(from.getUTCDate() - 6)
     return {
       from: from.toISOString().split("T")[0],
       to: today,
       periodLabel: "Weekly",
-    };
+    }
   }
 
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
   return {
     from: monthStart.toISOString().split("T")[0],
     to: today,
     periodLabel: "Monthly",
-  };
-};
+  }
+}
 
 const toPdfTime = (value) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
   return date.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  });
-};
+  })
+}
 
 const toPdfContact = (user) => {
-  const code = String(user?.mobileCountryCode || "").trim();
-  const mobile = String(user?.mobile || "").trim();
-  if (!code && !mobile) return "-";
-  return `${code}${mobile}`;
-};
+  const code = String(user?.mobileCountryCode || "").trim()
+  const mobile = String(user?.mobile || "").trim()
+  if (!code && !mobile) return "-"
+  return `${code}${mobile}`
+}
 
 const buildOrganizationReportData = async ({ orgId, rangeFrom, rangeTo }) => {
   return buildAttendanceReport({
@@ -73,8 +73,8 @@ const buildOrganizationReportData = async ({ orgId, rangeFrom, rangeTo }) => {
     rangeFrom,
     rangeTo,
     sortByWorkedMinutes: true,
-  });
-};
+  })
+}
 
 const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => {
   const records = await prisma.attendance.findMany({
@@ -98,23 +98,23 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
       },
     },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
-  });
+  })
 
-  let presentEntries = 0;
-  let absentEntries = 0;
-  let totalWorkedMinutes = 0;
-  let totalPresentMinutes = 0;
+  let presentEntries = 0
+  let absentEntries = 0
+  let totalWorkedMinutes = 0
+  let totalPresentMinutes = 0
 
   const rows = records.map((record) => {
-    const totalMinutesWorked = Number(record.totalMinutesWorked || 0);
-    const isAbsent = String(record.status || "").toUpperCase() === "ABSENT";
-    const presentMinutes = isAbsent ? 0 : totalMinutesWorked;
+    const totalMinutesWorked = Number(record.totalMinutesWorked || 0)
+    const isAbsent = String(record.status || "").toUpperCase() === "ABSENT"
+    const presentMinutes = isAbsent ? 0 : totalMinutesWorked
 
-    if (isAbsent) absentEntries += 1;
-    else presentEntries += 1;
+    if (isAbsent) absentEntries += 1
+    else presentEntries += 1
 
-    totalWorkedMinutes += totalMinutesWorked;
-    totalPresentMinutes += presentMinutes;
+    totalWorkedMinutes += totalMinutesWorked
+    totalPresentMinutes += presentMinutes
 
     return {
       userId: String(record.user?.id ?? record.userId ?? "-"),
@@ -127,8 +127,8 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
       totalDuration: minutesToDuration(totalMinutesWorked),
       presentDuration: minutesToDuration(presentMinutes),
       absent: isAbsent ? "YES" : "NO",
-    };
-  });
+    }
+  })
 
   return {
     rows,
@@ -139,13 +139,13 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
       totalWorkedMinutes,
       totalPresentMinutes,
     },
-  };
-};
+  }
+}
 
 exports.getOrgDashboard = asyncHandler(async (req, res) => {
-  const orgId = ensureOrganizationId(req, res);
-  const limit = parseLimit(req.query.limit, 12, 100);
-  const today = todayKey();
+  const orgId = ensureOrganizationId(req, res)
+  const limit = parseLimit(req.query.limit, 12, 100)
+  const today = todayKey()
 
   const [organization, totalUsers, totalTeams, presentToday, recentAttendance] =
     await Promise.all([
@@ -182,7 +182,7 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         take: limit,
       }),
-    ]);
+    ])
 
   res.status(200).json({
     success: true,
@@ -200,20 +200,20 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
       subscriptionExpiry: organization?.subscriptionExpiry || null,
       activeSubscriptionId: organization?.subscriptionId || null,
     },
-  });
-});
+  })
+})
 
 exports.getOrgReports = asyncHandler(async (req, res) => {
-  const orgId = ensureOrganizationId(req, res);
-  const preset = rangeFromPeriod(req.query.period || "monthly");
-  const fallback = defaultRange();
-  const rangeFrom = String(req.query.from || preset.from || fallback.from);
-  const rangeTo = String(req.query.to || preset.to || fallback.to);
+  const orgId = ensureOrganizationId(req, res)
+  const preset = rangeFromPeriod(req.query.period || "monthly")
+  const fallback = defaultRange()
+  const rangeFrom = String(req.query.from || preset.from || fallback.from)
+  const rangeTo = String(req.query.to || preset.to || fallback.to)
   const { summary, items, recordsCount } = await buildOrganizationReportData({
     orgId,
     rangeFrom,
     rangeTo,
-  });
+  })
 
   res.status(200).json({
     success: true,
@@ -225,15 +225,15 @@ exports.getOrgReports = asyncHandler(async (req, res) => {
       period: String(req.query.period || "custom").toLowerCase(),
       records: recordsCount,
     },
-  });
-});
+  })
+})
 
 exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
-  const orgId = ensureOrganizationId(req, res);
-  const preset = rangeFromPeriod(req.query.period || "monthly");
-  const fallback = defaultRange();
-  const rangeFrom = String(req.query.from || preset.from || fallback.from);
-  const rangeTo = String(req.query.to || preset.to || fallback.to);
+  const orgId = ensureOrganizationId(req, res)
+  const preset = rangeFromPeriod(req.query.period || "monthly")
+  const fallback = defaultRange()
+  const rangeFrom = String(req.query.from || preset.from || fallback.from)
+  const rangeTo = String(req.query.to || preset.to || fallback.to)
 
   const [organization, reportData] = await Promise.all([
     prisma.organization.findUnique({
@@ -248,11 +248,11 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
       rangeFrom,
       rangeTo,
     }),
-  ]);
+  ])
 
   const periodLabel = req.query.period
     ? String(req.query.period).trim().toLowerCase()
-    : preset.periodLabel.toLowerCase();
+    : preset.periodLabel.toLowerCase()
   const pdfBuffer = await buildAttendanceDetailedPdf({
     organizationName: organization?.name || "Organization",
     organizationCode: organization?.organizationCode || "",
@@ -261,28 +261,28 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
     rangeTo,
     summary: reportData.summary,
     rows: reportData.rows,
-  });
+  })
 
-  const safePeriod = String(periodLabel || "report").replace(/[^a-z0-9_-]+/gi, "-");
-  const filename = `attendance-report-${safePeriod}-${rangeFrom}-to-${rangeTo}.pdf`;
+  const safePeriod = String(periodLabel || "report").replace(/[^a-z0-9_-]+/gi, "-")
+  const filename = `attendance-report-${safePeriod}-${rangeFrom}-to-${rangeTo}.pdf`
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
-  res.status(200).send(pdfBuffer);
-});
+  res.setHeader("Content-Type", "application/pdf")
+  res.setHeader("Content-Disposition", `attachment filename=\"${filename}\"`)
+  res.status(200).send(pdfBuffer)
+})
 
 exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
-  const orgId = ensureOrganizationId(req, res);
-  const preset = rangeFromPeriod(req.query.period || "monthly");
-  const fallback = defaultRange();
-  const rangeFrom = String(req.query.from || preset.from || fallback.from);
-  const rangeTo = String(req.query.to || preset.to || fallback.to);
+  const orgId = ensureOrganizationId(req, res)
+  const preset = rangeFromPeriod(req.query.period || "monthly")
+  const fallback = defaultRange()
+  const rangeFrom = String(req.query.from || preset.from || fallback.from)
+  const rangeTo = String(req.query.to || preset.to || fallback.to)
 
   const reportData = await buildOrganizationPdfReportData({
     orgId,
     rangeFrom,
     rangeTo,
-  });
+  })
 
   // Transform rows for better Excel display (optional, but good for readability)
   const excelRows = reportData.rows.map(row => ({
@@ -296,28 +296,28 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
     "Total Duration": row.totalDuration,
     "Present Duration": row.presentDuration,
     "Is Absent": row.absent
-  }));
+  }))
 
-  const worksheet = xlsx.utils.json_to_sheet(excelRows);
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
+  const worksheet = xlsx.utils.json_to_sheet(excelRows)
+  const workbook = xlsx.utils.book_new()
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report")
 
-  const excelBuffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+  const excelBuffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" })
 
   const periodLabel = req.query.period
     ? String(req.query.period).trim().toLowerCase()
-    : preset.periodLabel.toLowerCase();
-  const safePeriod = String(periodLabel || "report").replace(/[^a-z0-9_-]+/gi, "-");
-  const filename = `attendance-report-${safePeriod}-${rangeFrom}-to-${rangeTo}.xlsx`;
+    : preset.periodLabel.toLowerCase()
+  const safePeriod = String(periodLabel || "report").replace(/[^a-z0-9_-]+/gi, "-")
+  const filename = `attendance-report-${safePeriod}-${rangeFrom}-to-${rangeTo}.xlsx`
 
-  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
-  res.status(200).send(excelBuffer);
-});
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+  res.setHeader("Content-Disposition", `attachment filename=\"${filename}\"`)
+  res.status(200).send(excelBuffer)
+})
 
 exports.getOrgSubscription = asyncHandler(async (req, res) => {
-  const orgId = ensureOrganizationId(req, res);
-  const limit = parseLimit(req.query.limit, 25, 200);
+  const orgId = ensureOrganizationId(req, res)
+  const limit = parseLimit(req.query.limit, 25, 200)
 
   const [organization, subscriptions, paymentAggregate] = await Promise.all([
     prisma.organization.findUnique({
@@ -343,7 +343,7 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
         _all: true,
       },
     }),
-  ]);
+  ])
 
   const items = subscriptions.map((subscription) => ({
     id: subscription.id,
@@ -357,7 +357,7 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
     createdAt: subscription.createdAt,
     razorpayOrderId: subscription.razorpayOrderId || "",
     razorpayPaymentId: subscription.razorpayPaymentId || "",
-  }));
+  }))
 
   res.status(200).json({
     success: true,
@@ -374,5 +374,5 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
       attendanceRadius: organization?.attendanceRadius || 25,
       limit,
     },
-  });
-});
+  })
+})

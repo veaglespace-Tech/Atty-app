@@ -10,6 +10,7 @@ import { dashboardApi } from "./api/dashboardApi";
 import { attendanceApi } from "./api/attendanceApi";
 import { paymentApi } from "./api/paymentApi";
 import { utilityApi } from "./api/utilityApi";
+import { postApi } from "./api/postApi";
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ export const store = configureStore({
     [attendanceApi.reducerPath]: attendanceApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
     [utilityApi.reducerPath]: utilityApi.reducer,
+    [postApi.reducerPath]: postApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -36,6 +38,7 @@ export const store = configureStore({
       dashboardApi.middleware,
       attendanceApi.middleware,
       paymentApi.middleware,
-      utilityApi.middleware
+      utilityApi.middleware,
+      postApi.middleware
     ),
 });

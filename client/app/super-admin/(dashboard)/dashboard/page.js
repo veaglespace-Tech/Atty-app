@@ -1,40 +1,40 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import DataPanelPage from "@/components/saas/DataPanelPage";
+import { useState } from "react"
+import DataPanelPage from "@/components/saas/DataPanelPage"
 import {
   useDownloadSuperAdminDashboardExcelMutation,
   useDownloadSuperAdminDashboardPdfMutation,
-} from "@/store/api/superAdminApi";
-import { downloadBlobFile } from "@/utils/download";
-import { getErrorMessage } from "@/utils/formValidation";
+} from "@/store/api/superAdminApi"
+import { downloadBlobFile } from "@/utils/download"
+import { getErrorMessage } from "@/utils/formValidation"
 
 export default function Page() {
-  const [downloadError, setDownloadError] = useState("");
+  const [downloadError, setDownloadError] = useState("")
   const [downloadDashboardPdf, { isLoading: downloadingPdf }] =
-    useDownloadSuperAdminDashboardPdfMutation();
+    useDownloadSuperAdminDashboardPdfMutation()
   const [downloadDashboardExcel, { isLoading: downloadingExcel }] =
-    useDownloadSuperAdminDashboardExcelMutation();
+    useDownloadSuperAdminDashboardExcelMutation()
 
   const onDownloadPdf = async () => {
     try {
-      setDownloadError("");
-      const blob = await downloadDashboardPdf("limit=500").unwrap();
-      downloadBlobFile(blob, "super-admin-dashboard-records.pdf");
+      setDownloadError("")
+      const blob = await downloadDashboardPdf("limit=500").unwrap()
+      downloadBlobFile(blob, "super-admin-dashboard-records.pdf")
     } catch (error) {
-      setDownloadError(getErrorMessage(error, "Failed to download dashboard PDF"));
+      setDownloadError(getErrorMessage(error, "Failed to download dashboard PDF"))
     }
-  };
+  }
 
   const onDownloadExcel = async () => {
     try {
-      setDownloadError("");
-      const blob = await downloadDashboardExcel("limit=500").unwrap();
-      downloadBlobFile(blob, "super-admin-dashboard-records.xlsx");
+      setDownloadError("")
+      const blob = await downloadDashboardExcel("limit=500").unwrap()
+      downloadBlobFile(blob, "super-admin-dashboard-records.xlsx")
     } catch (error) {
-      setDownloadError(getErrorMessage(error, "Failed to download dashboard Excel"));
+      setDownloadError(getErrorMessage(error, "Failed to download dashboard Excel"))
     }
-  };
+  }
 
   return (
     <DataPanelPage
@@ -81,5 +81,5 @@ export default function Page() {
         error: downloadError,
       }}
     />
-  );
+  )
 }
