@@ -8,6 +8,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed:plans": "node setup_plans.js",
+    "cleanup:paid-monthly-plans": "node scripts/remove-paid-monthly-plans.js",
     "create:super-admin": "node scripts/create-super-admin.js"
   },
   "keywords": [],

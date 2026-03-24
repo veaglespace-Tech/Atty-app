@@ -15,7 +15,7 @@ import CountryPhoneField from "@/components/CountryPhoneField";
 import {
   useGetOrgUserByIdQuery,
   usePatchOrgUserMutation,
-} from "@/store/api/orgApi";
+} from "@/services/api/orgApi";
 import {
   ORG_MANAGED_ROLE_OPTIONS,
   PERMISSION_GROUPS,
@@ -222,13 +222,13 @@ export default function OrgUserDetailPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <button
               type="button"
               onClick={() => router.push("/org/users")}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700"
+              className="brand-btn brand-btn-secondary brand-btn-sm"
             >
               <ArrowLeft size={14} /> Back
             </button>
@@ -240,10 +240,8 @@ export default function OrgUserDetailPage() {
             type="button"
             onClick={toggleAccess}
             disabled={!canToggleAccess || togglingAccess}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
-              form.active
-                ? "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
-                : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            className={`brand-btn brand-btn-sm w-full sm:w-auto disabled:opacity-60 ${
+              form.active ? "brand-btn-danger" : "brand-btn-soft"
             }`}
           >
             {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <ShieldAlert size={15} />}
@@ -260,7 +258,7 @@ export default function OrgUserDetailPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4 rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+        <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Profile & Access</h3>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -347,14 +345,14 @@ export default function OrgUserDetailPage() {
             type="button"
             onClick={saveProfile}
             disabled={!canEditUser || savingProfile || isFetching}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {savingProfile ? <Loader2 size={16} className="animate-spin" /> : <UserRound size={16} />}
             Update Profile
           </button>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+        <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Permissions</h3>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -383,7 +381,7 @@ export default function OrgUserDetailPage() {
             type="button"
             onClick={savePermissions}
             disabled={!canEditUser || savingPermissions || isFetching}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {savingPermissions ? <Loader2 size={16} className="animate-spin" /> : <UserCog size={16} />}
             Update Permissions

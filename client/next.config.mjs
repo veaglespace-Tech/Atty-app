@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  onDemandEntries: {
+    maxInactiveAge: 5 * 60 * 1000,
+    pagesBufferLength: 8,
+  },
   images: {
     remotePatterns: [
       {

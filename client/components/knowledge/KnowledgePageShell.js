@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 
 export default function KnowledgePageShell({
@@ -21,11 +18,7 @@ export default function KnowledgePageShell({
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
+        <div className="mb-12">
           <Link
             href="/about"
             className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-slate-600 shadow-[0_18px_44px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-600 hover:shadow-[0_22px_52px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-950/75 dark:text-slate-300 dark:shadow-black/20 dark:hover:border-blue-500/30 dark:hover:text-blue-200"
@@ -67,7 +60,7 @@ export default function KnowledgePageShell({
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {children}
       </div>

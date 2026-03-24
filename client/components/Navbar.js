@@ -1,39 +1,45 @@
 "use client";
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
+
+import { memo, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
-import { motion, AnimatePresence } from "framer-motion";
+import { useDispatch } from "react-redux";
 import { LayoutDashboard, LogIn, UserPlus, Menu, X, ChevronRight, LogOut, UserCircle2 } from "lucide-react";
 import { logout } from "@/store/slices/authSlice";
-import { useUserSignOutMutation } from "@/store/api/authApi";
+import { useAuthSession } from "@/hooks/useAuthSession";
+import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
+import { useUserSignOutMutation } from "@/services/api/authApi";
 import ThemeToggle from "@/components/ThemeToggle";
 import { formatRoleLabel, resolveDashboardPath } from "@/utils/roles";
+
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user, token, hydrated } = useSelector((state) => state.auth);
-  const isClient = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const { user, token, hydrated } = useAuthSession();
   const [isOpen, setIsOpen] = useState(false);
   const [userSignOut] = useUserSignOutMutation();
-  const isAuthReady = isClient && hydrated;
+  const isAuthReady = hydrated;
   const isLoggedIn = Boolean(isAuthReady && token && user);
   const dashboardHref = resolveDashboardPath(user?.role, user?.dashboardPath) || "/member/dashboard";
-  const hideOnAppSections =
-    pathname?.startsWith("/register") ||
-    pathname?.startsWith("/login") ||
+  const prefetchedRoutes = useMemo(
+    () => [...NAV_LINKS.map((link) => link.href), "/login", "/register", dashboardHref],
+    [dashboardHref]
+  );
+  const hideOnDashboardRoutes =
+    pathname?.startsWith("/dashboard") ||
     pathname?.startsWith("/org") ||
     pathname?.startsWith("/member") ||
     pathname?.startsWith("/team-leader") ||
-    pathname?.startsWith("/super-admin") ||
-    pathname?.startsWith("/dashboard");
+    (pathname?.startsWith("/super-admin") && pathname !== "/super-admin/login");
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -44,18 +50,13 @@ export default function Navbar() {
     };
   }, [isOpen]);
 
+  useIdleRoutePrefetch(router, prefetchedRoutes);
+
   const toggleMenu = () => {
     setIsOpen((prev) => !prev);
   };
 
   const closeMenu = () => setIsOpen(false);
-
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-  ];
 
   const onLogout = async () => {
     try {
@@ -69,42 +70,33 @@ export default function Navbar() {
     router.push("/login");
   };
 
-  if (hideOnAppSections) {
+  if (hideOnDashboardRoutes) {
     return null;
   }
 
   return (
-    <Fragment>
-      <nav className="fixed top-0 left-0 right-0 z-[70] border-b border-slate-100 bg-white/80 shadow-[0_16px_48px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-black/20">
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-[70] border-b border-slate-100 bg-white/80 shadow-[0_16px_48px_rgba(30,112,209,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-black/20">
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex h-20 items-center justify-between">
-          {/* Logo */}
             <Link href="/" className="group shrink-0 flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-blue-50 transition-all duration-500 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-blue-200 dark:bg-blue-500/15 dark:group-hover:shadow-blue-950/40 md:h-12 md:w-12">
-              <Image
-                src="/Logo.webp"
-                alt="Veagle Space Logo"
-                fill
-                sizes="(max-width: 768px) 40px, 48px"
-                className="w-full h-full object-contain p-1"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.nextSibling.style.display = "flex";
-                }}
-              />
-              <div className="hidden absolute inset-0 bg-blue-600 items-center justify-center text-white font-black text-lg">
-                VS
-              </div>
+              <div className="relative flex h-10 w-10 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-12 md:w-12">
+                <Image
+                  src="/logo1-clean.webp"
+                  alt="Veagle logo mark"
+                  fill
+                  sizes="(max-width: 768px) 40px, 48px"
+                  className="h-full w-full object-contain"
+                />
               </div>
               <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white md:text-2xl">
-                Veagle <span className="text-blue-600">Space</span>
+                Veagle <span className="brand-wordmark">Attendee</span>
               </span>
             </Link>
 
-            {/* Desktop Nav Links */}
             <div className="hidden items-center gap-10 lg:flex">
-              {navLinks.map((link) => (
-                <NavLink
+              {NAV_LINKS.map((link) => (
+                <PublicNavLink
                   key={link.href}
                   href={link.href}
                   label={link.label}
@@ -113,7 +105,6 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Desktop Action Buttons */}
             <div className="hidden items-center gap-4 md:flex">
               <ThemeToggle className="w-11 px-0" />
               {!isAuthReady ? (
@@ -156,7 +147,6 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile Menu Toggle */}
             <button
               type="button"
               onClick={toggleMenu}
@@ -171,96 +161,99 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.button
-              type="button"
-              aria-label="Close menu"
-              onClick={closeMenu}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[58] bg-slate-950/50 backdrop-blur-sm lg:hidden"
-            />
-            <motion.div
-              id="mobile-site-menu"
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className="fixed inset-x-0 bottom-0 top-20 z-[65] overflow-y-auto bg-white/95 px-4 pb-6 pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:bg-slate-950/95 dark:shadow-black/30 lg:hidden"
-            >
-              <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-6">
-                <div className="space-y-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMenu}
-                      className={`flex items-center justify-between rounded-2xl p-4 transition-all ${
-                        pathname === link.href
-                          ? "bg-blue-50 font-black text-blue-600 dark:bg-blue-500/15 dark:text-blue-200"
-                          : "bg-slate-50 font-bold text-slate-600 dark:bg-slate-900 dark:text-slate-300"
-                      }`}
-                    >
-                      {link.label}
-                      <ChevronRight size={18} opacity={0.5} />
-                    </Link>
-                  ))}
-                </div>
-
-                <div className="mt-auto space-y-4 rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-[0_22px_58px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-black/20">
-                  {!isAuthReady ? (
-                    <div className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
-                  ) : isLoggedIn ? (
-                    <>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{user?.name || "User"}</p>
-                        <p className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">{formatRoleLabel(user?.role)}</p>
-                      </div>
-                      <Link
-                        href={dashboardHref}
-                        onClick={closeMenu}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5 font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30"
-                      >
-                        <LayoutDashboard size={20} />
-                        Access Dashboard
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={onLogout}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-5 font-black text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
-                      >
-                        <LogOut size={20} />
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/login" onClick={closeMenu} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 font-black text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white">
-                        <LogIn size={20} />
-                        Login
-                      </Link>
-                      <Link href="/register" onClick={closeMenu} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5 font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30">
-                        <UserPlus size={20} />
-                        Register Now
-                      </Link>
-                    </>
-                  )}
-
-                  <ThemeToggle showLabel className="w-full justify-center" />
-                </div>
+      {isOpen ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={closeMenu}
+            className="fixed inset-0 z-[58] bg-slate-950/50 backdrop-blur-sm lg:hidden"
+          />
+          <div
+            id="mobile-site-menu"
+            className="fixed inset-x-0 bottom-0 top-20 z-[65] overflow-y-auto bg-white/95 px-4 pb-6 pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:bg-slate-950/95 dark:shadow-black/30 lg:hidden"
+          >
+            <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-6">
+              <div className="space-y-4">
+                {NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    className={`flex items-center justify-between rounded-2xl p-4 transition-all ${
+                      pathname === link.href
+                        ? "bg-blue-50 font-black text-blue-600 dark:bg-blue-500/15 dark:text-blue-200"
+                        : "bg-slate-50 font-bold text-slate-600 dark:bg-slate-900 dark:text-slate-300"
+                    }`}
+                  >
+                    {link.label}
+                    <ChevronRight size={18} opacity={0.5} />
+                  </Link>
+                ))}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </Fragment>
+
+              <div className="mt-auto space-y-4 rounded-[1.75rem] border border-slate-200 bg-white/90 p-4 shadow-[0_22px_58px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-black/20">
+                {!isAuthReady ? (
+                  <div className="h-14 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                ) : isLoggedIn ? (
+                  <>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                        {user?.name || "User"}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        {formatRoleLabel(user?.role)}
+                      </p>
+                    </div>
+                    <Link
+                      href={dashboardHref}
+                      onClick={closeMenu}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5 font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30"
+                    >
+                      <LayoutDashboard size={20} />
+                      Access Dashboard
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-5 font-black text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+                    >
+                      <LogOut size={20} />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={closeMenu}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 font-black text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                    >
+                      <LogIn size={20} />
+                      Login
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={closeMenu}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5 font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30"
+                    >
+                      <UserPlus size={20} />
+                      Register Now
+                    </Link>
+                  </>
+                )}
+
+                <ThemeToggle showLabel className="w-full justify-center" />
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
+    </>
   );
 }
 
-function NavLink({ href, label, active }) {
+const PublicNavLink = memo(function PublicNavLink({ href, label, active }) {
   return (
     <Link
       href={href}
@@ -270,11 +263,8 @@ function NavLink({ href, label, active }) {
     >
       {label}
       {active && (
-        <motion.div
-          layoutId="nav-underline"
-          className="absolute -bottom-1 left-0 right-0 h-0.75 bg-blue-600 rounded-full"
-        />
+        <span className="absolute -bottom-1 left-0 right-0 h-0.75 rounded-full bg-blue-600" />
       )}
     </Link>
   );
-}
+});

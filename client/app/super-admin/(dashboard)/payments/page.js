@@ -5,7 +5,7 @@ import DataPanelPage from "@/components/saas/DataPanelPage";
 import {
   useDownloadSuperAdminPaymentsExcelMutation,
   useDownloadSuperAdminPaymentsPdfMutation,
-} from "@/store/api/superAdminApi";
+} from "@/services/api/superAdminApi";
 import { downloadBlobFile } from "@/utils/download";
 import { getErrorMessage } from "@/utils/formValidation";
 
@@ -42,6 +42,7 @@ export default function Page() {
       description="Recent platform-wide payment transactions and statuses."
       endpoint="/super-admin/payments"
       emptyMessage="No payment records found."
+      hiddenSummaryLabels={["Revenue"]}
       recordsView="table"
       tableColumns={[
         { key: "organization", label: "Organization" },
@@ -59,7 +60,9 @@ export default function Page() {
       downloadSection={{
         title: "Records Download",
         description:
-          "Download platform payment records in PDF or Excel format for reconciliation and reporting.",
+          "Download the current payment records in PDF or Excel format from one menu.",
+        mode: "menu",
+        buttonLabel: "Download",
         downloadingPdf,
         downloadingExcel,
         onDownloadPdf,

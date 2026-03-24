@@ -1,10 +1,9 @@
-const fs = require("fs");
-const path = require("path");
 const { execSync, spawn } = require("child_process");
+const path = require("path");
 
 const projectRoot = process.cwd();
 const port = 3000;
-const turboMode = process.argv.includes("--turbo");
+const cleanMode = process.argv.includes("--clean");
 
 function findListeningPids(targetPort) {
   try {
@@ -15,16 +14,17 @@ function findListeningPids(targetPort) {
         stdio: ["ignore", "pipe", "ignore"],
       });
 
-      return [...new Set(
-        output
-          .split(/\r?\n/)
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .filter((line) => line.includes(`:${targetPort}`) && /LISTENING/i.test(line))
-          .map((line) => line.split(/\s+/).pop())
-          .map((pid) => Number(pid))
-          .filter((pid) => Number.isInteger(pid) && pid > 0)
-      )];
+      return [
+        ...new Set(
+          output
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .filter((line) => line.includes(`:${targetPort}`) && /LISTENING/i.test(line))
+            .map((line) => Number(line.split(/\s+/).pop()))
+            .filter((pid) => Number.isInteger(pid) && pid > 0)
+        ),
+      ];
     }
 
     const output = execSync(`lsof -ti tcp:${targetPort}`, {
@@ -33,12 +33,14 @@ function findListeningPids(targetPort) {
       stdio: ["ignore", "pipe", "ignore"],
     });
 
-    return [...new Set(
-      output
-        .split(/\r?\n/)
-        .map((value) => Number(value.trim()))
-        .filter((pid) => Number.isInteger(pid) && pid > 0)
-    )];
+    return [
+      ...new Set(
+        output
+          .split(/\r?\n/)
+          .map((line) => Number(line.trim()))
+          .filter((pid) => Number.isInteger(pid) && pid > 0)
+      ),
+    ];
   } catch (_) {
     return [];
   }
@@ -56,35 +58,35 @@ function killPid(pid) {
 
     process.kill(pid, "SIGKILL");
   } catch (_) {
-    // If the process exited between detection and kill, we can safely ignore it.
+    // Ignore if the process is already gone.
   }
 }
 
 function cleanupNextDirectory() {
   try {
-    fs.rmSync(path.join(projectRoot, ".next"), { recursive: true, force: true });
+    execSync(process.platform === "win32" ? 'rmdir /S /Q ".next"' : 'rm -rf ".next"', {
+      cwd: projectRoot,
+      stdio: ["ignore", "ignore", "ignore"],
+      shell: true,
+    });
   } catch (_) {
-    // Ignore cleanup failures and let Next report anything actionable.
+    // Let Next surface any actionable filesystem issues.
   }
 }
 
 const stalePids = findListeningPids(port).filter((pid) => pid !== process.pid);
-
 if (stalePids.length > 0) {
   console.log(`Freeing port ${port} by stopping PID(s): ${stalePids.join(", ")}`);
   stalePids.forEach(killPid);
 }
 
-cleanupNextDirectory();
+if (cleanMode) {
+  console.log("Clearing .next cache because --clean was requested.");
+  cleanupNextDirectory();
+}
 
 const nextCli = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
-
-const nextArgs = ["dev", "-p", String(port)];
-if (turboMode) {
-  nextArgs.splice(1, 0, "--turbo");
-} else {
-  nextArgs.splice(1, 0, "--webpack");
-}
+const nextArgs = ["dev", "--webpack", "-p", String(port)];
 
 const child = spawn(process.execPath, [nextCli, ...nextArgs], {
   cwd: projectRoot,

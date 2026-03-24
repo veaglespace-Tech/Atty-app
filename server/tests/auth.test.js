@@ -4,6 +4,9 @@ process.env.JWT_KEY = "test-secret";
 const request = require("supertest");
 
 jest.mock("../lib/prisma", () => ({
+  organization: {
+    findMany: jest.fn(),
+  },
   user: {
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -85,5 +88,56 @@ describe("POST /api/auth/login", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.message).toMatch(/email|password/i);
+  });
+});
+
+describe("GET /api/auth/organizations/search", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns matching organizations from the database", async () => {
+    prisma.organization.findMany.mockResolvedValue([
+      {
+        id: 3,
+        name: "Acme Workspace",
+        organizationCode: "ACME01",
+        city: "Mumbai",
+        state: "MH",
+        country: "India",
+      },
+    ]);
+
+    const response = await request(app).get("/api/auth/organizations/search").query({
+      query: "Acme",
+      limit: 5,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.items).toHaveLength(1);
+    expect(response.body.items[0].organizationCode).toBe("ACME01");
+    expect(prisma.organization.findMany).toHaveBeenCalledWith({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        isBlocked: false,
+        OR: [
+          { name: { contains: "Acme" } },
+          { organizationCode: { contains: "Acme" } },
+          { city: { contains: "Acme" } },
+          { state: { contains: "Acme" } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        organizationCode: true,
+        city: true,
+        state: true,
+        country: true,
+      },
+      orderBy: [{ name: "asc" }],
+      take: 5,
+    });
   });
 });

@@ -1,5 +1,10 @@
 const prisma = require("../lib/prisma");
 const asyncHandler = require("express-async-handler");
+const {
+  filterVisiblePlans,
+  isLegacyPaidMonthlyPlan,
+  normalizePlanCode,
+} = require("../services/plan.service");
 
 const toFeatureList = (value) => {
   if (Array.isArray(value)) {
@@ -40,7 +45,7 @@ exports.getPlans = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    plans: plans.map(mapPlanForResponse),
+    plans: filterVisiblePlans(plans).map(mapPlanForResponse),
   });
 });
 
@@ -51,7 +56,7 @@ exports.getPlanById = asyncHandler(async (req, res) => {
   const planId = Number(req.params.id);
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
 
-  if (!plan) {
+  if (!plan || isLegacyPaidMonthlyPlan(plan)) {
     res.status(404);
     throw new Error("Plan not found");
   }
@@ -73,7 +78,7 @@ exports.createPlan = asyncHandler(async (req, res) => {
     throw new Error("name, code, price and durationInDays are required");
   }
 
-  const normalizedCode = String(code).trim().toUpperCase();
+  const normalizedCode = normalizePlanCode(code);
   const normalizedName = String(name).trim();
   const parsedPrice = Number(price);
   const parsedDuration = Number(durationInDays);
@@ -92,6 +97,11 @@ exports.createPlan = asyncHandler(async (req, res) => {
   if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
     res.status(400);
     throw new Error("durationInDays must be a positive number");
+  }
+
+  if (parsedPrice > 0 && parsedDuration === 30) {
+    res.status(400);
+    throw new Error("Paid 1 month plans are disabled. Use 3, 6, or 12 month plans.");
   }
 
   if (Number.isNaN(parsedMemberLimit) || parsedMemberLimit < 0) {
@@ -190,6 +200,15 @@ exports.updatePlan = asyncHandler(async (req, res) => {
   if (!plan) {
     res.status(404);
     throw new Error("Plan not found");
+  }
+
+  const nextPrice = price !== undefined ? Number(price) : Number(plan.price || 0);
+  const nextDuration =
+    durationInDays !== undefined ? Number(durationInDays) : Number(plan.durationInDays || 0);
+
+  if (nextPrice > 0 && nextDuration === 30) {
+    res.status(400);
+    throw new Error("Paid 1 month plans are disabled. Use 3, 6, or 12 month plans.");
   }
 
   const updateData = {};

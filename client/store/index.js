@@ -1,15 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
-import { authApi } from "./api/authApi";
-import { planApi } from "./api/planApi";
-import { orgApi } from "./api/orgApi";
-import { teamLeaderApi } from "./api/teamLeaderApi";
-import { memberApi } from "./api/memberApi";
-import { superAdminApi } from "./api/superAdminApi";
-import { dashboardApi } from "./api/dashboardApi";
-import { attendanceApi } from "./api/attendanceApi";
-import { paymentApi } from "./api/paymentApi";
-import { utilityApi } from "./api/utilityApi";
+import { authApi } from "@/services/api/authApi";
+import { planApi } from "@/services/api/planApi";
+import { orgApi } from "@/services/api/orgApi";
+import { teamLeaderApi } from "@/services/api/teamLeaderApi";
+import { memberApi } from "@/services/api/memberApi";
+import { superAdminApi } from "@/services/api/superAdminApi";
+import { dashboardApi } from "@/services/api/dashboardApi";
+import { attendanceApi } from "@/services/api/attendanceApi";
+import { paymentApi } from "@/services/api/paymentApi";
+import { utilityApi } from "@/services/api/utilityApi";
 
 export const store = configureStore({
   reducer: {
@@ -26,7 +26,10 @@ export const store = configureStore({
     [utilityApi.reducerPath]: utilityApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
+    getDefaultMiddleware({
+      immutableCheck: false,
+      serializableCheck: false,
+    }).concat(
       authApi.middleware,
       planApi.middleware,
       orgApi.middleware,

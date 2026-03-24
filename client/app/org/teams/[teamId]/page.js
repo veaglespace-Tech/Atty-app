@@ -19,7 +19,7 @@ import {
   useGetOrgTeamByIdQuery,
   useGetOrgUsersQuery,
   usePatchOrgTeamMutation,
-} from "@/store/api/orgApi";
+} from "@/services/api/orgApi";
 import { ROLES, formatRoleLabel, normalizeRole } from "@/utils/roles";
 
 const getErrorMessage = (error, fallback) =>
@@ -275,7 +275,7 @@ export default function OrgTeamDetailPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <button
@@ -293,7 +293,7 @@ export default function OrgTeamDetailPage() {
             type="button"
             onClick={deleteTeam}
             disabled={deleting}
-            className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
           >
             {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
             Delete Team
@@ -309,7 +309,7 @@ export default function OrgTeamDetailPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="space-y-4 rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+        <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Details</h3>
 
           <div className="space-y-2">
@@ -361,14 +361,14 @@ export default function OrgTeamDetailPage() {
             type="button"
             onClick={saveBasics}
             disabled={savingBasics || teamFetching}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {savingBasics ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             Save Details
           </button>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
+        <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Leader</h3>
 
           <div className="relative">
@@ -412,8 +412,8 @@ export default function OrgTeamDetailPage() {
                     onClick={() => toggleLeader(leader.id)}
                     className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
                       active
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                        ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                        : "border-slate-300 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
                     }`}
                   >
                     <span>{leader.name}</span>
@@ -431,14 +431,14 @@ export default function OrgTeamDetailPage() {
             type="button"
             onClick={saveLeader}
             disabled={savingLeader || teamFetching}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {savingLeader ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
             Update Leader
           </button>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-slate-300 bg-white p-6 shadow-sm xl:col-span-1">
+        <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6 xl:col-span-1">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Members</h3>
 
           <p className="text-xs font-semibold text-slate-600">Current Members ({form.memberIds.length})</p>
@@ -452,7 +452,7 @@ export default function OrgTeamDetailPage() {
                   <button
                     type="button"
                     onClick={() => removeMember(id)}
-                    className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] text-rose-700"
+                    className="brand-btn brand-btn-danger brand-btn-sm"
                   >
                     <X size={11} /> Remove
                   </button>
@@ -491,7 +491,7 @@ export default function OrgTeamDetailPage() {
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => addMember(member.id)}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50"
                   >
                     <span>{member.name}</span>
                     <span className="ml-2 text-xs opacity-80">{formatRoleLabel(member.role)}</span>
@@ -508,7 +508,7 @@ export default function OrgTeamDetailPage() {
             type="button"
             onClick={saveMembers}
             disabled={savingMembers || teamFetching}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {savingMembers ? <Loader2 size={16} className="animate-spin" /> : <UsersRound size={16} />}
             Update Members

@@ -15,19 +15,40 @@ const TABLE_HEADER_HEIGHT = 24;
 const TABLE_ROW_HEIGHT = 22;
 
 const TABLE_COLUMNS = [
-  { key: "userId", label: "User ID", width: 48, align: "left" },
-  { key: "userName", label: "User Name", width: 112, align: "left" },
-  { key: "contact", label: "Contact", width: 96, align: "left" },
-  { key: "email", label: "Email", width: 154, align: "left" },
+  { key: "userId", label: "ID", width: 44, align: "center" },
+  { key: "userName", label: "Member", width: 102, align: "left" },
+  { key: "contact", label: "Phone", width: 88, align: "left" },
+  { key: "email", label: "Email", width: 144, align: "left" },
   { key: "date", label: "Date", width: 70, align: "center" },
-  { key: "punchIn", label: "Punch In", width: 58, align: "center" },
-  { key: "punchOut", label: "Punch Out", width: 58, align: "center" },
-  { key: "totalDuration", label: "Total", width: 62, align: "center" },
-  { key: "presentDuration", label: "Present", width: 62, align: "center" },
+  { key: "punchIn", label: "In", width: 50, align: "center" },
+  { key: "punchOut", label: "Out", width: 50, align: "center" },
+  { key: "totalDuration", label: "Work Time", width: 72, align: "center" },
+  { key: "presentDuration", label: "Present", width: 68, align: "center" },
   { key: "absent", label: "Absent", width: 54, align: "center" },
 ];
 
 const normalizeText = (value) => String(value === null || value === undefined ? "" : value).trim();
+const normalizeKey = (value) => String(value || "").replace(/[_-\s]+/g, "").toLowerCase();
+
+const PDF_LABEL_OVERRIDES = {
+  activeorganizations: "Active Orgs",
+  blockedorganizations: "Blocked Orgs",
+  createdat: "Created",
+  includedrecords: "Records",
+  organizationcode: "Org Code",
+  presentduration: "Present",
+  successfultransactions: "Success",
+  subscriptionstatus: "Subscription",
+  totalduration: "Work Time",
+  useremail: "Email",
+  userid: "ID",
+  username: "Member",
+  workedhours: "Hours",
+  workedminutes: "Work Min",
+};
+
+const toPdfLabel = (value, fallback = "") =>
+  PDF_LABEL_OVERRIDES[normalizeKey(value)] || normalizeText(value) || fallback;
 
 const minutesToDuration = (minutes) => {
   const total = Number(minutes || 0);
@@ -95,9 +116,14 @@ const drawSummaryCards = (doc, summary, startY) => {
     const cardX = x + index * (cardWidth + gap);
     doc.save();
     doc.roundedRect(cardX, startY, cardWidth, cardHeight, 6).fillAndStroke(COLORS.cardBg, COLORS.border);
-    doc.fillColor(COLORS.muted).font("Helvetica-Bold").fontSize(8).text(card.label, cardX + 8, startY + 8, {
-      width: cardWidth - 16,
-    });
+    doc.fillColor(COLORS.muted).font("Helvetica-Bold").fontSize(8).text(
+      toPdfLabel(card.label, `Metric ${index + 1}`),
+      cardX + 8,
+      startY + 8,
+      {
+        width: cardWidth - 16,
+      }
+    );
     doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(13).text(String(card.value), cardX + 8, startY + 22, {
       width: cardWidth - 16,
     });
@@ -117,7 +143,7 @@ const drawTableHeader = (doc, startY) => {
   doc.fillColor(COLORS.white).font("Helvetica-Bold").fontSize(8);
 
   TABLE_COLUMNS.forEach((column) => {
-    doc.text(column.label, cursorX + 4, startY + 8, {
+    doc.text(clipTextToWidth(doc, toPdfLabel(column.label, column.key), column.width - 8), cursorX + 4, startY + 8, {
       width: column.width - 8,
       align: column.align,
       lineBreak: false,
@@ -294,9 +320,14 @@ const drawGenericSummaryCards = (doc, cards, startY) => {
 
     doc.save();
     doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 6).fillAndStroke(COLORS.cardBg, COLORS.border);
-    doc.fillColor(COLORS.muted).font("Helvetica-Bold").fontSize(8).text(card.label, cardX + 8, cardY + 8, {
-      width: cardWidth - 16,
-    });
+    doc.fillColor(COLORS.muted).font("Helvetica-Bold").fontSize(8).text(
+      toPdfLabel(card.label, `Metric ${index + 1}`),
+      cardX + 8,
+      cardY + 8,
+      {
+        width: cardWidth - 16,
+      }
+    );
     doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(13).text(String(card.value ?? "-"), cardX + 8, cardY + 22, {
       width: cardWidth - 16,
     });
@@ -312,10 +343,21 @@ const resolveGenericColumns = (doc, columns = []) => {
   const autoCount = columns.filter((column) => !column.width).length;
   const autoWidth = autoCount > 0 ? Math.max(40, (pageWidth - explicitWidth) / autoCount) : 0;
 
-  return columns.map((column) => ({
+  const normalizedColumns = columns.map((column) => ({
     align: "left",
     ...column,
     width: Number(column.width || autoWidth),
+  }));
+
+  const requestedWidth = normalizedColumns.reduce((sum, column) => sum + Number(column.width || 0), 0);
+  if (requestedWidth <= pageWidth || requestedWidth <= 0) {
+    return normalizedColumns;
+  }
+
+  const scale = pageWidth / requestedWidth;
+  return normalizedColumns.map((column) => ({
+    ...column,
+    width: Math.max(36, Math.floor(Number(column.width || 0) * scale)),
   }));
 };
 
@@ -329,7 +371,7 @@ const drawGenericTableHeader = (doc, columns, startY) => {
   doc.fillColor(COLORS.white).font("Helvetica-Bold").fontSize(8);
 
   columns.forEach((column) => {
-    doc.text(column.label, cursorX + 4, startY + 8, {
+    doc.text(clipTextToWidth(doc, toPdfLabel(column.label || column.key, column.key), column.width - 8), cursorX + 4, startY + 8, {
       width: column.width - 8,
       align: column.align,
       lineBreak: false,

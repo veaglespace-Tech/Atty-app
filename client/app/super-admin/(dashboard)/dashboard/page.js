@@ -1,47 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import DataPanelPage from "@/components/saas/DataPanelPage";
-import {
-  useDownloadSuperAdminDashboardExcelMutation,
-  useDownloadSuperAdminDashboardPdfMutation,
-} from "@/store/api/superAdminApi";
-import { downloadBlobFile } from "@/utils/download";
-import { getErrorMessage } from "@/utils/formValidation";
 
 export default function Page() {
-  const [downloadError, setDownloadError] = useState("");
-  const [downloadDashboardPdf, { isLoading: downloadingPdf }] =
-    useDownloadSuperAdminDashboardPdfMutation();
-  const [downloadDashboardExcel, { isLoading: downloadingExcel }] =
-    useDownloadSuperAdminDashboardExcelMutation();
-
-  const onDownloadPdf = async () => {
-    try {
-      setDownloadError("");
-      const blob = await downloadDashboardPdf("limit=500").unwrap();
-      downloadBlobFile(blob, "super-admin-dashboard-records.pdf");
-    } catch (error) {
-      setDownloadError(getErrorMessage(error, "Failed to download dashboard PDF"));
-    }
-  };
-
-  const onDownloadExcel = async () => {
-    try {
-      setDownloadError("");
-      const blob = await downloadDashboardExcel("limit=500").unwrap();
-      downloadBlobFile(blob, "super-admin-dashboard-records.xlsx");
-    } catch (error) {
-      setDownloadError(getErrorMessage(error, "Failed to download dashboard Excel"));
-    }
-  };
-
   return (
     <DataPanelPage
       title="Super Admin Dashboard"
       description="Global SaaS usage, subscription health, and revenue summary."
       endpoint="/super-admin/dashboard"
       emptyMessage="No dashboard metrics found."
+      hiddenSummaryLabels={["Revenue"]}
       recordsView="table"
       tableColumns={[
         { key: "organization", label: "Organization" },
@@ -70,16 +38,6 @@ export default function Page() {
         },
         { key: "createdAt", label: "Created At", type: "datetime" },
       ]}
-      downloadSection={{
-        title: "Records Download",
-        description:
-          "Download the current dashboard records in PDF or Excel format for sharing and audit review.",
-        downloadingPdf,
-        downloadingExcel,
-        onDownloadPdf,
-        onDownloadExcel,
-        error: downloadError,
-      }}
     />
   );
 }

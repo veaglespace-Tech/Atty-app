@@ -7,6 +7,8 @@ const {
   getSuperAdminPlans,
   getSuperAdminPayments,
   getSuperAdminAnalytics,
+  downloadSuperAdminOrganizationsPdf,
+  downloadSuperAdminOrganizationsExcel,
   downloadSuperAdminDashboardPdf,
   downloadSuperAdminDashboardExcel,
   downloadSuperAdminPaymentsPdf,
@@ -21,6 +23,8 @@ router.get("/dashboard", getSuperAdminDashboard);
 router.get("/dashboard/pdf", downloadSuperAdminDashboardPdf);
 router.get("/dashboard/excel", downloadSuperAdminDashboardExcel);
 router.get("/organizations", getSuperAdminOrganizations);
+router.get("/organizations/pdf", downloadSuperAdminOrganizationsPdf);
+router.get("/organizations/excel", downloadSuperAdminOrganizationsExcel);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);
 router.get("/plans", getSuperAdminPlans);
 router.get("/payments", getSuperAdminPayments);

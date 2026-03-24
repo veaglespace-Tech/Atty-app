@@ -7,7 +7,7 @@ import CountryPhoneField from "@/components/CountryPhoneField";
 import {
   useCreateOrgUserMutation,
   useGetOrgUsersQuery,
-} from "@/store/api/orgApi";
+} from "@/services/api/orgApi";
 import {
   ORG_MANAGED_ROLE_OPTIONS,
   PERMISSION_GROUPS,
@@ -28,6 +28,9 @@ import {
 
 const STATUS_OPTIONS = ["APPROVED", "PENDING"];
 const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
+const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
+const fieldClassName =
+  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500";
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -187,20 +190,20 @@ export default function OrgUsersPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className={sectionCardClassName}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Organization Users</h2>
+            <h2 className="text-xl font-black text-slate-900 sm:text-2xl">Organization Users</h2>
             <p className="mt-2 text-sm text-slate-600">
               Directory keeps core fields simple. Click a user row to open full profile and actions.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
             <button
               type="button"
               onClick={() => setCreateOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               <Plus size={15} />
               Create Member
@@ -211,7 +214,7 @@ export default function OrgUsersPage() {
               type="button"
               onClick={refetch}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               Refresh
@@ -235,25 +238,25 @@ export default function OrgUsersPage() {
       </div>
 
       {createOpen ? (
-      <div className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
+      <div className={sectionCardClassName}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create User</h3>
           <button
             type="button"
             onClick={() => setCreateOpen(false)}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600"
+            className="brand-btn brand-btn-secondary brand-btn-sm w-full sm:w-auto"
           >
             <X size={13} /> Close
           </button>
         </div>
 
-        <form onSubmit={createUser} className="mt-4 grid gap-3 md:grid-cols-3">
+        <form onSubmit={createUser} className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <input
             name="name"
             value={form.name}
             onChange={onInputChange}
             placeholder="Full name"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className={fieldClassName}
             required
           />
           <input
@@ -262,10 +265,10 @@ export default function OrgUsersPage() {
             value={form.email}
             onChange={onInputChange}
             placeholder="Email"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className={fieldClassName}
             required
           />
-          <div className="md:col-span-3">
+          <div className="sm:col-span-2 xl:col-span-3">
             <CountryPhoneField
               label="Mobile Number"
               required
@@ -284,6 +287,8 @@ export default function OrgUsersPage() {
               containerClassName="space-y-1.5"
               labelClassName="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500"
               groupClassName="shadow-none"
+              selectClassName="py-3"
+              inputClassName="py-3"
             />
           </div>
 
@@ -291,7 +296,7 @@ export default function OrgUsersPage() {
             name="role"
             value={form.role}
             onChange={onInputChange}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className={fieldClassName}
           >
             {ORG_MANAGED_ROLE_OPTIONS.map((roleOption) => (
               <option key={roleOption.value} value={roleOption.value}>
@@ -304,7 +309,7 @@ export default function OrgUsersPage() {
             name="status"
             value={form.status}
             onChange={onInputChange}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className={fieldClassName}
           >
             {STATUS_OPTIONS.map((statusOption) => (
               <option key={statusOption} value={statusOption}>
@@ -319,14 +324,14 @@ export default function OrgUsersPage() {
             value={form.password}
             onChange={onInputChange}
             placeholder="Password (optional)"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className={fieldClassName}
           />
 
-          <div className="md:col-span-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="sm:col-span-2 xl:col-span-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 p-3 sm:p-4">
             <p className="text-xs font-black uppercase tracking-wide text-slate-500">Permissions</p>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
               {permissionGroups.map((group) => (
-                <div key={group.key} className="rounded-lg border border-slate-200 bg-white p-3">
+                <div key={group.key} className="rounded-xl border border-slate-200 bg-white p-3">
                   <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{group.label}</p>
                   <div className="mt-2 space-y-2">
                     {group.items.map((permission) => (
@@ -349,11 +354,11 @@ export default function OrgUsersPage() {
             </div>
           </div>
 
-          <div className="md:col-span-3 flex justify-end">
+          <div className="sm:col-span-2 xl:col-span-3 flex justify-stretch sm:justify-end">
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
               Create User
@@ -363,7 +368,7 @@ export default function OrgUsersPage() {
       </div>
       ) : null}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className={sectionCardClassName}>
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">User Directory</h3>
 
         {isLoading ? (
@@ -375,21 +380,21 @@ export default function OrgUsersPage() {
           <p className="mt-4 text-sm text-slate-500">No users found.</p>
         ) : (
           <div className="mt-4 space-y-3">
-            <div className="grid gap-2 md:grid-cols-4">
-              <div className="relative md:col-span-2">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="relative md:col-span-2 xl:col-span-1">
                 <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Search by name, mobile, email"
-                  className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-3 text-sm outline-none focus:border-blue-500"
+                  className="w-full rounded-xl border border-slate-300 py-2.5 pl-8 pr-3 text-sm outline-none transition focus:border-blue-500"
                 />
               </div>
 
               <select
                 value={roleFilter}
                 onChange={(event) => setRoleFilter(event.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={fieldClassName}
               >
                 <option value="ALL">All Roles</option>
                 {ORG_MANAGED_ROLE_OPTIONS.map((roleOption) => (
@@ -399,28 +404,26 @@ export default function OrgUsersPage() {
                 ))}
               </select>
 
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                >
-                  {DIRECTORY_STATUS_FILTERS.map((status) => (
-                    <option key={status} value={status}>
-                      {status === "ALL" ? "All Status" : status}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={activeFilter}
-                  onChange={(event) => setActiveFilter(event.target.value)}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                >
-                  <option value="ALL">All Access</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="BLOCKED">Blocked</option>
-                </select>
-              </div>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className={fieldClassName}
+              >
+                {DIRECTORY_STATUS_FILTERS.map((status) => (
+                  <option key={status} value={status}>
+                    {status === "ALL" ? "All Status" : status}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={activeFilter}
+                onChange={(event) => setActiveFilter(event.target.value)}
+                className={fieldClassName}
+              >
+                <option value="ALL">All Access</option>
+                <option value="ACTIVE">Active</option>
+                <option value="BLOCKED">Blocked</option>
+              </select>
             </div>
 
             <p className="text-xs font-semibold text-slate-500">
@@ -432,57 +435,95 @@ export default function OrgUsersPage() {
                 No users match current filters.
               </p>
             ) : (
-            <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead>
-                <tr>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Name</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Mobile</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Active</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    onClick={() => router.push(`/org/users/${user.id}`)}
-                    className="cursor-pointer transition hover:bg-slate-50"
-                  >
-                    <td className="px-3 py-3">
-                      <p className="font-bold text-slate-900">{user.name}</p>
-                      <p className="text-xs text-slate-500">{user.email}</p>
-                    </td>
-                    <td className="px-3 py-3 font-medium text-slate-700">{user.mobile || "-"}</td>
-                    <td className="px-3 py-3 font-semibold text-slate-700">{formatRoleLabel(user.role)}</td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
-                          user.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
-                        }`}
-                      >
-                        {user.active ? "Active" : "Blocked"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
-                          user.approvalStatus === "APPROVED"
-                            ? "bg-blue-100 text-blue-700"
-                            : user.approvalStatus === "PENDING"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-rose-100 text-rose-700"
-                        }`}
-                      >
-                        {user.approvalStatus}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
+              <>
+                <div className="grid gap-3 md:hidden">
+                  {filteredUsers.map((user) => (
+                    <button
+                      type="button"
+                      key={`card-${user.id}`}
+                      onClick={() => router.push(`/org/users/${user.id}`)}
+                      className="rounded-[1.55rem] border border-slate-200 bg-white/90 p-4 text-left shadow-[0_14px_34px_rgba(59,130,246,0.08)] transition hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950/75"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-black text-slate-900">{user.name}</p>
+                          <p className="mt-1 break-all text-xs text-slate-500">{user.email}</p>
+                        </div>
+                        <span
+                          className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
+                            user.active
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {user.active ? "Active" : "Blocked"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <DetailPill label="Mobile" value={user.mobile || "-"} />
+                        <DetailPill label="Role" value={formatRoleLabel(user.role)} />
+                        <DetailPill label="Status" value={user.approvalStatus} />
+                        <DetailPill label="Profile" value="Open details" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Name</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Mobile</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Active</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredUsers.map((user) => (
+                        <tr
+                          key={user.id}
+                          onClick={() => router.push(`/org/users/${user.id}`)}
+                          className="cursor-pointer transition hover:bg-slate-50"
+                        >
+                          <td className="px-3 py-3">
+                            <p className="font-bold text-slate-900">{user.name}</p>
+                            <p className="text-xs text-slate-500">{user.email}</p>
+                          </td>
+                          <td className="px-3 py-3 font-medium text-slate-700">{user.mobile || "-"}</td>
+                          <td className="px-3 py-3 font-semibold text-slate-700">{formatRoleLabel(user.role)}</td>
+                          <td className="px-3 py-3">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
+                                user.active
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-200 text-slate-700"
+                              }`}
+                            >
+                              {user.active ? "Active" : "Blocked"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
+                                user.approvalStatus === "APPROVED"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : user.approvalStatus === "PENDING"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-rose-100 text-rose-700"
+                              }`}
+                            >
+                              {user.approvalStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -493,9 +534,18 @@ export default function OrgUsersPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-300 bg-white p-4">
+    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function DetailPill({ label, value }) {
+  return (
+    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>
   );
 }

@@ -1,149 +1,327 @@
 "use client";
-import { useMemo } from "react";
+
+import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { motion } from "framer-motion";
 import {
-  Users,
+  ArrowUpRight,
+  CalendarDays,
   Clock,
-  Search,
-  Filter,
   Download,
+  Loader2,
+  MapPin,
+  Search,
   UserCheck,
   UserX,
-  MoreVertical,
-  Loader2,
-  CalendarDays
 } from "lucide-react";
-import { useGetAttendanceQuery, useGetAttendanceSummaryQuery } from "@/store/api/attendanceApi";
+import { formatRoleLabel } from "@/utils/roles";
+import { useGetAttendanceQuery, useGetAttendanceSummaryQuery } from "@/services/api/attendanceApi";
+
+const SUMMARY_CARDS = [
+  { key: "present", label: "Present", icon: UserCheck, tone: "emerald" },
+  { key: "late", label: "Late", icon: Clock, tone: "amber" },
+  { key: "absent", label: "Absent", icon: UserX, tone: "rose" },
+  { key: "leaves", label: "On Leave", icon: CalendarDays, tone: "blue" },
+];
 
 export default function AttendancePage() {
   const { user } = useSelector((state) => state.auth);
+  const [searchValue, setSearchValue] = useState("");
   const { data: attendanceData, isLoading: attendanceLoading, isFetching: attendanceFetching } =
     useGetAttendanceQuery("", { skip: !user });
   const { data: summaryData, isLoading: summaryLoading, isFetching: summaryFetching } =
     useGetAttendanceSummaryQuery(undefined, { skip: !user });
   const loading = attendanceLoading || attendanceFetching || summaryLoading || summaryFetching;
-  const attendance = useMemo(() => (Array.isArray(attendanceData) ? attendanceData : []), [attendanceData]);
+  const attendance = useMemo(
+    () => (Array.isArray(attendanceData) ? attendanceData : []),
+    [attendanceData]
+  );
   const summary = summaryData || { present: 0, late: 0, absent: 0, leaves: 0 };
+  const query = searchValue.trim().toLowerCase();
+
+  const filteredAttendance = useMemo(() => {
+    if (!query) return attendance;
+
+    return attendance.filter((row) =>
+      [row?.userName, row?.userRole, row?.locationName, row?.status].some((value) =>
+        String(value || "")
+          .toLowerCase()
+          .includes(query)
+      )
+    );
+  }, [attendance, query]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+        <p className="brand-kicker">Fetching daily attendance...</p>
+      </div>
+    );
+  }
+
+  const totalRecords = attendance.length;
+  const visibleRecords = filteredAttendance.length;
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Attendance Logs</h1>
-          <p className="teqxt-slate-500 font-medium text-sm mt-1">Real-time records for <strong>{user?.organizationCode}</strong></p>
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all text-sm">
-            <Download size={18} />
-            Export Data
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6 pb-10">
+      <section className="light-glow-card-static relative overflow-hidden rounded-[2.2rem] px-6 py-6 lg:px-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_26%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.20),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.16),transparent_28%)]" />
 
-      {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-4">
-           <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-           <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Fetching Daily Logs...</p>
-        </div>
-      ) : (
-        <>
-          {/* Stats Quick Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <MiniStat cardColor="bg-blue-50" icon={<UserCheck className="text-blue-600" size={20} />} label="Present" value={summary.present} />
-            <MiniStat cardColor="bg-amber-50" icon={<Clock className="text-amber-600" size={20} />} label="Late" value={summary.late} />
-            <MiniStat cardColor="bg-red-50" icon={<UserX className="text-red-600" size={20} />} label="Absent" value={summary.absent} />
-            <MiniStat cardColor="bg-indigo-50" icon={<CalendarDays className="text-indigo-600" size={20} />} label="On Leave" value={summary.leaves} />
-          </div>
+        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.22fr)_minmax(320px,0.78fr)]">
+          <div>
+            <div className="brand-chip">
+              <CalendarDays size={12} />
+              Live Attendance
+            </div>
+            <h1 className="brand-hero-title mt-4">Daily Attendance Hub</h1>
+            <p className="brand-copy mt-3 max-w-2xl">
+              Review who is on time, late, or away across{" "}
+              <strong>{user?.organizationCode || "your workspace"}</strong> without leaving the
+              dashboard.
+            </p>
 
-          {/* Main Table Content */}
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-            <div className="p-6 border-b border-slate-50 flex items-center gap-4">
-               <div className="relative flex-1 group max-w-sm">
-                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                 <input type="text" placeholder="Quick search members..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl outline-none focus:bg-white border-2 border-transparent focus:border-blue-100 transition-all text-sm font-medium" />
-               </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <span className="brand-chip">
+                {formatRoleLabel(user?.role)}
+              </span>
+              <span className="brand-chip">
+                {totalRecords} Records Today
+              </span>
             </div>
 
-            <div className="overflow-x-auto text-sm md:text-base">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">In-Time</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {attendance.length > 0 ? attendance.map((row, i) => (
-                    <motion.tr
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      key={row._id || i}
-                      className="hover:bg-slate-50/50 transition-colors group"
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="brand-btn brand-btn-primary brand-btn-lg rounded-[1.25rem]"
+              >
+                <Download size={18} />
+                Export Snapshot
+              </button>
+              <button
+                type="button"
+                className="brand-btn brand-btn-secondary brand-btn-lg rounded-[1.25rem]"
+              >
+                Review Logs
+                <ArrowUpRight size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {SUMMARY_CARDS.map((card) => (
+              <AttendanceMetric
+                key={card.key}
+                icon={card.icon}
+                label={card.label}
+                value={summary[card.key] || 0}
+                tone={card.tone}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="light-glow-card-static overflow-hidden rounded-[2rem]">
+        <div className="flex flex-col gap-4 border-b border-white/70 px-5 py-5 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between lg:px-6">
+          <div>
+            <h2 className="brand-section-title text-[1.35rem]">Attendance Records</h2>
+            <p className="brand-copy-sm mt-2">
+              {query
+                ? `Showing ${visibleRecords} of ${totalRecords} records matching "${searchValue}".`
+                : `Showing all ${totalRecords} attendance records for today.`}
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-end lg:w-auto">
+            <label className="relative min-w-0 flex-1 md:min-w-[320px]">
+              <Search
+                size={16}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder="Search by member, role, status, or location"
+                className="w-full rounded-[1.2rem] border border-slate-200 bg-white/88 py-3 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition-all focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-100/60 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-100 dark:focus:border-blue-500/25 dark:focus:ring-blue-500/10"
+              />
+            </label>
+            <button
+              type="button"
+              className="brand-btn brand-btn-secondary brand-btn-md rounded-[1.2rem]"
+            >
+              <Download size={16} />
+              Export
+            </button>
+          </div>
+        </div>
+
+        {filteredAttendance.length > 0 ? (
+          <>
+            <div className="grid gap-4 p-4 md:hidden">
+              {filteredAttendance.map((row, index) => (
+                <article
+                  key={row._id || `${row.userName || "user"}-${index}`}
+                  className="brand-panel-soft rounded-[1.6rem] p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="brand-icon-shell flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black">
+                      {String(row.userName || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">
+                          {row.userName || "Unknown Member"}
+                        </p>
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${getStatusClasses(
+                            row.status
+                          )}`}
+                        >
+                          {row.status || "Unknown"}
+                        </span>
+                      </div>
+                      <p className="brand-kicker mt-2">{formatRoleLabel(row.userRole)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3">
+                    <AttendanceRecordDetail label="Check In" value={row.checkIn || "--:--"} />
+                    <AttendanceRecordDetail
+                      label="Location"
+                      value={row.locationName || "Office Space"}
+                    />
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-[760px] w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100/80 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/70">
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                    Member
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                    Check In
+                  </th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                    Location
+                  </th>
+                </tr>
+              </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredAttendance.map((row, index) => (
+                    <tr
+                      key={row._id || `${row.userName || "user"}-${index}`}
+                      className="bg-white/70 transition-colors hover:bg-blue-50/60 dark:bg-transparent dark:hover:bg-slate-900/70"
                     >
-                      <td className="px-8 py-6">
+                      <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400">
-                            {row.userName?.[0] || "U"}
+                          <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black">
+                            {String(row.userName || "U").charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-900 leading-none mb-1">{row.userName}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{row.userRole}</p>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                              {row.userName || "Unknown Member"}
+                            </p>
+                            <p className="brand-kicker mt-1">{formatRoleLabel(row.userRole)}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                          row.status === "Present" ? "bg-emerald-50 text-emerald-600" :
-                          row.status === "Absent" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"
-                        }`}>
-                          {row.status}
+                      <td className="px-6 py-5">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${getStatusClasses(
+                            row.status
+                          )}`}
+                        >
+                          {row.status || "Unknown"}
                         </span>
                       </td>
-                      <td className="px-8 py-6">
-                        <p className="text-sm font-bold text-slate-600">{row.checkIn || "--:--"}</p>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                          <Clock size={14} className="text-slate-400 dark:text-slate-500" />
+                          {row.checkIn || "--:--"}
+                        </div>
                       </td>
-                      <td className="px-8 py-6">
-                         <p className="text-[10px] font-bold text-slate-400 uppercase truncate max-w-[150px]">{row.locationName || "Office Space"}</p>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button className="p-2 text-slate-400 hover:text-blue-600 transition-all">
-                          <MoreVertical size={18} />
-                        </button>
-                      </td>
-                    </motion.tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="5" className="py-20 text-center font-medium text-slate-400">
-                         No logs found for today in this organization.
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                          <MapPin size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
+                          <span className="truncate">{row.locationName || "Office Space"}</span>
+                        </div>
                       </td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
+          </>
+        ) : (
+          <div className="px-6 py-16 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-300">
+              <Search size={22} />
+            </div>
+            <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
+              No matching attendance records
+            </h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+              Try a different search term or clear the filter to see all logs for today.
+            </p>
           </div>
-        </>
-      )}
+        )}
+      </section>
     </div>
   );
 }
 
-function MiniStat({ icon, label, value, cardColor }) {
+function AttendanceMetric({ icon: Icon, label, value, tone }) {
+  const tones = {
+    blue: "border-blue-100 bg-blue-50/90 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200",
+    emerald:
+      "border-emerald-100 bg-emerald-50/90 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
+    amber:
+      "border-amber-100 bg-amber-50/90 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
+    rose: "border-rose-100 bg-rose-50/90 text-rose-600 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200",
+  };
+
   return (
-    <div className={`p-6 md:p-8 rounded-[2rem] border border-white/20 shadow-sm ${cardColor}`}>
-       <div className="flex items-center justify-between mb-4">
-          <div className="w-10 h-10 rounded-xl bg-white/80 flex items-center justify-center shadow-sm">
-             {icon}
-          </div>
-          <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Today</p>
-       </div>
-       <h4 className="text-3xl font-black text-slate-900 tracking-tight">{value}</h4>
-       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{label}</p>
+    <div className={`light-glow-soft rounded-[1.7rem] border p-5 ${tones[tone]}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="brand-icon-shell flex h-12 w-12 items-center justify-center rounded-2xl">
+          <Icon size={20} />
+        </div>
+      </div>
+      <p className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-900 dark:text-white">
+        {value}
+      </p>
+      <p className="brand-kicker mt-2">{label}</p>
     </div>
   );
+}
+
+function AttendanceRecordDetail({ label, value }) {
+  return (
+    <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+      <p className="brand-kicker">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-900 dark:text-white">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function getStatusClasses(status) {
+  if (status === "Present") {
+    return "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200";
+  }
+
+  if (status === "Absent") {
+    return "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200";
+  }
+
+  return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200";
 }

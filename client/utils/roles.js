@@ -246,15 +246,74 @@ export const resolveDashboardPath = (role, dashboardPath) => {
     : fallbackPath;
 };
 
+const humanizeIdentifier = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (token) => token.toUpperCase());
+
 export const formatRoleLabel = (role) => {
   const normalizedRole = normalizeRole(role);
-  return ROLE_LABELS[normalizedRole] || ROLE_LABELS[ROLES.MEMBER];
+  return ROLE_LABELS[normalizedRole] || humanizeIdentifier(role) || ROLE_LABELS[ROLES.MEMBER];
+};
+
+export const getRoleBadgeTheme = (role) => {
+  switch (normalizeRole(role)) {
+    case ROLES.SUPER_ADMIN:
+      return {
+        sidebar:
+          "border border-blue-400/20 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.30)] dark:border-blue-400/20 dark:from-blue-500 dark:via-indigo-500 dark:to-cyan-400 dark:text-white",
+        header:
+          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/12 dark:text-blue-200",
+        accent:
+          "bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.22)] dark:from-blue-500 dark:to-cyan-400 dark:text-white",
+      };
+    case ROLES.ORG_ADMIN:
+      return {
+        sidebar:
+          "border border-blue-400/20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.28)] dark:border-blue-400/20 dark:bg-blue-400 dark:text-slate-950",
+        header:
+          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/12 dark:text-blue-200",
+        accent:
+          "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.22)] dark:from-blue-500 dark:to-indigo-400 dark:text-white",
+      };
+    case ROLES.SUB_ADMIN:
+      return {
+        sidebar:
+          "border border-violet-400/20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.28)] dark:border-violet-400/20 dark:from-violet-500 dark:to-indigo-500 dark:text-white",
+        header:
+          "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/12 dark:text-violet-200",
+        accent:
+          "bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.22)] dark:from-violet-500 dark:to-indigo-400 dark:text-white",
+      };
+    case ROLES.TEAM_LEADER:
+      return {
+        sidebar:
+          "border border-emerald-400/20 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.26)] dark:border-emerald-400/20 dark:from-emerald-500 dark:to-teal-400 dark:text-white",
+        header:
+          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-200",
+        accent:
+          "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.22)] dark:from-emerald-500 dark:to-teal-400 dark:text-white",
+      };
+    case ROLES.MEMBER:
+    default:
+      return {
+        sidebar:
+          "border border-amber-400/20 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.28)] dark:border-amber-400/20 dark:from-amber-500 dark:to-orange-400 dark:text-white",
+        header:
+          "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/12 dark:text-amber-200",
+        accent:
+          "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.22)] dark:from-amber-500 dark:to-orange-400 dark:text-white",
+      };
+  }
 };
 
 export const formatPermissionLabel = (permission) => {
   const normalizedPermission = normalizePermission(permission);
   if (!normalizedPermission) return "Unknown Permission";
-  return PERMISSION_LABELS[normalizedPermission] || normalizedPermission;
+  return PERMISSION_LABELS[normalizedPermission] || humanizeIdentifier(permission);
 };
 
 export const hasPermission = (userOrRole, permissionKey, explicitPermissions) => {

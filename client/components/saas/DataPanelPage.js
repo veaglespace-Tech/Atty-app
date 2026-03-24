@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -7,14 +8,12 @@ import {
   FileBox,
   FileText,
   Loader2,
-  MapPin,
   RefreshCcw,
   Sparkles,
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import { useGetUtilityEndpointQuery } from "@/store/api/utilityApi";
-import { usePatchTeamLeaderTeamMutation } from "@/store/api/teamLeaderApi";
-import { getCurrentCoordinates } from "@/utils/location";
+import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
+import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
 
 const RECORD_THEMES = [
   {
@@ -63,7 +62,146 @@ const SUPPORTING_KEY_PRIORITY = [
   "createdat",
 ];
 
+const normalizeKey = (key) => String(key || "").replace(/[_-\s]/g, "").toLowerCase();
+
+const DISPLAY_LABEL_OVERRIDES = {
+  activeorganizations: "Active Orgs",
+  absentdays: "Absent",
+  absententries: "Absent",
+  blockedorganizations: "Blocked Orgs",
+  createdat: "Created",
+  date: "Date",
+  enabledmodules: "Modules",
+  halfday: "Half Day",
+  halfdays: "Half Day",
+  lateminutes: "Late Min",
+  memberid: "Member ID",
+  organizationcode: "Org Code",
+  pendingpunchout: "Pending Out",
+  planname: "Plan",
+  plancode: "Plan Code",
+  presentdays: "Present",
+  presentduration: "Present Time",
+  presententries: "Present",
+  presenttoday: "Present Today",
+  punchinat: "Check-In",
+  punchincoordinates: "Check-In Coordinates",
+  punchindistancemeters: "Check-In Distance",
+  punchinvalid: "Check-In Valid",
+  punchinlocationmeta: "Check-In Location",
+  punchoutat: "Check-Out",
+  punchoutcoordinates: "Check-Out Coordinates",
+  punchoutdistancemeters: "Check-Out Distance",
+  punchoutvalid: "Check-Out Valid",
+  punchoutlocationmeta: "Check-Out Location",
+  subscriptionstatus: "Subscription",
+  successfulpayments: "Payments",
+  teamname: "Team",
+  totalrecords: "Records",
+  totalteams: "Teams",
+  totalusers: "Users",
+  totalduration: "Work Time",
+  useremail: "Email",
+  userid: "User ID",
+  username: "Member",
+  workedhours: "Hours",
+  workedminutes: "Worked Min",
+};
+
+const COLUMN_PRESETS = {
+  amount: { type: "currency", align: "right", minWidth: 132, wrap: "nowrap" },
+  createdat: { type: "datetime", minWidth: 168, wrap: "nowrap" },
+  date: { type: "date", minWidth: 132, wrap: "nowrap" },
+  gateway: { minWidth: 120, wrap: "nowrap" },
+  lateminutes: { minWidth: 88, wrap: "nowrap" },
+  member: { minWidth: 152 },
+  memberid: { align: "center", minWidth: 92, wrap: "nowrap" },
+  orderid: { minWidth: 156, wrap: "nowrap" },
+  paymentid: { minWidth: 156, wrap: "nowrap" },
+  plancode: { minWidth: 112, wrap: "nowrap" },
+  punchinat: { type: "datetime", minWidth: 168, wrap: "nowrap" },
+  punchincoordinates: { type: "coordinates", minWidth: 176, wrap: "nowrap" },
+  punchindistancemeters: { align: "center", minWidth: 132, wrap: "nowrap" },
+  punchinvalid: { align: "center", minWidth: 132, wrap: "nowrap" },
+  punchinlocationmeta: { type: "location", minWidth: 300, wrap: "wrap" },
+  punchoutat: { type: "datetime", minWidth: 168, wrap: "nowrap" },
+  punchoutcoordinates: { type: "coordinates", minWidth: 176, wrap: "nowrap" },
+  punchoutdistancemeters: { align: "center", minWidth: 140, wrap: "nowrap" },
+  punchoutvalid: { align: "center", minWidth: 140, wrap: "nowrap" },
+  punchoutlocationmeta: { type: "location", minWidth: 300, wrap: "wrap" },
+  revenue: { type: "currency", align: "right", minWidth: 148, wrap: "nowrap" },
+  role: { align: "center", minWidth: 116, wrap: "nowrap" },
+  status: { type: "badge", align: "center", minWidth: 116, wrap: "nowrap" },
+  subscriptionstatus: { type: "badge", align: "center", minWidth: 144, wrap: "nowrap" },
+  teamid: { align: "center", minWidth: 88, wrap: "nowrap" },
+  teamname: { minWidth: 124 },
+  useremail: { minWidth: 220, wrap: "nowrap" },
+  userid: { align: "center", minWidth: 88, wrap: "nowrap" },
+  username: { minWidth: 152 },
+  workedhours: { align: "center", minWidth: 96, wrap: "nowrap" },
+  workedminutes: { align: "center", minWidth: 104, wrap: "nowrap" },
+};
+
+const ENUM_LIKE_KEYS = new Set([
+  "gateway",
+  "inputformat",
+  "mode",
+  "role",
+  "source",
+  "status",
+  "subscriptionstatus",
+]);
+
+const ALWAYS_UPPERCASE_TOKENS = new Set(["GPS", "HR", "ID", "INR", "PDF", "UPI"]);
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T/;
+const DATE_ONLY_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+const DATETIME_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const CENTER_ALIGNED_KEYS = new Set([
+  "absent",
+  "absentdays",
+  "active",
+  "blocked",
+  "createdat",
+  "currency",
+  "date",
+  "gateway",
+  "halfday",
+  "halfdays",
+  "lateminutes",
+  "memberid",
+  "paymentid",
+  "punchinat",
+  "punchoutat",
+  "present",
+  "presentdays",
+  "role",
+  "status",
+  "subscriptionstatus",
+  "teamid",
+  "userid",
+  "workedhours",
+  "workedminutes",
+]);
+
+const RIGHT_ALIGNED_KEYS = new Set(["amount", "revenue"]);
+const MOBILE_RECORD_PREVIEW_COUNT = 8;
+const getColumnPreset = (keyHint = "") => COLUMN_PRESETS[normalizeKey(keyHint)] || null;
+
 const toReadableLabel = (key) =>
+  DISPLAY_LABEL_OVERRIDES[normalizeKey(key)] ||
   String(key)
     .replace(/([A-Z])/g, " $1")
     .replace(/[_-]/g, " ")
@@ -71,7 +209,167 @@ const toReadableLabel = (key) =>
     .trim()
     .replace(/^./, (value) => value.toUpperCase());
 
-const normalizeKey = (key) => String(key || "").replace(/[_-\s]/g, "").toLowerCase();
+const toPlainTokenText = (value) =>
+  String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((token) => {
+      const normalizedToken = token.toUpperCase();
+      if (ALWAYS_UPPERCASE_TOKENS.has(normalizedToken)) return normalizedToken;
+      if (/^\d+(\.\d+)?$/.test(token)) return token;
+      if (/^[A-Z0-9]{1,4}$/.test(token) && /\d/.test(token)) return normalizedToken;
+      return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+    })
+    .join(" ");
+
+const shouldHumanizeString = (value, keyHint = "") => {
+  const text = String(value || "").trim();
+  const normalizedKey = normalizeKey(keyHint);
+
+  if (!text || text.includes("@") || text.includes("://")) return false;
+  if (ENUM_LIKE_KEYS.has(normalizedKey)) return true;
+  if (text.includes("_")) return true;
+  return /^[A-Z][A-Z0-9\s-]+$/.test(text) && text.length <= 32 && !/\d{5,}/.test(text);
+};
+
+const formatDateOnlyValue = (value) => {
+  if (!value) return "-";
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return DATE_ONLY_FORMATTER.format(value);
+  }
+
+  if (typeof value === "string" && DATE_ONLY_PATTERN.test(value)) {
+    const date = new Date(`${value}T00:00:00Z`);
+    if (!Number.isNaN(date.getTime())) {
+      return DATE_ONLY_FORMATTER.format(date);
+    }
+  }
+
+  return String(value);
+};
+
+const formatDateTimeValue = (value) => {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return DATETIME_FORMATTER.format(date);
+};
+
+const isCoordinatePair = (value) =>
+  Array.isArray(value) &&
+  value.length === 2 &&
+  value.every((entry) => Number.isFinite(Number(entry)));
+
+const formatCoordinatesValue = (value) => {
+  if (!isCoordinatePair(value)) return "-";
+  const longitude = Number(value[0]);
+  const latitude = Number(value[1]);
+  return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+};
+
+const formatLocationValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+
+  if (typeof value === "string") {
+    return shouldHumanizeString(value, "location") ? toPlainTokenText(value) : value;
+  }
+
+  if (Array.isArray(value)) {
+    return formatCoordinatesValue(value);
+  }
+
+  if (typeof value === "object") {
+    const displayText =
+      value.displayText || value.areaLabel || value.address || value.name || value.label;
+    if (displayText) return String(displayText);
+
+    if (value.coordinates) {
+      return formatCoordinatesValue(value.coordinates);
+    }
+
+    const firstString = Object.values(value).find(
+      (entry) => typeof entry === "string" && entry.trim()
+    );
+    if (firstString) {
+      return shouldHumanizeString(firstString, "location")
+        ? toPlainTokenText(firstString)
+        : firstString;
+    }
+  }
+
+  return "-";
+};
+
+const buildStructuredEntries = (value, keyHint = "") => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+
+  const normalizedKey = normalizeKey(keyHint);
+  const locationMetaPriority =
+    normalizedKey === "punchinlocationmeta" || normalizedKey === "punchoutlocationmeta"
+      ? ["displayText", "areaLabel", "source", "mode", "inputFormat", "coordinates"]
+      : [];
+
+  const sourceEntries = Object.entries(value).filter(([, entryValue]) => {
+    if (entryValue === null || entryValue === undefined || entryValue === "") return false;
+    if (Array.isArray(entryValue) && entryValue.length === 0) return false;
+    return true;
+  });
+
+  const orderedEntries =
+    locationMetaPriority.length > 0
+      ? [
+          ...locationMetaPriority
+            .map((priorityKey) =>
+              sourceEntries.find(([entryKey]) => normalizeKey(entryKey) === normalizeKey(priorityKey))
+            )
+            .filter(Boolean),
+          ...sourceEntries.filter(
+            ([entryKey]) =>
+              !locationMetaPriority.some(
+                (priorityKey) => normalizeKey(priorityKey) === normalizeKey(entryKey)
+              )
+          ),
+        ]
+      : sourceEntries;
+
+  return orderedEntries.map(([entryKey, entryValue]) => ({
+    key: entryKey,
+    label:
+      normalizeKey(entryKey) === "displaytext"
+        ? "Location"
+        : normalizeKey(entryKey) === "inputformat"
+          ? "Format"
+          : toReadableLabel(entryKey),
+    value:
+      normalizeKey(entryKey) === "coordinates"
+        ? formatCoordinatesValue(entryValue)
+        : formatValue(entryValue, entryKey),
+  }));
+};
+
+const renderStructuredEntries = (entries) => {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return <span className="block">-</span>;
+  }
+
+  return (
+    <div className="space-y-1.5 text-left">
+      {entries.map((entry) => (
+        <div key={entry.key} className="space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+            {entry.label}
+          </p>
+          <p className="break-words text-sm font-medium text-slate-700 dark:text-slate-100">
+            {entry.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const getPriorityKey = (keys, priorities) => {
   for (const priority of priorities) {
@@ -81,8 +379,14 @@ const getPriorityKey = (keys, priorities) => {
   return keys[0] || null;
 };
 
-const formatValue = (value) => {
+const formatValue = (value, keyHint = "") => {
   if (value === null || value === undefined || value === "") return "-";
+
+  const preset = getColumnPreset(keyHint);
+  if (preset?.type === "date") return formatDateOnlyValue(value);
+  if (preset?.type === "datetime") return formatDateTimeValue(value);
+  if (preset?.type === "coordinates") return formatCoordinatesValue(value);
+  if (preset?.type === "location") return formatLocationValue(value);
 
   if (typeof value === "number") {
     return Number.isInteger(value) ? value.toLocaleString("en-IN") : value.toFixed(2);
@@ -91,19 +395,29 @@ const formatValue = (value) => {
   if (typeof value === "boolean") return value ? "Yes" : "No";
 
   if (typeof value === "string") {
-    if (/^\d{4}-\d{2}-\d{2}T/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const date = new Date(value);
-      if (!Number.isNaN(date.getTime())) {
-        return date.toLocaleString();
-      }
-    }
+    if (DATETIME_PATTERN.test(value)) return formatDateTimeValue(value);
+    if (DATE_ONLY_PATTERN.test(value)) return formatDateOnlyValue(value);
+    if (shouldHumanizeString(value, keyHint)) return toPlainTokenText(value);
     return value;
   }
 
-  if (Array.isArray(value)) return value.join(", ");
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "-";
+
+    const hasComplexEntries = value.some((item) => item && typeof item === "object");
+    if (hasComplexEntries) {
+      try {
+        return JSON.stringify(value, null, 2);
+      } catch (_) {
+        return String(value);
+      }
+    }
+
+    return value.map((item) => formatValue(item, keyHint)).join(", ");
+  }
 
   try {
-    return JSON.stringify(value);
+    return JSON.stringify(value, null, 2);
   } catch (_) {
     return String(value);
   }
@@ -118,6 +432,24 @@ const formatCurrencyValue = (value, currency = "INR") => {
     currency,
     maximumFractionDigits: 0,
   }).format(numeric);
+};
+
+const getSummaryDisplay = (card) => {
+  const formattedValue = formatValue(card?.value, card?.key || card?.label);
+  const normalizedLabel = normalizeKey(card?.label);
+  const normalizedValue = normalizeKey(formattedValue);
+
+  if (normalizedLabel === "todaystatus" && normalizedValue === "norecord") {
+    return {
+      value: "No Record",
+      valueClassName: "text-[1.7rem] leading-tight",
+    };
+  }
+
+  return {
+    value: formattedValue,
+    valueClassName: "text-3xl",
+  };
 };
 
 const resolveTableColumns = (items, tableColumns) => {
@@ -172,7 +504,11 @@ const renderTableCell = (column, row) => {
   }
 
   if (column.type === "currency") {
-    return formatCurrencyValue(value, column.currency || row?.[column.currencyKey] || "INR");
+    return (
+      <span className="block max-w-full break-all whitespace-pre-wrap">
+        {formatCurrencyValue(value, column.currency || row?.[column.currencyKey] || "INR")}
+      </span>
+    );
   }
 
   if (column.type === "badge") {
@@ -182,17 +518,66 @@ const renderTableCell = (column, row) => {
           value
         )}`}
       >
-        {formatValue(value)}
+        {formatValue(value, column.key)}
+      </span>
+    );
+  }
+
+  if (column.type === "date") {
+    return (
+      <span className="block max-w-full break-all whitespace-pre-wrap">
+        {formatDateOnlyValue(value)}
       </span>
     );
   }
 
   if (column.type === "datetime") {
-    return formatValue(value);
+    return (
+      <span className="block max-w-full break-all whitespace-pre-wrap">
+        {formatDateTimeValue(value)}
+      </span>
+    );
   }
 
-  return formatValue(value);
+  if (column.type === "coordinates") {
+    return (
+      <span className="block max-w-full break-all whitespace-pre-wrap">
+        {formatCoordinatesValue(value)}
+      </span>
+    );
+  }
+
+  if (column.type === "location") {
+    return renderStructuredEntries(buildStructuredEntries(value, column.key));
+  }
+
+  return (
+    <span className="block max-w-full break-all whitespace-pre-wrap">
+      {formatValue(value, column.key)}
+    </span>
+  );
 };
+
+const getColumnAlignment = (column = {}) => {
+  if (column.align) return column.align;
+  if (column.type === "currency") return "right";
+  if (column.type === "badge") return "center";
+  if (column.type === "datetime") return "center";
+
+  const normalizedKey = normalizeKey(column.key);
+  if (RIGHT_ALIGNED_KEYS.has(normalizedKey)) return "right";
+  if (CENTER_ALIGNED_KEYS.has(normalizedKey)) return "center";
+  return "left";
+};
+
+const getAlignmentClasses = (alignment) => {
+  if (alignment === "right") return "text-right";
+  if (alignment === "center") return "text-center";
+  return "text-left";
+};
+
+const getCellWrapClass = (alignment) =>
+  alignment === "left" ? "break-words whitespace-normal" : "whitespace-nowrap";
 
 const getRecordPresentation = (row, index) => {
   const entries = Object.entries(row || {}).filter(([key]) => key !== "id" && key !== "_id");
@@ -211,26 +596,46 @@ const getRecordPresentation = (row, index) => {
 
   return {
     theme: RECORD_THEMES[index % RECORD_THEMES.length],
-    title: titleKey ? formatValue(row?.[titleKey]) : `Record ${index + 1}`,
+    title: titleKey ? formatValue(row?.[titleKey], titleKey) : `Record ${index + 1}`,
     heroEntries: heroKeys.map((key) => ({
       key,
       label: toReadableLabel(key),
-      value: formatValue(row?.[key]),
+      value: formatValue(row?.[key], key),
     })),
     visibleEntries,
   };
 };
+
+const getHeroKicker = ({ isDashboardEndpoint, isSuperAdminEndpoint }) => {
+  if (isSuperAdminEndpoint) return "Platform Overview";
+  if (isDashboardEndpoint) return "Dashboard Overview";
+  return "Section Overview";
+};
+
+const getHeroDescription = ({ description, isDashboardEndpoint, isSuperAdminEndpoint }) => {
+  if (description) return description;
+  if (isSuperAdminEndpoint) {
+    return "Review platform metrics, key records, and the current operational status in one place.";
+  }
+  if (isDashboardEndpoint) {
+    return "Review key metrics, recent activity, and the current status for this dashboard.";
+  }
+  return "Review section records, summary metrics, and the current operational status.";
+};
+
+const TeamLeaderLiveLocationButton = dynamic(() => import("@/components/saas/TeamLeaderLiveLocationButton"));
 
 export default function DataPanelPage({
   title,
   description,
   endpoint,
   emptyMessage = "No records found.",
-  recordsView = "cards",
+  recordsView = "table",
   tableColumns = [],
   downloadSection = null,
+  hiddenSummaryLabels = [],
 }) {
-  const { user } = useSelector((state) => state.auth);
+  const user = useSelector((state) => state.auth.user);
   const [error, setError] = useState("");
   const {
     data,
@@ -241,40 +646,17 @@ export default function DataPanelPage({
   const firstName = String(user?.name || "").trim().split(/\s+/)[0] || "User";
   const payload = data || {};
   const loading = endpointLoading || endpointFetching;
+  const [expandedMobileRows, setExpandedMobileRows] = useState({});
   const isDashboardEndpoint = String(endpoint || "").endsWith("/dashboard");
   const isSuperAdminEndpoint = String(endpoint || "").startsWith("/super-admin/");
-  const effectiveTitle = isDashboardEndpoint ? `${firstName}'s Dashboard` : title;
-
-  const [updateTeamLoc] = usePatchTeamLeaderTeamMutation();
-  const [locLoading, setLocLoading] = useState(false);
+  const effectiveTitle = isDashboardEndpoint ? `${firstName} Dashboard` : title;
+  const heroKicker = getHeroKicker({ isDashboardEndpoint, isSuperAdminEndpoint });
+  const heroDescription = getHeroDescription({
+    description,
+    isDashboardEndpoint,
+    isSuperAdminEndpoint,
+  });
   const [locMessage, setLocMessage] = useState("");
-
-  const handleSetLiveLocation = async () => {
-    try {
-      setLocLoading(true);
-      setError("");
-      setLocMessage("");
-
-      const coords = await getCurrentCoordinates();
-      if (user.role === "TEAM_LEADER") {
-        const teamId = payload.meta?.teamId;
-        if (!teamId) throw new Error("Team context not found in dashboard.");
-        await updateTeamLoc({
-          teamId,
-          longitude: coords[0],
-          latitude: coords[1],
-        }).unwrap();
-      } else {
-        throw new Error("Only team leaders can set live location from dashboard.");
-      }
-      setLocMessage("Today's live location has been set successfully!");
-      refetch();
-    } catch (err) {
-      setError(err?.message || "Failed to set live location.");
-    } finally {
-      setLocLoading(false);
-    }
-  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -285,88 +667,75 @@ export default function DataPanelPage({
     }
   }, [refetch]);
 
-  const summary = useMemo(
-    () => (Array.isArray(payload.summary) ? payload.summary : []),
-    [payload.summary]
-  );
+  const summary = useMemo(() => {
+    const items = Array.isArray(payload.summary) ? payload.summary : [];
+    if (!hiddenSummaryLabels.length) return items;
+
+    const hiddenSet = new Set(
+      hiddenSummaryLabels.map((label) => String(label || "").trim().toLowerCase()).filter(Boolean)
+    );
+
+    return items.filter(
+      (item) => !hiddenSet.has(String(item?.label || "").trim().toLowerCase())
+    );
+  }, [hiddenSummaryLabels, payload.summary]);
   const items = useMemo(() => (Array.isArray(payload.items) ? payload.items : []), [payload.items]);
   const resolvedTableColumns = useMemo(
     () => resolveTableColumns(items, tableColumns),
     [items, tableColumns]
   );
-  const meta = useMemo(
-    () =>
-      payload.meta && typeof payload.meta === "object" && !Array.isArray(payload.meta)
-        ? payload.meta
-        : null,
-    [payload.meta]
-  );
+
+  const toggleMobileRow = useCallback((rowKey) => {
+    setExpandedMobileRows((current) => ({
+      ...current,
+      [rowKey]: !current[rowKey],
+    }));
+  }, []);
 
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static relative overflow-hidden rounded-[2rem] p-6 lg:p-7">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.14),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="relative">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
               <Sparkles size={12} />
-              {isSuperAdminEndpoint ? "Control Snapshot" : "Workspace Snapshot"}
+              {heroKicker}
             </div>
             <h2 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">
               {effectiveTitle}
             </h2>
-            {description ? (
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                {description}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[330px]">
-            {summary.slice(0, 2).map((card, index) => (
-              <div
-                key={`${card.label || "glance"}-${index}`}
-                className="rounded-[1.45rem] border border-white/80 bg-white/90 p-4 shadow-[0_20px_52px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-950/75"
-              >
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  {card.label || `Metric ${index + 1}`}
-                </p>
-                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
-                  {formatValue(card.value)}
-                </p>
-              </div>
-            ))}
-            {summary.length === 0 ? (
-              <div className="rounded-[1.45rem] border border-white/80 bg-white/90 p-4 shadow-[0_20px_52px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-950/75">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  Status
-                </p>
-                <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  {loading ? "Fetching latest data" : "Ready for review"}
-                </p>
-              </div>
-            ) : null}
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              {heroDescription}
+            </p>
           </div>
         </div>
 
         <div className="relative mt-6 flex flex-wrap items-center gap-2">
           {isDashboardEndpoint && user.role === "TEAM_LEADER" ? (
-            <button
-              type="button"
-              onClick={handleSetLiveLocation}
-              disabled={locLoading || loading}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(16,185,129,0.24)] transition-all duration-300 hover:-translate-y-1 hover:bg-emerald-500 hover:shadow-[0_24px_56px_rgba(16,185,129,0.32)] disabled:opacity-70"
-            >
-              {locLoading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
-              Set Today&apos;s Live Location
-            </button>
+            <TeamLeaderLiveLocationButton
+              teamId={payload.meta?.teamId}
+              disabled={loading}
+              onStart={() => {
+                setError("");
+                setLocMessage("");
+              }}
+              onError={(message) => {
+                setLocMessage("");
+                setError(message);
+              }}
+              onSuccess={() => {
+                setLocMessage("Today's live location has been set successfully!");
+                refetch();
+              }}
+            />
           ) : null}
 
           <button
             type="button"
             onClick={fetchData}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-[0_20px_44px_rgba(59,130,246,0.16)] disabled:opacity-70 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:shadow-black/20 dark:hover:border-blue-500/30 dark:hover:bg-slate-800 dark:hover:text-blue-200"
+            className="brand-btn brand-btn-secondary brand-btn-md"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
             Refresh
@@ -389,7 +758,7 @@ export default function DataPanelPage({
       </div>
 
       {downloadSection ? (
-        <div className="light-glow-card-static rounded-[1.85rem] p-6">
+        <div className="light-glow-card-static relative z-20 overflow-visible rounded-[1.85rem] p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
@@ -401,33 +770,45 @@ export default function DataPanelPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={downloadSection.onDownloadPdf}
-                disabled={downloadSection.downloadingPdf || downloadSection.downloadingExcel}
-                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] transition-all duration-300 hover:-translate-y-1 hover:bg-blue-100 disabled:opacity-60 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200"
-              >
-                {downloadSection.downloadingPdf ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <FileText size={16} />
-                )}
-                {downloadSection.pdfLabel || "Download PDF"}
-              </button>
+              {downloadSection.mode === "menu" ? (
+                <DownloadMenuButton
+                  label={downloadSection.buttonLabel || "Download"}
+                  onDownloadPdf={downloadSection.onDownloadPdf}
+                  onDownloadExcel={downloadSection.onDownloadExcel}
+                  downloadingPdf={downloadSection.downloadingPdf}
+                  downloadingExcel={downloadSection.downloadingExcel}
+                />
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={downloadSection.onDownloadPdf}
+                    disabled={downloadSection.downloadingPdf || downloadSection.downloadingExcel}
+                    className="brand-btn brand-btn-secondary brand-btn-md"
+                  >
+                    {downloadSection.downloadingPdf ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <FileText size={16} />
+                    )}
+                    {downloadSection.pdfLabel || "Download PDF"}
+                  </button>
 
-              <button
-                type="button"
-                onClick={downloadSection.onDownloadExcel}
-                disabled={downloadSection.downloadingPdf || downloadSection.downloadingExcel}
-                className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-[0_14px_34px_rgba(16,185,129,0.10)] transition-all duration-300 hover:-translate-y-1 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-              >
-                {downloadSection.downloadingExcel ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <FileBox size={16} />
-                )}
-                {downloadSection.excelLabel || "Download Excel"}
-              </button>
+                  <button
+                    type="button"
+                    onClick={downloadSection.onDownloadExcel}
+                    disabled={downloadSection.downloadingPdf || downloadSection.downloadingExcel}
+                    className="brand-btn brand-btn-secondary brand-btn-md"
+                  >
+                    {downloadSection.downloadingExcel ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <FileBox size={16} />
+                    )}
+                    {downloadSection.excelLabel || "Download Excel"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -444,6 +825,7 @@ export default function DataPanelPage({
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {summary.map((card, index) => {
             const theme = RECORD_THEMES[index % RECORD_THEMES.length];
+            const { value, valueClassName } = getSummaryDisplay(card);
 
             return (
               <div
@@ -453,53 +835,15 @@ export default function DataPanelPage({
                 <div className={`absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl ${theme.glow}`} />
                 <div className="relative">
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
-                    {card.label || `Metric ${index + 1}`}
+                    {toReadableLabel(card.label || `Metric ${index + 1}`)}
                   </p>
-                  <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">
-                    {formatValue(card.value)}
+                  <p className={`mt-3 font-black text-slate-900 dark:text-white ${valueClassName}`}>
+                    {value}
                   </p>
                 </div>
               </div>
             );
           })}
-        </div>
-      ) : null}
-
-      {meta ? (
-        <div className="light-glow-card-static rounded-[1.85rem] p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                Operational Signals
-              </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
-                Important context attached to this section.
-              </p>
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              {Object.keys(meta).length} fields
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {Object.entries(meta).map(([key, value], index) => {
-              const theme = RECORD_THEMES[index % RECORD_THEMES.length];
-
-              return (
-                <div
-                  key={key}
-                  className={`rounded-[1.35rem] border p-4 shadow-[0_18px_42px_rgba(59,130,246,0.10)] ${theme.shell}`}
-                >
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                    {toReadableLabel(key)}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-800 dark:text-slate-100">
-                    {formatValue(value)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
         </div>
       ) : null}
 
@@ -528,38 +872,122 @@ export default function DataPanelPage({
         ) : items.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">{emptyMessage}</p>
         ) : recordsView === "table" ? (
-          <div className="mt-5 overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">
-            <table className="min-w-[900px] w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-              <thead className="bg-slate-50/90 dark:bg-slate-900/85">
-                <tr>
-                  {resolvedTableColumns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {items.map((row, rowIndex) => (
-                  <tr
-                    key={row.id || row._id || `${endpoint}-${rowIndex}`}
-                    className="align-top transition hover:bg-slate-50/80 dark:hover:bg-slate-900/55"
+          <div className="mt-5 space-y-4">
+            <div className="grid gap-4 md:hidden">
+              {items.map((row, rowIndex) => {
+                const mobileRowKey = row.id || row._id || `${endpoint}-${rowIndex}`;
+                const isExpanded = Boolean(expandedMobileRows[mobileRowKey]);
+                const hiddenCount = Math.max(
+                  resolvedTableColumns.length - MOBILE_RECORD_PREVIEW_COUNT,
+                  0
+                );
+                const visibleColumns = isExpanded
+                  ? resolvedTableColumns
+                  : resolvedTableColumns.slice(0, MOBILE_RECORD_PREVIEW_COUNT);
+
+                return (
+                  <article
+                    key={mobileRowKey}
+                    className="min-w-0 rounded-[1.5rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
                   >
-                    {resolvedTableColumns.map((column, columnIndex) => (
-                      <td
-                        key={`${row.id || row._id || rowIndex}-${column.key}`}
-                        className={`px-4 py-3 ${columnIndex === 0 ? "font-semibold text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-200"}`}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Record {rowIndex + 1}
+                        </p>
+                        <div className="mt-2 text-base font-black text-slate-900 dark:text-white">
+                          <span className="block max-w-full break-all whitespace-pre-wrap">
+                            {(() => {
+                              const titleKey =
+                                resolvedTableColumns[0]?.key ||
+                                getPriorityKey(Object.keys(row || {}), TITLE_KEY_PRIORITY);
+                              return formatValue(row?.[titleKey], titleKey);
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                        #{rowIndex + 1}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {visibleColumns.map((column) => (
+                        <div
+                          key={`${mobileRowKey}-${column.key}-mobile`}
+                          className="min-w-0 overflow-hidden rounded-[1.1rem] border border-slate-200 bg-slate-50/90 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+                        >
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                            {column.label}
+                          </p>
+                          <div className="mt-2 min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                            {renderTableCell(column, row)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {hiddenCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleMobileRow(mobileRowKey)}
+                        className="mt-4 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-slate-600 transition hover:border-blue-200 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/30 dark:hover:text-blue-200"
                       >
-                        {renderTableCell(column, row)}
-                      </td>
-                    ))}
+                        {isExpanded ? "Show Less" : `Show ${hiddenCount} More`}
+                      </button>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70 md:block">
+              <table className="min-w-[760px] w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+                <thead className="bg-slate-50/90 dark:bg-slate-900/85">
+                  <tr>
+                    {resolvedTableColumns.map((column) => {
+                      const alignment = getColumnAlignment(column);
+
+                      return (
+                        <th
+                          key={column.key}
+                          className={`px-3 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500 ${getAlignmentClasses(
+                            alignment
+                          )} whitespace-nowrap`}
+                        >
+                          {column.label}
+                        </th>
+                      );
+                    })}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {items.map((row, rowIndex) => (
+                    <tr
+                      key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                      className="align-top transition hover:bg-slate-50/80 dark:hover:bg-slate-900/55"
+                    >
+                      {resolvedTableColumns.map((column, columnIndex) => {
+                        const alignment = getColumnAlignment(column);
+
+                        return (
+                          <td
+                            key={`${row.id || row._id || rowIndex}-${column.key}`}
+                            className={`px-3 py-3 ${getCellWrapClass(alignment)} ${getAlignmentClasses(alignment)} ${
+                              columnIndex === 0
+                                ? "font-semibold text-slate-900 dark:text-white"
+                                : "text-slate-700 dark:text-slate-200"
+                            }`}
+                          >
+                            {renderTableCell(column, row)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
@@ -621,7 +1049,7 @@ export default function DataPanelPage({
                             {toReadableLabel(key)}
                           </p>
                           <p className="mt-2 break-words text-sm font-semibold leading-6 text-slate-800 dark:text-slate-100">
-                            {formatValue(value)}
+                            {formatValue(value, key)}
                           </p>
                         </div>
                       ))}

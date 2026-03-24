@@ -1,11 +1,13 @@
 "use client";
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
-  useSyncExternalStore,
 } from "react";
+import { useMounted } from "@/hooks/useMounted";
 
 const ThemeContext = createContext({
   theme: "light",
@@ -18,7 +20,6 @@ const ThemeContext = createContext({
 export const useTheme = () => useContext(ThemeContext);
 
 const THEME_STORAGE_KEYS = ["veagle-theme", "theme"];
-const subscribe = () => () => {};
 
 function applyTheme(theme) {
   if (typeof document === "undefined") return;
@@ -33,6 +34,13 @@ function applyTheme(theme) {
 }
 
 function getStoredTheme() {
+  if (typeof document !== "undefined") {
+    const bootTheme = document.documentElement.getAttribute("data-theme");
+    if (bootTheme === "dark" || bootTheme === "light") {
+      return bootTheme;
+    }
+  }
+
   if (typeof window === "undefined") return "light";
 
   for (const key of THEME_STORAGE_KEYS) {
@@ -47,40 +55,39 @@ function getStoredTheme() {
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => getStoredTheme());
-  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
+  const mounted = useMounted();
 
   useEffect(() => {
     applyTheme(theme);
-  }, [theme]);
-
-  const setThemeMode = (nextTheme) => {
-    const resolvedTheme = nextTheme === "dark" ? "dark" : "light";
-    setTheme(resolvedTheme);
 
     if (typeof window !== "undefined") {
       THEME_STORAGE_KEYS.forEach((key) => {
-        window.localStorage.setItem(key, resolvedTheme);
+        window.localStorage.setItem(key, theme);
       });
     }
+  }, [theme]);
 
-    applyTheme(resolvedTheme);
-  };
+  const setThemeMode = useCallback((nextTheme) => {
+    const resolvedTheme = nextTheme === "dark" ? "dark" : "light";
+    setTheme(resolvedTheme);
+  }, []);
 
-  const toggleTheme = () => {
-    setThemeMode(theme === "dark" ? "light" : "dark");
-  };
+  const toggleTheme = useCallback(() => {
+    setTheme((currentTheme) => (currentTheme === "dark" ? "light" : "dark"));
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      isDarkMode: theme === "dark",
+      toggleTheme,
+      setThemeMode,
+      mounted,
+    }),
+    [mounted, setThemeMode, theme, toggleTheme]
+  );
 
   return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        isDarkMode: theme === "dark",
-        toggleTheme,
-        setThemeMode,
-        mounted,
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }

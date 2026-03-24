@@ -11,7 +11,7 @@ const sendEmail = async (options) => {
     });
 
     const mailOptions = {
-      from: `"Veagle Space" <${process.env.EMAIL_USER || process.env.EMAIL || process.env.SMTP_USER}>`,
+      from: `"Veagle Attendee" <${process.env.EMAIL_USER || process.env.EMAIL || process.env.SMTP_USER}>`,
       to: options.email,
       subject: options.subject,
       text: options.message,

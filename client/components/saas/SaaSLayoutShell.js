@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
@@ -23,14 +23,17 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { logout } from "@/store/slices/authSlice";
-import { useUserSignOutMutation } from "@/store/api/authApi";
+import { useAuthSession } from "@/hooks/useAuthSession";
+import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
+import { useUserSignOutMutation } from "@/services/api/authApi";
 import {
   formatRoleLabel,
+  getRoleBadgeTheme,
   hasPermission,
-  normalizeRole,
   resolveDashboardPath,
   ROLES,
 } from "@/utils/roles";
+import DashboardBrandBlock from "@/components/DashboardBrandBlock";
 
 function extractRootFromDashboardPath(dashboardPath) {
   if (!dashboardPath) return null;
@@ -58,60 +61,11 @@ function getNavIcon(label) {
   return ShieldCheck;
 }
 
-function toTitleCaseFromPath(value) {
-  return String(value || "")
-    .split(/[-_]/g)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ");
-}
-
-function getRoleBadgeTheme(role) {
-  switch (normalizeRole(role)) {
-    case ROLES.SUPER_ADMIN:
-      return {
-        sidebar:
-          "border border-blue-400/20 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.30)] dark:border-blue-400/20 dark:from-blue-500 dark:via-indigo-500 dark:to-cyan-400 dark:text-white",
-        header:
-          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/12 dark:text-blue-200",
-      };
-    case ROLES.ORG_ADMIN:
-      return {
-        sidebar:
-          "border border-blue-400/20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.28)] dark:border-blue-400/20 dark:bg-blue-400 dark:text-slate-950",
-        header:
-          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/12 dark:text-blue-200",
-      };
-    case ROLES.SUB_ADMIN:
-      return {
-        sidebar:
-          "border border-violet-400/20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.28)] dark:border-violet-400/20 dark:from-violet-500 dark:to-indigo-500 dark:text-white",
-        header:
-          "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/12 dark:text-violet-200",
-      };
-    case ROLES.TEAM_LEADER:
-      return {
-        sidebar:
-          "border border-emerald-400/20 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.26)] dark:border-emerald-400/20 dark:from-emerald-500 dark:to-teal-400 dark:text-white",
-        header:
-          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-200",
-      };
-    case ROLES.MEMBER:
-    default:
-      return {
-        sidebar:
-          "border border-amber-400/20 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.28)] dark:border-amber-400/20 dark:from-amber-500 dark:to-orange-400 dark:text-white",
-        header:
-          "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/12 dark:text-amber-200",
-      };
-  }
-}
-
-export default function SaaSLayoutShell({ title, sectionRoot, navItems, children }) {
+export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user, token, loading, hydrated } = useSelector((state) => state.auth);
+  const { user, token, loading, hydrated } = useAuthSession();
   const [mobileNavPath, setMobileNavPath] = useState(null);
   const [userSignOut] = useUserSignOutMutation();
   const loginPath = sectionRoot === "/super-admin" ? "/super-admin/login" : "/login";
@@ -131,27 +85,24 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
       ),
     [navItems, user]
   );
+  const resolvedNavItems = useMemo(
+    () =>
+      visibleNavItems.map((item) => ({
+        ...item,
+        Icon: getNavIcon(item.label),
+      })),
+    [visibleNavItems]
+  );
 
-  const firstName = String(user?.name || "").trim().split(/\s+/)[0] || "User";
   const roleLabel = formatRoleLabel(user?.role);
   const roleBadgeTheme = getRoleBadgeTheme(user?.role);
   const settingsHref = sectionRoot ? `${sectionRoot}/settings` : "/settings";
   const settingsActive = pathname === settingsHref;
   const mobileNavOpen = mobileNavPath === pathname;
-
-  const displayTitle = useMemo(() => {
-    if (pathname?.endsWith("/dashboard")) return `${firstName}'s Dashboard`;
-
-    const matchedNavItem = visibleNavItems.find(
-      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
-    );
-    if (matchedNavItem) return matchedNavItem.label;
-
-    if (pathname === settingsHref) return "Settings";
-
-    const lastSegment = pathname?.split("/").filter(Boolean).pop();
-    return lastSegment ? toTitleCaseFromPath(lastSegment) : title;
-  }, [firstName, pathname, settingsHref, title, visibleNavItems]);
+  const prefetchedRoutes = useMemo(
+    () => [...resolvedNavItems.map((item) => item.href), settingsHref],
+    [resolvedNavItems, settingsHref]
+  );
 
   useEffect(() => {
     if (!hydrated || loading) return;
@@ -178,6 +129,8 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
     }
   }, [dashboardPath, expectedRoot, hydrated, loading, loginPath, pathname, router, sectionRoot, token]);
 
+  useIdleRoutePrefetch(router, prefetchedRoutes);
+
   const onLogout = async () => {
     try {
       await userSignOut().unwrap();
@@ -193,71 +146,43 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
   if (!hydrated || !token) return null;
 
   return (
-    <div className="dashboard-theme flex min-h-screen bg-slate-100 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
-      <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 md:flex">
-        <div className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-white via-slate-50 to-blue-50/80 p-5 shadow-[0_24px_70px_rgba(59,130,246,0.14)] transition-all duration-500 dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:shadow-black/25">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
-                Veagle Space
-              </p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                {title}
-              </h2>
-            </div>
-            <div
-              className={cn(
-                "shrink-0 whitespace-nowrap rounded-2xl px-3.5 py-2 text-center text-[10px] font-black uppercase tracking-[0.22em]",
-                roleBadgeTheme.sidebar
-              )}
-            >
-              {roleLabel}
-            </div>
-          </div>
+    <div className="dashboard-theme flex min-h-screen bg-background transition-colors duration-300 dark:text-slate-100">
+      <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(30,112,209,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 md:flex">
+        <div className="light-glow-card-static rounded-[2rem] p-5">
+          <DashboardBrandBlock />
         </div>
 
         <nav className="mt-6 flex-1 space-y-2">
-          {visibleNavItems.map((item) => {
+          {resolvedNavItems.map((item) => {
             const active = pathname === item.href;
-            const Icon = getNavIcon(item.label);
+            const Icon = item.Icon;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group flex items-center gap-4 rounded-[1.4rem] border px-4 py-3.5 transition-all duration-500",
-                  active
-                    ? "border-blue-500/20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_18px_44px_rgba(59,130,246,0.30)] dark:shadow-blue-950/30"
-                    : "border-transparent text-slate-600 hover:-translate-y-1 hover:border-blue-100 hover:bg-white hover:text-blue-600 hover:shadow-[0_18px_44px_rgba(59,130,246,0.14)] dark:text-slate-300 dark:hover:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-blue-200"
+                  "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5",
+                  active ? "brand-nav-item-active" : "brand-nav-item"
                 )}
               >
-                <span
-                  className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-300",
-                    active
-                      ? "bg-white/15 text-white"
-                      : "bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 dark:bg-slate-900 dark:text-slate-400 dark:group-hover:bg-slate-800 dark:group-hover:text-blue-200"
-                  )}
-                >
+                <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl">
                   <Icon size={20} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black tracking-wide">{item.label}</p>
+                  <p className="text-sm font-semibold tracking-[0.01em]">{item.label}</p>
                 </div>
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-6 rounded-[1.75rem] border border-white/70 bg-white/88 p-3 shadow-[0_22px_64px_rgba(59,130,246,0.12)] transition-all duration-500 dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-black/20">
+        <div className="light-glow-card-static mt-6 rounded-[1.75rem] p-3">
           <Link
             href={settingsHref}
             className={cn(
-              "inline-flex w-full items-center justify-center gap-2 rounded-[1.3rem] border px-4 py-3 text-sm font-black transition-all duration-300",
-              settingsActive
-                ? "border-blue-500/20 bg-blue-600 text-white shadow-[0_18px_44px_rgba(59,130,246,0.24)]"
-                : "border-slate-200 bg-white text-slate-700 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:bg-slate-900 dark:hover:text-blue-200"
+              "brand-btn brand-btn-md w-full rounded-[1.25rem]",
+              settingsActive ? "brand-btn-primary" : "brand-btn-secondary"
             )}
           >
             <Settings size={18} />
@@ -269,13 +194,13 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/88 px-4 py-4 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 md:px-6">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() =>
                   setMobileNavPath((currentPath) => (currentPath === pathname ? null : pathname))
                 }
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700 transition-all hover:border-blue-200 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:text-blue-200 md:hidden"
+                className="brand-btn brand-btn-secondary brand-btn-sm rounded-2xl px-3 py-2 md:hidden"
                 aria-label={mobileNavOpen ? "Close section menu" : "Open section menu"}
               >
                 {mobileNavOpen ? <X size={16} /> : <Menu size={16} />}
@@ -284,32 +209,30 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
                   className={cn("transition-transform", mobileNavOpen ? "rotate-180" : "")}
                 />
               </button>
-
-              <div className="min-w-0">
-                <h1 className="truncate text-sm font-black text-slate-900 dark:text-white md:text-base">
-                  {displayTitle}
-                </h1>
-              </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right dark:border-slate-800 dark:bg-slate-900 lg:block">
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{user?.name || "User"}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email || "-"}</p>
+              <div className="brand-panel-soft relative hidden min-w-[260px] rounded-[1.5rem] px-4 py-3 pr-24 md:block">
+                <div
+                  className={cn(
+                    "absolute right-3 top-3 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
+                    roleBadgeTheme.header
+                  )}
+                >
+                  {roleLabel}
+                </div>
+                <p className="text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                  {user?.name || "User"}
+                </p>
+                <p className="brand-copy-sm mt-1 text-left text-xs">
+                  {user?.email || "-"}
+                </p>
               </div>
-              <p
-                className={cn(
-                  "hidden rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] sm:block",
-                  roleBadgeTheme.header
-                )}
-              >
-                {roleLabel}
-              </p>
               <ThemeToggle className="w-11 px-0 sm:w-auto sm:px-4" showLabel={false} />
               <button
                 type="button"
                 onClick={onLogout}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm font-black text-rose-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-rose-100 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/15 sm:px-4"
+                className="brand-btn brand-btn-danger brand-btn-md rounded-2xl px-3 py-2.5 sm:px-4"
               >
                 <LogOut size={16} />
                 <span className="hidden sm:inline">Logout</span>
@@ -319,11 +242,11 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
         </header>
 
         {mobileNavOpen ? (
-          <div className="border-b border-slate-200/80 bg-white px-4 py-4 shadow-[0_12px_32px_rgba(59,130,246,0.10)] dark:border-slate-800 dark:bg-slate-950 md:hidden">
+          <div className="border-b border-slate-200/80 bg-white/92 px-4 py-4 shadow-[0_12px_32px_rgba(30,112,209,0.10)] dark:border-slate-800 dark:bg-slate-950 md:hidden">
             <div className="space-y-2">
-              {visibleNavItems.map((item) => {
+              {resolvedNavItems.map((item) => {
                 const active = pathname === item.href;
-                const Icon = getNavIcon(item.label);
+                const Icon = item.Icon;
 
                 return (
                   <Link
@@ -331,23 +254,14 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
                     href={item.href}
                     onClick={() => setMobileNavPath(null)}
                     className={cn(
-                      "flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all",
-                      active
-                        ? "border-blue-500/20 bg-blue-600 text-white"
-                        : "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                      "flex items-center gap-3 rounded-2xl px-4 py-3",
+                      active ? "brand-nav-item-active" : "brand-nav-item"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-2xl",
-                        active
-                          ? "bg-white/15"
-                          : "bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-300"
-                      )}
-                    >
+                    <span className="brand-nav-icon flex h-10 w-10 items-center justify-center rounded-2xl">
                       <Icon size={18} />
                     </span>
-                    <span className="text-sm font-black">{item.label}</span>
+                    <span className="text-sm font-semibold tracking-[0.01em]">{item.label}</span>
                   </Link>
                 );
               })}
@@ -356,23 +270,14 @@ export default function SaaSLayoutShell({ title, sectionRoot, navItems, children
                 href={settingsHref}
                 onClick={() => setMobileNavPath(null)}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all",
-                  settingsActive
-                    ? "border-blue-500/20 bg-blue-600 text-white"
-                    : "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                  "flex items-center gap-3 rounded-2xl px-4 py-3",
+                  settingsActive ? "brand-nav-item-active" : "brand-nav-item"
                 )}
               >
-                <span
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-2xl",
-                    settingsActive
-                      ? "bg-white/15"
-                      : "bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-300"
-                  )}
-                >
+                <span className="brand-nav-icon flex h-10 w-10 items-center justify-center rounded-2xl">
                   <Settings size={18} />
                 </span>
-                <span className="text-sm font-black">Settings</span>
+                <span className="text-sm font-semibold tracking-[0.01em]">Settings</span>
               </Link>
             </div>
 

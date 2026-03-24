@@ -1,14 +1,11 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const pageShellClassName =
-  "relative min-h-screen overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 pb-16 pt-28 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900";
+  "relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,rgba(240,247,255,0.96),rgba(255,255,255,0.98),rgba(240,247,255,0.94))] px-4 pb-16 pt-28 transition-colors duration-500 dark:bg-[linear-gradient(180deg,rgba(4,12,30,0.98),rgba(5,18,44,0.98),rgba(8,24,57,0.98))]";
 
 const cardShellClassName =
-  "relative z-10 overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_38px_108px_rgba(59,130,246,0.16),0_18px_44px_rgba(15,23,42,0.10)] backdrop-blur-2xl transition-colors duration-500 dark:border-slate-700/80 dark:bg-slate-950/78 dark:shadow-[0_35px_100px_rgba(2,6,23,0.55)] md:rounded-[2.4rem]";
+  "relative z-10 overflow-hidden rounded-[2rem] border border-[rgba(205,224,244,0.78)] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(240,247,255,0.9))] shadow-[0_38px_108px_rgba(30,112,209,0.14),0_18px_44px_rgba(4,18,48,0.08)] backdrop-blur-2xl transition-colors duration-500 dark:border-[rgba(31,70,128,0.82)] dark:bg-[linear-gradient(180deg,rgba(5,18,44,0.92),rgba(8,24,57,0.9))] dark:shadow-[0_35px_100px_rgba(3,10,28,0.55)] md:rounded-[2.4rem]";
 
 export default function RegisterFlowShell({
   badge,
@@ -33,20 +30,16 @@ export default function RegisterFlowShell({
   return (
     <div className={pageShellClassName}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-6%] top-24 h-80 w-80 rounded-full bg-indigo-400/14 blur-[120px] dark:bg-blue-500/12" />
-        <div className="absolute right-[-8%] top-36 h-72 w-72 rounded-full bg-blue-500/18 blur-[120px] dark:bg-indigo-500/16" />
-        <div className="absolute bottom-10 left-1/3 h-72 w-72 rounded-full bg-indigo-500/10 blur-[120px] dark:bg-cyan-500/10" />
+        <div className="absolute left-[-6%] top-24 h-80 w-80 rounded-full bg-cyan-400/18 blur-[120px] dark:bg-cyan-400/14" />
+        <div className="absolute right-[-8%] top-36 h-72 w-72 rounded-full bg-blue-500/18 blur-[120px] dark:bg-blue-400/18" />
+        <div className="absolute bottom-10 left-1/3 h-72 w-72 rounded-full bg-sky-400/14 blur-[120px] dark:bg-cyan-500/12" />
       </div>
 
       <div className={cn("relative z-10 mx-auto w-full", maxWidthClassName, containerClassName)}>
         {beforeCard ? <div className="mb-8">{beforeCard}</div> : null}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(cardShellClassName, cardClassName)}
-        >
-          <div className="h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-blue-400 dark:via-indigo-300 dark:to-cyan-300" />
+        <div className={cn(cardShellClassName, cardClassName)}>
+          <div className="h-2 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 dark:from-cyan-300 dark:via-blue-400 dark:to-blue-600" />
 
           <div className={cn("p-8 md:p-12", contentClassName)}>
             {(badge || title || description) && (
@@ -84,7 +77,7 @@ export default function RegisterFlowShell({
 
             {children}
           </div>
-        </motion.div>
+        </div>
 
         {afterCard ? <div className="mt-8">{afterCard}</div> : null}
       </div>

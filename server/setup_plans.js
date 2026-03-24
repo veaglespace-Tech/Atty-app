@@ -19,19 +19,6 @@ const plans = [
 
   // PLAN 1: 1-500 Users
   {
-    name: "Plan 1 - 1 Month",
-    code: "PLAN1_1M",
-    description: "Up to 500 users for 1 month",
-    price: 999,
-    durationInDays: 30,
-    features: ["Up to 500 Users", "Manual Attendance", "WhatsApp Exports", "Basic Support"],
-    memberLimit: 500,
-    maxUsers: 500,
-    maxTeams: 10,
-    maxLocations: 5,
-    isDefault: false,
-  },
-  {
     name: "Plan 1 - 3 Months",
     code: "PLAN1_3M",
     description: "Up to 500 users for 3 months",
@@ -73,19 +60,6 @@ const plans = [
 
   // PLAN 2: 1-1000 Users
   {
-    name: "Plan 2 - 1 Month",
-    code: "PLAN2_1M",
-    description: "Up to 1000 users for 1 month",
-    price: 1999,
-    durationInDays: 30,
-    features: ["Up to 1000 Users", "Face Recognition", "Advanced PDF Reports", "Priority Sync"],
-    memberLimit: 1000,
-    maxUsers: 1000,
-    maxTeams: 20,
-    maxLocations: 10,
-    isDefault: false,
-  },
-  {
     name: "Plan 2 - 3 Months",
     code: "PLAN2_3M",
     description: "Up to 1000 users for 3 months",
@@ -126,19 +100,6 @@ const plans = [
   },
 
   // PLAN 3: 1-1500 Users
-  {
-    name: "Plan 3 - 1 Month",
-    code: "PLAN3_1M",
-    description: "Up to 1500 users for 1 month",
-    price: 2999,
-    durationInDays: 30,
-    features: ["Up to 1500 Users", "AI Analytics", "API Integration", "24/7 Dedicated Support"],
-    memberLimit: 1500,
-    maxUsers: 1500,
-    maxTeams: 50,
-    maxLocations: 20,
-    isDefault: false,
-  },
   {
     name: "Plan 3 - 3 Months",
     code: "PLAN3_3M",

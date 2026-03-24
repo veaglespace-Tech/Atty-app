@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 import { Building2, Check, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLazySearchOrganizationsQuery } from "@/store/api/authApi";
+import { useLazySearchOrganizationsQuery } from "@/services/api/authApi";
 
 const formatOrganizationMeta = (organization) =>
   [organization?.city, organization?.state, organization?.country].filter(Boolean).join(", ");
@@ -26,7 +26,9 @@ export default function OrganizationLookupField({
   const [query, setQuery] = useState(selectedOrganization?.name || "");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState([]);
+  const deferredQuery = useDeferredValue(query);
   const wrapperRef = useRef(null);
+  const requestIdRef = useRef(0);
   const [searchOrganizations, { isFetching }] = useLazySearchOrganizationsQuery();
 
   useEffect(() => {
@@ -43,26 +45,36 @@ export default function OrganizationLookupField({
   }, [open]);
 
   useEffect(() => {
-    const trimmed = query.trim();
+    const trimmed = deferredQuery.trim();
 
     if (!open || trimmed.length < 2) {
+      startTransition(() => setResults([]));
       return undefined;
     }
 
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     const timeoutId = setTimeout(async () => {
       try {
         const response = await searchOrganizations({ query: trimmed, limit: 8 }).unwrap();
-        setResults(Array.isArray(response?.items) ? response.items : []);
+        if (requestId !== requestIdRef.current) return;
+        startTransition(() => {
+          setResults(Array.isArray(response?.items) ? response.items : []);
+        });
       } catch (searchError) {
-        setResults([]);
+        if (requestId !== requestIdRef.current) return;
+        startTransition(() => {
+          setResults([]);
+        });
       }
     }, 250);
 
     return () => clearTimeout(timeoutId);
-  }, [open, query, searchOrganizations]);
+  }, [deferredQuery, open, searchOrganizations]);
 
   const hasError = Boolean(error);
-  const showEmptyState = open && query.trim().length >= 2 && !isFetching && results.length === 0;
+  const showEmptyState =
+    open && deferredQuery.trim().length >= 2 && !isFetching && results.length === 0;
 
   const handleInputChange = (event) => {
     const nextValue = event.target.value;
@@ -81,9 +93,14 @@ export default function OrganizationLookupField({
   const handleSelect = (organization) => {
     onSelect?.(organization);
     setQuery(organization?.name || "");
-    setResults([]);
+    startTransition(() => {
+      setResults([]);
+    });
     setOpen(false);
   };
+
+  const inputValue =
+    selectedOrganization && !open ? selectedOrganization.name || query : query;
 
   return (
     <div ref={wrapperRef} className={cn("group relative", containerClassName)}>
@@ -99,7 +116,7 @@ export default function OrganizationLookupField({
 
         <input
           type="text"
-          value={query}
+          value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
@@ -142,7 +159,7 @@ export default function OrganizationLookupField({
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-300">
             {selectedOrganization.organizationCode}
             {formatOrganizationMeta(selectedOrganization)
-              ? ` • ${formatOrganizationMeta(selectedOrganization)}`
+              ? ` - ${formatOrganizationMeta(selectedOrganization)}`
               : ""}
           </p>
         </div>
@@ -189,7 +206,12 @@ export default function OrganizationLookupField({
       {hasError ? (
         <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">{error}</p>
       ) : helperText ? (
-        <p className={cn("ml-1 mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500", helperClassName)}>
+        <p
+          className={cn(
+            "ml-1 mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500",
+            helperClassName
+          )}
+        >
           {helperText}
         </p>
       ) : null}

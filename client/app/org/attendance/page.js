@@ -8,7 +8,7 @@ import {
   useUpdateOrgAttendanceSettingsMutation,
   useGetOrgTeamsQuery,
   usePatchOrgTeamMutation,
-} from "@/store/api/orgApi";
+} from "@/services/api/orgApi";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -281,7 +281,7 @@ export default function OrgAttendancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-black text-slate-900">Organization Attendance</h2>
@@ -294,7 +294,7 @@ export default function OrgAttendancePage() {
             type="button"
             onClick={refreshData}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
             Refresh
@@ -317,7 +317,7 @@ export default function OrgAttendancePage() {
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Settings</h3>
 
         <form onSubmit={saveSettings} className="mt-4 grid gap-3 md:grid-cols-2">
@@ -383,7 +383,7 @@ export default function OrgAttendancePage() {
             type="button"
             onClick={onUseCurrentLocation}
             disabled={geoLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+            className="brand-btn brand-btn-secondary brand-btn-md w-full"
           >
             {geoLoading ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
             Use Current Location
@@ -409,11 +409,11 @@ export default function OrgAttendancePage() {
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
           />
 
-          <div className="md:col-span-2 flex justify-end">
+          <div className="md:col-span-2 flex justify-stretch sm:justify-end">
             <button
               type="submit"
               disabled={settingsLoading}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               {settingsLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               Save Settings
@@ -422,7 +422,7 @@ export default function OrgAttendancePage() {
         </form>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Logs</h3>
 
         {loading ? (
@@ -433,33 +433,61 @@ export default function OrgAttendancePage() {
         ) : records.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">No attendance records found.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead>
-                <tr>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked (min)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {records.map((record) => (
-                  <tr key={record.id}>
-                    <td className="px-3 py-2 text-slate-700">{record.date}</td>
-                    <td className="px-3 py-2 text-slate-700">{record.member}</td>
-                    <td className="px-3 py-2 text-slate-700">{record.role}</td>
-                    <td className="px-3 py-2 text-slate-700">{record.status}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatDate(record.punchInAt)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatDate(record.punchOutAt)}</td>
-                    <td className="px-3 py-2 text-slate-700">{record.workedMinutes || 0}</td>
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-3 md:hidden">
+              {records.map((record) => (
+                <article
+                  key={`mobile-${record.id}`}
+                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h4 className="truncate text-base font-black text-slate-900">{record.member}</h4>
+                      <p className="mt-1 text-xs text-slate-500">{record.date}</p>
+                    </div>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                      {record.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <AttendanceDetail label="Role" value={record.role} />
+                    <AttendanceDetail label="Punch In" value={formatDate(record.punchInAt)} />
+                    <AttendanceDetail label="Punch Out" value={formatDate(record.punchOutAt)} />
+                    <AttendanceDetail label="Worked (min)" value={record.workedMinutes || 0} />
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked (min)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {records.map((record) => (
+                    <tr key={record.id}>
+                      <td className="px-3 py-2 text-slate-700">{record.date}</td>
+                      <td className="px-3 py-2 text-slate-700">{record.member}</td>
+                      <td className="px-3 py-2 text-slate-700">{record.role}</td>
+                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDate(record.punchInAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDate(record.punchOutAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{record.workedMinutes || 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -469,9 +497,18 @@ export default function OrgAttendancePage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function AttendanceDetail({ label, value }) {
+  return (
+    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>
   );
 }

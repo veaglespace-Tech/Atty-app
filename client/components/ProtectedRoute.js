@@ -1,11 +1,11 @@
 "use client";
-import { useSelector } from "react-redux";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import { resolveDashboardPath } from "@/utils/roles";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { user, token, loading, redirectPath, hydrated } = useSelector((state) => state.auth);
+  const { user, token, loading, redirectPath, hydrated } = useAuthSession();
   const router = useRouter();
   const pathname = usePathname();
   const fallbackPath =

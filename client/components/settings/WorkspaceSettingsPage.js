@@ -20,10 +20,10 @@ import {
 } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import * as z from "zod";
+import { z } from "zod";
 import ThemeToggle from "@/components/ThemeToggle";
 import CountryPhoneField from "@/components/CountryPhoneField";
-import { useUpdateMeMutation } from "@/store/api/authApi";
+import { useUpdateMeMutation } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { formatRoleLabel, resolveUserPermissions, ROLES } from "@/utils/roles";
 import { getLocalPhoneNumber } from "@/utils/phone";
@@ -68,9 +68,9 @@ const settingsSchema = z.object({
     ),
 });
 
-const labelClassName = "mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200";
+const labelClassName = "brand-kicker mb-1.5 ml-1 block";
 const inputClassName =
-  "w-full rounded-[1.25rem] border-2 border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_14px_32px_rgba(59,130,246,0.10)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/80 dark:border-white/80 dark:bg-white dark:text-slate-950 dark:shadow-[0_16px_30px_rgba(2,6,23,0.28)] dark:focus:ring-blue-500/20";
+  "w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(30,112,209,0.10)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
 const errorInputClassName =
   "border-rose-400 bg-rose-50/80 focus:border-rose-500 focus:ring-rose-500/10";
 
@@ -88,15 +88,13 @@ const getFormDefaults = (user) => ({
 
 function DetailCard({ icon: Icon, label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/70 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="brand-panel-soft rounded-[1.5rem] p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-200">
+        <div className="brand-icon-shell flex h-11 w-11 items-center justify-center rounded-2xl">
           <Icon size={18} />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-            {label}
-          </p>
+          <p className="brand-kicker">{label}</p>
           <p className="mt-1 truncate text-sm font-semibold text-slate-900 dark:text-white">
             {value}
           </p>
@@ -108,14 +106,16 @@ function DetailCard({ icon: Icon, label, value }) {
 
 function PreferenceCard({ icon: Icon, title, value, children }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/70 bg-white/90 p-5 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="brand-panel-soft rounded-[1.5rem] p-5">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+        <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
           <Icon size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-slate-900 dark:text-white">{title}</p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{value}</p>
+          <p className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">
+            {title}
+          </p>
+          <p className="brand-copy-sm mt-1">{value}</p>
           {children ? <div className="mt-4">{children}</div> : null}
         </div>
       </div>
@@ -217,23 +217,19 @@ export default function WorkspaceSettingsPage() {
       <div className="light-glow-card-static rounded-[1.75rem] p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.75rem] bg-gradient-to-br from-blue-600 to-indigo-600 text-2xl font-black text-white shadow-[0_20px_46px_rgba(59,130,246,0.24)]">
+            <div className="brand-icon-shell flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.75rem] text-2xl font-black">
               {userInitial}
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                Account Settings
-              </p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                {previewName}
-              </h2>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+              <p className="brand-kicker">Account Settings</p>
+              <h2 className="brand-section-title mt-2">{previewName}</h2>
+              <p className="brand-copy-sm mt-2">
                 Edit your profile details and keep your workspace preferences in sync.
               </p>
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-600 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+          <div className="brand-chip self-start">
             <ShieldCheck size={14} className="text-blue-600 dark:text-blue-300" />
             {roleLabel}
           </div>
@@ -250,14 +246,12 @@ export default function WorkspaceSettingsPage() {
         <div className="light-glow-card-static rounded-[1.75rem] p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                Editable Profile
-              </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+              <h3 className="brand-kicker">Editable Profile</h3>
+              <p className="brand-copy-sm mt-2">
                 Update your personal details here. Changes appear across the dashboard right away.
               </p>
             </div>
-            <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+            <div className="brand-chip px-3 py-1">
               {isDirty ? "Unsaved Changes" : "Up to Date"}
             </div>
           </div>
@@ -341,26 +335,22 @@ export default function WorkspaceSettingsPage() {
               <input type="hidden" {...register("mobile")} />
             </div>
 
-            <div className="grid gap-4 rounded-[1.5rem] bg-slate-50/90 p-4 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:bg-slate-900/80">
+            <div className="brand-panel-soft grid gap-4 rounded-[1.5rem] p-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                    Role
-                  </p>
+                  <p className="brand-kicker">Role</p>
                   <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
                     {roleLabel}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                    Workspace Code
-                  </p>
+                  <p className="brand-kicker">Workspace Code</p>
                   <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
                     {isSuperAdmin ? "Platform-wide" : formatValue(workspaceCode, "Not available")}
                   </p>
                 </div>
               </div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <p className="brand-copy-sm text-xs">
                 Role and workspace scope are managed by the platform or organization admin.
               </p>
             </div>
@@ -370,7 +360,7 @@ export default function WorkspaceSettingsPage() {
                 type="button"
                 onClick={resetForm}
                 disabled={isSaving || !isDirty}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:text-blue-200"
+                className="brand-btn brand-btn-secondary brand-btn-md"
               >
                 <RotateCcw size={16} />
                 Cancel
@@ -378,7 +368,7 @@ export default function WorkspaceSettingsPage() {
               <button
                 type="submit"
                 disabled={isSaving || !isDirty}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-[0_20px_46px_rgba(59,130,246,0.24)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300"
+                className="brand-btn brand-btn-primary brand-btn-md"
               >
                 {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 Save Changes
@@ -409,14 +399,10 @@ export default function WorkspaceSettingsPage() {
           />
 
           <div className="light-glow-card-static rounded-[1.75rem] p-6">
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-              Workspace Details
-            </h3>
+            <h3 className="brand-kicker">Workspace Details</h3>
             <div className="mt-4 grid gap-4">
-              <div className="rounded-[1.5rem] bg-slate-50/90 p-5 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:bg-slate-900">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  Location
-                </p>
+              <div className="brand-panel-soft rounded-[1.5rem] p-5">
+                <p className="brand-kicker">Location</p>
                 <div className="mt-3 flex items-center gap-3">
                   <MapPin size={18} className="text-blue-600 dark:text-blue-300" />
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -425,10 +411,8 @@ export default function WorkspaceSettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-[1.5rem] bg-slate-50/90 p-5 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:bg-slate-900">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  Workspace
-                </p>
+              <div className="brand-panel-soft rounded-[1.5rem] p-5">
+                <p className="brand-kicker">Workspace</p>
                 <div className="mt-3 flex items-center gap-3">
                   <Globe size={18} className="text-blue-600 dark:text-blue-300" />
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">

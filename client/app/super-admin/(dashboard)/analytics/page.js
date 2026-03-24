@@ -7,6 +7,7 @@ export default function Page() {
       description="Monthly growth trend for revenue, organizations, users, and payments."
       endpoint="/super-admin/analytics"
       emptyMessage="No analytics data found."
+      hiddenSummaryLabels={["Revenue"]}
       recordsView="table"
       tableColumns={[
         { key: "month", label: "Month" },

@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle } from "lucide-react";
-import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/store/api/memberApi";
-import { usePunchInMutation, usePunchOutMutation } from "@/store/api/attendanceApi";
+import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
+import { usePunchInMutation, usePunchOutMutation } from "@/services/api/attendanceApi";
 import { getCurrentCoordinates } from "@/utils/location";
 
 const todayKey = () => new Date().toISOString().split("T")[0];
@@ -88,6 +88,7 @@ export default function MemberAttendancePage() {
     () => records.find((record) => String(record.date) === todayKey()) || null,
     [records]
   );
+  const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "No Record";
 
   const fetchAttendance = async () => {
     try {
@@ -146,7 +147,7 @@ export default function MemberAttendancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-black text-slate-900">Member Attendance</h2>
@@ -159,19 +160,19 @@ export default function MemberAttendancePage() {
             type="button"
             onClick={fetchAttendance}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
             Refresh
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             onClick={() => handlePunch("in")}
             disabled={!canPunchIn || actionLoading !== ""}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {actionLoading === "in" ? <Loader2 size={16} className="animate-spin" /> : <MapPinned size={16} />}
             Punch In
@@ -181,7 +182,7 @@ export default function MemberAttendancePage() {
             type="button"
             onClick={() => handlePunch("out")}
             disabled={!canPunchOut || actionLoading !== ""}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {actionLoading === "out" ? <Loader2 size={16} className="animate-spin" /> : <Timer size={16} />}
             Punch Out
@@ -209,7 +210,8 @@ export default function MemberAttendancePage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Today Status"
-          value={summaryMap.get("Today Status") || todayRecord?.status || "NO_RECORD"}
+          value={todayStatusValue}
+          valueClassName={todayStatusValue === "No Record" ? "text-xl" : undefined}
           icon={<UserCheck size={16} />}
         />
         <MetricCard
@@ -229,7 +231,7 @@ export default function MemberAttendancePage() {
         />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Today Snapshot</h3>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -240,7 +242,7 @@ export default function MemberAttendancePage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance History</h3>
 
         {loading ? (
@@ -251,35 +253,63 @@ export default function MemberAttendancePage() {
         ) : records.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">No attendance records found.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead>
-                <tr>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hours</th>
-                  <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {records.map((record) => (
-                  <tr key={record.id}>
-                    <td className="px-3 py-2 text-slate-700">{record.date}</td>
-                    <td className="px-3 py-2 text-slate-700">{record.status}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatHours(record.workedMinutes)}</td>
-                    <td className="px-3 py-2 text-slate-700">
-                      {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
-                    </td>
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-3 md:hidden">
+              {records.map((record) => (
+                <article
+                  key={`mobile-${record.id}`}
+                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h4 className="truncate text-base font-black text-slate-900">{record.date}</h4>
+                      <p className="mt-1 text-xs text-slate-500">{record.status}</p>
+                    </div>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                      {record.punchInValid === false || record.punchOutValid === false ? "Geo No" : "Geo Yes"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <HistoryDetail label="Punch In" value={formatDateTime(record.punchInAt)} />
+                    <HistoryDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
+                    <HistoryDetail label="Location" value={formatPunchLocation(record)} />
+                    <HistoryDetail label="Worked Hours" value={formatHours(record.workedMinutes)} />
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hours</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {records.map((record) => (
+                    <tr key={record.id}>
+                      <td className="px-3 py-2 text-slate-700">{record.date}</td>
+                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatHours(record.workedMinutes)}</td>
+                      <td className="px-3 py-2 text-slate-700">
+                        {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -287,23 +317,32 @@ export default function MemberAttendancePage() {
   );
 }
 
-function MetricCard({ label, value, icon }) {
+function MetricCard({ label, value, icon, valueClassName = "text-2xl" }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
         <span className="text-slate-500">{icon}</span>
       </div>
-      <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+      <p className={`mt-2 font-black text-slate-900 ${valueClassName}`}>{value}</p>
     </div>
   );
 }
 
 function Snapshot({ label, value }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
+    </div>
+  );
+}
+
+function HistoryDetail({ label, value }) {
+  return (
+    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>
   );
 }

@@ -9,6 +9,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
 const sendEmail = require("../utils/email");
 const { truncateText, formatDate } = require("../services/common.service");
+const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
 
 const FALLBACK_PLANS = {
   BASIC: {
@@ -188,6 +189,11 @@ exports.createOrder = asyncHandler(async (req, res) => {
     throw new Error("Invalid or inactive plan");
   }
 
+  if (isLegacyPaidMonthlyPlan(plan)) {
+    res.status(404);
+    throw new Error("This plan is no longer available. Please choose a 3, 6, or 12 month plan.");
+  }
+
   const freeTrialPlan = isFreeTrialPlan(plan);
   if (freeTrialPlan) {
     const orgEmail = normalizeEmail(organization?.email);
@@ -339,6 +345,11 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
   if (!resolvedPlan) {
     res.status(404);
     throw new Error("Invalid or inactive plan");
+  }
+
+  if (isLegacyPaidMonthlyPlan(resolvedPlan)) {
+    res.status(404);
+    throw new Error("This plan is no longer available. Please choose a 3, 6, or 12 month plan.");
   }
 
   const freeTrialPlan = isFreeTrialPlan(resolvedPlan);
@@ -546,7 +557,7 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
 
       const emailMessage = `Hello ${result.newUser.name},
 
-Thank you for registering your organization "${result.newOrg.name}" on Veagle Space.
+Thank you for registering your organization "${result.newOrg.name}" on Veagle Attendee.
 
 Your Organization Code is: ${result.newOrg.organizationCode}
 
@@ -559,12 +570,12 @@ Subscription Details:
 You will need the Organization Code, along with your registered email and password, to log in to the system.
 
 Best Regards,
-Veagle Space Team`;
+Veagle Attendee Team`;
 
       const emailHtml = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; padding: 30px; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
           <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="color: #2563eb; margin: 0; font-size: 28px;">Welcome to Veagle Space!</h2>
+            <h2 style="color: #2563eb; margin: 0; font-size: 28px;">Welcome to Veagle Attendee!</h2>
             <p style="color: #666; font-size: 16px;">Your workspace is ready.</p>
           </div>
 
@@ -604,7 +615,7 @@ Veagle Space Team`;
           <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
             <p style="font-size: 14px; color: #888; margin: 0;">
               Best Regards,<br/>
-              <strong style="color: #333;">Veagle Space Pvt Ltd</strong>
+              <strong style="color: #333;">Veagle Attendee Pvt Ltd</strong>
             </p>
           </div>
         </div>
@@ -612,7 +623,7 @@ Veagle Space Team`;
 
       await sendEmail({
         email: result.newUser.email,
-        subject: `Welcome to Veagle Space - ${result.newOrg.organizationCode}`,
+        subject: `Welcome to Veagle Attendee - ${result.newOrg.organizationCode}`,
         message: emailMessage,
         html: emailHtml,
       });

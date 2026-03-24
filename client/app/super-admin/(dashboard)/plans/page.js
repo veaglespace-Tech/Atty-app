@@ -3,10 +3,8 @@
 import { useMemo, useState } from "react";
 import { 
   Loader2, 
-  PlusCircle, 
   RefreshCcw, 
   Zap, 
-  ChevronRight,
   Plus,
   X,
   IndianRupee,
@@ -14,9 +12,16 @@ import {
 } from "lucide-react";
 import { 
   useCreatePlanMutation 
-} from "@/store/api/planApi";
-import { useGetSuperAdminPlansQuery } from "@/store/api/superAdminApi";
+} from "@/services/api/planApi";
+import { useGetSuperAdminPlansQuery } from "@/services/api/superAdminApi";
 import Link from "next/link";
+import {
+  filterVisiblePlans,
+  formatPlanCodeLabel,
+  formatPlanDurationLong,
+  formatPlanNameLabel,
+  formatPlanPrice,
+} from "@/utils/plans";
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -28,6 +33,10 @@ const summaryMapFromArray = (summary) => {
   return map;
 };
 
+const panelClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
+const planTileClassName =
+  "brand-entity-card group active:scale-[0.99]";
+
 export default function SuperAdminPlansPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +47,7 @@ export default function SuperAdminPlansPage() {
     name: "",
     code: "",
     price: "",
-    durationInDays: "30",
+    durationInDays: "90",
     memberLimit: "0",
     featuresText: "",
     description: "",
@@ -57,9 +66,39 @@ export default function SuperAdminPlansPage() {
   
   const [createPlanMutation] = useCreatePlanMutation();
 
-  const plans = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
+  const plans = useMemo(
+    () => filterVisiblePlans(Array.isArray(data?.items) ? data.items : []),
+    [data]
+  );
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+  const overviewCards = useMemo(
+    () => [
+      {
+        label: "Plans",
+        value: summaryMap.get("Plans") || plans.length,
+        hint: "Configured subscription tiers",
+      },
+      {
+        label: "Active",
+        value: summaryMap.get("Active Plans") || plans.filter((plan) => plan.active).length,
+        hint: "Currently market-ready plans",
+      },
+      {
+        label: "Default",
+        value: summaryMap.get("Default Plans") || plans.filter((plan) => plan.isDefault).length,
+        hint: "Starter plans shown by default",
+      },
+      {
+        label: "Subscribers",
+        value:
+          summaryMap.get("Total Subscribers") ||
+          plans.reduce((sum, item) => sum + Number(item.subscribersTotal || 0), 0),
+        hint: "Active plan assignments",
+      },
+    ],
+    [plans, summaryMap]
+  );
 
   const onInputChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -74,7 +113,7 @@ export default function SuperAdminPlansPage() {
       name: "",
       code: "",
       price: "",
-      durationInDays: "30",
+      durationInDays: "90",
       memberLimit: "0",
       featuresText: "",
       description: "",
@@ -100,7 +139,7 @@ export default function SuperAdminPlansPage() {
 
       const payload = {
         name: form.name.trim(),
-        code: form.code.trim().toUpperCase(),
+        code: form.code.trim().toUpperCase().replace(/[_\s]+/g, "-"),
         price: Number(form.price),
         durationInDays: Number(form.durationInDays),
         memberLimit: Number(form.memberLimit || 0),
@@ -137,8 +176,8 @@ export default function SuperAdminPlansPage() {
       {/* Mini Top Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">System Plans</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">SaaS Model Control</p>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900">System Plans</h2>
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">SaaS Model Control</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -146,15 +185,13 @@ export default function SuperAdminPlansPage() {
               type="button"
               onClick={refetch}
               disabled={loading}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 transition-colors shadow-sm active:scale-95"
+              className="brand-btn brand-btn-secondary brand-btn-sm h-10 w-10 p-0"
             >
               <RefreshCcw size={18} className={loading ? "animate-spin" : ""} />
             </button>
             <button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className={`inline-flex h-11 items-center gap-2 rounded-2xl px-6 text-sm font-black text-white shadow-xl transition-all active:scale-95 ${
-                    showAddForm ? 'bg-rose-500 shadow-rose-100 hover:bg-rose-600' : 'bg-slate-900 shadow-slate-100 hover:bg-slate-800'
-                }`}
+                className={`brand-btn ${showAddForm ? "brand-btn-secondary" : "brand-btn-primary"} brand-btn-md`}
             >
                 {showAddForm ? <X size={18} /> : <Plus size={18} />}
                 {showAddForm ? "Close Form" : "Create New Plan"}
@@ -162,13 +199,21 @@ export default function SuperAdminPlansPage() {
         </div>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {overviewCards.map((card) => (
+          <MetricCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            hint={card.hint}
+          />
+        ))}
+      </div>
+
       {/* Toggleable Add Form */}
       {showAddForm && (
-        <div className="rounded-[2rem] border-2 border-slate-900 bg-white p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                    <PlusCircle size={24} />
-                </div>
+        <div className={`${panelClassName} animate-in zoom-in-95 duration-300`}>
+            <div className="mb-8 flex items-center gap-3">
                 <h3 className="text-lg font-black text-slate-900">Define a New Subscription TIER</h3>
             </div>
 
@@ -191,14 +236,14 @@ export default function SuperAdminPlansPage() {
                         name="code"
                         value={form.code}
                         onChange={onInputChange}
-                        placeholder="PRO_2026"
+                        placeholder="PRO-2026"
                         className="w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black uppercase outline-none ring-offset-2 transition-all focus:ring-2 focus:ring-blue-500 focus:bg-white"
                         required
                     />
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Monthly Price</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Billing Price</label>
                     <div className="relative">
                         <IndianRupee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -214,7 +259,7 @@ export default function SuperAdminPlansPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Validity (Days)</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Billing Cycle (Days)</label>
                     <input
                         name="durationInDays"
                         type="number"
@@ -282,33 +327,49 @@ export default function SuperAdminPlansPage() {
             <Link 
                 href={`/super-admin/plans/${plan.id}`} 
                 key={plan.id}
-                className="group relative flex flex-col p-6 rounded-3xl border border-slate-200 bg-white hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-50 transition-all duration-300 active:scale-95 overflow-hidden"
+                className={planTileClassName}
             >
+                <div className="brand-metric-glow" />
                 <div className="flex items-start justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                        <Zap size={20} fill={plan.isActive ? "currentColor" : "none"} />
-                    </div>
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase ${
-                        plan.active !== false ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      {formatPlanCodeLabel(plan.code)}
+                    </span>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                        plan.active !== false
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+                          : "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300"
                     }`}>
                         <div className={`h-1.5 w-1.5 rounded-full ${plan.active !== false ? "bg-emerald-500" : "bg-slate-400"}`}></div>
                         {plan.active !== false ? "Active" : "Paused"}
                     </span>
                 </div>
 
-                <div className="mt-6">
-                    <h4 className="text-lg font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors uppercase">{plan.name}</h4>
+                <div className="relative mt-6 flex-1">
+                    <h4 className="text-[1.3rem] font-black leading-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-200">
+                      {formatPlanNameLabel(plan.name, plan.code)}
+                    </h4>
                     <div className="mt-2 flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-slate-900">₹{plan.price}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">/ Month</span>
+                        <span className="text-[2rem] font-black tracking-tight text-slate-900 dark:text-white">
+                          Rs. {formatPlanPrice(plan.price)}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                          / {formatPlanDurationLong(plan.durationInDays)}
+                        </span>
                     </div>
+                    <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">
+                      {Number(plan.subscribersTotal || 0)} subscribers
+                      {" · "}
+                      Rs. {formatPlanPrice(plan.revenue || 0)} revenue
+                    </p>
                 </div>
 
-                <div className="mt-6 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{plan.code}</span>
-                    <div className="h-8 w-8 rounded-full bg-slate-50 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all">
-                        <ChevronRight size={16} />
-                    </div>
+                <div className="relative mt-6 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+                      Open plan details
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600 transition-colors group-hover:text-blue-700 dark:text-blue-200 dark:group-hover:text-cyan-200">
+                      View
+                    </span>
                 </div>
 
                 {plan.isDefault && (
@@ -322,36 +383,19 @@ export default function SuperAdminPlansPage() {
           ))
         )}
       </div>
-
-      {/* Global Stats bar at bottom */}
-      <div className="flex flex-wrap items-center gap-4 bg-slate-900 rounded-[2rem] p-6 text-white">
-          <div className="flex-1 min-w-[140px]">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Tiers</p>
-              <h5 className="text-2xl font-black">{summaryMap.get("Plans") || plans.length}</h5>
-          </div>
-          <div className="h-10 w-px bg-slate-800 hidden sm:block"></div>
-          <div className="flex-1 min-w-[140px]">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Market</p>
-              <h5 className="text-2xl font-black text-emerald-400">{summaryMap.get("Active Plans") || 0}</h5>
-          </div>
-          <div className="h-10 w-px bg-slate-800 hidden sm:block"></div>
-          <div className="flex-1 min-w-[140px]">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscribers</p>
-              <h5 className="text-2xl font-black text-blue-400">{plans.reduce((sum, item) => sum + Number(item.subscribersTotal || 0), 0)}</h5>
-          </div>
-      </div>
     </section>
   );
 }
 
-function MetricCard({ label, value, icon, color }) {
+function MetricCard({ label, value, hint }) {
   return (
-    <div className="group rounded-[2rem] border border-slate-200 bg-white p-6 transition-all hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50">
-      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-2xl ${color} transition-transform group-hover:scale-110`}>
-        {icon}
+    <div className="brand-metric-card">
+      <div className="brand-metric-glow" />
+      <div className="relative">
+        <p className="brand-metric-label mt-0">{label}</p>
+        <p className="brand-metric-value">{value}</p>
+        <p className="brand-metric-copy">{hint}</p>
       </div>
-      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="mt-1 text-3xl font-black text-slate-900 tracking-tight">{value}</p>
     </div>
   );
 }

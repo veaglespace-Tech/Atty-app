@@ -430,13 +430,14 @@ exports.login = asyncHandler(async (req, res) => {
 exports.searchOrganizations = asyncHandler(async (req, res) => {
   const query = String(req.query.query || "").trim();
   const limit = parseSearchLimit(req.query.limit, 8, 12);
+  const normalizedQuery = query;
 
-  if (query.length < 2) {
+  if (normalizedQuery.length < 2) {
     return res.status(200).json({
       success: true,
       items: [],
       meta: {
-        query,
+        query: normalizedQuery,
         limit,
       },
     });
@@ -448,10 +449,10 @@ exports.searchOrganizations = asyncHandler(async (req, res) => {
       isActive: true,
       isBlocked: false,
       OR: [
-        { name: { contains: query } },
-        { organizationCode: { contains: query.toUpperCase() } },
-        { city: { contains: query } },
-        { state: { contains: query } },
+        { name: { contains: normalizedQuery } },
+        { organizationCode: { contains: normalizedQuery } },
+        { city: { contains: normalizedQuery } },
+        { state: { contains: normalizedQuery } },
       ],
     },
     select: organizationSearchSelect,

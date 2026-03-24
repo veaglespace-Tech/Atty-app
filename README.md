@@ -1,6 +1,6 @@
-# Veagle Space Attendance SaaS
+# Veagle Attendee Attendance SaaS
 
-Veagle Space is a multi-tenant attendance and workforce management platform built for organizations, team leaders, members, and super admins.
+Veagle Attendee is a multi-tenant attendance and workforce management platform built for organizations, team leaders, members, and super admins.
 
 It includes organization onboarding, plan selection, payment integration, attendance tracking, team management, reporting, and role-based dashboards.
 
@@ -24,7 +24,7 @@ It includes organization onboarding, plan selection, payment integration, attend
 ## Project Structure
 
 ```text
-Atendee/
+attendee/
 |- client/   # Next.js frontend
 |- server/   # Express + Prisma backend
 `- README.md
