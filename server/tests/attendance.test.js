@@ -8,6 +8,9 @@ jest.mock("../lib/prisma", () => ({
   organization: {
     findUnique: jest.fn(),
   },
+  team: {
+    findFirst: jest.fn(),
+  },
   attendance: {
     findFirst: jest.fn(),
     create: jest.fn(),
@@ -39,6 +42,7 @@ describe("POST /api/attendance/punch-in", () => {
     });
     prisma.attendance.findFirst.mockResolvedValue(null);
     prisma.teamMember.findFirst.mockResolvedValue(null);
+    prisma.team.findFirst.mockResolvedValue(null);
     prisma.attendance.create.mockResolvedValue({
       id: 11,
       orgId: 3,

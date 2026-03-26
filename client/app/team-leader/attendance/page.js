@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin } from "lucide-react";
 import {
   useGetTeamLeaderAttendanceQuery,
   usePatchTeamLeaderTeamMutation,
   useGetTeamLeaderTeamsQuery,
 } from "@/services/api/teamLeaderApi";
+import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
+import { hasPermission, normalizeRole, PERMISSIONS, ROLES } from "@/utils/roles";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -78,6 +81,7 @@ const getCoordinates = async () => {
 };
 
 export default function TeamLeaderAttendancePage() {
+  const authUser = useSelector((state) => state.auth.user);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     ...DEFAULT_FILTERS,
@@ -141,6 +145,8 @@ export default function TeamLeaderAttendancePage() {
   const loading = isLoading || isFetching;
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+  const showSelfAttendance = normalizeRole(authUser?.role) === ROLES.TEAM_LEADER;
+  const canManageAttendanceSettings = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
 
   const geoPermissionMessage = useMemo(() => {
     switch (geoPermissionState) {
@@ -298,6 +304,10 @@ export default function TeamLeaderAttendancePage() {
       setSettingsError("No team found to update settings.");
       return;
     }
+    if (!canManageAttendanceSettings) {
+      setSettingsError("Admin permission is required to manage team attendance settings.");
+      return;
+    }
 
     const validationError = validateAttendanceSettingsForm({
       attendanceRadius: settings.attendanceRadius,
@@ -366,6 +376,17 @@ export default function TeamLeaderAttendancePage() {
           <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         ) : null}
       </div>
+
+      {showSelfAttendance ? (
+        <MyAttendancePanel
+          title="My Attendance"
+          description="Mark your own team leader attendance with live GPS, then review team logs below."
+          limit={8}
+          onAttendanceChange={async () => {
+            await refetch();
+          }}
+        />
+      ) : null}
 
       <form onSubmit={onApplyFilters} className="light-glow-card-static rounded-[1.75rem] p-4 md:p-6">
         <div className="grid gap-3 md:grid-cols-5">
@@ -438,6 +459,11 @@ export default function TeamLeaderAttendancePage() {
       <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Settings</h3>
         <p className="mt-1 text-xs text-slate-500">Update the work location for {currentTeam?.name || "your team"}.</p>
+        {!canManageAttendanceSettings ? (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+            Admin must grant `Manage Attendance` permission before you can update team location or radius.
+          </p>
+        ) : null}
 
         <form onSubmit={saveSettings} className="mt-4 grid gap-3 md:grid-cols-2">
           <input
@@ -448,6 +474,7 @@ export default function TeamLeaderAttendancePage() {
             onChange={onSettingsChange}
             placeholder="Attendance radius (meters)"
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            disabled={!canManageAttendanceSettings}
           />
 
           <div className="md:col-span-2 relative">
@@ -458,6 +485,7 @@ export default function TeamLeaderAttendancePage() {
                 onChange={(e) => onSearchLocation(e.target.value)}
                 placeholder="Search for a location (e.g. Mumbai Airport)"
                 className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm outline-none focus:border-blue-500"
+                disabled={!canManageAttendanceSettings}
               />
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
               {searching && <Loader2 className="absolute right-3 top-2.5 animate-spin text-slate-400" size={16} />}
@@ -488,6 +516,7 @@ export default function TeamLeaderAttendancePage() {
             type="button"
             onClick={onUseCurrentLocation}
             disabled={
+              !canManageAttendanceSettings ||
               geoLoading ||
               geoPermissionState === "unsupported" ||
               geoPermissionState === "insecure"
@@ -507,6 +536,7 @@ export default function TeamLeaderAttendancePage() {
               onChange={onSettingsChange}
               placeholder="Longitude"
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              disabled={!canManageAttendanceSettings}
             />
             <input
               name="latitude"
@@ -516,6 +546,7 @@ export default function TeamLeaderAttendancePage() {
               onChange={onSettingsChange}
               placeholder="Latitude"
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              disabled={!canManageAttendanceSettings}
             />
           </div>
 
@@ -537,7 +568,7 @@ export default function TeamLeaderAttendancePage() {
           <div className="md:col-span-2 flex justify-stretch sm:justify-end">
             <button
               type="submit"
-              disabled={settingsLoading || !currentTeam}
+              disabled={settingsLoading || !currentTeam || !canManageAttendanceSettings}
               className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               {settingsLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}

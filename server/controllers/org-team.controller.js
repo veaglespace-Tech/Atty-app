@@ -17,7 +17,7 @@ const {
   teamListSelect,
   teamDetailSelect,
 } = require("../services/prisma-selects.service");
-const { PERMISSION_KEYS } = require("../constants/permissions");
+const { PERMISSION_KEYS, hasPermission } = require("../constants/permissions");
 
 const ensureOrgTeam = async ({ req, res, teamId }) => {
   const orgId = ensureOrganizationId(req, res);
@@ -91,6 +91,36 @@ const normalizeTeamPayload = ({ req, res, allowMemberEdits = false }) => {
       req.body?.leaderId === null || req.body?.leaderId === ""
         ? null
         : parseId(req.body?.leaderId),
+  };
+};
+
+const getTeamPatchPermissionState = (req) => {
+  const body = req.body || {};
+  const hasMemberIds = Object.prototype.hasOwnProperty.call(body, "memberIds");
+  const hasLeaderId = Object.prototype.hasOwnProperty.call(body, "leaderId");
+  const hasBasicTeamFields =
+    typeof body?.name === "string" ||
+    typeof body?.description === "string" ||
+    body?.isActive !== undefined;
+  const hasAttendanceFields =
+    body?.attendanceRadius !== undefined || Boolean(normalizeCoordinatesInput(body));
+  const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE);
+  const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE);
+
+  return {
+    canUpdateTeam,
+    canManageAttendance,
+    hasMemberIds,
+    hasLeaderId,
+    hasBasicTeamFields,
+    hasAttendanceFields,
+    canPatchAttendanceOnly:
+      !canUpdateTeam &&
+      canManageAttendance &&
+      hasAttendanceFields &&
+      !hasBasicTeamFields &&
+      !hasMemberIds &&
+      !hasLeaderId,
   };
 };
 
@@ -274,16 +304,16 @@ exports.patchOrgTeam = asyncHandler(async (req, res) => {
     res,
     teamId: req.params.teamId,
   });
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_UPDATE);
+  const patchPermissionState = getTeamPatchPermissionState(req);
 
-  const canAssignMembers = (() => {
-    try {
-      assertPermission(res, req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  })();
+  if (!patchPermissionState.canUpdateTeam && !patchPermissionState.canPatchAttendanceOnly) {
+    res.status(403);
+    throw new Error("Missing required permission");
+  }
+
+  const canAssignMembers =
+    patchPermissionState.canUpdateTeam &&
+    hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS);
 
   const { payload, memberIds, leaderId, hasMemberIds, hasLeaderId } =
     normalizeTeamPayload({

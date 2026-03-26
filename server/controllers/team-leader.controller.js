@@ -101,6 +101,33 @@ const assertTeamMutationAccess = ({ req, res, team }) => {
   throw new Error("You can only modify teams assigned to you");
 };
 
+const getTeamPatchPermissionState = (req) => {
+  const body = req.body || {};
+  const hasMemberIds = Object.prototype.hasOwnProperty.call(body, "memberIds");
+  const hasLeaderId = Object.prototype.hasOwnProperty.call(body, "leaderId");
+  const hasBasicTeamFields =
+    typeof body?.name === "string" ||
+    typeof body?.description === "string" ||
+    body?.isActive !== undefined;
+  const hasAttendanceFields =
+    body?.attendanceRadius !== undefined || Boolean(normalizeCoordinatesInput(body));
+  const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE);
+  const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE);
+
+  return {
+    canUpdateTeam,
+    hasMemberIds,
+    hasLeaderId,
+    canPatchAttendanceOnly:
+      !canUpdateTeam &&
+      canManageAttendance &&
+      hasAttendanceFields &&
+      !hasBasicTeamFields &&
+      !hasMemberIds &&
+      !hasLeaderId,
+  };
+};
+
 const validateTeamAssignmentInputs = async ({
   req,
   res,
@@ -418,7 +445,6 @@ exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
 
 exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_UPDATE);
   const teamId = parseId(req.params.teamId);
   if (!teamId) {
     res.status(400);
@@ -443,6 +469,12 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
   }
 
   assertTeamMutationAccess({ req, res, team });
+
+  const patchPermissionState = getTeamPatchPermissionState(req);
+  if (!patchPermissionState.canUpdateTeam && !patchPermissionState.canPatchAttendanceOnly) {
+    res.status(403);
+    throw new Error("Missing required permission");
+  }
 
   const payload = {};
   if (typeof req.body?.name === "string") {

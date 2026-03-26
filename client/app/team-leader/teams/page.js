@@ -87,6 +87,7 @@ export default function TeamLeaderTeamsPage() {
   const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
   const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM_DELETE);
   const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
+  const canManageAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
   const [submitting, setSubmitting] = useState(false);
   const [actionTeamId, setActionTeamId] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
@@ -351,8 +352,8 @@ export default function TeamLeaderTeamsPage() {
   };
 
   const setTeamLocationFromCurrent = async (team) => {
-    if (!canUpdateTeams) {
-      setError("You do not have permission to update team geofence.");
+    if (!canManageAttendance) {
+      setError("Admin permission is required to update team geofence.");
       return;
     }
     try {
@@ -697,7 +698,7 @@ export default function TeamLeaderTeamsPage() {
                         label="Set Geo"
                         icon={<LocateFixed size={14} />}
                         onClick={() => setTeamLocationFromCurrent(team)}
-                        disabled={busy || !canUpdateTeams}
+                        disabled={busy || !canManageAttendance}
                       />
                       <ActionButton
                         label="Delete"
@@ -753,7 +754,7 @@ export default function TeamLeaderTeamsPage() {
                               label="Set Geo"
                               icon={<LocateFixed size={14} />}
                               onClick={() => setTeamLocationFromCurrent(team)}
-                              disabled={busy || !canUpdateTeams}
+                              disabled={busy || !canManageAttendance}
                             />
                             <ActionButton
                               label="Delete"

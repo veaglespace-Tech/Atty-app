@@ -1,7 +1,13 @@
 const express = require("express");
 const { z } = require("zod");
 const router = express.Router();
-const { punchIn, punchOut, getAttendance, getAttendanceSummary } = require("../controllers/attendance.controller");
+const {
+  punchIn,
+  punchOut,
+  getAttendance,
+  getAttendanceSummary,
+  getMyAttendance,
+} = require("../controllers/attendance.controller");
 const { verifyToken } = require("../middlewares/token.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
@@ -43,6 +49,7 @@ router.use(checkActiveSubscription);
 
 router.post("/punch-in", validateBody(attendanceLocationSchema), punchIn);
 router.post("/punch-out", validateBody(attendanceLocationSchema), punchOut);
+router.get("/me", getMyAttendance);
 router.get("/", getAttendance);
 router.get("/summary", getAttendanceSummary);
 

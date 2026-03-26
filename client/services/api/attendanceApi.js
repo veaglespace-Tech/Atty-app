@@ -10,6 +10,10 @@ export const attendanceApi = createApi({
       query: (queryString = "") => `/attendance${queryString ? `?${queryString}` : ""}`,
       providesTags: ["Attendance"],
     }),
+    getMyAttendance: builder.query({
+      query: (limit = 12) => `/attendance/me?limit=${limit}`,
+      providesTags: ["Attendance"],
+    }),
     getAttendanceSummary: builder.query({
       query: () => "/attendance/summary",
       providesTags: ["Attendance"],
@@ -35,6 +39,7 @@ export const attendanceApi = createApi({
 
 export const {
   useGetAttendanceQuery,
+  useGetMyAttendanceQuery,
   useGetAttendanceSummaryQuery,
   usePunchInMutation,
   usePunchOutMutation,

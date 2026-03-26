@@ -3,7 +3,204 @@ const geolib = require("geolib");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
 const { resolveLocationPayload } = require("../services/location.service");
-const { ensureOrganizationId } = require("../services/common.service");
+const {
+  ensureOrganizationId,
+  parseLimit,
+  toSummaryItem,
+  todayKey,
+} = require("../services/common.service");
+const { attendanceRecordSelect } = require("../services/prisma-selects.service");
+const { mapAttendanceRecord } = require("../services/attendance-query.service");
+
+const attendanceTargetTeamSelect = {
+  id: true,
+  longitude: true,
+  latitude: true,
+  attendanceRadius: true,
+};
+
+const monthWindow = (date = new Date()) => {
+  const firstDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+  return {
+    from: firstDay.toISOString().split("T")[0],
+    to: lastDay.toISOString().split("T")[0],
+  };
+};
+
+const getManagedAttendanceTeam = async ({ orgId, userId }) => {
+  const teamMembership = await prisma.teamMember.findFirst({
+    where: {
+      userId,
+      team: {
+        orgId,
+        deletedAt: null,
+      },
+    },
+    select: {
+      team: {
+        select: attendanceTargetTeamSelect,
+      },
+    },
+  });
+
+  if (teamMembership?.team) {
+    return teamMembership.team;
+  }
+
+  const teamLedByUser = await prisma.team.findFirst({
+    where: {
+      orgId,
+      deletedAt: null,
+      leaderId: userId,
+    },
+    select: attendanceTargetTeamSelect,
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  if (teamLedByUser) {
+    return teamLedByUser;
+  }
+
+  return prisma.team.findFirst({
+    where: {
+      orgId,
+      deletedAt: null,
+      createdById: userId,
+    },
+    select: attendanceTargetTeamSelect,
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+};
+
+const resolveAttendanceTarget = async ({
+  orgId,
+  userId,
+  organization,
+  fallbackTeamId = null,
+}) => {
+  let team = null;
+
+  if (fallbackTeamId) {
+    team = await prisma.team.findFirst({
+      where: {
+        id: Number(fallbackTeamId),
+        orgId,
+        deletedAt: null,
+      },
+      select: attendanceTargetTeamSelect,
+    });
+  }
+
+  if (!team) {
+    team = await getManagedAttendanceTeam({ orgId, userId });
+  }
+
+  let targetLocation = [organization.longitude, organization.latitude];
+  let targetRadius = organization.attendanceRadius || 25;
+
+  // Managed team geofence takes priority for members and team owners/leaders.
+  if (team && team.latitude !== null && team.longitude !== null) {
+    targetLocation = [team.longitude, team.latitude];
+    targetRadius = team.attendanceRadius || 25;
+  }
+
+  return {
+    teamId: team?.id || null,
+    targetLocation,
+    targetRadius,
+  };
+};
+
+const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
+  const safeLimit = parseLimit(limit, 45, 365);
+  const today = todayKey();
+  const { from, to } = monthWindow(new Date());
+
+  const [todayRecord, monthlyStatus, monthlyAggregate, recentRecords] = await Promise.all([
+    prisma.attendance.findFirst({
+      where: {
+        orgId,
+        userId,
+        date: today,
+        deletedAt: null,
+      },
+      select: attendanceRecordSelect,
+    }),
+    prisma.attendance.groupBy({
+      by: ["status"],
+      where: {
+        orgId,
+        userId,
+        deletedAt: null,
+        date: {
+          gte: from,
+          lte: to,
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+    prisma.attendance.aggregate({
+      where: {
+        orgId,
+        userId,
+        deletedAt: null,
+        date: {
+          gte: from,
+          lte: to,
+        },
+      },
+      _sum: {
+        totalMinutesWorked: true,
+      },
+    }),
+    prisma.attendance.findMany({
+      where: {
+        orgId,
+        userId,
+        deletedAt: null,
+      },
+      select: attendanceRecordSelect,
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      take: safeLimit,
+    }),
+  ]);
+
+  const statusCountMap = monthlyStatus.reduce((acc, entry) => {
+    acc[entry.status] = Number(entry._count?._all || 0);
+    return acc;
+  }, {});
+
+  const presentCount = Number(statusCountMap.PRESENT || 0);
+  const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
+  const absentCount = Number(statusCountMap.ABSENT || 0);
+  const workedHours = Number(
+    (Number(monthlyAggregate?._sum?.totalMinutesWorked || 0) / 60).toFixed(2)
+  );
+
+  return {
+    summary: [
+      toSummaryItem("Today Status", todayRecord?.status || "NO_RECORD"),
+      toSummaryItem("Present This Month", presentCount + halfDayCount),
+      toSummaryItem("Absent This Month", absentCount),
+      toSummaryItem("Worked Hours This Month", workedHours),
+    ],
+    items: recentRecords.map(mapAttendanceRecord),
+    meta: {
+      monthFrom: from,
+      monthTo: to,
+      today,
+      totalRecords: recentRecords.length,
+      limit: safeLimit,
+    },
+  };
+};
 
 exports.punchIn = asyncHandler(async (req, res) => {
   const input = req.validatedBody || req.body || {};
@@ -57,55 +254,33 @@ exports.punchIn = asyncHandler(async (req, res) => {
     throw new Error(existingRecord.punchOutAt ? "Attendance already completed for today" : "You already punched in for today");
   }
 
-  const teamMember = await prisma.teamMember.findFirst({
-    where: {
-      userId,
-      team: {
-        orgId,
-        deletedAt: null,
-      },
-    },
-    select: {
-      team: {
-        select: {
-          id: true,
-          longitude: true,
-          latitude: true,
-          attendanceRadius: true,
-        },
-      },
-    },
+  const attendanceTarget = await resolveAttendanceTarget({
+    orgId,
+    userId,
+    organization: org,
   });
-
-  let targetLocation = [org.longitude, org.latitude];
-  let targetRadius = org.attendanceRadius || 25;
-
-  // Team location takes priority if configured
-  if (
-    teamMember?.team &&
-    teamMember.team.latitude !== null &&
-    teamMember.team.longitude !== null
-  ) {
-    targetLocation = [teamMember.team.longitude, teamMember.team.latitude];
-    targetRadius = teamMember.team.attendanceRadius || 25;
-  }
 
   const distance = geolib.getDistance(
     { latitude: parsedLocation[1], longitude: parsedLocation[0] },
-    { latitude: targetLocation[1], longitude: targetLocation[0] }
+    {
+      latitude: attendanceTarget.targetLocation[1],
+      longitude: attendanceTarget.targetLocation[0],
+    }
   );
 
-  const isValid = distance <= targetRadius;
+  const isValid = distance <= attendanceTarget.targetRadius;
 
   if (!isValid) {
     res.status(403);
-    throw new Error(`Location violation: You are ${distance}m away from the designated work area. Maximum allowed radius is ${targetRadius}m.`);
+    throw new Error(
+      `Location violation: You are ${distance}m away from the designated work area. Maximum allowed radius is ${attendanceTarget.targetRadius}m.`
+    );
   }
 
   const attendance = await prisma.attendance.create({
     data: {
       orgId,
-      teamId: teamMember?.team?.id || null,
+      teamId: attendanceTarget.teamId,
       userId,
       date: today,
       punchInAt: new Date(),
@@ -147,6 +322,7 @@ exports.punchOut = asyncHandler(async (req, res) => {
     },
     select: {
       id: true,
+      teamId: true,
       punchInAt: true,
       punchOutAt: true,
     },
@@ -178,49 +354,28 @@ exports.punchOut = asyncHandler(async (req, res) => {
     throw new Error("Organization location is not configured");
   }
 
-  const teamMember = await prisma.teamMember.findFirst({
-    where: {
-      userId,
-      team: {
-        orgId,
-        deletedAt: null,
-      },
-    },
-    select: {
-      team: {
-        select: {
-          id: true,
-          longitude: true,
-          latitude: true,
-          attendanceRadius: true,
-        },
-      },
-    },
+  const attendanceTarget = await resolveAttendanceTarget({
+    orgId,
+    userId,
+    organization: org,
+    fallbackTeamId: attendance.teamId,
   });
-
-  let targetLocation = [org.longitude, org.latitude];
-  let targetRadius = org.attendanceRadius || 25;
-
-  // Team-specific settings override organization defaults
-  if (
-    teamMember?.team &&
-    teamMember.team.latitude !== null &&
-    teamMember.team.longitude !== null
-  ) {
-    targetLocation = [teamMember.team.longitude, teamMember.team.latitude];
-    targetRadius = teamMember.team.attendanceRadius || 25;
-  }
 
   const distance = geolib.getDistance(
     { latitude: parsedLocation[1], longitude: parsedLocation[0] },
-    { latitude: targetLocation[1], longitude: targetLocation[0] }
+    {
+      latitude: attendanceTarget.targetLocation[1],
+      longitude: attendanceTarget.targetLocation[0],
+    }
   );
 
-  const isValid = distance <= targetRadius;
+  const isValid = distance <= attendanceTarget.targetRadius;
 
   if (!isValid) {
     res.status(403);
-    throw new Error(`Location violation: You are ${distance}m away from the assigned work area. Please be within ${targetRadius}m to punch out.`);
+    throw new Error(
+      `Location violation: You are ${distance}m away from the assigned work area. Please be within ${attendanceTarget.targetRadius}m to punch out.`
+    );
   }
 
   const punchOutAt = new Date();
@@ -246,6 +401,21 @@ exports.punchOut = asyncHandler(async (req, res) => {
     success: true,
     message: "Punched out successfully!",
     data: updated,
+  });
+});
+
+exports.getMyAttendance = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const userId = Number(req.user.id);
+  const payload = await buildSelfAttendancePayload({
+    orgId,
+    userId,
+    limit: req.query.limit,
+  });
+
+  res.status(200).json({
+    success: true,
+    ...payload,
   });
 });
 

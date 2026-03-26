@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin } from "lucide-react";
 import {
   useGetOrgAttendanceQuery,
@@ -9,6 +10,8 @@ import {
   useGetOrgTeamsQuery,
   usePatchOrgTeamMutation,
 } from "@/services/api/orgApi";
+import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
+import { normalizeRole, ROLES } from "@/utils/roles";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -63,6 +66,7 @@ const detectLocation = () =>
   });
 
 export default function OrgAttendancePage() {
+  const authUser = useSelector((state) => state.auth.user);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [settings, setSettings] = useState({
@@ -110,6 +114,7 @@ export default function OrgAttendancePage() {
   );
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+  const showSelfAttendance = normalizeRole(authUser?.role) === ROLES.SUB_ADMIN;
 
   useEffect(() => {
     const location = settingsData?.settings?.location;
@@ -309,6 +314,15 @@ export default function OrgAttendancePage() {
           <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>
         ) : null}
       </div>
+
+      {showSelfAttendance ? (
+        <MyAttendancePanel
+          title="My Attendance"
+          description="Mark your own sub admin attendance with live GPS while keeping organization logs in view."
+          limit={8}
+          onAttendanceChange={refreshData}
+        />
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Records" value={summaryMap.get("Records") || 0} />
