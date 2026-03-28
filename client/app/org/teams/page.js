@@ -55,6 +55,10 @@ const selectorSummaryLabelClassName =
   "text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400";
 const selectorSummaryValueClassName =
   "mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100";
+const selectorSummaryHelperClassName =
+  "mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400";
+const selectorChipClassName =
+  "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200";
 
 export default function OrgTeamsPage() {
   const router = useRouter();
@@ -118,13 +122,15 @@ export default function OrgTeamsPage() {
 
   const filteredLeaders = useMemo(() => {
     const query = leaderSearch.trim().toLowerCase();
-    if (!query) return leaderOptions;
-    return leaderOptions.filter(
-      (user) =>
+    return leaderOptions.filter((user) => {
+      if (String(user.id) === String(form.leaderId)) return false;
+      if (!query) return true;
+      return (
         String(user.name || "").toLowerCase().includes(query) ||
         String(user.email || "").toLowerCase().includes(query)
-    );
-  }, [leaderOptions, leaderSearch]);
+      );
+    });
+  }, [form.leaderId, leaderOptions, leaderSearch]);
 
   const filteredMembers = useMemo(() => {
     const query = memberSearch.trim().toLowerCase();
@@ -394,8 +400,23 @@ export default function OrgTeamsPage() {
               <div className={selectorSummaryClassName}>
                 <p className={selectorSummaryLabelClassName}>Selected Leader</p>
                 <p className={selectorSummaryValueClassName}>
-                  {selectedLeader ? selectedLeader.name : "No leader selected"}
+                  {selectedLeader ? "1 leader" : "0 leaders"}
                 </p>
+
+                {selectedLeader ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleLeader(selectedLeader.id)}
+                      className={selectorChipClassName}
+                    >
+                      {selectedLeader.name}
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <p className={selectorSummaryHelperClassName}>No leader selected</p>
+                )}
               </div>
 
               {leaderOpen ? (

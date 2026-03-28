@@ -16,6 +16,7 @@ import {
   BarChart3,
   CalendarCheck,
 } from "lucide-react";
+import { DashboardRecordsSection } from "@/components/saas/DataPanelPage";
 import { ROLES, formatRoleLabel } from "@/utils/roles";
 import { useGetDashboardActivitiesQuery, useGetDashboardStatsQuery } from "@/services/api/dashboardApi";
 
@@ -45,6 +46,14 @@ export default function Dashboard() {
   const loading = statsLoading || statsFetching || activitiesLoading || activitiesFetching;
   const stats = statsData || null;
   const activities = Array.isArray(activityData) ? activityData.slice(0, 6) : [];
+  const activityRecords = activities.map((activity, index) => ({
+    id: `activity-${index}`,
+    description: activity.description || "-",
+    userName: activity.userName || "Unknown",
+    time: activity.time || "-",
+    category: activity.category || "-",
+    status: activity.status || "OPEN",
+  }));
   const firstName = String(user?.name || "").trim().split(/\s+/)[0] || "User";
   const isManager = userRole === ROLES.ADMIN || userRole === ROLES.SUBADMIN;
 
@@ -144,61 +153,18 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
-        <section className="light-glow-card-static rounded-[2rem] p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="brand-section-title text-[1.35rem]">Recent Activity</h3>
-              <p className="brand-copy-sm mt-2">
-                Latest check-ins, updates, and attendance activity.
-              </p>
-            </div>
-            <Link
-              href={isManager ? "/dashboard/reports" : "/dashboard/attendance"}
-              className="brand-kicker inline-flex items-center gap-1 text-blue-600 transition hover:gap-2 dark:text-blue-300"
-            >
-              Open
-              <ArrowUpRight size={14} />
-            </Link>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {activities.length > 0 ? (
-              activities.map((activity, index) => (
-                <article
-                  key={`${activity.description || "activity"}-${index}`}
-                  className="brand-panel-soft rounded-[1.5rem] p-4 transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl font-black">
-                      {activity.userName?.[0] || "U"}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
-                        {activity.description}
-                      </p>
-                      <p className="brand-kicker mt-1">
-                        {activity.time} | {activity.category}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
-                        activity.status === "Success"
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200"
-                          : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200"
-                      }`}
-                    >
-                      {activity.status}
-                    </span>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/90 px-4 py-8 text-center text-sm font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
-                No recent activity found in your workspace.
-              </div>
-            )}
-          </div>
-        </section>
+        <DashboardRecordsSection
+          items={activityRecords}
+          emptyMessage="No recent activity found in your workspace."
+          endpoint="legacy-dashboard-activity"
+          tableColumns={[
+            { key: "description", label: "Description" },
+            { key: "userName", label: "User" },
+            { key: "time", label: "Time" },
+            { key: "category", label: "Category" },
+            { key: "status", label: "Status", type: "badge" },
+          ]}
+        />
 
         <aside className="space-y-6">
           <section className="light-glow-card-static rounded-[2rem] p-6">

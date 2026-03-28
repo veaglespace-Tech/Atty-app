@@ -266,7 +266,7 @@ export const getRoleBadgeTheme = (role) => {
         sidebar:
           "border border-blue-400/20 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.30)] dark:border-blue-400/20 dark:from-blue-500 dark:via-indigo-500 dark:to-cyan-400 dark:text-white",
         header:
-          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/12 dark:text-blue-200",
+          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-400/30 dark:bg-gradient-to-r dark:from-blue-500/24 dark:via-indigo-500/18 dark:to-cyan-400/20 dark:text-blue-100 dark:shadow-[0_12px_28px_rgba(59,130,246,0.20)]",
         accent:
           "bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.22)] dark:from-blue-500 dark:to-cyan-400 dark:text-white",
       };
@@ -275,7 +275,7 @@ export const getRoleBadgeTheme = (role) => {
         sidebar:
           "border border-blue-400/20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.28)] dark:border-blue-400/20 dark:bg-blue-400 dark:text-slate-950",
         header:
-          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/25 dark:bg-blue-500/12 dark:text-blue-200",
+          "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-400/30 dark:bg-gradient-to-r dark:from-blue-500/24 dark:via-indigo-500/16 dark:to-sky-400/18 dark:text-blue-100 dark:shadow-[0_12px_28px_rgba(59,130,246,0.18)]",
         accent:
           "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.22)] dark:from-blue-500 dark:to-indigo-400 dark:text-white",
       };
@@ -284,7 +284,7 @@ export const getRoleBadgeTheme = (role) => {
         sidebar:
           "border border-violet-400/20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.28)] dark:border-violet-400/20 dark:from-violet-500 dark:to-indigo-500 dark:text-white",
         header:
-          "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-300/40 dark:bg-violet-500/24 dark:text-violet-50 dark:shadow-[0_12px_28px_rgba(124,58,237,0.20)]",
+          "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-300/35 dark:bg-gradient-to-r dark:from-violet-500/24 dark:via-fuchsia-500/14 dark:to-indigo-500/18 dark:text-violet-50 dark:shadow-[0_12px_28px_rgba(124,58,237,0.24)]",
         accent:
           "bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.22)] dark:from-violet-500 dark:to-indigo-400 dark:text-white",
       };
@@ -293,7 +293,7 @@ export const getRoleBadgeTheme = (role) => {
         sidebar:
           "border border-emerald-400/20 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.26)] dark:border-emerald-400/20 dark:from-emerald-500 dark:to-teal-400 dark:text-white",
         header:
-          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-200",
+          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-gradient-to-r dark:from-emerald-500/22 dark:via-teal-500/14 dark:to-cyan-400/16 dark:text-emerald-100 dark:shadow-[0_12px_28px_rgba(16,185,129,0.20)]",
         accent:
           "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.22)] dark:from-emerald-500 dark:to-teal-400 dark:text-white",
       };
@@ -303,7 +303,7 @@ export const getRoleBadgeTheme = (role) => {
         sidebar:
           "border border-amber-400/20 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.28)] dark:border-amber-400/20 dark:from-amber-500 dark:to-orange-400 dark:text-white",
         header:
-          "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/12 dark:text-amber-200",
+          "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/30 dark:bg-gradient-to-r dark:from-amber-500/22 dark:via-orange-500/14 dark:to-rose-400/14 dark:text-amber-100 dark:shadow-[0_12px_28px_rgba(245,158,11,0.20)]",
         accent:
           "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.22)] dark:from-amber-500 dark:to-orange-400 dark:text-white",
       };

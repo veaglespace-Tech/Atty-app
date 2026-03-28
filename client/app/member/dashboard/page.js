@@ -1,4 +1,5 @@
 import DataPanelPage from "@/components/saas/DataPanelPage";
+import { attendanceDashboardTableColumns } from "@/components/saas/attendanceDashboardColumns";
 
 export default function Page() {
   return (
@@ -7,6 +8,7 @@ export default function Page() {
       description="Your daily attendance status, month summary, and streak insights."
       endpoint="/member/dashboard"
       emptyMessage="No dashboard entries available."
+      tableColumns={attendanceDashboardTableColumns}
     />
   );
 }

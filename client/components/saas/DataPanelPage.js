@@ -512,15 +512,15 @@ const shouldHideColumn = (column = {}, hiddenColumnSet) => {
 const getTableBadgeTone = (value) => {
   const normalized = String(value || "").trim().toUpperCase();
 
-  if (["SUCCESS", "ACTIVE", "APPROVED", "OPEN", "UNBLOCKED"].includes(normalized)) {
+  if (["SUCCESS", "ACTIVE", "APPROVED", "OPEN", "UNBLOCKED", "PRESENT"].includes(normalized)) {
     return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200";
   }
 
-  if (["FAILED", "BLOCKED", "EXPIRED", "REJECTED", "INACTIVE"].includes(normalized)) {
+  if (["FAILED", "BLOCKED", "EXPIRED", "REJECTED", "INACTIVE", "ABSENT"].includes(normalized)) {
     return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200";
   }
 
-  if (["PENDING", "TRIAL", "PAYMENT_PENDING"].includes(normalized)) {
+  if (["PENDING", "TRIAL", "PAYMENT_PENDING", "HALF_DAY", "LATE"].includes(normalized)) {
     return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200";
   }
 
@@ -758,6 +758,266 @@ const getHeroDescription = ({ description, isDashboardEndpoint, isSuperAdminEndp
 };
 
 const TeamLeaderLiveLocationButton = dynamic(() => import("@/components/saas/TeamLeaderLiveLocationButton"));
+
+export function DashboardRecordsSection({
+  items = [],
+  loading = false,
+  emptyMessage = "No records found.",
+  recordsView = "table",
+  tableColumns = [],
+  hiddenRecordColumns = [],
+  endpoint = "records",
+  title = "Records",
+  description = null,
+}) {
+  const [expandedMobileRows, setExpandedMobileRows] = useState({});
+  const hiddenColumnSet = useMemo(
+    () => buildHiddenColumnSet(hiddenRecordColumns),
+    [hiddenRecordColumns]
+  );
+  const resolvedTableColumns = useMemo(
+    () =>
+      resolveTableColumns(items, tableColumns).filter(
+        (column) => !shouldHideColumn(column, hiddenColumnSet)
+      ),
+    [hiddenColumnSet, items, tableColumns]
+  );
+  const toggleMobileRow = useCallback((rowKey) => {
+    setExpandedMobileRows((current) => ({
+      ...current,
+      [rowKey]: !current[rowKey],
+    }));
+  }, []);
+  const sectionDescription =
+    description ||
+    (recordsView === "table"
+      ? "Detailed entries arranged in a roomy table for easier scanning."
+      : "Detailed entries presented as quick-scan cards.");
+
+  return (
+    <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+            {sectionDescription}
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          {items.length} entries
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-slate-500 dark:text-slate-300">
+          <Loader2 className="animate-spin" size={18} />
+          <span className="text-sm font-medium">Loading data...</span>
+        </div>
+      ) : items.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">{emptyMessage}</p>
+      ) : recordsView === "table" ? (
+        <div className="mt-5 space-y-4">
+          <div className="grid gap-4 md:hidden">
+            {items.map((row, rowIndex) => {
+              const mobileRowKey = row.id || row._id || `${endpoint}-${rowIndex}`;
+              const isExpanded = Boolean(expandedMobileRows[mobileRowKey]);
+              const hiddenCount = Math.max(resolvedTableColumns.length - MOBILE_RECORD_PREVIEW_COUNT, 0);
+              const visibleColumns = isExpanded
+                ? resolvedTableColumns
+                : resolvedTableColumns.slice(0, MOBILE_RECORD_PREVIEW_COUNT);
+
+              return (
+                <article
+                  key={mobileRowKey}
+                  className="min-w-0 rounded-[1.5rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                        Record {rowIndex + 1}
+                      </p>
+                      <div className="mt-2 text-base font-black text-slate-900 dark:text-white">
+                        <span className="block max-w-full break-all whitespace-pre-wrap">
+                          {(() => {
+                            const titleKey =
+                              resolvedTableColumns[0]?.key ||
+                              getPriorityKey(Object.keys(row || {}), TITLE_KEY_PRIORITY);
+                            return formatValue(row?.[titleKey], titleKey);
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                      #{rowIndex + 1}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {visibleColumns.map((column) => (
+                      <div
+                        key={`${mobileRowKey}-${column.key}-mobile`}
+                        className="min-w-0 overflow-hidden rounded-[1.1rem] border border-slate-200 bg-slate-50/90 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+                      >
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                          {column.label}
+                        </p>
+                        <div className="mt-2 min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          {renderTableCell(column, row)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {hiddenCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleMobileRow(mobileRowKey)}
+                      className="mt-4 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-slate-600 transition hover:border-blue-200 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500/30 dark:hover:text-blue-200"
+                    >
+                      {isExpanded ? "Show Less" : `Show ${hiddenCount} More`}
+                    </button>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table
+              className="min-w-full table-auto divide-y divide-slate-200 text-sm dark:divide-slate-800"
+              style={{ minWidth: `${Math.max(getDesktopTableMinWidth(resolvedTableColumns), 720)}px` }}
+            >
+              <colgroup>
+                {resolvedTableColumns.map((column) => (
+                  <col key={`col-${column.key}`} style={getColumnStyle(column)} />
+                ))}
+              </colgroup>
+
+              <thead>
+                <tr>
+                  {resolvedTableColumns.map((column) => {
+                    const alignment = getColumnAlignment(column);
+
+                    return (
+                      <th
+                        key={column.key}
+                        className={`px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 ${getAlignmentClasses(
+                          alignment
+                        )} whitespace-nowrap`}
+                      >
+                        {column.label}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {items.map((row, rowIndex) => (
+                  <tr
+                    key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
+                  >
+                    {resolvedTableColumns.map((column, columnIndex) => {
+                      const alignment = getColumnAlignment(column);
+
+                      return (
+                        <td
+                          key={`${row.id || row._id || rowIndex}-${column.key}`}
+                          className={`px-3 py-2 align-top ${getCellWrapClass(
+                            column,
+                            alignment
+                          )} ${getAlignmentClasses(alignment)} ${
+                            columnIndex === 0
+                              ? "font-semibold text-slate-900 dark:text-white"
+                              : "text-slate-700 dark:text-slate-200"
+                          }`}
+                        >
+                          {renderTableCell(column, row, { compact: true })}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          {items.map((row, rowIndex) => {
+            const { theme, title: cardTitle, heroEntries, visibleEntries } = getRecordPresentation(
+              row,
+              rowIndex,
+              hiddenColumnSet
+            );
+
+            return (
+              <article
+                key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                className={`group light-glow-soft relative overflow-hidden rounded-[1.7rem] border p-5 ${theme.shell}`}
+              >
+                <div className={`absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl ${theme.glow}`} />
+                <div className="relative">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${theme.chip}`}
+                      >
+                        Record {rowIndex + 1}
+                      </div>
+                      <h4 className="mt-4 truncate text-xl font-black text-slate-900 dark:text-white">
+                        {cardTitle}
+                      </h4>
+                    </div>
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-500 shadow-[0_14px_32px_rgba(59,130,246,0.12)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300 dark:group-hover:text-white">
+                      <ArrowUpRight size={16} />
+                    </div>
+                  </div>
+
+                  {heroEntries.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {heroEntries.map((entry) => (
+                        <div
+                          key={`${rowIndex}-${entry.key}`}
+                          className={`inline-flex flex-col rounded-2xl border px-3 py-2 text-left ${theme.chip}`}
+                        >
+                          <span className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70">
+                            {entry.label}
+                          </span>
+                          <span className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">
+                            {entry.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {visibleEntries.map(([key, value]) => (
+                      <div
+                        key={`${rowIndex}-${key}`}
+                        className="rounded-[1.2rem] border border-white/70 bg-white/78 px-3 py-3 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/72"
+                      >
+                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                          {toReadableLabel(key)}
+                        </p>
+                        <p className="mt-2 break-words text-sm font-semibold leading-6 text-slate-800 dark:text-slate-100">
+                          {formatValue(value, key)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DataPanelPage({
   title,

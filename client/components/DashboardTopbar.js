@@ -38,10 +38,10 @@ export default function DashboardTopbar() {
       <div className="relative">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="hidden min-w-[260px] flex-1 md:block">
-            <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] px-4 py-3 pr-24">
+            <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
               <div
                 className={cn(
-                  "absolute right-3 top-3 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
+                  "absolute right-3 top-3 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
                   roleTheme.header
                 )}
               >
@@ -68,7 +68,7 @@ export default function DashboardTopbar() {
         </div>
 
         <div className="mt-3 md:hidden">
-          <div className="brand-panel-soft flex items-center gap-3 rounded-[1.5rem] px-4 py-3">
+          <div className="brand-panel-soft flex items-center gap-3 rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
             <div
               className={cn(
                 "brand-icon-shell flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
@@ -85,7 +85,7 @@ export default function DashboardTopbar() {
             </div>
             <div
               className={cn(
-                "inline-flex shrink-0 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
+                "inline-flex shrink-0 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
                 roleTheme.header
               )}
             >
