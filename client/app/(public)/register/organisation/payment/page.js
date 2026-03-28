@@ -7,21 +7,18 @@ import {
   useLazyGetPaymentPublicKeyQuery,
   useVerifyAndRegisterPaymentMutation,
 } from "@/services/api/paymentApi";
-import { useTheme } from "@/components/ThemeProvider";
 import {
   CreditCard,
   ShieldCheck,
   CheckCircle2,
   ChevronRight,
   Loader2,
-  Sparkles,
   Lock,
   Building,
   Zap,
   Mail,
-  Moon,
-  Sun
 } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import { isHiddenPaidMonthlyPlan } from "@/utils/plans";
 
 const PAYMENT_FEATURES = [
@@ -90,8 +87,6 @@ export default function PaymentPage() {
   const [verifyAndRegisterPayment] = useVerifyAndRegisterPaymentMutation();
   const [getPaymentPublicKey] = useLazyGetPaymentPublicKeyQuery();
   const [archiveFailedRegistration] = useArchiveFailedRegistrationMutation();
-  const { isDarkMode, toggleTheme } = useTheme();
-
   const handleArchive = async (reason = "Registration abandoned") => {
     try {
       const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
@@ -231,7 +226,7 @@ export default function PaymentPage() {
           planCode: selectedPlan.code,
         },
         theme: {
-          color: isDarkMode ? "#4f46e5" : "#4f46e5",
+          color: "#4f46e5",
         },
         modal: {
           ondismiss: () => {
@@ -309,23 +304,7 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className={`min-h-screen flex justify-center items-center relative overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-700 ${theme.bg}`}>
-
-      {/* Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-6 right-6 lg:top-8 lg:right-8 z-50 p-3 lg:p-4 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-xl border shadow-xl group bg-white/90 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 text-indigo-600 dark:text-amber-300 hover:bg-white dark:hover:bg-slate-700 hover:shadow-indigo-500/20 dark:hover:shadow-amber-500/10"
-        aria-label="Toggle Dark Mode"
-      >
-        <span className={`inline-flex transition-transform duration-500 ${isDarkMode ? "scale-110 rotate-[360deg]" : ""}`}>
-          {isDarkMode ? (
-            <Sun size={24} strokeWidth={2.5} className="drop-shadow-lg group-hover:text-amber-400 transition-colors" />
-          ) : (
-            <Moon size={24} strokeWidth={2.5} className="drop-shadow-sm group-hover:text-indigo-700 transition-colors" />
-          )}
-        </span>
-      </button>
-
+    <div className={`relative mt-20 min-h-[calc(100vh-5rem)] overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-700 ${theme.bg}`}>
       {/* Global CSS for Animations */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes blob {
@@ -344,14 +323,13 @@ export default function PaymentPage() {
       <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full animate-blob animation-delay-2000 pointer-events-none transition-colors duration-700 ${theme.blob2}`} />
       <div className={`absolute top-[20%] right-[10%] w-[30%] h-[30%] blur-[100px] rounded-full animate-blob animation-delay-4000 pointer-events-none transition-colors duration-700 ${theme.blob3}`} />
 
-      <div className="w-full max-w-6xl px-4 py-12 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 px-4 py-4 sm:py-6 lg:grid-cols-12 lg:gap-10 lg:py-4">
         {/* Left Section - Context Info */}
-        <div className="hidden lg:flex lg:col-span-5 flex-col justify-center gap-8 pl-4 lg:pl-8">
+        <div className="hidden lg:col-span-5 lg:flex lg:flex-col lg:justify-center lg:gap-6 lg:pl-6">
           <div>
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-semibold mb-6 shadow-sm transition-colors duration-500 ${theme.badgeBg}`}>
-              <Sparkles size={16} />
-              <span>Final step to get started</span>
-            </div>
+            <SectionEyebrow className="mb-6">
+              Final step to get started
+            </SectionEyebrow>
             <h1 className={`text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight mb-4 transition-colors duration-500 ${theme.textMain}`}>
               Secure & Complete <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 dark:from-indigo-400 to-blue-500 dark:to-purple-400">
@@ -379,12 +357,12 @@ export default function PaymentPage() {
         </div>
 
         {/* Right Section - Payment Card */}
-        <div className="lg:col-span-7 flex justify-center perspective-[1000px]">
+        <div className="flex justify-center perspective-[1000px] lg:col-span-7">
           <div className={`card w-full max-w-lg backdrop-blur-2xl rounded-[2.5rem] border overflow-hidden relative group transition-all duration-700 ${theme.card}`}>
             {/* Top decorative gradient line */}
             <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r transition-all duration-700 from-indigo-500 dark:from-purple-500 via-blue-500 dark:via-indigo-500 to-emerald-500 dark:to-emerald-400" />
 
-            <div className="card-body p-8 sm:p-12">
+            <div className="card-body p-6 sm:p-8 lg:p-9">
               {successState ? (
                 <div className="space-y-6">
                   <div className="text-center">
@@ -472,7 +450,7 @@ export default function PaymentPage() {
                 </div>
               ) : (
                 <>
-                  <div className="text-center mb-8 lg:hidden">
+                  <div className="mb-6 text-center lg:hidden">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-6 transition-colors duration-500 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
                       <ShieldCheck size={32} />
                     </div>
@@ -481,7 +459,7 @@ export default function PaymentPage() {
                   </div>
 
                   {/* Selected Plan Details */}
-                  <div className={`relative rounded-3xl p-6 mb-8 border transition-all duration-500 ${theme.planBox}`}>
+                  <div className={`relative mb-6 rounded-3xl border p-5 transition-all duration-500 ${theme.planBox}`}>
                     <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
                       <CreditCard size={80} className="text-indigo-600 dark:text-white -rotate-12" />
                     </div>
@@ -508,7 +486,7 @@ export default function PaymentPage() {
                         </div>
                       </div>
 
-                      <div className={`h-[1px] w-full my-5 transition-colors duration-500 ${theme.divider}`} />
+                      <div className={`my-4 h-[1px] w-full transition-colors duration-500 ${theme.divider}`} />
 
                       <div className="flex flex-col gap-3">
                         {(selectedPlan?.features || ["Core Platform Features", "Advanced Location & Attendance", "Admin Role Controls", "Premium Support"]).slice(0, 4).map((feature, i) => (
@@ -523,9 +501,9 @@ export default function PaymentPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {/* Security Badge Info */}
-                    <div className={`flex items-center gap-3 p-4 rounded-2xl border transition-colors duration-500 ${theme.securityBox}`}>
+                    <div className={`flex items-center gap-3 rounded-2xl border p-3.5 transition-colors duration-500 ${theme.securityBox}`}>
                       <Lock className={`shrink-0 transition-colors duration-500 ${theme.securityIcon}`} size={20} />
                       <p className={`text-sm font-semibold leading-snug transition-colors duration-500 ${theme.securityText}`}>
                         {selectedPlan && Number(selectedPlan.price) === 0
@@ -537,7 +515,7 @@ export default function PaymentPage() {
                     {/* Status Message */}
                     {paymentStatus ? (
                       <div className="overflow-hidden">
-                        <div className={`py-3 px-4 rounded-xl border flex justify-center items-center gap-2 text-sm font-bold shadow-sm mt-2 transition-colors duration-500 ${theme.statusBadge}`}>
+                        <div className={`mt-2 flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold shadow-sm transition-colors duration-500 ${theme.statusBadge}`}>
                           {loading && <Loader2 className="animate-spin text-amber-600 dark:text-amber-400" size={16} />}
                           {paymentStatus}
                         </div>
@@ -545,11 +523,11 @@ export default function PaymentPage() {
                     ) : null}
 
                     {/* Primary CTA */}
-                    <div className="card-actions mt-4">
+                    <div className="card-actions mt-2">
                       <button
                         onClick={handlePayment}
                         disabled={loading || !selectedPlan}
-                        className={`relative flex h-14 w-full items-center justify-center overflow-hidden rounded-full px-6 text-base font-black tracking-tight transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 ${theme.buttonBase}`}
+                        className={`relative flex h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-full px-6 text-base font-black tracking-tight transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 ${theme.buttonBase}`}
                       >
                         <span className="absolute inset-[1px] rounded-full bg-white/10 dark:bg-white/5" />
                         <span className="absolute inset-y-0 left-0 w-24 rounded-full bg-white/18 blur-2xl opacity-70" />
@@ -570,7 +548,7 @@ export default function PaymentPage() {
                     </div>
 
                     {/* Badges footer */}
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                       {PAYMENT_BADGES.map((badge) => (
                         <span
                           key={badge}

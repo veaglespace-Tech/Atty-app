@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FileText, HelpCircle } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import { knowledgeCards } from "./knowledgeData";
 
 const iconMap = {
@@ -37,10 +38,9 @@ export default function AboutPage() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-600 shadow-[0_18px_44px_rgba(59,130,246,0.12)] backdrop-blur-xl dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200">
-            <BookOpen size={14} className="text-blue-600 dark:text-blue-300" />
+          <SectionEyebrow className="mb-6">
             Knowledge Center
-          </div>
+          </SectionEyebrow>
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white md:text-6xl">
             User Guide, Templates
             <br className="hidden md:block" /> and Support Answers
@@ -50,39 +50,38 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-8 md:auto-rows-fr md:grid-cols-2 xl:grid-cols-3">
           {knowledgeCards.map((card) => {
             const Icon = iconMap[card.slug];
             const accent = accentMap[card.accent] || accentMap.blue;
 
             return (
-              <div key={card.slug}>
-                <Link
-                  href={`/about/${card.slug}`}
-                  className={`group block rounded-[2.5rem] border border-slate-100 bg-white/85 p-8 shadow-[0_30px_84px_rgba(59,130,246,0.12),0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_36px_98px_rgba(59,130,246,0.16),0_18px_42px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-950/78 dark:shadow-[0_30px_90px_rgba(2,6,23,0.45)] ${accent.border}`}
-                >
-                  <div className="flex items-start gap-5">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.6rem] bg-white shadow-[0_18px_44px_rgba(15,23,42,0.10)] transition-transform duration-500 group-hover:scale-105 dark:bg-slate-900 dark:shadow-black/20">
-                      <Icon size={26} className={accent.icon} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${accent.chip}`}>
-                        {card.eyebrow}
-                      </span>
-                      <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-                        {card.title}
-                      </h2>
-                      <p className="mt-3 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                        {card.desc}
-                      </p>
-                      <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 transition-all duration-300 group-hover:gap-4 dark:text-blue-200">
-                        Open Page
-                        <ArrowRight size={14} />
-                      </div>
+              <Link
+                key={card.slug}
+                href={`/about/${card.slug}`}
+                className={`group flex h-full min-h-[320px] rounded-[2.5rem] border border-slate-100 bg-white/85 p-8 shadow-[0_30px_84px_rgba(59,130,246,0.12),0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_36px_98px_rgba(59,130,246,0.16),0_18px_42px_rgba(15,23,42,0.10)] md:min-h-[340px] dark:border-slate-800 dark:bg-slate-950/78 dark:shadow-[0_30px_90px_rgba(2,6,23,0.45)] ${accent.border}`}
+              >
+                <div className="flex w-full items-start gap-5">
+                  <div className="brand-hover-white-media flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.6rem] bg-white shadow-[0_18px_44px_rgba(15,23,42,0.10)] transition-transform duration-500 group-hover:scale-105 group-hover:bg-blue-600 dark:bg-slate-900 dark:shadow-black/20 dark:group-hover:bg-blue-500">
+                    <Icon size={26} className={accent.icon} />
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col self-stretch">
+                    <span className={`inline-flex w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${accent.chip}`}>
+                      {card.eyebrow}
+                    </span>
+                    <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
+                      {card.title}
+                    </h2>
+                    <p className="mt-3 max-w-[24ch] text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                      {card.desc}
+                    </p>
+                    <div className="mt-auto pt-8 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 transition-all duration-300 group-hover:gap-4 dark:text-blue-200">
+                      Open Page
+                      <ArrowRight size={14} />
                     </div>
                   </div>
-                </Link>
-              </div>
+                </div>
+              </Link>
             );
           })}
         </div>

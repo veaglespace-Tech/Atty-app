@@ -6,6 +6,7 @@ const navItems = [
   { label: "Teams", href: "/team-leader/teams", permission: PERMISSIONS.TEAM_VIEW },
   { label: "Attendance", href: "/team-leader/attendance", permission: PERMISSIONS.ATTENDANCE_VIEW },
   { label: "Reports", href: "/team-leader/reports", permission: PERMISSIONS.REPORTS_VIEW },
+  { label: "Notifications", href: "/team-leader/notifications" },
 ];
 
 export default function TeamLeaderLayout({ children }) {

@@ -95,24 +95,25 @@ export default function ContactPage() {
             <div className="space-y-8">
               <ContactInfo
                 icon={<Mail className="text-blue-600" size={24} />}
-                iconWrapperClassName="border-blue-100 bg-blue-50 shadow-[0_16px_38px_rgba(59,130,246,0.12)] group-hover:shadow-[0_20px_46px_rgba(59,130,246,0.16)]"
+                iconWrapperClassName="border-blue-100 bg-blue-50 shadow-[0_16px_38px_rgba(59,130,246,0.12)] group-hover:bg-blue-600 group-hover:shadow-[0_20px_46px_rgba(59,130,246,0.16)] dark:group-hover:bg-blue-500"
                 title="Email Us"
                 content="info@veaglespace.com"
                 sub="Available 24/7"
               />
               <ContactInfo
                 icon={<Phone className="text-indigo-600" size={24} />}
-                iconWrapperClassName="border-indigo-100 bg-indigo-50 shadow-[0_16px_38px_rgba(99,102,241,0.12)] group-hover:shadow-[0_20px_46px_rgba(99,102,241,0.16)]"
+                iconWrapperClassName="border-indigo-100 bg-indigo-50 shadow-[0_16px_38px_rgba(99,102,241,0.12)] group-hover:bg-indigo-600 group-hover:shadow-[0_20px_46px_rgba(99,102,241,0.16)] dark:group-hover:bg-indigo-500"
                 title="Call Support"
                 content="+91 8237999101"
                 sub="Mon-Sat, 10am - 7pm"
               />
               <ContactInfo
-                icon={<MapPin className="text-indigo-100" size={24} />}
-                iconWrapperClassName="border-indigo-400/20 bg-[linear-gradient(180deg,#24377d_0%,#1b275a_100%)] shadow-[0_18px_42px_rgba(37,56,125,0.24)] group-hover:shadow-[0_22px_50px_rgba(37,56,125,0.30)]"
+                icon={<MapPin className="text-indigo-600" size={24} />}
+                iconWrapperClassName="border-indigo-100 bg-indigo-50 shadow-[0_16px_38px_rgba(99,102,241,0.12)] group-hover:bg-indigo-600 group-hover:shadow-[0_20px_46px_rgba(99,102,241,0.16)] dark:group-hover:bg-indigo-500"
                 title="Visit Office"
                 content="'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041"
                 sub="India"
+                multiline
               />
             </div>
           </div>
@@ -203,17 +204,30 @@ export default function ContactPage() {
   );
 }
 
-function ContactInfo({ icon, title, content, sub, iconWrapperClassName = "" }) {
+function ContactInfo({
+  icon,
+  title,
+  content,
+  sub,
+  iconWrapperClassName = "",
+  multiline = false,
+}) {
   return (
-    <div className="group flex items-center gap-6">
+    <div className="group flex items-start gap-6">
       <div
-        className={`flex h-14 w-14 items-center justify-center rounded-2xl border transition-all ${iconWrapperClassName}`}
+        className={`brand-hover-white-media mt-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border transition-all ${iconWrapperClassName}`}
       >
         {icon}
       </div>
-      <div>
+      <div className="min-w-0 flex-1">
         <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</h4>
-        <p className="text-lg font-black text-slate-900">{content}</p>
+        <p
+          className={`text-lg font-black text-slate-900 ${
+            multiline ? "max-w-xl leading-relaxed" : ""
+          }`}
+        >
+          {content}
+        </p>
         <p className="text-xs font-medium text-slate-400">{sub}</p>
       </div>
     </div>

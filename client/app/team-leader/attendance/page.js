@@ -170,11 +170,36 @@ export default function TeamLeaderAttendancePage() {
     if (!query) return records;
 
     return records.filter((record) =>
-      `${record.member || ""} ${record.role || ""} ${record.status || ""}`
+      [
+        record.member,
+        record.role,
+        record.status,
+        record.date,
+        formatLocation(record),
+        record.teamName,
+      ]
+        .filter(Boolean)
+        .join(" ")
         .toLowerCase()
         .includes(query)
     );
   }, [records, filters.search]);
+
+  const activeFilterCount = useMemo(
+    () =>
+      [
+        filters.search,
+        filters.status !== "ALL" ? filters.status : "",
+        filters.date,
+        filters.from,
+        filters.to,
+      ].filter(Boolean).length,
+    [filters]
+  );
+
+  const hasActiveFilters = activeFilterCount > 0;
+  const isSingleDateMode = Boolean(filters.date);
+  const isRangeMode = Boolean(filters.from || filters.to);
 
   const buildQueryString = (inputFilters = DEFAULT_FILTERS) => {
     const params = new URLSearchParams({ limit: "300" });
@@ -193,7 +218,25 @@ export default function TeamLeaderAttendancePage() {
 
   const onFilterChange = (event) => {
     const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    setFilters((prev) => {
+      if (name === "date") {
+        return {
+          ...prev,
+          date: value,
+          ...(value ? { from: "", to: "" } : {}),
+        };
+      }
+
+      if (name === "from" || name === "to") {
+        return {
+          ...prev,
+          [name]: value,
+          ...(value ? { date: "" } : {}),
+        };
+      }
+
+      return { ...prev, [name]: value };
+    });
   };
 
   const onApplyFilters = (event) => {
@@ -388,74 +431,6 @@ export default function TeamLeaderAttendancePage() {
         />
       ) : null}
 
-      <form onSubmit={onApplyFilters} className="light-glow-card-static rounded-[1.75rem] p-4 md:p-6">
-        <div className="grid gap-3 md:grid-cols-5">
-          <input
-            name="search"
-            value={filters.search}
-            onChange={onFilterChange}
-            placeholder="Search member"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-          />
-
-          <select
-            name="status"
-            value={filters.status}
-            onChange={onFilterChange}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-          >
-            <option value="ALL">All Status</option>
-            <option value="PRESENT">Present</option>
-            <option value="HALF_DAY">Half Day</option>
-            <option value="ABSENT">Absent</option>
-          </select>
-
-          <input
-            name="date"
-            type="date"
-            value={filters.date}
-            onChange={onFilterChange}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-          />
-
-          <input
-            name="from"
-            type="date"
-            value={filters.from}
-            onChange={onFilterChange}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-          />
-
-          <input
-            name="to"
-            type="date"
-            value={filters.to}
-            onChange={onFilterChange}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button
-            type="submit"
-            disabled={loading}
-            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
-          >
-            <Filter size={16} />
-            Apply Filters
-          </button>
-
-          <button
-            type="button"
-            onClick={onResetFilters}
-            disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-          >
-            Reset
-          </button>
-        </div>
-      </form>
-
       <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Settings</h3>
         <p className="mt-1 text-xs text-slate-500">Update the work location for {currentTeam?.name || "your team"}.</p>
@@ -586,7 +561,138 @@ export default function TeamLeaderAttendancePage() {
       </div>
 
       <div className="light-glow-card-static rounded-[1.9rem] p-6">
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Logs</h3>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Logs</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              Keep filters close to the list so it is easier to scan member records and narrow results.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              {filteredRecords.length} Visible
+            </span>
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              {records.length} Total
+            </span>
+            {hasActiveFilters ? (
+              <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+                {activeFilterCount} Active Filters
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <form
+          onSubmit={onApplyFilters}
+          className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50/85 p-4 dark:border-slate-800 dark:bg-slate-900/70"
+        >
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_220px_180px]">
+            <label className="space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                Search
+              </span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  name="search"
+                  value={filters.search}
+                  onChange={onFilterChange}
+                  placeholder="Search member, role, status, location"
+                  className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/80"
+                />
+              </div>
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                Status
+              </span>
+              <select
+                name="status"
+                value={filters.status}
+                onChange={onFilterChange}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/80"
+              >
+                <option value="ALL">All Status</option>
+                <option value="PRESENT">Present</option>
+                <option value="HALF_DAY">Half Day</option>
+                <option value="ABSENT">Absent</option>
+              </select>
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                Single Date
+              </span>
+              <input
+                name="date"
+                type="date"
+                value={filters.date}
+                onChange={onFilterChange}
+                disabled={isRangeMode}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/80"
+              />
+            </label>
+          </div>
+
+          <div className="mt-3 grid gap-3 xl:grid-cols-[180px_180px_minmax(0,1fr)]">
+            <label className="space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                From
+              </span>
+              <input
+                name="from"
+                type="date"
+                value={filters.from}
+                onChange={onFilterChange}
+                disabled={isSingleDateMode}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/80"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                To
+              </span>
+              <input
+                name="to"
+                type="date"
+                value={filters.to}
+                onChange={onFilterChange}
+                disabled={isSingleDateMode}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/80"
+              />
+            </label>
+
+            <div className="flex flex-col justify-end gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <p className="text-xs text-slate-500">
+                Search updates the visible list instantly. Status and date filters load matching team records.
+              </p>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+                >
+                  <Filter size={16} />
+                  Apply Filters
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onResetFilters}
+                  disabled={loading}
+                  className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
 
         {loading ? (
           <div className="py-10 flex items-center justify-center gap-2 text-slate-500">
@@ -594,7 +700,11 @@ export default function TeamLeaderAttendancePage() {
             <span className="text-sm font-medium">Loading team attendance...</span>
           </div>
         ) : filteredRecords.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">No team attendance records found.</p>
+          <p className="mt-4 text-sm text-slate-500">
+            {hasActiveFilters
+              ? "No team attendance records match the current filters."
+              : "No team attendance records found."}
+          </p>
         ) : (
           <div className="mt-4 space-y-4">
             <div className="grid gap-3 md:hidden">

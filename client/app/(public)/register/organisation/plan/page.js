@@ -145,7 +145,7 @@ export default function Plans() {
                   }`}
               >
                 <div className={`bg-white dark:bg-slate-950/90 rounded-[2.8rem] p-10 h-full flex flex-col border border-slate-100 dark:border-white/10 shadow-2xl transition-all ${tier.popular ? "shadow-blue-100/50 border-blue-50 dark:shadow-blue-950/20 dark:border-blue-500/20" : "shadow-slate-200/40 dark:shadow-black/30"}`}>
-                  <div className={`w-16 h-16 rounded-[1.5rem] mb-10 flex items-center justify-center transform group-hover:rotate-6 transition-transform shadow-lg ${tier.color === "blue" ? "bg-blue-600 dark:bg-blue-400 text-white dark:text-slate-950" :
+                  <div className={`brand-hover-white-media w-16 h-16 rounded-[1.5rem] mb-10 flex items-center justify-center transform group-hover:rotate-6 transition-transform shadow-lg ${tier.color === "blue" ? "bg-blue-600 dark:bg-blue-400 text-white dark:text-slate-950" :
                     tier.color === "indigo" ? "bg-indigo-600 dark:bg-indigo-400 text-white dark:text-slate-950" :
                       "bg-amber-500 dark:bg-amber-400 text-white dark:text-slate-950"
                     }`}>
@@ -177,7 +177,7 @@ export default function Plans() {
                   <div className="space-y-5 mb-12 flex-grow">
                     {tier.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-4">
-                        <div className="mt-1 w-6 h-6 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-500/20 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                        <div className="brand-hover-white-media mt-1 w-6 h-6 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-500/20 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors">
                           <Check size={14} className="text-blue-600 dark:text-blue-300" />
                         </div>
                         <span className="text-slate-600 dark:text-slate-300 font-bold text-sm leading-tight">{feature}</span>
@@ -187,10 +187,7 @@ export default function Plans() {
 
                   <button
                     onClick={() => handleSelectPlan(planOption)}
-                    className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 group/btn shadow-2xl ${tier.popular
-                      ? "bg-blue-600 dark:bg-blue-400 text-white dark:text-slate-950 shadow-blue-200 dark:shadow-blue-950/30 hover:bg-slate-900 dark:hover:bg-blue-300"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-blue-600 dark:hover:bg-slate-700 hover:text-white"
-                      }`}
+                    className="group/btn flex w-full items-center justify-center gap-3 rounded-[2rem] border border-slate-200 bg-slate-100 py-6 font-black text-xs uppercase tracking-widest text-slate-900 shadow-2xl transition-all hover:bg-blue-600 hover:text-white dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
                   >
                     Activate {tier.name}
                     <ArrowRight size={20} className="group-hover/btn:translate-x-2 transition-transform" />

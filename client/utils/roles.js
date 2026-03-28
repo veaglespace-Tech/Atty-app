@@ -284,7 +284,7 @@ export const getRoleBadgeTheme = (role) => {
         sidebar:
           "border border-violet-400/20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.28)] dark:border-violet-400/20 dark:from-violet-500 dark:to-indigo-500 dark:text-white",
         header:
-          "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/25 dark:bg-violet-500/12 dark:text-violet-200",
+          "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-300/40 dark:bg-violet-500/24 dark:text-violet-50 dark:shadow-[0_12px_28px_rgba(124,58,237,0.20)]",
         accent:
           "bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.22)] dark:from-violet-500 dark:to-indigo-400 dark:text-white",
       };

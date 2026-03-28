@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { MessageSquareText, SendHorizontal, Sparkles, X } from "lucide-react";
+import { MessageSquareText, SendHorizontal, X } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   useAskAttyMutation,
@@ -39,12 +39,12 @@ const CHAT_THEME = {
     section: "border-white/70 bg-white/68 backdrop-blur-xl",
     sectionText: "text-slate-500",
     quickButton:
-      "brand-btn brand-btn-secondary brand-btn-sm rounded-full px-3 py-1.5 text-[11px] font-black tracking-[0.04em]",
+      "brand-btn brand-btn-secondary brand-btn-sm w-full justify-center rounded-full px-3 py-1.5 text-center text-[11px] font-black tracking-[0.04em] sm:w-auto",
     inputWrap: "border-white/70 bg-white/68 backdrop-blur-xl",
     input:
       "atty-widget-field border-[rgb(var(--brand-line)/0.76)] bg-white/90 text-slate-800 placeholder:text-slate-400 shadow-[0_12px_30px_rgba(30,112,209,0.08)] focus:border-blue-500",
     sendButton:
-      "brand-btn brand-btn-primary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl p-0 disabled:opacity-40",
+      "brand-btn brand-btn-primary flex h-11 w-full flex-shrink-0 items-center justify-center rounded-[1.1rem] p-0 disabled:opacity-40 sm:h-10 sm:w-10 sm:rounded-2xl",
     supportCard:
       "border border-white/70 bg-white/78 text-slate-800 shadow-[0_22px_54px_rgba(30,112,209,0.10)] backdrop-blur-xl",
     supportTitle: "text-slate-900",
@@ -83,12 +83,12 @@ const CHAT_THEME = {
     section: "border-slate-800/80 bg-slate-950/34 backdrop-blur-xl",
     sectionText: "text-slate-400",
     quickButton:
-      "brand-btn brand-btn-secondary brand-btn-sm rounded-full px-3 py-1.5 text-[11px] font-black tracking-[0.04em]",
+      "brand-btn brand-btn-secondary brand-btn-sm w-full justify-center rounded-full px-3 py-1.5 text-center text-[11px] font-black tracking-[0.04em] sm:w-auto",
     inputWrap: "border-slate-800/80 bg-slate-950/34 backdrop-blur-xl",
     input:
       "atty-widget-field atty-widget-field-dark border-[rgb(var(--brand-line)/0.56)] bg-[rgb(var(--brand-surface)/0.82)] text-slate-100 placeholder:text-slate-500 shadow-[0_22px_50px_rgba(2,6,23,0.32)] focus:border-blue-400",
     sendButton:
-      "brand-btn brand-btn-primary flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl p-0 disabled:opacity-40",
+      "brand-btn brand-btn-primary flex h-11 w-full flex-shrink-0 items-center justify-center rounded-[1.1rem] p-0 disabled:opacity-40 sm:h-10 sm:w-10 sm:rounded-2xl",
     supportCard:
       "border border-slate-800/80 bg-slate-950/34 text-slate-100 shadow-[0_24px_58px_rgba(2,6,23,0.44)] backdrop-blur-xl",
     supportTitle: "text-slate-100",
@@ -112,14 +112,14 @@ const CHAT_THEME = {
 function BotAvatar({ avatarBorder }) {
   return (
     <div
-      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-white/15 p-0.5 ${avatarBorder}`}
+      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-[0.9rem] border bg-white p-0.5 shadow-[0_10px_24px_rgba(3,10,28,0.14)] sm:h-9 sm:w-9 sm:rounded-[1rem] ${avatarBorder}`}
     >
       <Image
-        src="/Logo.webp"
+        src="/logo1-clean.webp"
         alt="Atty"
-        width={28}
-        height={28}
-        className="h-full w-full object-cover"
+        width={32}
+        height={32}
+        className="h-full w-full object-contain"
       />
     </div>
   );
@@ -201,7 +201,7 @@ function SupportForm({ onSubmit, loading, theme }) {
   }
 
   return (
-    <div className={`flex-1 rounded-[1.4rem] p-3 text-sm ${theme.supportCard}`}>
+    <div className={`w-full rounded-[1.25rem] p-3 text-sm sm:flex-1 sm:rounded-[1.4rem] ${theme.supportCard}`}>
       <p className={`mb-2 font-black tracking-[0.04em] ${theme.supportTitle}`}>
         Contact support
       </p>
@@ -362,35 +362,31 @@ export default function AttyWidget() {
     <>
       {open ? (
         <div
-          className={`fixed bottom-24 left-3 right-3 z-50 flex max-h-[min(78vh,640px)] w-auto max-w-none flex-col overflow-hidden rounded-[2rem] border shadow-xl sm:left-auto sm:right-5 sm:w-[390px] ${widgetModeClass} ${theme.panel}`}
+          className={`fixed bottom-20 left-3 right-3 z-50 flex min-w-0 max-h-[calc(100dvh-6rem)] w-auto max-w-none flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-24 sm:left-auto sm:right-4 sm:w-[24rem] sm:max-w-[calc(100vw-2rem)] sm:max-h-[min(82dvh,720px)] sm:rounded-[2rem] md:w-[26rem] lg:w-[28rem] 2xl:w-[30rem] ${widgetModeClass} ${theme.panel}`}
         >
           <div
-            className={`relative flex flex-shrink-0 items-center gap-3 overflow-hidden px-4 py-4 ${theme.header}`}
+            className={`relative flex flex-shrink-0 items-start gap-2.5 overflow-hidden px-3.5 py-3.5 sm:items-center sm:gap-3 sm:px-4 sm:py-4 ${theme.header}`}
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.14),transparent_28%)]" />
 
-            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-[1.2rem] border border-white/25 bg-white/12 shadow-[0_14px_30px_rgba(3,10,28,0.18)]">
+            <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/25 bg-white p-0.5 shadow-[0_14px_30px_rgba(3,10,28,0.18)] sm:h-10 sm:w-10 sm:rounded-[1.2rem]">
               <Image
-                src="/Logo.webp"
+                src="/logo1-clean.webp"
                 alt="Atty"
-                width={36}
-                height={36}
-                className="h-full w-full object-cover"
+                width={40}
+                height={40}
+                className="h-full w-full object-contain"
               />
             </div>
 
             <div className="relative min-w-0 flex-1">
-              <div className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/85">
-                <Sparkles size={10} />
-                Smart Help
-              </div>
-              <p className="mt-2 text-sm font-black leading-tight text-white">
+              <p className="text-sm font-black leading-tight text-white sm:text-[15px]">
                 Atty
               </p>
-              <p className={`text-[11px] ${theme.headerSubtle}`}>
+              <p className={`pr-1 text-[10px] leading-relaxed sm:text-[11px] ${theme.headerSubtle}`}>
                 Attendee assistant, tuned to your workspace
               </p>
-              <div className="mt-1 flex items-center gap-1">
+              <div className="mt-1 hidden items-center gap-1 sm:flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span className={`text-[11px] ${theme.statusText}`}>
                   Always on
@@ -400,7 +396,7 @@ export default function AttyWidget() {
 
             <button
               onClick={closeChat}
-              className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-white/18 bg-white/10 text-white/75 transition hover:bg-white/16 hover:text-white"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/18 bg-white/10 text-white/75 transition hover:bg-white/16 hover:text-white sm:h-9 sm:w-9 sm:rounded-2xl"
               aria-label="Close Atty support"
             >
               <X size={18} />
@@ -408,16 +404,16 @@ export default function AttyWidget() {
           </div>
 
           <div
-            className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 ${theme.messages}`}
+            className={`flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3 sm:gap-3 sm:p-4 ${theme.messages}`}
           >
             {messages.length === 0 ? (
               <div className="flex items-start gap-2">
                 <BotAvatar avatarBorder={theme.avatarBorder} />
                 <div
-                  className={`max-w-[84%] rounded-2xl rounded-tl-sm px-3 py-2 text-sm leading-relaxed ${theme.introBubble}`}
+                  className={`max-w-[88%] rounded-2xl rounded-tl-sm px-3 py-2 text-sm leading-relaxed sm:max-w-[84%] ${theme.introBubble}`}
                 >
-                  Hi. Ask me anything about attendance, teams, reports, or
-                  subscriptions and I will help fast.
+                  Hi. Ask me anything about Attendee and I will get you an
+                  answer fast.
                 </div>
               </div>
             ) : null}
@@ -436,7 +432,7 @@ export default function AttyWidget() {
                 ) : null}
 
                 <div
-                  className={`max-w-[84%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed sm:max-w-[84%] ${
                     msg.role === "user"
                       ? `rounded-tr-sm ${theme.userBubble}`
                       : `${theme.botBubble} rounded-tl-sm`
@@ -465,7 +461,7 @@ export default function AttyWidget() {
             ) : null}
 
             {showForm ? (
-              <div className="flex items-start gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                 <BotAvatar avatarBorder={theme.avatarBorder} />
                 <SupportForm
                   onSubmit={handleFormSubmit}
@@ -479,11 +475,11 @@ export default function AttyWidget() {
           </div>
 
           {messages.length === 0 ? (
-            <div className={`flex-shrink-0 border-t px-4 pb-3 ${theme.section}`}>
+            <div className={`flex-shrink-0 border-t px-3 pb-3 ${theme.section} sm:px-4`}>
               <p className={`mb-1.5 mt-2 text-[11px] ${theme.sectionText}`}>
                 Quick questions
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-1.5">
                 {QUICK_QUESTIONS.map((q) => (
                   <button
                     key={q}
@@ -498,7 +494,7 @@ export default function AttyWidget() {
           ) : null}
 
           <div
-            className={`flex flex-shrink-0 gap-2 border-t px-3 py-2.5 ${theme.inputWrap}`}
+            className={`flex flex-shrink-0 flex-col gap-2 border-t px-3 py-3 sm:flex-row sm:items-end sm:gap-2 sm:px-3 sm:py-2.5 ${theme.inputWrap}`}
           >
             <textarea
               rows={1}
@@ -506,7 +502,7 @@ export default function AttyWidget() {
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKey}
               placeholder="Ask Atty anything..."
-              className={`max-h-20 flex-1 resize-none overflow-y-auto rounded-2xl border px-3 py-2 text-sm focus:outline-none ${theme.input}`}
+              className={`min-h-[48px] max-h-24 flex-1 resize-none overflow-y-auto rounded-[1.1rem] border px-3 py-2 text-sm focus:outline-none sm:min-h-0 sm:max-h-20 sm:rounded-2xl ${theme.input}`}
             />
             <button
               onClick={() => handleAsk(input)}
@@ -524,7 +520,7 @@ export default function AttyWidget() {
           if (open) closeChat();
           else setOpen(true);
         }}
-        className={`fixed bottom-5 right-5 z-50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${open ? theme.fabActive : theme.fab}`}
+        className={`fixed bottom-4 right-4 z-50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 sm:bottom-5 sm:right-5 ${open ? theme.fabActive : theme.fab}`}
         aria-label="Open Atty support"
       >
         {open ? (

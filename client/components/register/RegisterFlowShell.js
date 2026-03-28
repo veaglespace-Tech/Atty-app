@@ -1,5 +1,5 @@
-import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SectionEyebrow from "@/components/SectionEyebrow";
 
 const pageShellClassName =
   "relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,rgba(240,247,255,0.96),rgba(255,255,255,0.98),rgba(240,247,255,0.94))] px-4 pb-16 pt-28 transition-colors duration-500 dark:bg-[linear-gradient(180deg,rgba(4,12,30,0.98),rgba(5,18,44,0.98),rgba(8,24,57,0.98))]";
@@ -9,7 +9,6 @@ const cardShellClassName =
 
 export default function RegisterFlowShell({
   badge,
-  badgeIcon: BadgeIcon = ShieldCheck,
   title,
   description,
   children,
@@ -45,15 +44,9 @@ export default function RegisterFlowShell({
             {(badge || title || description) && (
               <div className={cn("mb-10", alignClassName, headerClassName)}>
                 {badge ? (
-                  <div
-                    className={cn(
-                      "mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-600 shadow-lg shadow-blue-100/60 dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200",
-                      badgeClassName
-                    )}
-                  >
-                    <BadgeIcon size={14} className="text-blue-600 dark:text-blue-300" />
+                  <SectionEyebrow className={cn("mb-5", badgeClassName)}>
                     {badge}
-                  </div>
+                  </SectionEyebrow>
                 ) : null}
 
                 {title ? (

@@ -14,7 +14,7 @@ export default function DashboardBrandBlock() {
             width={80}
             height={80}
             unoptimized
-            className="h-full w-full object-contain"
+            className="brand-logo-mark h-full w-full object-contain"
           />
         </div>
         <p className="mt-2 text-xs font-bold tracking-[0.16em] text-slate-500 dark:text-slate-400">

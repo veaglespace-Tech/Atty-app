@@ -77,24 +77,24 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-[70] border-b border-slate-100 bg-white/80 shadow-[0_16px_48px_rgba(30,112,209,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-black/20">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="flex h-20 items-center justify-between">
-            <Link href="/" className="group shrink-0 flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-12 md:w-12">
+        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6">
+          <div className="flex h-20 items-center justify-between gap-3 xl:gap-6">
+            <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2.5 lg:gap-3">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-11 md:w-11 2xl:h-12 2xl:w-12">
                 <Image
                   src="/logo1-clean.webp"
                   alt="Veagle logo mark"
                   fill
                   sizes="(max-width: 768px) 40px, 48px"
-                  className="h-full w-full object-contain"
+                  className="brand-logo-mark h-full w-full object-contain"
                 />
               </div>
-              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white md:text-2xl">
-                Veagle <span className="brand-wordmark">Attendee</span>
+              <span className="truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl 2xl:text-2xl">
+                Veagle <span className="brand-wordmark hidden sm:inline">Attendee</span>
               </span>
             </Link>
 
-            <div className="hidden items-center gap-10 lg:flex">
+            <div className="hidden items-center gap-6 2xl:gap-10 xl:flex">
               {NAV_LINKS.map((link) => (
                 <PublicNavLink
                   key={link.href}
@@ -105,13 +105,36 @@ export default function Navbar() {
               ))}
             </div>
 
-            <div className="hidden items-center gap-4 md:flex">
-              <ThemeToggle className="w-11 px-0" />
+            <div className="hidden items-center gap-2 sm:flex xl:hidden">
+              <ThemeToggle className="h-11 w-11 px-0" />
+              {!isAuthReady ? (
+                <div className="h-11 w-28 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800 lg:w-36" />
+              ) : isLoggedIn ? (
+                <Link
+                  href={dashboardHref}
+                  className="brand-btn brand-btn-primary h-11 rounded-2xl px-3 text-sm font-bold text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30"
+                >
+                  <LayoutDashboard size={18} />
+                  <span className="hidden lg:inline">Dashboard</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/register"
+                  className="brand-btn brand-btn-primary h-11 rounded-2xl px-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30"
+                >
+                  <UserPlus size={18} />
+                  <span className="hidden lg:inline">Get Started</span>
+                </Link>
+              )}
+            </div>
+
+            <div className="hidden items-center gap-3 2xl:gap-4 xl:flex">
+              <ThemeToggle className="h-11 w-11 px-0" />
               {!isAuthReady ? (
                 <div className="h-11 w-44 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
               ) : isLoggedIn ? (
                 <>
-                  <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900 lg:flex">
+                  <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900 2xl:flex">
                     <UserCircle2 size={18} className="text-slate-500 dark:text-slate-300" />
                     <div className="text-right leading-tight">
                       <p className="text-[11px] font-bold text-slate-800 dark:text-white">{user?.name || "User"}</p>
@@ -120,27 +143,27 @@ export default function Navbar() {
                   </div>
                   <Link
                     href={dashboardHref}
-                    className="flex items-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_24px_60px_rgba(59,130,246,0.28)] dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30 dark:hover:bg-blue-300"
+                    className="flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_24px_60px_rgba(59,130,246,0.28)] 2xl:px-6 dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30 dark:hover:bg-blue-300"
                   >
                     <LayoutDashboard size={18} />
-                    Dashboard
+                    <span className="hidden 2xl:inline">Dashboard</span>
                   </Link>
                   <button
                     type="button"
                     onClick={onLogout}
-                    className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-slate-500 transition-all hover:text-rose-600 dark:text-slate-300 dark:hover:text-rose-300"
+                    className="flex items-center gap-2 px-3 py-3 text-sm font-bold text-slate-500 transition-all hover:text-rose-600 2xl:px-5 dark:text-slate-300 dark:hover:text-rose-300"
                   >
                     <LogOut size={18} />
-                    Logout
+                    <span className="hidden 2xl:inline">Logout</span>
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-slate-500 transition-all hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-300">
+                  <Link href="/login" className="flex items-center gap-2 px-3 py-3 text-sm font-bold text-slate-500 transition-all hover:text-blue-600 2xl:px-5 dark:text-slate-300 dark:hover:text-blue-300">
                     <LogIn size={18} />
-                    Login
+                    <span className="hidden 2xl:inline">Login</span>
                   </Link>
-                  <Link href="/register" className="rounded-2xl bg-blue-600 px-7 py-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_24px_60px_rgba(59,130,246,0.28)] dark:shadow-blue-950/30">
+                  <Link href="/register" className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_24px_60px_rgba(59,130,246,0.28)] 2xl:px-7 dark:shadow-blue-950/30">
                     Get Started
                   </Link>
                 </>
@@ -153,7 +176,7 @@ export default function Navbar() {
               aria-expanded={isOpen}
               aria-controls="mobile-site-menu"
               aria-label={isOpen ? "Close menu" : "Open menu"}
-              className="p-2 text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-200 lg:hidden"
+              className="p-2 text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-200 xl:hidden"
             >
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -167,11 +190,11 @@ export default function Navbar() {
             type="button"
             aria-label="Close menu"
             onClick={closeMenu}
-            className="fixed inset-0 z-[58] bg-slate-950/50 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-[58] bg-slate-950/50 backdrop-blur-sm xl:hidden"
           />
           <div
             id="mobile-site-menu"
-            className="fixed inset-x-0 bottom-0 top-20 z-[65] overflow-y-auto bg-white/95 px-4 pb-6 pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:bg-slate-950/95 dark:shadow-black/30 lg:hidden"
+            className="fixed inset-x-0 bottom-0 top-20 z-[65] overflow-y-auto bg-white/95 px-4 pb-6 pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:bg-slate-950/95 dark:shadow-black/30 xl:hidden"
           >
             <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-6">
               <div className="space-y-4">

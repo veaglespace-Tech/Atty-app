@@ -20,6 +20,8 @@ const attendanceUserSelect = {
 const attendanceTeamSelect = {
   id: true,
   name: true,
+  isActive: true,
+  deletedAt: true,
 };
 
 const attendanceRecordSelect = {

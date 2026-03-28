@@ -29,6 +29,14 @@ export const postApi = createApi({
       }),
       invalidatesTags: ["Posts"],
     }),
+    voteOnPost: builder.mutation({
+      query: ({ id, optionIndex }) => ({
+        url: `/posts/${id}/vote`,
+        method: "POST",
+        body: { optionIndex },
+      }),
+      invalidatesTags: ["Posts"],
+    }),
     deletePost: builder.mutation({
       query: (id) => ({
         url: `/posts/${id}`,
@@ -43,5 +51,6 @@ export const {
   useGetOrgPostsQuery,
   useCreatePostMutation,
   useUpdatePostMutation,
+  useVoteOnPostMutation,
   useDeletePostMutation,
 } = postApi;

@@ -27,7 +27,10 @@ function FeatureCard({ icon: Icon, title, desc, accent }) {
   return (
     <div className="group relative overflow-hidden rounded-[2.5rem] border border-transparent bg-white p-8 shadow-[0_28px_78px_rgba(59,130,246,0.12),0_14px_34px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-2 hover:border-blue-100 hover:shadow-[0_34px_92px_rgba(59,130,246,0.16),0_18px_42px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:hover:border-blue-500/20 dark:hover:shadow-blue-950/20 md:rounded-[3rem] md:p-10">
       <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-blue-50 transition-all duration-500 group-hover:rotate-6 group-hover:bg-blue-600 md:h-20 md:w-20 md:rounded-[2rem]">
-        <Icon size={32} className={`${accent} transition-colors duration-500 group-hover:text-white`} />
+        <Icon
+          size={32}
+          className={`${accent} transition-colors duration-500 group-hover:!text-white dark:group-hover:!text-white`}
+        />
       </div>
       <h4 className="mb-4 text-xl font-black text-slate-950 dark:text-white md:text-2xl">{title}</h4>
       <p className="text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300 md:text-base">

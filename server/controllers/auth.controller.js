@@ -7,6 +7,228 @@ const { resolveUserPermissions } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { normalizeUser } = require("../utils/identity");
 const { truncateText } = require("../services/common.service");
+const sendEmail = require("../utils/email");
+
+const PASSWORD_RESET_TOKEN_TTL_MINUTES = 15;
+const PASSWORD_RESET_TOKEN_TTL_SECONDS = PASSWORD_RESET_TOKEN_TTL_MINUTES * 60;
+const GENERIC_PASSWORD_RESET_MESSAGE =
+  "If this account exists, we have sent a reset link to the registered email address.";
+
+const getClientBaseUrl = () => {
+  const explicitBaseUrl = String(process.env.CLIENT_URL || process.env.APP_URL || "").trim();
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/+$/, "");
+  }
+
+  const firstAllowedOrigin = String(process.env.CLIENT_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .find(Boolean);
+
+  if (firstAllowedOrigin) {
+    return firstAllowedOrigin.replace(/\/+$/, "");
+  }
+
+  return "http://localhost:3000";
+};
+
+const getLoginPathByRole = (role) =>
+  normalizeRole(role) === "SUPER_ADMIN" ? "/super-admin/login" : "/login";
+
+const formatRoleLabel = (role) =>
+  normalizeRole(role)
+    .split("_")
+    .map((segment) => segment.charAt(0) + segment.slice(1).toLowerCase())
+    .join(" ");
+
+const maskEmailAddress = (value) => {
+  const normalized = normalizeEmail(value);
+  const [name = "", domain = ""] = normalized.split("@");
+  if (!name || !domain) return "";
+
+  const [domainName = "", ...domainSuffixParts] = domain.split(".");
+  const maskedName =
+    name.length <= 2 ? `${name.charAt(0)}*` : `${name.slice(0, 2)}${"*".repeat(name.length - 2)}`;
+  const maskedDomain = domainName
+    ? `${domainName.charAt(0)}${"*".repeat(Math.max(1, domainName.length - 1))}`
+    : "";
+  const suffix = domainSuffixParts.length > 0 ? `.${domainSuffixParts.join(".")}` : "";
+
+  return `${maskedName}@${maskedDomain}${suffix}`;
+};
+
+const buildPasswordResetSecret = (user) =>
+  `${String(process.env.JWT_KEY || "")}:${String(user?.password || "")}`;
+
+const createPasswordResetToken = (user) =>
+  jwt.sign(
+    {
+      id: Number(user.id),
+      purpose: "PASSWORD_RESET",
+    },
+    buildPasswordResetSecret(user),
+    {
+      expiresIn: PASSWORD_RESET_TOKEN_TTL_SECONDS,
+    }
+  );
+
+const decodePasswordResetToken = (token) => {
+  const decoded = jwt.decode(String(token || ""));
+  if (!decoded || typeof decoded !== "object") return null;
+
+  const userId = Number(decoded.id);
+  if (!Number.isFinite(userId) || userId <= 0 || decoded.purpose !== "PASSWORD_RESET") {
+    return null;
+  }
+
+  return { userId };
+};
+
+const validatePasswordResetToken = async (token) => {
+  const decoded = decodePasswordResetToken(token);
+  if (!decoded) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+    include: {
+      organization: {
+        include: {
+          plan: true,
+        },
+      },
+    },
+  });
+
+  if (!user || user.deletedAt || user.isActive === false) {
+    return null;
+  }
+
+  try {
+    const verified = jwt.verify(String(token || ""), buildPasswordResetSecret(user));
+    if (!verified || typeof verified !== "object" || verified.purpose !== "PASSWORD_RESET") {
+      return null;
+    }
+  } catch (_) {
+    return null;
+  }
+
+  return user;
+};
+
+const findPasswordResetUser = async ({
+  email,
+  loginAs,
+  organizationId,
+  organizationCode,
+}) => {
+  const normalizedEmail = normalizeEmail(email);
+  const requestedRole = normalizeRole(loginAs);
+  const requestedOrganizationId = parseOrganizationId(organizationId);
+  const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
+
+  if (!normalizedEmail) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: {
+      organization: {
+        include: {
+          plan: true,
+        },
+      },
+    },
+  });
+
+  if (!user) return null;
+
+  const normalizedUserRole = normalizeRole(user.role);
+  if (normalizedUserRole !== requestedRole) {
+    return null;
+  }
+
+  if (user.deletedAt || user.isActive === false) {
+    return null;
+  }
+
+  if (normalizedUserRole !== "SUPER_ADMIN") {
+    const org = user.organization;
+    if (!org || org.deletedAt) {
+      return null;
+    }
+
+    if (!requestedOrganizationId && !normalizedOrganizationCode) {
+      return null;
+    }
+
+    if (requestedOrganizationId && Number(org.id) !== requestedOrganizationId) {
+      return null;
+    }
+
+    if (
+      normalizedOrganizationCode &&
+      String(org.organizationCode || "").trim().toUpperCase() !== normalizedOrganizationCode
+    ) {
+      return null;
+    }
+  }
+
+  return user;
+};
+
+const sendPasswordResetEmail = async ({ user, token }) => {
+  const resetUrl = `${getClientBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+  const roleLabel = formatRoleLabel(user.role);
+  const subject = "Reset your Veagle Attendee password";
+  const message = `Hello ${user.name},
+
+We received a request to reset your Veagle Attendee password for your ${roleLabel} account.
+
+Open this link to set a new password:
+${resetUrl}
+
+This link will expire in ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes and can only be used once after your password changes.
+
+If you did not request this, you can ignore this email.`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;background:#f8fafc;padding:32px 16px;color:#0f172a">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dbeafe;border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(15,23,42,0.08)">
+        <div style="padding:28px 32px;background:linear-gradient(135deg,#0c447c,#1e70d1,#5cd1e5);color:#ffffff">
+          <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.24em;text-transform:uppercase;font-weight:700;opacity:0.85">Password Reset</p>
+          <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:800">Reset your Veagle Attendee password</h1>
+        </div>
+        <div style="padding:32px">
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">Hello <strong>${user.name}</strong>,</p>
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">
+            We received a request to reset the password for your <strong>${roleLabel}</strong> account.
+          </p>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.7">
+            Click the button below to set a new password. This link will expire in
+            <strong> ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes</strong>.
+          </p>
+          <a href="${resetUrl}" style="display:inline-block;padding:14px 22px;border-radius:16px;background:#1e70d1;color:#ffffff;text-decoration:none;font-weight:700">
+            Reset Password
+          </a>
+          <p style="margin:24px 0 10px;font-size:13px;line-height:1.7;color:#475569">
+            If the button does not open, copy and paste this link into your browser:
+          </p>
+          <p style="margin:0;word-break:break-all;font-size:13px;line-height:1.7;color:#1d4ed8">
+            ${resetUrl}
+          </p>
+          <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+            If you did not request this, you can safely ignore this email.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({
+    email: user.email,
+    subject,
+    message,
+    html,
+  });
+};
 
 const parseOrganizationId = (value) => {
   const parsed = Number(value);
@@ -468,6 +690,68 @@ exports.searchOrganizations = asyncHandler(async (req, res) => {
       limit,
       total: items.length,
     },
+  });
+});
+
+exports.forgotPassword = asyncHandler(async (req, res) => {
+  const requestBody = req.validatedBody || req.body || {};
+  const user = await findPasswordResetUser(requestBody);
+
+  if (user) {
+    try {
+      const token = createPasswordResetToken(user);
+      await sendPasswordResetEmail({ user, token });
+    } catch (error) {
+      console.error("Failed to send password reset email:", error.message || error);
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    message: GENERIC_PASSWORD_RESET_MESSAGE,
+  });
+});
+
+exports.validateResetPasswordToken = asyncHandler(async (req, res) => {
+  const { token } = req.validatedBody || req.body || {};
+  const user = await validatePasswordResetToken(token);
+
+  if (!user) {
+    res.status(400);
+    throw new Error("Reset link is invalid or expired.");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Reset link verified.",
+    emailHint: maskEmailAddress(user.email),
+    role: normalizeRole(user.role),
+    loginPath: getLoginPathByRole(user.role),
+  });
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.validatedBody || req.body || {};
+  const user = await validatePasswordResetToken(token);
+
+  if (!user) {
+    res.status(400);
+    throw new Error("Reset link is invalid or expired.");
+  }
+
+  const hashedPassword = await bcrypt.hash(String(password), 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Password reset successful. Please sign in with your new password.",
+    loginPath: getLoginPathByRole(user.role),
   });
 });
 

@@ -9,9 +9,9 @@ import {
   FileText,
   Loader2,
   RefreshCcw,
-  Sparkles,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
 
@@ -118,6 +118,8 @@ const COLUMN_PRESETS = {
   memberid: { align: "center", minWidth: 92, wrap: "nowrap" },
   orderid: { minWidth: 156, wrap: "nowrap" },
   paymentid: { minWidth: 156, wrap: "nowrap" },
+  plan: { minWidth: 136, wrap: "wrap" },
+  planname: { minWidth: 136, wrap: "wrap" },
   plancode: { minWidth: 112, wrap: "nowrap" },
   punchinat: { type: "datetime", minWidth: 168, wrap: "nowrap" },
   punchincoordinates: { type: "coordinates", minWidth: 176, wrap: "nowrap" },
@@ -225,6 +227,14 @@ const toPlainTokenText = (value) =>
       return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
     })
     .join(" ");
+
+const formatPlanCodeValue = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
 const shouldHumanizeString = (value, keyHint = "") => {
   const text = String(value || "").trim();
@@ -396,6 +406,7 @@ const formatValue = (value, keyHint = "") => {
   if (typeof value === "boolean") return value ? "Yes" : "No";
 
   if (typeof value === "string") {
+    if (normalizeKey(keyHint) === "plancode") return formatPlanCodeValue(value);
     if (DATETIME_PATTERN.test(value)) return formatDateTimeValue(value);
     if (DATE_ONLY_PATTERN.test(value)) return formatDateOnlyValue(value);
     if (shouldHumanizeString(value, keyHint)) return toPlainTokenText(value);
@@ -483,6 +494,21 @@ const resolveTableColumns = (items, tableColumns) => {
     });
 };
 
+const buildHiddenColumnSet = (columns = []) =>
+  new Set(
+    (Array.isArray(columns) ? columns : [])
+      .map((column) => normalizeKey(column))
+      .filter(Boolean)
+  );
+
+const shouldHideColumn = (column = {}, hiddenColumnSet) => {
+  if (!(hiddenColumnSet instanceof Set) || hiddenColumnSet.size === 0) return false;
+  return (
+    hiddenColumnSet.has(normalizeKey(column?.key)) ||
+    hiddenColumnSet.has(normalizeKey(column?.label))
+  );
+};
+
 const getTableBadgeTone = (value) => {
   const normalized = String(value || "").trim().toUpperCase();
 
@@ -517,6 +543,7 @@ const formatCompactTableValue = (value, column = {}) => {
   if (typeof value === "number") return Number.isInteger(value) ? value.toLocaleString("en-IN") : value.toFixed(2);
 
   if (typeof value === "string") {
+    if (normalizeKey(column.key) === "plancode") return formatPlanCodeValue(value);
     if (DATETIME_PATTERN.test(value)) return formatDateTimeValue(value);
     if (DATE_ONLY_PATTERN.test(value)) return formatDateOnlyValue(value);
     if (shouldHumanizeString(value, column.key)) return toPlainTokenText(value);
@@ -627,7 +654,7 @@ const renderTableCell = (column, row, options = {}) => {
   }
 
   return (
-    <span className="block max-w-full break-all whitespace-pre-wrap">
+    <span className="block max-w-full break-words whitespace-pre-wrap">
       {formatValue(value, column.key)}
     </span>
   );
@@ -681,8 +708,13 @@ const getColumnStyle = (column = {}) => {
 const getDesktopTableMinWidth = (columns = []) =>
   columns.reduce((total, column) => total + getColumnMinWidth(column), 0);
 
-const getRecordPresentation = (row, index) => {
-  const entries = Object.entries(row || {}).filter(([key]) => key !== "id" && key !== "_id");
+const getRecordPresentation = (row, index, hiddenColumnSet) => {
+  const entries = Object.entries(row || {}).filter(
+    ([key]) =>
+      key !== "id" &&
+      key !== "_id" &&
+      !hiddenColumnSet?.has(normalizeKey(key))
+  );
   const keys = entries.map(([key]) => key);
   const titleKey = getPriorityKey(keys, TITLE_KEY_PRIORITY);
   const supportingKeys = SUPPORTING_KEY_PRIORITY.map((priority) =>
@@ -736,6 +768,7 @@ export default function DataPanelPage({
   tableColumns = [],
   downloadSection = null,
   hiddenSummaryLabels = [],
+  hiddenRecordColumns = [],
 }) {
   const user = useSelector((state) => state.auth.user);
   const [error, setError] = useState("");
@@ -782,9 +815,16 @@ export default function DataPanelPage({
     );
   }, [hiddenSummaryLabels, payload.summary]);
   const items = useMemo(() => (Array.isArray(payload.items) ? payload.items : []), [payload.items]);
+  const hiddenColumnSet = useMemo(
+    () => buildHiddenColumnSet(hiddenRecordColumns),
+    [hiddenRecordColumns]
+  );
   const resolvedTableColumns = useMemo(
-    () => resolveTableColumns(items, tableColumns),
-    [items, tableColumns]
+    () =>
+      resolveTableColumns(items, tableColumns).filter(
+        (column) => !shouldHideColumn(column, hiddenColumnSet)
+      ),
+    [hiddenColumnSet, items, tableColumns]
   );
 
   const toggleMobileRow = useCallback((rowKey) => {
@@ -800,10 +840,9 @@ export default function DataPanelPage({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.14),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
         <div className="relative">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
-              <Sparkles size={12} />
+            <SectionEyebrow className="border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
               {heroKicker}
-            </div>
+            </SectionEyebrow>
             <h2 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">
               {effectiveTitle}
             </h2>
@@ -1108,7 +1147,8 @@ export default function DataPanelPage({
             {items.map((row, rowIndex) => {
               const { theme, title: cardTitle, heroEntries, visibleEntries } = getRecordPresentation(
                 row,
-                rowIndex
+                rowIndex,
+                hiddenColumnSet
               );
 
               return (
@@ -1123,7 +1163,6 @@ export default function DataPanelPage({
                         <div
                           className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${theme.chip}`}
                         >
-                          <Sparkles size={12} />
                           Record {rowIndex + 1}
                         </div>
                         <h4 className="mt-4 truncate text-xl font-black text-slate-900 dark:text-white">

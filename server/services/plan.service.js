@@ -2,8 +2,9 @@ const normalizePlanCode = (code) =>
   String(code || "")
     .trim()
     .toUpperCase()
-    .replace(/[_\s]+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
 const isLegacyPaidMonthlyPlan = (plan = {}) => {
   const durationInDays = Number(plan?.durationInDays || 0);

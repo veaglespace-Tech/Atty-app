@@ -17,6 +17,7 @@ import {
   useGetOrgPostsQuery, 
   useCreatePostMutation, 
   useUpdatePostMutation, 
+  useVoteOnPostMutation,
   useDeletePostMutation 
 } from "@/services/api/postApi";
 import { getErrorMessage } from "@/utils/formValidation";
@@ -38,6 +39,7 @@ export default function OrgPostsPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [activeVoteId, setActiveVoteId] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -49,6 +51,7 @@ export default function OrgPostsPage() {
   const { data: postsData, isLoading, refetch, isFetching } = useGetOrgPostsQuery();
   const [createPost] = useCreatePostMutation();
   const [updatePost] = useUpdatePostMutation();
+  const [voteOnPost] = useVoteOnPostMutation();
   const [deletePost] = useDeletePostMutation();
 
   const posts = useMemo(() => postsData?.items || [], [postsData]);
@@ -126,6 +129,20 @@ export default function OrgPostsPage() {
       setMessage("Post deleted successfully");
     } catch (err) {
       setError(getErrorMessage(err, "Failed to delete post"));
+    }
+  };
+
+  const handleVote = async (postId, optionIndex) => {
+    try {
+      setError("");
+      setMessage("");
+      setActiveVoteId(postId);
+      await voteOnPost({ id: postId, optionIndex }).unwrap();
+      setMessage("Poll response saved successfully");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to save poll response"));
+    } finally {
+      setActiveVoteId(null);
     }
   };
 
@@ -233,6 +250,8 @@ export default function OrgPostsPage() {
                 types={POST_TYPES}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onVote={handleVote}
+                isVoting={activeVoteId === post.id}
               />
             ))}
           </div>

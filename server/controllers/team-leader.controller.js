@@ -16,6 +16,11 @@ const { normalizeCoordinatesInput } = require("../services/location.service");
 const { mapTeamRecord, buildTeamSummary } = require("../services/team-query.service");
 const { mapUserForManagement } = require("../services/user-query.service");
 const {
+  reclaimSoftDeletedTeamName,
+  softDeleteTeamRecord,
+  isTeamNameUniqueConstraintError,
+} = require("../services/team-name.service");
+const {
   buildAttendanceWhere,
   buildAttendanceSummary,
   mapAttendanceRecord,
@@ -403,38 +408,53 @@ exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
     leaderId,
   });
 
-  const created = await prisma.$transaction(async (tx) => {
-    const team = await tx.team.create({
-      data: {
+  let created;
+  try {
+    created = await prisma.$transaction(async (tx) => {
+      await reclaimSoftDeletedTeamName({
+        tx,
         orgId,
         name,
-        description,
-        attendanceRadius: Math.round(radius),
-        leaderId,
-        longitude: coordinates ? coordinates[0] : null,
-        latitude: coordinates ? coordinates[1] : null,
-        createdById: Number(req.user.id),
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (memberIds.length > 0) {
-      await tx.teamMember.createMany({
-        data: memberIds.map((userId) => ({
-          teamId: team.id,
-          userId,
-        })),
-        skipDuplicates: true,
       });
-    }
 
-    return tx.team.findUnique({
-      where: { id: team.id },
-      select: teamListSelect,
+      const team = await tx.team.create({
+        data: {
+          orgId,
+          name,
+          description,
+          attendanceRadius: Math.round(radius),
+          leaderId,
+          longitude: coordinates ? coordinates[0] : null,
+          latitude: coordinates ? coordinates[1] : null,
+          createdById: Number(req.user.id),
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (memberIds.length > 0) {
+        await tx.teamMember.createMany({
+          data: memberIds.map((userId) => ({
+            teamId: team.id,
+            userId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return tx.team.findUnique({
+        where: { id: team.id },
+        select: teamListSelect,
+      });
     });
-  });
+  } catch (error) {
+    if (isTeamNameUniqueConstraintError(error)) {
+      res.status(409);
+      throw new Error("Team with this name already exists");
+    }
+    throw error;
+  }
 
   res.status(201).json({
     success: true,
@@ -527,37 +547,55 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
     leaderId: hasLeaderId ? leaderId : null,
   });
 
-  const updated = await prisma.$transaction(async (tx) => {
-    await tx.team.update({
-      where: { id: teamId },
-      data: {
-        ...payload,
-        ...(hasLeaderId ? { leaderId } : {}),
-      },
-    });
-
-    if (hasMemberIds) {
-      await tx.teamMember.deleteMany({
-        where: {
-          teamId,
-        },
-      });
-      if (memberIds.length > 0) {
-        await tx.teamMember.createMany({
-          data: memberIds.map((userId) => ({
-            teamId,
-            userId,
-          })),
-          skipDuplicates: true,
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      if (payload.name) {
+        await reclaimSoftDeletedTeamName({
+          tx,
+          orgId,
+          name: payload.name,
+          excludeTeamId: teamId,
         });
       }
-    }
 
-    return tx.team.findUnique({
-      where: { id: teamId },
-      select: teamListSelect,
+      await tx.team.update({
+        where: { id: teamId },
+        data: {
+          ...payload,
+          ...(hasLeaderId ? { leaderId } : {}),
+        },
+      });
+
+      if (hasMemberIds) {
+        await tx.teamMember.deleteMany({
+          where: {
+            teamId,
+          },
+        });
+        if (memberIds.length > 0) {
+          await tx.teamMember.createMany({
+            data: memberIds.map((userId) => ({
+              teamId,
+              userId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.team.findUnique({
+        where: { id: teamId },
+        select: teamListSelect,
+      });
     });
-  });
+  } catch (error) {
+    if (payload.name && isTeamNameUniqueConstraintError(error)) {
+      res.status(409);
+      throw new Error("Another team with this name already exists");
+    }
+    throw error;
+  }
 
   res.status(200).json({
     success: true,
@@ -594,12 +632,11 @@ exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
 
   assertTeamMutationAccess({ req, res, team });
 
-  await prisma.team.update({
-    where: { id: teamId },
-    data: {
-      deletedAt: new Date(),
-      isActive: false,
-    },
+  await prisma.$transaction(async (tx) => {
+    await softDeleteTeamRecord({
+      tx,
+      teamId,
+    });
   });
 
   res.status(200).json({

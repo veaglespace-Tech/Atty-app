@@ -7,6 +7,7 @@ const { normalizeRole } = require("../constants/rbac");
 const { getDefaultPermissionsForRole } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
+const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
 const sendEmail = require("../utils/email");
 const { truncateText, formatDate } = require("../services/common.service");
 
@@ -267,8 +268,12 @@ exports.createOrder = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("Razorpay Order Error:", error);
-    res.status(500);
-    throw new Error("Failed to create Razorpay order");
+    res.status(res.statusCode === 200 ? 500 : res.statusCode);
+    const message =
+      error?.message === "Razorpay key configuration is missing on server"
+        ? error.message
+        : "Failed to create Razorpay order";
+    throw new Error(message);
   }
 });
 

@@ -27,24 +27,24 @@ export const userGuideSections = [
     title: "Organization Launch Checklist",
     audience: "For Organization Admin",
     summary:
-      "Set up the workspace foundation before inviting the team so reporting, permissions, and attendance rules start clean.",
+      "Set up your workspace before inviting the team so reporting, permissions, and attendance tracking start clean.",
     steps: [
-      "Verify organization profile, branding, and workspace code before user onboarding begins.",
-      "Configure team structure, reporting owners, and role visibility for admins, team leaders, and members.",
-      "Review attendance settings such as allowed radius, working hours, and exception handling.",
-      "Test the login flow with one admin and one member account before full rollout.",
+      "Verify your organization profile and confirm your workspace details are correct before onboarding begins.",
+      "Set up your team structure - create teams, assign Team Leaders, and define role visibility across Admins, Team Leaders, and Members.",
+      "Add your users via Excel bulk import or individual invite, and confirm each person is assigned the correct role.",
+      "Test the full flow with one Admin account and one Member account - confirm punch-in, attendance records, and dashboard access before rolling out to the team.",
     ],
   },
   {
-    title: "User Approval And Access Flow",
+    title: "User Approval and Access Flow",
     audience: "For Admin & Sub Admin",
     summary:
       "Keep onboarding fast while controlling who enters the workspace and what each role can manage.",
     steps: [
-      "Ask new users to register with the correct organization code and approved email or mobile details.",
-      "Review pending requests in the organization dashboard and approve only verified members.",
-      "Assign the right role based on responsibility, team ownership, and reporting access.",
-      "Confirm active status after approval so the user can sign in and reach the correct dashboard.",
+      "Ask new users to register using the correct organization code so they are linked to the right workspace from the start.",
+      "Add users to the platform individually or in bulk using the Excel import feature available in the Users section.",
+      "Assign the right role to each user based on their responsibility - Member, Team Leader, Sub Admin, or Org Admin - so they see only what they need.",
+      "Confirm the user can sign in and land on the correct dashboard before considering their onboarding complete.",
     ],
   },
   {
@@ -53,22 +53,22 @@ export const userGuideSections = [
     summary:
       "Use a consistent daily routine so attendance logs stay accurate and managers can spot missing punches early.",
     steps: [
-      "Members punch in from the approved location or geo-fence at the start of the shift.",
-      "Team leaders monitor present, absent, and pending punch-out cases from the attendance dashboard.",
-      "Members complete punch out at shift close and leaders review exceptions before the day ends.",
-      "Admins export weekly or monthly summaries for payroll, compliance, and management review.",
+      "Members punch in from within the approved geo-fence location at the start of their shift using their current GPS position.",
+      "Team Leaders monitor present, absent, and late statuses from the Attendance section in their dashboard throughout the day.",
+      "Members complete punch out at shift close and Team Leaders review any missing or incomplete records before the day ends.",
+      "Admins export weekly or monthly attendance summaries from the Reports section for compliance and management review.",
     ],
   },
   {
-    title: "Reports And Audit Rhythm",
+    title: "Reports and Audit Rhythm",
     audience: "For Admin Leadership",
     summary:
-      "Build a repeatable review cycle to turn attendance data into operational decisions and policy updates.",
+      "Build a repeatable review cycle to turn attendance data into operational decisions.",
     steps: [
-      "Check late arrivals, missing punches, and inactive users at least once per day.",
-      "Review team-level reports weekly to identify trends, staffing gaps, and policy misuse.",
-      "Export monthly reports for payroll coordination, leadership review, and archive storage.",
-      "Update attendance policy when recurring exceptions show a process problem instead of individual error.",
+      "Review daily attendance records to check for absent members and incomplete punch-outs across your teams.",
+      "Run weekly reports to identify patterns, spot staffing gaps, and flag members with consistently irregular attendance.",
+      "Export monthly summaries from the Reports section for leadership review and record-keeping - Excel and PDF formats are available for all report ranges.",
+      "Raise a support query through Atty if recurring attendance exceptions suggest a platform or access issue that needs investigation.",
     ],
   },
 ];

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 
 export default function HomeHero() {
   return (
@@ -11,10 +12,9 @@ export default function HomeHero() {
 
       <div className="container relative z-10 mx-auto">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 shadow-[0_18px_44px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_22px_52px_rgba(59,130,246,0.16)] dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200 dark:shadow-black/20 md:mb-8 md:text-xs">
-            <Star size={14} className="animate-pulse text-blue-600 dark:text-blue-300" />
+          <SectionEyebrow className="mb-6 md:mb-8">
             Attendance Made Simple
-          </div>
+          </SectionEyebrow>
 
           <h1 className="mb-6 text-5xl font-black leading-[1] tracking-tight md:mb-8 md:text-8xl md:leading-[0.95]">
             Veagle <br className="hidden md:block" />

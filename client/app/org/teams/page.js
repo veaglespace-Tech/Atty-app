@@ -49,6 +49,12 @@ const fieldClassName =
   "w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
 const selectorCardClassName =
   "rounded-[1.35rem] border border-slate-200 bg-slate-50/90 p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70";
+const selectorSummaryClassName =
+  "mt-2 rounded-[1rem] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[0_12px_28px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/70";
+const selectorSummaryLabelClassName =
+  "text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400";
+const selectorSummaryValueClassName =
+  "mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100";
 
 export default function OrgTeamsPage() {
   const router = useRouter();
@@ -64,7 +70,7 @@ export default function OrgTeamsPage() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    attendanceRadius: "25",
+    attendanceRadius: "",
     leaderId: "",
     memberIds: [],
   });
@@ -146,7 +152,7 @@ export default function OrgTeamsPage() {
     setForm({
       name: "",
       description: "",
-      attendanceRadius: "25",
+      attendanceRadius: "",
       leaderId: "",
       memberIds: [],
     });
@@ -167,6 +173,7 @@ export default function OrgTeamsPage() {
       ...prev,
       leaderId: String(prev.leaderId) === id ? "" : id,
     }));
+    setLeaderSearch("");
   };
 
   const addMember = (memberId) => {
@@ -175,6 +182,7 @@ export default function OrgTeamsPage() {
       ...prev,
       memberIds: prev.memberIds.includes(id) ? prev.memberIds : [...prev.memberIds, id],
     }));
+    setMemberSearch("");
   };
 
   const removeMember = (memberId) => {
@@ -183,6 +191,7 @@ export default function OrgTeamsPage() {
       ...prev,
       memberIds: prev.memberIds.filter((value) => value !== id),
     }));
+    setMemberSearch("");
   };
 
   const refreshAll = async () => {
@@ -346,7 +355,7 @@ export default function OrgTeamsPage() {
               min="5"
               value={form.attendanceRadius}
               onChange={onInputChange}
-              placeholder="Attendance radius"
+              placeholder="Attendance radius (optional, default 25)"
               className={fieldClassName}
             />
 
@@ -382,15 +391,12 @@ export default function OrgTeamsPage() {
                 </button>
               </div>
 
-              {selectedLeader ? (
-                <div className="mt-2 rounded-[1rem] bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700 dark:bg-blue-500/15 dark:text-blue-200">
-                  Selected: {selectedLeader.name}
-                </div>
-              ) : (
-                <div className="mt-2 rounded-[1rem] bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  No leader selected
-                </div>
-              )}
+              <div className={selectorSummaryClassName}>
+                <p className={selectorSummaryLabelClassName}>Selected Leader</p>
+                <p className={selectorSummaryValueClassName}>
+                  {selectedLeader ? selectedLeader.name : "No leader selected"}
+                </p>
+              </div>
 
               {leaderOpen ? (
                 <div className="mt-2 max-h-52 space-y-1 overflow-auto rounded-[1.1rem] border border-slate-200 bg-white/95 p-1 pr-1 shadow-[0_18px_40px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/95">
@@ -443,23 +449,32 @@ export default function OrgTeamsPage() {
                 </button>
               </div>
 
-              <p className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-400">Selected: {form.memberIds.length}</p>
+              <div className={selectorSummaryClassName}>
+                <p className={selectorSummaryLabelClassName}>Selected Members</p>
+                <p className={selectorSummaryValueClassName}>
+                  {form.memberIds.length} {form.memberIds.length === 1 ? "member" : "members"}
+                </p>
 
-              {selectedMembers.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedMembers.map((member) => (
-                    <button
-                      key={`selected-${member.id}`}
-                      type="button"
-                      onClick={() => removeMember(member.id)}
-                      className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200"
-                    >
-                      {member.name}
-                      <X size={12} />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+                {selectedMembers.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedMembers.map((member) => (
+                      <button
+                        key={`selected-${member.id}`}
+                        type="button"
+                        onClick={() => removeMember(member.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200"
+                      >
+                        {member.name}
+                        <X size={12} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    No members selected
+                  </p>
+                )}
+              </div>
 
               {memberOpen ? (
                 <div className="mt-2 max-h-52 space-y-1 overflow-auto rounded-[1.1rem] border border-slate-200 bg-white/95 p-1 pr-1 shadow-[0_18px_40px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/95">

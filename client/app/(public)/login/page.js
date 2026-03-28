@@ -15,6 +15,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import OrganizationLookupField from "@/components/OrganizationLookupField";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useUserSignInMutation } from "@/services/api/authApi";
@@ -117,10 +118,9 @@ export default function LoginPage() {
 
           <div className="p-7 sm:p-8 md:p-12">
             <div className="mb-10 text-center">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-600 shadow-lg shadow-blue-100/60 dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200">
-                <ShieldCheck size={14} className="text-blue-600 dark:text-blue-300" />
+              <SectionEyebrow className="mb-5">
                 Team Login
-              </div>
+              </SectionEyebrow>
               <h2 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
                 Welcome to Veagle Attendee
               </h2>

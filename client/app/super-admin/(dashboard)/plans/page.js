@@ -139,7 +139,7 @@ export default function SuperAdminPlansPage() {
 
       const payload = {
         name: form.name.trim(),
-        code: form.code.trim().toUpperCase().replace(/[_\s]+/g, "-"),
+        code: form.code.trim().toUpperCase().replace(/[-\s]+/g, "_").replace(/_+/g, "_"),
         price: Number(form.price),
         durationInDays: Number(form.durationInDays),
         memberLimit: Number(form.memberLimit || 0),
@@ -236,7 +236,7 @@ export default function SuperAdminPlansPage() {
                         name="code"
                         value={form.code}
                         onChange={onInputChange}
-                        placeholder="PRO-2026"
+                        placeholder="PRO_2026"
                         className="w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black uppercase outline-none ring-offset-2 transition-all focus:ring-2 focus:ring-blue-500 focus:bg-white"
                         required
                     />

@@ -8,8 +8,8 @@ import {
   RefreshCcw,
   Save,
   Search,
-  ShieldCheck,
 } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import {
   useDownloadSuperAdminOrganizationsExcelMutation,
@@ -212,10 +212,9 @@ export default function SuperAdminOrganizationsPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.14),transparent_28%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
-              <ShieldCheck size={12} />
+            <SectionEyebrow className="border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
               Access Control Room
-            </div>
+            </SectionEyebrow>
             <h2 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">
               Organizations
             </h2>

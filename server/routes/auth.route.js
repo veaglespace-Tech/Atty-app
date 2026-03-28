@@ -8,6 +8,9 @@ const {
   getMe,
   updateMe,
   searchOrganizations,
+  forgotPassword,
+  validateResetPasswordToken,
+  resetPassword,
 } = require("../controllers/auth.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { validateBody } = require("../middlewares/validation.middleware");
@@ -20,6 +23,36 @@ const loginSchema = z.object({
   organizationCode: z.string().trim().optional(),
   organizationId: numericIdSchema.optional(),
   loginAs: z.string().trim().optional(),
+});
+
+const forgotPasswordSchema = z
+  .object({
+    email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
+    organizationCode: z.string().trim().optional(),
+    organizationId: numericIdSchema.optional(),
+    loginAs: z.string().trim().min(1, "Role is required"),
+  })
+  .superRefine((value, ctx) => {
+    const normalizedRole = String(value.loginAs || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+    if (normalizedRole !== "SUPER_ADMIN" && !value.organizationCode && !value.organizationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Organization selection is required for this role",
+        path: ["organizationId"],
+      });
+    }
+  });
+
+const resetPasswordTokenSchema = z.object({
+  token: z.string().trim().min(1, "Reset token is required"),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().trim().min(1, "Reset token is required"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password is too long"),
 });
 
 const registerSchema = z
@@ -54,6 +87,13 @@ const updateMeSchema = z
 router.get("/organizations/search", searchOrganizations);
 router.post("/register", validateBody(registerSchema), register);
 router.post("/login", validateBody(loginSchema), login);
+router.post("/forgot-password", validateBody(forgotPasswordSchema), forgotPassword);
+router.post(
+  "/reset-password/validate",
+  validateBody(resetPasswordTokenSchema),
+  validateResetPasswordToken
+);
+router.post("/reset-password", validateBody(resetPasswordSchema), resetPassword);
 router.post("/logout", logout);
 router.get("/me", userProtected, getMe);
 router.patch("/me", userProtected, validateBody(updateMeSchema), updateMe);

@@ -46,8 +46,7 @@ FEATURES THAT EXIST:
 - Teams — create teams, assign team leaders, add members
 - Attendance records — view daily attendance, present/absent/late status
 - Late minutes and total working minutes calculated automatically
-- Attendance reports — filter by Daily, Weekly, or Monthly
-- Reports can be exported in Excel format only
+- Attendance reports — filter by Daily, Weekly, Monthly — Excel and PDF export available
 - Free trial = 7 days of FULL access to ALL features — nothing is locked or restricted
 - After 7 days the trial expires and the org must subscribe to a paid plan to continue
 - There are no feature restrictions during the free trial — every feature is available

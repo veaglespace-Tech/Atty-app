@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Building2, ShieldCheck, UserCircle2 } from "lucide-react";
+import { ArrowRight, Building2, UserCircle2 } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 
 const pageShell =
   "relative min-h-screen overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 pb-12 pt-32 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900";
@@ -17,10 +18,9 @@ export default function RegisterPage() {
 
       <div className="relative z-10 mx-auto w-full max-w-5xl">
         <div className="mb-14 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-600 shadow-[0_18px_44px_rgba(59,130,246,0.12)] dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200">
-            <ShieldCheck size={14} className="text-blue-600 dark:text-blue-300" />
+          <SectionEyebrow className="mb-6">
             Get Started
-          </div>
+          </SectionEyebrow>
           <h1 className="mb-4 text-5xl font-black leading-tight tracking-tight text-slate-950 dark:text-white md:text-7xl">
             Veagle <span className="gradient-text">Attendee</span>
           </h1>
@@ -64,7 +64,7 @@ function RegistrationCard({ icon: Icon, title, desc, badge, href }) {
       <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-blue-400 dark:via-indigo-300 dark:to-cyan-300" />
 
       <div className="mb-8 flex items-start justify-between gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-[1.8rem] bg-blue-50 text-blue-600 transition-all duration-500 group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-500/15 dark:text-blue-200 dark:group-hover:bg-blue-500 md:h-24 md:w-24">
+        <div className="brand-hover-white-media flex h-20 w-20 items-center justify-center rounded-[1.8rem] bg-blue-50 text-blue-600 transition-all duration-500 group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-500/15 dark:text-blue-200 dark:group-hover:bg-blue-500 md:h-24 md:w-24">
           <Icon size={40} />
         </div>
         <div className="rounded-full bg-blue-600 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-[0_18px_44px_rgba(59,130,246,0.22)] dark:bg-blue-400 dark:text-slate-950">

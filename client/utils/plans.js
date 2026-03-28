@@ -1,29 +1,12 @@
-const PLAN_ACRONYMS = new Set(["AI", "API", "GPS", "HR", "ID", "INR", "PDF", "UPI"]);
-
-const normalizePlanTokens = (value) =>
+const normalizePlanCodeValue = (value) =>
   String(value || "")
     .trim()
-    .replace(/([A-Za-z])(\d)/g, "$1 $2")
-    .replace(/(\d)([A-Za-z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .toUpperCase()
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
-const formatToken = (token) => {
-  const upperToken = token.toUpperCase();
-  if (!token) return "";
-  if (PLAN_ACRONYMS.has(upperToken)) return upperToken;
-  if (/^\d+[A-Z]+$/i.test(token)) return upperToken;
-  if (/^\d+$/.test(token)) return token;
-  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
-};
-
-export const formatPlanCodeLabel = (code) =>
-  normalizePlanTokens(code)
-    .split(" ")
-    .filter(Boolean)
-    .map((token) => formatToken(token))
-    .join(" ");
+export const formatPlanCodeLabel = (code) => normalizePlanCodeValue(code);
 
 export const formatPlanNameLabel = (name, code = "") => {
   const rawName = String(name || "").trim();

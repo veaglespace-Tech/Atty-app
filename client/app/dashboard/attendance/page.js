@@ -70,7 +70,6 @@ export default function AttendancePage() {
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.22fr)_minmax(320px,0.78fr)]">
           <div>
             <div className="brand-chip">
-              <CalendarDays size={12} />
               Live Attendance
             </div>
             <h1 className="brand-hero-title mt-4">Daily Attendance Hub</h1>

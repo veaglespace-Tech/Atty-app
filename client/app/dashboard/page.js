@@ -85,7 +85,6 @@ export default function Dashboard() {
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
           <div>
             <div className="brand-chip">
-              <ShieldCheck size={12} />
               Attendance Snapshot
             </div>
             <h1 className="brand-hero-title mt-4">
@@ -241,7 +240,6 @@ export default function Dashboard() {
               Your data stays visible only inside <strong>{user?.organizationCode || "your organization"}</strong>.
             </p>
             <div className="brand-spotlight-chip relative mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">
-              <ShieldCheck size={14} />
               Encrypted Session
             </div>
           </section>

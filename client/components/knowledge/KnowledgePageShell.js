@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 
 export default function KnowledgePageShell({
   eyebrow,
@@ -28,10 +29,9 @@ export default function KnowledgePageShell({
           </Link>
 
           <div className="rounded-[2.5rem] border border-white/70 bg-white/82 p-8 shadow-[0_38px_110px_rgba(59,130,246,0.18),0_18px_44px_rgba(15,23,42,0.10)] backdrop-blur-2xl transition-colors duration-500 dark:border-slate-700/80 dark:bg-slate-950/78 dark:shadow-[0_35px_100px_rgba(2,6,23,0.55)] md:p-12">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-600 shadow-lg shadow-blue-100/60 dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200">
-              <Sparkles size={14} className="text-blue-600 dark:text-blue-300" />
+            <SectionEyebrow className="mb-6">
               {eyebrow}
-            </div>
+            </SectionEyebrow>
 
             <div className="grid gap-8 lg:grid-cols-[1.5fr,0.8fr] lg:items-end">
               <div>
@@ -52,7 +52,7 @@ export default function KnowledgePageShell({
                 </p>
                 <Link
                   href={ctaHref}
-                  className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-slate-900 hover:shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30 dark:hover:bg-blue-300"
+                  className="mt-5 inline-flex w-full max-w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-blue-600 px-4 py-3 text-[13px] font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-slate-900 hover:shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:w-auto sm:px-5 sm:text-sm dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30 dark:hover:bg-blue-300"
                 >
                   {ctaLabel}
                   <ArrowRight size={16} />

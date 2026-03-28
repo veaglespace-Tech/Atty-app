@@ -2,6 +2,10 @@ const { todayKey, toDateKey, toSummaryItem } = require("./common.service");
 
 const mapAttendanceRecord = (record = {}) => {
   const user = record.user || {};
+  const team =
+    record.team && record.team.deletedAt == null && record.team.isActive !== false
+      ? record.team
+      : null;
   const punchInMeta = record.punchInLocationMeta || null;
   const punchOutMeta = record.punchOutLocationMeta || null;
   const punchInCoordinates =
@@ -33,8 +37,8 @@ const mapAttendanceRecord = (record = {}) => {
     punchOutCoordinates,
     punchInLocationMeta: punchInMeta,
     punchOutLocationMeta: punchOutMeta,
-    teamId: record.teamId || null,
-    teamName: record.team?.name || null,
+    teamId: team?.id || null,
+    teamName: team?.name || null,
   };
 };
 

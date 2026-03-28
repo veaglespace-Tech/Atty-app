@@ -69,7 +69,6 @@ export default function ReportsPage() {
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.28fr)_minmax(320px,0.72fr)]">
           <div>
             <div className="brand-chip">
-              <BarChart3 size={12} />
               Insights Workspace
             </div>
             <h1 className="brand-hero-title mt-4">Intelligence & Reports</h1>
@@ -129,10 +128,7 @@ export default function ReportsPage() {
                 daily monitoring.
               </p>
             </div>
-            <div className="brand-chip">
-              <ArrowUpRight size={14} />
-              Ready to Export
-            </div>
+            <div className="brand-chip">Ready to Export</div>
           </div>
 
           <div className="space-y-4 p-4 md:p-6">
@@ -210,7 +206,6 @@ export default function ReportsPage() {
               data stays aligned with the access level assigned to your session.
             </p>
             <div className="brand-spotlight-chip relative mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">
-              <ShieldCheck size={14} />
               Secure Artifact Generation
             </div>
           </section>

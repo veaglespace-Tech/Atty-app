@@ -162,6 +162,8 @@ export const validateTeamForm = ({
   latitude,
   requireCoordinates = false,
 }) => {
+  const normalizedAttendanceRadius = String(attendanceRadius ?? "").trim();
+
   return (
     validateRequiredText({
       value: name,
@@ -176,7 +178,9 @@ export const validateTeamForm = ({
       label: "Description",
       max: 191,
     }) ||
-    validateAttendanceRadius(attendanceRadius) ||
+    (normalizedAttendanceRadius
+      ? validateAttendanceRadius(normalizedAttendanceRadius)
+      : null) ||
     validateCoordinatePair({
       longitude,
       latitude,

@@ -230,7 +230,6 @@ export default function WorkspaceSettingsPage() {
           </div>
 
           <div className="brand-chip self-start">
-            <ShieldCheck size={14} className="text-blue-600 dark:text-blue-300" />
             {roleLabel}
           </div>
         </div>

@@ -58,6 +58,12 @@ const formatLocation = (location) => {
   return `${location[1].toFixed(5)}, ${location[0].toFixed(5)}`;
 };
 
+const selectorSummaryClassName =
+  "mt-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2.5 shadow-sm";
+const selectorSummaryLabelClassName =
+  "text-[10px] font-black uppercase tracking-[0.16em] text-slate-500";
+const selectorSummaryValueClassName = "mt-1 text-sm font-semibold text-slate-900";
+
 const detectLocation = () =>
   new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -100,7 +106,7 @@ export default function TeamLeaderTeamsPage() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    attendanceRadius: "25",
+    attendanceRadius: "",
     leaderId: "",
     memberIds: [],
     longitude: "",
@@ -209,6 +215,7 @@ export default function TeamLeaderTeamsPage() {
       ...prev,
       leaderId: String(prev.leaderId) === id ? "" : id,
     }));
+    setLeaderSearch("");
   };
 
   const addMember = (memberId) => {
@@ -217,6 +224,7 @@ export default function TeamLeaderTeamsPage() {
       ...prev,
       memberIds: prev.memberIds.includes(id) ? prev.memberIds : [...prev.memberIds, id],
     }));
+    setMemberSearch("");
   };
 
   const removeMember = (memberId) => {
@@ -225,13 +233,14 @@ export default function TeamLeaderTeamsPage() {
       ...prev,
       memberIds: prev.memberIds.filter((value) => value !== id),
     }));
+    setMemberSearch("");
   };
 
   const resetForm = () => {
     setForm({
       name: "",
       description: "",
-      attendanceRadius: "25",
+      attendanceRadius: "",
       leaderId: "",
       memberIds: [],
       longitude: "",
@@ -436,7 +445,7 @@ export default function TeamLeaderTeamsPage() {
             min="5"
             value={form.attendanceRadius}
             onChange={onInputChange}
-            placeholder="Attendance radius"
+            placeholder="Attendance radius (optional, default 25)"
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
             disabled={!canCreateTeams}
           />
@@ -478,15 +487,12 @@ export default function TeamLeaderTeamsPage() {
                   </button>
                 </div>
 
-                {selectedLeader ? (
-                  <div className="mt-2 rounded-lg bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700">
-                    Selected: {selectedLeader.name}
-                  </div>
-                ) : (
-                  <div className="mt-2 rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">
-                    No leader selected
-                  </div>
-                )}
+                <div className={selectorSummaryClassName}>
+                  <p className={selectorSummaryLabelClassName}>Selected Leader</p>
+                  <p className={selectorSummaryValueClassName}>
+                    {selectedLeader ? selectedLeader.name : "No leader selected"}
+                  </p>
+                </div>
 
                 {leaderOpen ? (
                   <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
@@ -542,25 +548,32 @@ export default function TeamLeaderTeamsPage() {
                   </button>
                 </div>
 
-                <p className="mt-2 text-xs font-semibold text-slate-600">
-                  Selected: {form.memberIds.length}
-                </p>
+                <div className={selectorSummaryClassName}>
+                  <p className={selectorSummaryLabelClassName}>Selected Members</p>
+                  <p className={selectorSummaryValueClassName}>
+                    {form.memberIds.length} {form.memberIds.length === 1 ? "member" : "members"}
+                  </p>
 
-                {selectedMembers.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedMembers.map((member) => (
-                      <button
-                        key={`selected-${member.id}`}
-                        type="button"
-                        onClick={() => removeMember(member.id)}
-                        className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200"
-                      >
-                        {member.name}
-                        <X size={12} />
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                  {selectedMembers.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedMembers.map((member) => (
+                        <button
+                          key={`selected-${member.id}`}
+                          type="button"
+                          onClick={() => removeMember(member.id)}
+                          className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200"
+                        >
+                          {member.name}
+                          <X size={12} />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs font-semibold text-slate-500">
+                      No members selected
+                    </p>
+                  )}
+                </div>
 
                 {memberOpen ? (
                   <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">

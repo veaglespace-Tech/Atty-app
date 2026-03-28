@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Crown, Loader2, Star, Zap } from "lucide-react";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import { useGetPlansQuery } from "@/services/api/planApi";
 import {
   filterVisiblePlans,
@@ -131,10 +132,9 @@ export default function PricingPage() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-600 shadow-[0_18px_44px_rgba(59,130,246,0.12)] backdrop-blur-xl dark:border-blue-400/20 dark:bg-slate-900/70 dark:text-blue-200">
-            <Zap size={14} className="text-blue-600 dark:text-blue-300" />
+          <SectionEyebrow className="mb-6">
             Flexible Pricing
-          </div>
+          </SectionEyebrow>
           <h1 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white md:text-6xl">
             Plans for{" "}
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent dark:from-white dark:via-blue-200 dark:to-cyan-200">
@@ -169,7 +169,7 @@ export default function PricingPage() {
                   className={`group relative rounded-[2.5rem] border border-transparent bg-white p-1 shadow-[0_30px_84px_rgba(59,130,246,0.12),0_14px_34px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-2 hover:border-blue-100 hover:shadow-[0_36px_96px_rgba(59,130,246,0.16),0_18px_42px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-black/25 ${palette.hoverShadow} ${tier.popular ? "ring-4 ring-blue-600/10 dark:ring-blue-400/20" : ""}`}
                 >
                   <div className="flex h-full flex-col rounded-[2.3rem] border border-slate-100 bg-white p-8 transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/90 md:p-10">
-                    <div className={`mb-8 flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-500 group-hover:scale-105 ${palette.icon}`}>
+                    <div className={`brand-hover-white-media mb-8 flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-500 group-hover:scale-105 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 ${palette.icon}`}>
                       <Icon size={24} />
                     </div>
 
@@ -211,7 +211,7 @@ export default function PricingPage() {
                     <div className="mb-10 flex-grow space-y-4">
                       {tier.features.map((feature) => (
                         <div key={feature} className="flex items-start gap-3">
-                          <div className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${palette.check}`}>
+                          <div className={`brand-hover-white-media mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full group-hover:bg-blue-600 dark:group-hover:bg-blue-500 ${palette.check}`}>
                             <Check size={12} />
                           </div>
                           <span className="text-sm font-medium leading-tight text-slate-600 dark:text-slate-300">
@@ -226,7 +226,7 @@ export default function PricingPage() {
                         pathname: "/register/organisation",
                         query: { planCode: selectedPlan.code },
                       }}
-                      className={`group/btn flex w-full items-center justify-center gap-3 rounded-3xl py-5 font-black shadow-[0_18px_44px_rgba(15,23,42,0.10)] transition-all duration-500 hover:-translate-y-1 ${tier.popular ? "bg-blue-600 text-white shadow-[0_24px_60px_rgba(59,130,246,0.24)] hover:bg-slate-900 hover:shadow-[0_28px_70px_rgba(15,23,42,0.18)] dark:bg-blue-400 dark:text-slate-950 dark:shadow-blue-950/30 dark:hover:bg-blue-300" : "border border-slate-200 bg-slate-50 text-slate-950 hover:bg-blue-600 hover:text-white hover:shadow-[0_24px_60px_rgba(59,130,246,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-100"}`}
+                      className="group/btn flex w-full items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 py-5 font-black text-slate-950 shadow-[0_18px_44px_rgba(15,23,42,0.10)] transition-all duration-500 hover:-translate-y-1 hover:bg-blue-600 hover:text-white hover:shadow-[0_24px_60px_rgba(59,130,246,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-100"
                     >
                       Select Plan
                       <ArrowRight size={20} className="transition-transform group-hover/btn:translate-x-1" />

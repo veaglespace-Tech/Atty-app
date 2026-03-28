@@ -80,7 +80,6 @@ export default function EmployeesPage() {
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.24fr)_minmax(320px,0.76fr)]">
           <div>
             <div className="brand-chip">
-              <Users size={12} />
               Workspace Directory
             </div>
             <h1 className="brand-hero-title mt-4">Team Members & Access</h1>

@@ -1,8 +1,9 @@
 "use client";
 
 import { Edit2, Trash2 } from "lucide-react";
+import PollOptionsPanel from "@/components/posts/PollOptionsPanel";
 
-export function PostCard({ post, types, onEdit, onDelete }) {
+export function PostCard({ post, types, onEdit, onDelete, onVote, isVoting }) {
   const typeInfo = types.find((t) => t.value === post.type) || types[0];
   const Icon = typeInfo.icon;
 
@@ -38,21 +39,7 @@ export function PostCard({ post, types, onEdit, onDelete }) {
       </div>
 
       {post.type === "POLL" && post.metadata?.options && (
-        <div className="mt-4 space-y-1.5">
-          {post.metadata.options.slice(0, 3).map((opt, i) => (
-            <div
-              key={i}
-              className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden"
-            >
-              <div className="h-full bg-amber-400 w-1/4 opacity-30" />
-            </div>
-          ))}
-          {post.metadata.options.length > 3 && (
-            <p className="text-[10px] font-bold text-slate-400">
-              +{post.metadata.options.length - 3} more options
-            </p>
-          )}
-        </div>
+        <PollOptionsPanel post={post} onVote={onVote} isVoting={isVoting} />
       )}
 
       <div className="mt-6 flex items-center justify-between border-t border-slate-50 pt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
