@@ -1,4 +1,5 @@
 const { todayKey, toDateKey, toSummaryItem } = require("./common.service");
+const { resolveAttendanceLateMinutes } = require("./attendance-time.service");
 
 const mapAttendanceRecord = (record = {}) => {
   const user = record.user || {};
@@ -28,7 +29,7 @@ const mapAttendanceRecord = (record = {}) => {
     punchInAt: record.punchInAt,
     punchOutAt: record.punchOutAt,
     workedMinutes: Number(record.totalMinutesWorked || 0),
-    lateMinutes: Number(record.lateMinutes || 0),
+    lateMinutes: resolveAttendanceLateMinutes(record),
     punchInValid: record.isPunchInValid !== false,
     punchOutValid: record.isPunchOutValid !== false,
     punchInDistanceMeters: record.punchInDistanceMeters,

@@ -11,6 +11,10 @@ const {
 } = require("../services/common.service");
 const { attendanceRecordSelect } = require("../services/prisma-selects.service");
 const { mapAttendanceRecord } = require("../services/attendance-query.service");
+const {
+  calculateLateMinutes,
+  resolveAttendanceLateMinutes,
+} = require("../services/attendance-time.service");
 
 const attendanceTargetTeamSelect = {
   id: true,
@@ -277,18 +281,22 @@ exports.punchIn = asyncHandler(async (req, res) => {
     );
   }
 
+  const punchInAt = new Date();
+  const lateMinutes = calculateLateMinutes({ punchInAt });
+
   const attendance = await prisma.attendance.create({
     data: {
       orgId,
       teamId: attendanceTarget.teamId,
       userId,
       date: today,
-      punchInAt: new Date(),
+      punchInAt,
       punchInLongitude: parsedLocation[0],
       punchInLatitude: parsedLocation[1],
       punchInLocationMeta: locationPayload?.meta || undefined,
       punchInDistanceMeters: distance,
       isPunchInValid: isValid,
+      lateMinutes,
       markedById: userId,
     },
   });
@@ -440,6 +448,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
     select: {
       id: true,
       status: true,
+      lateMinutes: true,
       punchInAt: true,
       punchOutAt: true,
       punchInLatitude: true,
@@ -473,6 +482,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
       status: record.status === "PRESENT" ? "Present" : record.status === "HALF_DAY" ? "Half Day" : "Absent",
       checkIn: record.punchInAt ? new Date(record.punchInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
       checkOut: record.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
+      lateMinutes: resolveAttendanceLateMinutes(record),
       locationName,
       locationMeta: punchInMeta,
     };
@@ -485,21 +495,17 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const today = new Date().toISOString().split("T")[0];
 
-  const [present, halfDay, totalUsers] = await Promise.all([
-    prisma.attendance.count({
+  const [todayAttendance, totalUsers] = await Promise.all([
+    prisma.attendance.findMany({
       where: {
         orgId,
         date: today,
-        status: "PRESENT",
         deletedAt: null,
       },
-    }),
-    prisma.attendance.count({
-      where: {
-        orgId,
-        date: today,
-        status: "HALF_DAY",
-        deletedAt: null,
+      select: {
+        status: true,
+        lateMinutes: true,
+        punchInAt: true,
       },
     }),
     prisma.user.count({
@@ -513,11 +519,19 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
     }),
   ]);
 
+  const present = todayAttendance.filter((record) => record.status === "PRESENT").length;
+  const halfDay = todayAttendance.filter((record) => record.status === "HALF_DAY").length;
+  const late = todayAttendance.filter(
+    (record) =>
+      String(record.status || "").toUpperCase() !== "ABSENT" &&
+      resolveAttendanceLateMinutes(record) > 0
+  ).length;
+
   const absent = totalUsers - (present + halfDay);
 
   res.status(200).json({
     present,
-    late: 0,
+    late,
     absent: Math.max(0, absent),
     leaves: 0,
   });
