@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin } from "lucide-react";
+import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetOrgAttendanceQuery,
@@ -490,6 +491,15 @@ export default function OrgAttendancePage() {
                     <AttendanceDetail label="Punch In" value={formatDate(record.punchInAt)} />
                     <AttendanceDetail label="Punch Out" value={formatDate(record.punchOutAt)} />
                     <AttendanceDetail label="Worked (min)" value={record.workedMinutes || 0} />
+                    <AttendanceDetail
+                      label="Selfie Proof"
+                      value={
+                        <AttendanceSelfieProofLinks
+                          punchInSelfieUrl={record.punchInSelfieUrl}
+                          punchOutSelfieUrl={record.punchOutSelfieUrl}
+                        />
+                      }
+                    />
                   </div>
                 </article>
               ))}
@@ -506,6 +516,7 @@ export default function OrgAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked (min)</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -518,6 +529,12 @@ export default function OrgAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatDate(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDate(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{record.workedMinutes || 0}</td>
+                      <td className="px-3 py-2 text-slate-700">
+                        <AttendanceSelfieProofLinks
+                          punchInSelfieUrl={record.punchInSelfieUrl}
+                          punchOutSelfieUrl={record.punchOutSelfieUrl}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -556,7 +573,7 @@ function AttendanceDetail({ label, value }) {
   return (
     <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
+      <div className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</div>
     </div>
   );
 }

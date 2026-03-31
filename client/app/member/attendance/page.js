@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle } from "lucide-react";
+import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
+import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
@@ -58,6 +60,7 @@ const formatPunchLocation = (record) => {
 export default function MemberAttendancePage() {
   const user = useSelector((state) => state.auth.user);
   const [actionLoading, setActionLoading] = useState("");
+  const [pendingPunchType, setPendingPunchType] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const {
@@ -130,7 +133,7 @@ export default function MemberAttendancePage() {
   };
 
 
-  const handlePunch = async (type) => {
+  const submitPunch = async (type, selfieImageDataUrl) => {
     try {
       setActionLoading(type);
       setError("");
@@ -142,13 +145,18 @@ export default function MemberAttendancePage() {
           ? await punchInMutation({
               userLocation: locationPayload.coordinates,
               location: locationPayload.location,
+              selfieImageDataUrl,
             }).unwrap()
           : await punchOutMutation({
               userLocation: locationPayload.coordinates,
               location: locationPayload.location,
+              selfieImageDataUrl,
             }).unwrap();
 
-      setMessage(response?.message || (type === "in" ? "Punch in successful" : "Punch out successful"));
+      setMessage(
+        response?.message || (type === "in" ? "Punch in successful" : "Punch out successful")
+      );
+      setPendingPunchType("");
       await fetchAttendance();
     } catch (err) {
       setError(err?.data?.message || err?.error || "Attendance action failed");
@@ -185,7 +193,7 @@ export default function MemberAttendancePage() {
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button
             type="button"
-            onClick={() => handlePunch("in")}
+            onClick={() => setPendingPunchType("in")}
             disabled={!canPunchIn || actionLoading !== ""}
             className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
@@ -195,7 +203,7 @@ export default function MemberAttendancePage() {
 
           <button
             type="button"
-            onClick={() => handlePunch("out")}
+            onClick={() => setPendingPunchType("out")}
             disabled={!canPunchOut || actionLoading !== ""}
             className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
@@ -211,6 +219,10 @@ export default function MemberAttendancePage() {
           <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
             <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
             Live Location (GPS Only)
+          </p>
+          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+            <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+            Live Selfie Required
           </p>
         </div>
 
@@ -296,6 +308,15 @@ export default function MemberAttendancePage() {
                     <HistoryDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
                     <HistoryDetail label="Location" value={formatPunchLocation(record)} />
                     <HistoryDetail label="Worked Hours" value={formatHours(record.workedMinutes)} />
+                    <HistoryDetail
+                      label="Selfie Proof"
+                      value={
+                        <AttendanceSelfieProofLinks
+                          punchInSelfieUrl={record.punchInSelfieUrl}
+                          punchOutSelfieUrl={record.punchOutSelfieUrl}
+                        />
+                      }
+                    />
                   </div>
                 </article>
               ))}
@@ -312,6 +333,7 @@ export default function MemberAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hours</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -325,6 +347,12 @@ export default function MemberAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatHours(record.workedMinutes)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
+                      </td>
+                      <td className="px-3 py-2 text-slate-700">
+                        <AttendanceSelfieProofLinks
+                          punchInSelfieUrl={record.punchInSelfieUrl}
+                          punchOutSelfieUrl={record.punchOutSelfieUrl}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -347,6 +375,14 @@ export default function MemberAttendancePage() {
           </div>
         )}
       </div>
+
+      <AttendanceFaceCaptureModal
+        open={Boolean(pendingPunchType)}
+        actionLabel={pendingPunchType === "out" ? "Punch Out" : "Punch In"}
+        isSubmitting={actionLoading !== ""}
+        onClose={() => setPendingPunchType("")}
+        onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)}
+      />
     </section>
   );
 }
@@ -376,7 +412,7 @@ function HistoryDetail({ label, value }) {
   return (
     <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
+      <div className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</div>
     </div>
   );
 }

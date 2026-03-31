@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Bell,
   Building2,
+  ImageUp,
   Globe,
   Loader2,
   LockKeyhole,
@@ -15,6 +16,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
+  Trash2,
   User,
   Users,
 } from "lucide-react";
@@ -23,6 +25,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { z } from "zod";
 import ThemeToggle from "@/components/ThemeToggle";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import UserAvatar from "@/components/UserAvatar";
 import { useUpdateMeMutation } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { formatRoleLabel, resolveUserPermissions, ROLES } from "@/utils/roles";
@@ -73,6 +76,13 @@ const inputClassName =
   "w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(30,112,209,0.10)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
 const errorInputClassName =
   "border-rose-400 bg-rose-50/80 focus:border-rose-500 focus:ring-rose-500/10";
+const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
+const ACCEPTED_PROFILE_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 const formatValue = (value, fallback = "-") => {
   if (value === null || value === undefined || value === "") return fallback;
@@ -128,6 +138,10 @@ export default function WorkspaceSettingsPage() {
   const { user } = useSelector((state) => state.auth);
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
   const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
+  const [removeProfileImage, setRemoveProfileImage] = useState(false);
+  const [profileImageError, setProfileImageError] = useState("");
+  const profileImageInputRef = useRef(null);
   const roleLabel = formatRoleLabel(user?.role);
   const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
   const permissionsCount = resolveUserPermissions(user).length;
@@ -158,7 +172,11 @@ export default function WorkspaceSettingsPage() {
     formValues.mobile || user?.mobile
       ? `${formValues.mobileCountryCode || user?.mobileCountryCode || ""}${formValues.mobile || getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode)}`
       : "-";
-  const userInitial = String(previewName).trim().charAt(0).toUpperCase() || "U";
+  const currentProfileImageUrl = user?.profileImageUrl || "";
+  const previewProfileImageUrl =
+    profileImageDataUrl || (removeProfileImage ? "" : currentProfileImageUrl);
+  const hasPendingProfileImageChange = Boolean(profileImageDataUrl) || removeProfileImage;
+  const canSubmit = isDirty || hasPendingProfileImageChange;
 
   const detailCards = useMemo(
     () => [
@@ -179,10 +197,68 @@ export default function WorkspaceSettingsPage() {
   const resetForm = () => {
     reset(getFormDefaults(user));
     setFeedback({ type: "", message: "" });
+    setProfileImageDataUrl("");
+    setRemoveProfileImage(false);
+    setProfileImageError("");
+  };
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Failed to read the selected image."));
+      reader.readAsDataURL(file);
+    });
+
+  const onProfileImageSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!ACCEPTED_PROFILE_IMAGE_TYPES.has(file.type)) {
+      setProfileImageError("Upload a JPG, PNG, WEBP, or GIF image.");
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+      setProfileImageError("Profile image must be 2 MB or smaller.");
+      return;
+    }
+
+    try {
+      const nextDataUrl = await readFileAsDataUrl(file);
+      setProfileImageDataUrl(nextDataUrl);
+      setRemoveProfileImage(false);
+      setProfileImageError("");
+      setFeedback({ type: "", message: "" });
+    } catch (error) {
+      setProfileImageError(error.message || "Failed to prepare the selected image.");
+    }
+  };
+
+  const toggleProfileImageRemoval = () => {
+    setFeedback({ type: "", message: "" });
+    setProfileImageError("");
+
+    if (removeProfileImage) {
+      setRemoveProfileImage(false);
+      return;
+    }
+
+    if (profileImageDataUrl) {
+      setProfileImageDataUrl("");
+      return;
+    }
+
+    if (currentProfileImageUrl) {
+      setRemoveProfileImage(true);
+    }
   };
 
   const onSubmit = async (values) => {
     setFeedback({ type: "", message: "" });
+    setProfileImageError("");
 
     const nextMobile = values.mobile.trim();
     const nextMobileCountryCode = values.mobileCountryCode.trim();
@@ -196,15 +272,25 @@ export default function WorkspaceSettingsPage() {
       payload.mobileCountryCode = nextMobileCountryCode || user?.mobileCountryCode || "";
     }
 
+    if (profileImageDataUrl) {
+      payload.profileImageDataUrl = profileImageDataUrl;
+    } else if (removeProfileImage) {
+      payload.removeProfileImage = true;
+    }
+
     try {
       const result = await updateMe(payload).unwrap();
       dispatch(setCurrentUser(result.user));
       reset(getFormDefaults(result.user));
+      setProfileImageDataUrl("");
+      setRemoveProfileImage(false);
+      setProfileImageError("");
       setFeedback({
         type: "success",
         message: result?.message || "Profile updated successfully.",
       });
     } catch (error) {
+      setProfileImageError("");
       setFeedback({
         type: "error",
         message: error?.data?.message || error?.message || "Failed to update profile.",
@@ -217,9 +303,12 @@ export default function WorkspaceSettingsPage() {
       <div className="light-glow-card-static rounded-[1.75rem] p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="brand-icon-shell flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.75rem] text-2xl font-black">
-              {userInitial}
-            </div>
+            <UserAvatar
+              src={previewProfileImageUrl}
+              name={previewName}
+              className="h-16 w-16 rounded-[1.75rem] text-2xl"
+              sizes="64px"
+            />
             <div>
               <p className="brand-kicker">Account Settings</p>
               <h2 className="brand-section-title mt-2">{previewName}</h2>
@@ -251,7 +340,7 @@ export default function WorkspaceSettingsPage() {
               </p>
             </div>
             <div className="brand-chip px-3 py-1">
-              {isDirty ? "Unsaved Changes" : "Up to Date"}
+              {canSubmit ? "Unsaved Changes" : "Up to Date"}
             </div>
           </div>
 
@@ -269,6 +358,74 @@ export default function WorkspaceSettingsPage() {
           ) : null}
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
+            <div className="brand-panel-soft rounded-[1.5rem] p-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <UserAvatar
+                  src={previewProfileImageUrl}
+                  name={previewName}
+                  className="h-24 w-24 rounded-[2rem] text-3xl"
+                  sizes="96px"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="brand-kicker">Profile Photo</p>
+                  <p className="brand-copy-sm mt-2">
+                    Upload a clear square image to personalize your workspace profile.
+                  </p>
+
+                  <input
+                    ref={profileImageInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    onChange={onProfileImageSelected}
+                  />
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => profileImageInputRef.current?.click()}
+                      className="brand-btn brand-btn-secondary brand-btn-md"
+                    >
+                      <ImageUp size={16} />
+                      {previewProfileImageUrl ? "Change Photo" : "Upload Photo"}
+                    </button>
+
+                    {removeProfileImage || profileImageDataUrl || currentProfileImageUrl ? (
+                      <button
+                        type="button"
+                        onClick={toggleProfileImageRemoval}
+                        className="brand-btn brand-btn-secondary brand-btn-md"
+                      >
+                        <Trash2 size={16} />
+                        {removeProfileImage
+                          ? "Keep Current Photo"
+                          : profileImageDataUrl
+                            ? "Clear Selection"
+                            : "Remove Photo"}
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-300">
+                    {removeProfileImage
+                      ? "Your current profile photo will be removed when you save."
+                      : profileImageDataUrl
+                        ? "New profile photo is ready. Save changes to publish it."
+                        : previewProfileImageUrl
+                          ? "This profile photo appears anywhere your account avatar is shown."
+                          : "Supported formats: JPG, PNG, WEBP, GIF. Maximum size: 2 MB."}
+                  </p>
+
+                  {profileImageError ? (
+                    <p className="mt-2 text-xs font-semibold text-rose-500">
+                      {profileImageError}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label htmlFor="settings-name" className={labelClassName}>
@@ -358,7 +515,7 @@ export default function WorkspaceSettingsPage() {
               <button
                 type="button"
                 onClick={resetForm}
-                disabled={isSaving || !isDirty}
+                disabled={isSaving || !canSubmit}
                 className="brand-btn brand-btn-secondary brand-btn-md"
               >
                 <RotateCcw size={16} />
@@ -366,7 +523,7 @@ export default function WorkspaceSettingsPage() {
               </button>
               <button
                 type="submit"
-                disabled={isSaving || !isDirty}
+                disabled={isSaving || !canSubmit}
                 className="brand-btn brand-btn-primary brand-btn-md"
               >
                 {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}

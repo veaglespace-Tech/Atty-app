@@ -6,12 +6,12 @@ import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   Loader2,
-  Save,
   ShieldAlert,
   UserCog,
   UserRound,
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import UserAvatar from "@/components/UserAvatar";
 import {
   useGetOrgUserByIdQuery,
   usePatchOrgUserMutation,
@@ -224,7 +224,15 @@ export default function OrgUserDetailPage() {
     <section className="space-y-6">
       <div className="light-glow-card-static rounded-[1.9rem] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="flex items-center gap-4">
+            <UserAvatar
+              src={user.profileImageUrl}
+              name={form.name}
+              className="h-16 w-16 rounded-[1.5rem] text-2xl"
+              sizes="64px"
+            />
+
+            <div>
             <button
               type="button"
               onClick={() => router.push("/org/users")}
@@ -234,6 +242,7 @@ export default function OrgUserDetailPage() {
             </button>
             <h2 className="mt-3 text-2xl font-black text-slate-900">{form.name}</h2>
             <p className="mt-1 text-sm font-medium text-slate-600">{user.email}</p>
+            </div>
           </div>
 
           <button

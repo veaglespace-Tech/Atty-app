@@ -29,9 +29,18 @@ jest.mock("jsonwebtoken", () => ({
   sign: jest.fn(() => "signed-jwt-token"),
 }));
 
+jest.mock("../services/profile-image.service", () => ({
+  uploadProfileImage: jest.fn(),
+  deleteProfileImage: jest.fn(),
+}));
+
 const prisma = require("../lib/prisma");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const {
+  uploadProfileImage,
+  deleteProfileImage,
+} = require("../services/profile-image.service");
 const { app } = require("../index");
 
 describe("POST /api/auth/login", () => {
@@ -251,5 +260,135 @@ describe("GET /api/auth/organizations/search", () => {
       orderBy: [{ name: "asc" }],
       take: 5,
     });
+  });
+});
+
+describe("PATCH /api/auth/me", () => {
+  const originalBypassProtectedRoutes = process.env.BYPASS_PROTECTED_ROUTES;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.BYPASS_PROTECTED_ROUTES = "true";
+  });
+
+  afterAll(() => {
+    process.env.BYPASS_PROTECTED_ROUTES = originalBypassProtectedRoutes;
+  });
+
+  it("uploads a new profile image and persists the returned url", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 1,
+      name: "Bypass Test User",
+      email: "bypass@test.local",
+      mobile: "+919999999999",
+      mobileCountryCode: "+91",
+      role: "MEMBER",
+      permissions: [],
+      status: "APPROVED",
+      isActive: true,
+      profileImageUrl: null,
+      profileImagePublicId: null,
+      organization: null,
+    });
+    uploadProfileImage.mockResolvedValue({
+      url: "https://res.cloudinary.com/demo/image/upload/v1/user-1.png",
+      publicId: "veagle-attendee/profile-images/user-1",
+    });
+    prisma.user.update.mockResolvedValue({
+      id: 1,
+      name: "Bypass Test User",
+      email: "bypass@test.local",
+      mobile: "+919999999999",
+      mobileCountryCode: "+91",
+      role: "MEMBER",
+      permissions: [],
+      status: "APPROVED",
+      isActive: true,
+      profileImageUrl: "https://res.cloudinary.com/demo/image/upload/v1/user-1.png",
+      profileImagePublicId: "veagle-attendee/profile-images/user-1",
+      organization: null,
+    });
+
+    const response = await request(app).patch("/api/auth/me").send({
+      profileImageDataUrl: "data:image/png;base64,AAAA",
+    });
+
+    expect(response.status).toBe(200);
+    expect(uploadProfileImage).toHaveBeenCalledWith({
+      userId: 1,
+      dataUrl: "data:image/png;base64,AAAA",
+    });
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: {
+        profileImageUrl: "https://res.cloudinary.com/demo/image/upload/v1/user-1.png",
+        profileImagePublicId: "veagle-attendee/profile-images/user-1",
+      },
+      include: {
+        organization: {
+          include: {
+            plan: true,
+          },
+        },
+      },
+    });
+    expect(response.body.user.profileImageUrl).toBe(
+      "https://res.cloudinary.com/demo/image/upload/v1/user-1.png"
+    );
+  });
+
+  it("removes an existing profile image and clears it from the database", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 1,
+      name: "Bypass Test User",
+      email: "bypass@test.local",
+      mobile: "+919999999999",
+      mobileCountryCode: "+91",
+      role: "MEMBER",
+      permissions: [],
+      status: "APPROVED",
+      isActive: true,
+      profileImageUrl: "https://res.cloudinary.com/demo/image/upload/v1/user-1.png",
+      profileImagePublicId: "veagle-attendee/profile-images/user-1",
+      organization: null,
+    });
+    prisma.user.update.mockResolvedValue({
+      id: 1,
+      name: "Bypass Test User",
+      email: "bypass@test.local",
+      mobile: "+919999999999",
+      mobileCountryCode: "+91",
+      role: "MEMBER",
+      permissions: [],
+      status: "APPROVED",
+      isActive: true,
+      profileImageUrl: null,
+      profileImagePublicId: null,
+      organization: null,
+    });
+
+    const response = await request(app).patch("/api/auth/me").send({
+      removeProfileImage: true,
+    });
+
+    expect(response.status).toBe(200);
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: {
+        profileImageUrl: null,
+        profileImagePublicId: null,
+      },
+      include: {
+        organization: {
+          include: {
+            plan: true,
+          },
+        },
+      },
+    });
+    expect(deleteProfileImage).toHaveBeenCalledWith(
+      "veagle-attendee/profile-images/user-1"
+    );
+    expect(response.body.user.profileImageUrl).toBeNull();
   });
 });

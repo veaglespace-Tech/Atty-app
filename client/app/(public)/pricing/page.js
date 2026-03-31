@@ -21,6 +21,7 @@ import {
   useVerifyRenewalPaymentMutation,
 } from "@/services/api/paymentApi";
 import { getErrorMessage } from "@/utils/formValidation";
+import { formatCalendarDate } from "@/utils/date";
 import {
   filterVisiblePlans,
   formatPlanDurationLong,
@@ -81,17 +82,7 @@ const isRenewalRestrictedPlan = (plan = {}) => {
   return Number(plan.price || 0) <= 0 || code.includes("FREE");
 };
 
-const formatExpiryLabel = (value) => {
-  if (!value) return "Not active";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Not active";
-
-  return parsed.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
+const formatExpiryLabel = (value) => formatCalendarDate(value);
 
 const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName }) => {
   if (!selectedPlan) return null;

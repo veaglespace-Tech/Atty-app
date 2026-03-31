@@ -38,6 +38,8 @@ const mapAttendanceRecord = (record = {}) => {
     punchOutCoordinates,
     punchInLocationMeta: punchInMeta,
     punchOutLocationMeta: punchOutMeta,
+    punchInSelfieUrl: record.punchInSelfieUrl || null,
+    punchOutSelfieUrl: record.punchOutSelfieUrl || null,
     teamId: team?.id || null,
     teamName: team?.name || null,
   };

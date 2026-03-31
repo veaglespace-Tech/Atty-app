@@ -8,6 +8,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { normalizeUser } = require("../utils/identity");
 const { truncateText } = require("../services/common.service");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
+const { deleteProfileImage, uploadProfileImage } = require("../services/profile-image.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
 
@@ -450,6 +451,7 @@ const serializeSessionUser = (user, organization = null) => {
     email: normalized.email,
     mobile: normalized.mobile,
     mobileCountryCode: normalized.mobileCountryCode || null,
+    profileImageUrl: normalized.profileImageUrl || null,
     role: normalized.role,
     permissions: normalized.permissions,
     status: normalized.status,
@@ -940,6 +942,14 @@ exports.updateMe = asyncHandler(async (req, res) => {
   const hasEmail = Object.prototype.hasOwnProperty.call(requestBody, "email");
   const hasMobile = Object.prototype.hasOwnProperty.call(requestBody, "mobile");
   const hasMobileCountryCode = Object.prototype.hasOwnProperty.call(requestBody, "mobileCountryCode");
+  const hasProfileImageDataUrl = Object.prototype.hasOwnProperty.call(
+    requestBody,
+    "profileImageDataUrl"
+  );
+  const hasRemoveProfileImage = Object.prototype.hasOwnProperty.call(
+    requestBody,
+    "removeProfileImage"
+  );
 
   if (hasName) {
     const name = truncateText(requestBody.name, 120);
@@ -999,28 +1009,79 @@ exports.updateMe = asyncHandler(async (req, res) => {
     }
   }
 
+  const shouldUploadProfileImage =
+    hasProfileImageDataUrl && String(requestBody.profileImageDataUrl || "").trim().length > 0;
+  const shouldRemoveProfileImage =
+    hasRemoveProfileImage && requestBody.removeProfileImage === true;
+
+  if (shouldUploadProfileImage && shouldRemoveProfileImage) {
+    res.status(400);
+    throw new Error("Choose either a new profile image or remove the current one.");
+  }
+
+  let uploadedProfileImage = null;
+  let didPersistUploadedProfileImage = false;
+
+  if (shouldUploadProfileImage) {
+    try {
+      uploadedProfileImage = await uploadProfileImage({
+        userId,
+        dataUrl: requestBody.profileImageDataUrl,
+      });
+      payload.profileImageUrl = uploadedProfileImage.url;
+      payload.profileImagePublicId = uploadedProfileImage.publicId;
+    } catch (error) {
+      res.status(error.statusCode || 500);
+      throw new Error(error.message || "Failed to upload profile image.");
+    }
+  } else if (shouldRemoveProfileImage) {
+    payload.profileImageUrl = null;
+    payload.profileImagePublicId = null;
+  }
+
   if (Object.keys(payload).length === 0) {
     res.status(400);
     throw new Error("No profile changes were provided");
   }
 
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: payload,
-    include: {
-      organization: {
-        include: {
-          plan: true,
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: payload,
+      include: {
+        organization: {
+          include: {
+            plan: true,
+          },
         },
       },
-    },
-  });
+    });
+    didPersistUploadedProfileImage = Boolean(uploadedProfileImage?.publicId);
 
-  res.status(200).json({
-    success: true,
-    message: "Profile updated successfully",
-    user: serializeSessionUser(updatedUser, updatedUser.organization || null),
-  });
+    if (
+      shouldUploadProfileImage &&
+      existingUser.profileImagePublicId &&
+      existingUser.profileImagePublicId !== uploadedProfileImage?.publicId
+    ) {
+      await deleteProfileImage(existingUser.profileImagePublicId);
+    }
+
+    if (shouldRemoveProfileImage && existingUser.profileImagePublicId) {
+      await deleteProfileImage(existingUser.profileImagePublicId);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: serializeSessionUser(updatedUser, updatedUser.organization || null),
+    });
+  } catch (error) {
+    if (uploadedProfileImage?.publicId && !didPersistUploadedProfileImage) {
+      await deleteProfileImage(uploadedProfileImage.publicId);
+    }
+
+    throw error;
+  }
 });
 
 exports.getMe = asyncHandler(async (req, res) => {

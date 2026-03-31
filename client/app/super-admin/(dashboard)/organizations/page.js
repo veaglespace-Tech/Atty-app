@@ -21,6 +21,7 @@ import {
 } from "@/services/api/superAdminApi";
 import { downloadBlobFile } from "@/utils/download";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
+import { formatCalendarDate } from "@/utils/date";
 import { getErrorMessage } from "@/utils/formValidation";
 
 const SUBSCRIPTION_OPTIONS = ["TRIAL", "ACTIVE", "EXPIRED", "PAYMENT_PENDING"];
@@ -526,7 +527,7 @@ export default function SuperAdminOrganizationsPage() {
                                 tone={getSubscriptionTone(organization.subscriptionStatus)}
                               />
                               <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Expires {formatDate(organization.subscriptionExpiry)}
+                                Expires {formatCalendarDate(organization.subscriptionExpiry, "-")}
                               </p>
                               <select
                                 value={subscriptionDraft[organization.id] || "TRIAL"}
