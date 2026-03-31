@@ -22,7 +22,7 @@ const { PERMISSION_KEYS } = require("../constants/permissions");
 exports.getOrgAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
-  const limit = parseLimit(req.query.limit, 200, 800);
+  const limit = parseLimit(req.query.limit, 400, 2500);
 
   const where = buildAttendanceWhere({
     orgId,

@@ -161,7 +161,7 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
 exports.getMemberAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const userId = Number(req.user.id);
-  const limit = parseLimit(req.query.limit, 60, 365);
+  const limit = parseLimit(req.query.limit, 90, 730);
 
   const where = buildAttendanceWhere({
     orgId,

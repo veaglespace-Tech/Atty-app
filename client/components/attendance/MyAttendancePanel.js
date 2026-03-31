@@ -168,16 +168,16 @@ export default function MyAttendancePanel({
 
   return (
     <section className="space-y-4">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-black text-slate-900">{title}</h2>
+              <h2 className="mobile-compact-title text-2xl font-black text-slate-900">{title}</h2>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                 {formatRoleLabel(user?.role)}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-600">{description}</p>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">{description}</p>
           </div>
 
           <button
@@ -213,9 +213,11 @@ export default function MyAttendancePanel({
           </button>
         </div>
 
-        <div className="mt-5 rounded-lg border border-slate-100 bg-slate-50 p-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Attendance Mode</p>
-          <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-700">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <p className="mobile-hide-chip rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+            Attendance Mode
+          </p>
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
             <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
             Live Location (GPS Only)
           </p>
@@ -263,7 +265,7 @@ export default function MyAttendancePanel({
         />
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">{historyTitle}</h3>
 
         {loading ? (
@@ -279,7 +281,7 @@ export default function MyAttendancePanel({
               {recentRecords.map((record) => (
                 <article
                   key={`mobile-${record.id}`}
-                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)]"
+                  className="dashboard-mobile-record-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -340,7 +342,7 @@ export default function MyAttendancePanel({
 
 function MetricCard({ label, value, icon, valueClassName = "text-2xl" }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
         <span className="text-slate-500">{icon}</span>
@@ -352,7 +354,7 @@ function MetricCard({ label, value, icon, valueClassName = "text-2xl" }) {
 
 function Snapshot({ label, value }) {
   return (
-    <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
+    <div className="dashboard-detail-tile rounded-[1.25rem] px-4">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
     </div>
@@ -361,7 +363,7 @@ function Snapshot({ label, value }) {
 
 function HistoryDetail({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>

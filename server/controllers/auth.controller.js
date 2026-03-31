@@ -7,6 +7,7 @@ const { resolveUserPermissions } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { normalizeUser } = require("../utils/identity");
 const { truncateText } = require("../services/common.service");
+const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
 const sendEmail = require("../utils/email");
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 15;
@@ -56,6 +57,14 @@ const maskEmailAddress = (value) => {
 
   return `${maskedName}@${maskedDomain}${suffix}`;
 };
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const buildPasswordResetSecret = (user) =>
   `${String(process.env.JWT_KEY || "")}:${String(user?.password || "")}`;
@@ -178,15 +187,39 @@ const findPasswordResetUser = async ({
 const sendPasswordResetEmail = async ({ user, token }) => {
   const resetUrl = `${getClientBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
   const roleLabel = formatRoleLabel(user.role);
+  const loginPath = getLoginPathByRole(user.role);
+  const loginUrl = `${getClientBaseUrl()}${loginPath}`;
+  const organizationSummary =
+    user.organization && !user.organization.deletedAt
+      ? [user.organization.name, user.organization.organizationCode]
+          .filter(Boolean)
+          .join(" - ")
+      : "Platform account";
+  const safeName = escapeHtml(user.name || "there");
+  const safeRoleLabel = escapeHtml(roleLabel);
+  const safeEmail = escapeHtml(user.email || "");
+  const safeOrganizationSummary = escapeHtml(organizationSummary);
+  const safeResetUrl = escapeHtml(resetUrl);
+  const safeLoginUrl = escapeHtml(loginUrl);
   const subject = "Reset your Veagle Attendee password";
   const message = `Hello ${user.name},
 
 We received a request to reset your Veagle Attendee password for your ${roleLabel} account.
 
+Account details:
+- Email: ${user.email}
+- Role: ${roleLabel}
+- Workspace: ${organizationSummary}
+
 Open this link to set a new password:
 ${resetUrl}
 
 This link will expire in ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes and can only be used once after your password changes.
+
+After you save the new password, the previous password will stop working immediately.
+
+Login page:
+${loginUrl}
 
 If you did not request this, you can ignore this email.`;
   const html = `
@@ -197,22 +230,37 @@ If you did not request this, you can ignore this email.`;
           <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:800">Reset your Veagle Attendee password</h1>
         </div>
         <div style="padding:32px">
-          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">Hello <strong>${user.name}</strong>,</p>
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">Hello <strong>${safeName}</strong>,</p>
           <p style="margin:0 0 12px;font-size:15px;line-height:1.7">
-            We received a request to reset the password for your <strong>${roleLabel}</strong> account.
+            We received a request to reset the password for your <strong>${safeRoleLabel}</strong> account.
           </p>
+          <div style="margin:0 0 24px;border:1px solid #dbeafe;border-radius:18px;background:#eff6ff;padding:18px 20px">
+            <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;color:#1d4ed8">Account Details</p>
+            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Email:</strong> ${safeEmail}</p>
+            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Role:</strong> ${safeRoleLabel}</p>
+            <p style="margin:0;font-size:14px;line-height:1.7;color:#0f172a"><strong>Workspace:</strong> ${safeOrganizationSummary}</p>
+          </div>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.7">
             Click the button below to set a new password. This link will expire in
             <strong> ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes</strong>.
           </p>
-          <a href="${resetUrl}" style="display:inline-block;padding:14px 22px;border-radius:16px;background:#1e70d1;color:#ffffff;text-decoration:none;font-weight:700">
+          <a href="${safeResetUrl}" style="display:inline-block;padding:14px 22px;border-radius:16px;background:#1e70d1;color:#ffffff;text-decoration:none;font-weight:700">
             Reset Password
           </a>
+          <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#475569">
+            After you save a new password, your previous password will stop working immediately.
+          </p>
           <p style="margin:24px 0 10px;font-size:13px;line-height:1.7;color:#475569">
             If the button does not open, copy and paste this link into your browser:
           </p>
           <p style="margin:0;word-break:break-all;font-size:13px;line-height:1.7;color:#1d4ed8">
-            ${resetUrl}
+            ${safeResetUrl}
+          </p>
+          <p style="margin:20px 0 0;font-size:13px;line-height:1.7;color:#475569">
+            Sign-in page:
+          </p>
+          <p style="margin:0;word-break:break-all;font-size:13px;line-height:1.7;color:#1d4ed8">
+            ${safeLoginUrl}
           </p>
           <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
             If you did not request this, you can safely ignore this email.
@@ -550,7 +598,7 @@ exports.login = asyncHandler(async (req, res) => {
 
   const normalizedRole = normalizeRole(user.role);
   const resolvedPermissions = resolveUserPermissions(user);
-  const org = user.organization || null;
+  let org = user.organization || null;
   const requestedRole = loginAs ? normalizeRole(loginAs) : null;
   const effectiveRole = requestedRole || normalizedRole;
   const requestedOrganizationId = parseOrganizationId(organizationId);
@@ -613,6 +661,22 @@ exports.login = asyncHandler(async (req, res) => {
       res.status(410);
       throw new Error("Your organization has been deactivated.");
     }
+
+    const { organization: syncedOrganization, activeSubscription } =
+      await syncOrganizationSubscriptionState({
+        organizationId: org.id,
+        organization: org,
+        now: new Date(),
+      });
+
+    org = syncedOrganization || org;
+
+    if (!activeSubscription) {
+      if (normalizedRole !== "ORG_ADMIN") {
+        res.status(402);
+        throw new Error("Organization subscription expired. Please contact your admin to renew.");
+      }
+    }
   }
 
   await prisma.user.update({
@@ -624,7 +688,10 @@ exports.login = asyncHandler(async (req, res) => {
     expiresIn: "7d",
   });
 
-  const redirectPath = getDashboardPathByRole(normalizedRole);
+  const redirectPath =
+    normalizedRole === "ORG_ADMIN" && org?.subscriptionStatus === "EXPIRED"
+      ? "/org/subscription"
+      : getDashboardPathByRole(normalizedRole);
 
   res.cookie("token", token, {
     httpOnly: true,

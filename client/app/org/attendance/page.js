@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetOrgAttendanceQuery,
   useGetOrgAttendanceSettingsQuery,
@@ -11,6 +12,8 @@ import {
   usePatchOrgTeamMutation,
 } from "@/services/api/orgApi";
 import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { normalizeRole, ROLES } from "@/utils/roles";
 import {
   getErrorMessage,
@@ -89,7 +92,7 @@ export default function OrgAttendancePage() {
     isLoading: attendanceLoading,
     isFetching: attendanceFetching,
     refetch: refetchAttendance,
-  } = useGetOrgAttendanceQuery(200);
+  } = useGetOrgAttendanceQuery(DASHBOARD_FETCH_LIMITS.ORG_ATTENDANCE);
 
   const {
     data: settingsData,
@@ -97,7 +100,9 @@ export default function OrgAttendancePage() {
     isFetching: settingsFetching,
     refetch: refetchSettings,
   } = useGetOrgAttendanceSettingsQuery();
-  const { data: teamsData, isLoading: teamsLoading } = useGetOrgTeamsQuery();
+  const { data: teamsData, isLoading: teamsLoading } = useGetOrgTeamsQuery(
+    DASHBOARD_FETCH_LIMITS.ORG_TEAMS
+  );
 
   const [updateSettingsMutation] = useUpdateOrgAttendanceSettingsMutation();
   const [patchTeamMutation] = usePatchOrgTeamMutation();
@@ -115,6 +120,18 @@ export default function OrgAttendancePage() {
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
   const showSelfAttendance = normalizeRole(authUser?.role) === ROLES.SUB_ADMIN;
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedRecords,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(records, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE[0],
+  });
 
   useEffect(() => {
     const location = settingsData?.settings?.location;
@@ -286,11 +303,11 @@ export default function OrgAttendancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Organization Attendance</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Organization Attendance</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Configure organization geofence and monitor team attendance logs.
             </p>
           </div>
@@ -331,7 +348,7 @@ export default function OrgAttendancePage() {
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Settings</h3>
 
         <form onSubmit={saveSettings} className="mt-4 grid gap-3 md:grid-cols-2">
@@ -339,7 +356,7 @@ export default function OrgAttendancePage() {
             name="teamId"
             value={settings.teamId}
             onChange={onTeamChange}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control dashboard-select-control"
           >
             <option value="">Organization-wide Geofence</option>
             {teams.map((team) => (
@@ -356,7 +373,7 @@ export default function OrgAttendancePage() {
             value={settings.attendanceRadius}
             onChange={onSettingsChange}
             placeholder="Attendance radius (meters)"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control"
           />
 
           <div className="relative md:col-span-2">
@@ -366,14 +383,14 @@ export default function OrgAttendancePage() {
                 value={searchQuery}
                 onChange={(e) => onSearchLocation(e.target.value)}
                 placeholder="Search for a place (e.g. Pune Station)"
-                className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm outline-none focus:border-blue-500"
+                className="dashboard-field-control w-full pl-10 pr-4"
               />
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
               {searching && <Loader2 className="absolute right-3 top-2.5 animate-spin text-slate-400" size={16} />}
             </div>
 
             {suggestions.length > 0 && (
-              <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+              <ul className="dashboard-dropdown-menu absolute z-50 mt-1 w-full overflow-hidden">
                 {suggestions.map((s, i) => (
                   <li
                     key={i}
@@ -410,7 +427,7 @@ export default function OrgAttendancePage() {
             value={settings.longitude}
             onChange={onSettingsChange}
             placeholder="Longitude"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control"
           />
 
           <input
@@ -420,7 +437,7 @@ export default function OrgAttendancePage() {
             value={settings.latitude}
             onChange={onSettingsChange}
             placeholder="Latitude"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control"
           />
 
           <div className="md:col-span-2 flex justify-stretch sm:justify-end">
@@ -436,7 +453,7 @@ export default function OrgAttendancePage() {
         </form>
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Logs</h3>
 
         {loading ? (
@@ -448,11 +465,15 @@ export default function OrgAttendancePage() {
           <p className="mt-4 text-sm text-slate-500">No attendance records found.</p>
         ) : (
           <div className="mt-4 space-y-4">
+            <p className="mobile-hide-helper text-xs font-semibold text-slate-500">
+              Showing {startIndex}-{endIndex} of {records.length} attendance records
+            </p>
+
             <div className="grid gap-3 md:hidden">
-              {records.map((record) => (
+              {paginatedRecords.map((record) => (
                 <article
                   key={`mobile-${record.id}`}
-                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                  className="dashboard-mobile-record-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -488,7 +509,7 @@ export default function OrgAttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {records.map((record) => (
+                  {paginatedRecords.map((record) => (
                     <tr key={record.id}>
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
                       <td className="px-3 py-2 text-slate-700">{record.member}</td>
@@ -502,6 +523,19 @@ export default function OrgAttendancePage() {
                 </tbody>
               </table>
             </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={records.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE}
+              label="records"
+            />
           </div>
         )}
       </div>
@@ -511,7 +545,7 @@ export default function OrgAttendancePage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>
@@ -520,7 +554,7 @@ function MetricCard({ label, value }) {
 
 function AttendanceDetail({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>

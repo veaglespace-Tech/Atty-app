@@ -319,7 +319,7 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
   const limit = parseLimit(req.query.limit, 25, 200)
 
-  const [organization, subscriptions, paymentAggregate] = await Promise.all([
+  const [organization, subscriptions, paymentAggregate, userCount, teamCount] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
       select: organizationSubscriptionSelect,
@@ -341,6 +341,18 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
       },
       _count: {
         _all: true,
+      },
+    }),
+    prisma.user.count({
+      where: {
+        orgId,
+        deletedAt: null,
+      },
+    }),
+    prisma.team.count({
+      where: {
+        orgId,
+        deletedAt: null,
       },
     }),
   ])
@@ -369,8 +381,25 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
     ],
     items,
     meta: {
+      organizationId: orgId,
+      organizationName: organization?.name || "",
       organizationCode: organization?.organizationCode || "",
+      currentPlanName: organization?.plan?.name || "",
+      currentPlanCode: organization?.plan?.code || "",
+      currentPlanPrice: Number(organization?.plan?.price || 0),
+      currentPlanDurationInDays: Number(organization?.plan?.durationInDays || 0),
+      planLimits: {
+        maxUsers: Number(organization?.plan?.memberLimit || organization?.plan?.maxUsers || 0),
+        maxTeams: Number(organization?.plan?.maxTeams || 0),
+        maxLocations: Number(organization?.plan?.maxLocations || 0),
+      },
+      usage: {
+        users: Number(userCount || 0),
+        teams: Number(teamCount || 0),
+      },
+      subscriptionStatus: organization?.subscriptionStatus || "TRIAL",
       subscriptionExpiry: organization?.subscriptionExpiry || null,
+      activeSubscriptionId: organization?.subscriptionId || null,
       attendanceRadius: organization?.attendanceRadius || 25,
       limit,
     },

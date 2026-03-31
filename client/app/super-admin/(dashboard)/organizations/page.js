@@ -9,8 +9,10 @@ import {
   Save,
   Search,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useDownloadSuperAdminOrganizationsExcelMutation,
   useDownloadSuperAdminOrganizationsPdfMutation,
@@ -18,6 +20,7 @@ import {
   useUpdateOrganizationAccessMutation,
 } from "@/services/api/superAdminApi";
 import { downloadBlobFile } from "@/utils/download";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { getErrorMessage } from "@/utils/formValidation";
 
 const SUBSCRIPTION_OPTIONS = ["TRIAL", "ACTIVE", "EXPIRED", "PAYMENT_PENDING"];
@@ -26,14 +29,10 @@ const BLOCK_FILTER_OPTIONS = ["ALL", "BLOCKED", "UNBLOCKED"];
 const panelClassName = "light-glow-card-static rounded-[1.9rem] p-6";
 const secondaryButtonClassName =
   "brand-btn brand-btn-secondary brand-btn-md";
-const inputClassName =
-  "rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 shadow-[0_10px_24px_rgba(59,130,246,0.08)] outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/80 dark:border-white/80 dark:bg-white dark:text-slate-950 dark:shadow-[0_16px_30px_rgba(2,6,23,0.30)] dark:focus:ring-blue-500/20";
-const filterShellClassName =
-  "rounded-[1.7rem] border border-slate-200/80 bg-white/76 p-4 shadow-[0_20px_46px_rgba(59,130,246,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_56px_rgba(2,6,23,0.30)]";
-const filterFieldClassName =
-  "rounded-[1.3rem] border border-slate-200/80 bg-white/88 p-3 shadow-[0_14px_28px_rgba(59,130,246,0.06)] dark:border-slate-800 dark:bg-slate-950/68 dark:shadow-none";
-const tableSelectClassName =
-  "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-400";
+const inputClassName = "dashboard-field-control";
+const filterShellClassName = "dashboard-filter-shell";
+const filterFieldClassName = "dashboard-filter-field";
+const tableSelectClassName = "dashboard-field-control dashboard-select-control";
 const actionButtonBaseClassName =
   "brand-btn brand-btn-sm justify-center whitespace-nowrap px-3 py-2 text-[11px]";
 
@@ -93,7 +92,9 @@ export default function SuperAdminOrganizationsPage() {
   const [subscriptionFilter, setSubscriptionFilter] = useState("ALL");
   const [accessFilter, setAccessFilter] = useState("ALL");
   const [blockFilter, setBlockFilter] = useState("ALL");
-  const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationsQuery(500);
+  const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationsQuery(
+    DASHBOARD_FETCH_LIMITS.SUPER_ADMIN_ORGANIZATIONS
+  );
   const [downloadOrganizationsPdf, { isLoading: downloadingPdf }] =
     useDownloadSuperAdminOrganizationsPdfMutation();
   const [downloadOrganizationsExcel, { isLoading: downloadingExcel }] =
@@ -140,6 +141,19 @@ export default function SuperAdminOrganizationsPage() {
       return haystack.includes(query);
     });
   }, [organizations, searchTerm, subscriptionFilter, accessFilter, blockFilter]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedOrganizations,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(filteredOrganizations, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.ORGANIZATIONS[0],
+    dependencies: [searchTerm, subscriptionFilter, accessFilter, blockFilter],
+  });
 
   const buildDownloadQueryString = () => {
     const params = new URLSearchParams();
@@ -208,24 +222,24 @@ export default function SuperAdminOrganizationsPage() {
 
   return (
     <section className="space-y-6">
-      <div className={`${panelClassName} relative z-20 overflow-visible`}>
+      <div className={`${panelClassName} mobile-compact-panel relative z-20 overflow-visible`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.14),transparent_28%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <SectionEyebrow className="border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+            <SectionEyebrow className="mobile-hide-chip border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
               Access Control Room
             </SectionEyebrow>
-            <h2 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">
+            <h2 className="mobile-compact-hero-title mt-3 sm:mt-4 text-3xl font-black text-slate-900 dark:text-white">
               Organizations
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <p className="mobile-hide-copy mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
               Organization records now stay in a compact table so search, filters, and access
               actions are easier to manage without oversized cards.
             </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:min-w-[300px]">
-            <div className="rounded-[1.5rem] border border-white/80 bg-white/90 p-4 shadow-[0_18px_44px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-950/75">
+            <div className="dashboard-summary-card">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                 Live View
               </p>
@@ -301,17 +315,17 @@ export default function SuperAdminOrganizationsPage() {
         />
       </div>
 
-      <div className={panelClassName}>
+      <div className={`${panelClassName} mobile-compact-panel`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
               Organization Directory
             </h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-500 dark:text-slate-300">
               Search by name, code, email, or phone, then manage subscription and access from a compact table.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          <div className="mobile-hide-chip inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
             {filteredOrganizations.length} rows
           </div>
         </div>
@@ -333,11 +347,11 @@ export default function SuperAdminOrganizationsPage() {
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
                     Search & Filters
                   </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                  <p className="mobile-hide-copy mt-1 text-sm text-slate-500 dark:text-slate-300">
                     Keep the list focused with only the controls you need.
                   </p>
                 </div>
-                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/88 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/82 dark:text-slate-300 dark:shadow-none">
+                <div className="mobile-hide-chip inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/88 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 shadow-[0_12px_30px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/82 dark:text-slate-300 dark:shadow-none">
                   {filteredOrganizations.length} / {organizations.length} visible
                 </div>
               </div>
@@ -350,7 +364,7 @@ export default function SuperAdminOrganizationsPage() {
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
                       placeholder="Name, code, phone, email"
-                      className={`${inputClassName} w-full py-3 pl-9 pr-3 text-sm`}
+                    className={`${inputClassName} w-full pl-9 pr-3 text-sm`}
                     />
                   </div>
                 </FilterField>
@@ -359,7 +373,7 @@ export default function SuperAdminOrganizationsPage() {
                   <select
                     value={subscriptionFilter}
                     onChange={(event) => setSubscriptionFilter(event.target.value)}
-                    className={`${inputClassName} w-full py-3 text-sm`}
+                    className={`${inputClassName} dashboard-select-control w-full text-sm`}
                   >
                     <option value="ALL">All Subscription</option>
                     {SUBSCRIPTION_OPTIONS.map((status) => (
@@ -374,7 +388,7 @@ export default function SuperAdminOrganizationsPage() {
                   <select
                     value={accessFilter}
                     onChange={(event) => setAccessFilter(event.target.value)}
-                    className={`${inputClassName} w-full py-3 text-sm`}
+                    className={`${inputClassName} dashboard-select-control w-full text-sm`}
                   >
                     {ACCESS_FILTER_OPTIONS.map((status) => (
                       <option key={status} value={status}>
@@ -388,7 +402,7 @@ export default function SuperAdminOrganizationsPage() {
                   <select
                     value={blockFilter}
                     onChange={(event) => setBlockFilter(event.target.value)}
-                    className={`${inputClassName} w-full py-3 text-sm`}
+                    className={`${inputClassName} dashboard-select-control w-full text-sm`}
                   >
                     {BLOCK_FILTER_OPTIONS.map((status) => (
                       <option key={status} value={status}>
@@ -405,35 +419,40 @@ export default function SuperAdminOrganizationsPage() {
                 No organizations match current filters.
               </p>
             ) : (
-              <div className="overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">
-                <table className="min-w-[1260px] w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-                  <thead className="bg-slate-50/90 dark:bg-slate-900/85">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Organization
-                      </th>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Primary Admin
-                      </th>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Contact
-                      </th>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Plan & Usage
-                      </th>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Payments
-                      </th>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Subscription
-                      </th>
-                      <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Access Control
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {filteredOrganizations.map((organization) => {
+              <>
+                <p className="mobile-hide-helper text-xs font-semibold text-slate-500 dark:text-slate-300">
+                  Showing {startIndex}-{endIndex} of {filteredOrganizations.length} filtered organizations
+                </p>
+
+                <div className="overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">
+                  <table className="min-w-[1260px] w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+                    <thead className="bg-slate-50/90 dark:bg-slate-900/85">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Organization
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Primary Admin
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Contact
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Plan & Usage
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Payments
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Subscription
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          Access Control
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {paginatedOrganizations.map((organization) => {
                       const busy = actionId === organization.id;
                       const phone = formatPhone(organization);
 
@@ -599,9 +618,23 @@ export default function SuperAdminOrganizationsPage() {
                         </tr>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+
+                <PaginationControls
+                  page={page}
+                  pageSize={pageSize}
+                  totalItems={filteredOrganizations.length}
+                  totalPages={totalPages}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.ORGANIZATIONS}
+                  label="organizations"
+                />
+              </>
             )}
           </div>
         )}
@@ -612,7 +645,7 @@ export default function SuperAdminOrganizationsPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="relative overflow-hidden rounded-[1.8rem] border border-slate-200/80 bg-[radial-gradient(circle_at_top_right,rgba(96,165,250,0.2),transparent_38%),linear-gradient(145deg,rgba(248,251,255,0.98),rgba(221,234,254,0.92))] px-5 py-5 shadow-[0_26px_64px_rgba(59,130,246,0.12)] dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_right,rgba(96,165,250,0.18),transparent_38%),linear-gradient(145deg,rgba(8,16,38,0.98),rgba(18,31,58,0.96))] dark:shadow-[0_28px_72px_rgba(2,6,23,0.34)]">
+    <div className="dashboard-summary-card rounded-[1.8rem] px-5 py-5">
       <div className="relative min-h-[5.9rem]">
         <p className="text-[0.72rem] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-blue-100/80">
           {label}

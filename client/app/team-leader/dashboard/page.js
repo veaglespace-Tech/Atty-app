@@ -119,7 +119,7 @@ export default function TeamLeaderDashboardPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/90 p-4 shadow-sm shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-black/20">
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
         <Layers3 size={14} className="text-slate-400 dark:text-slate-500" />

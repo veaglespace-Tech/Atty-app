@@ -25,7 +25,7 @@ export const superAdminApi = createApi({
       }),
     }),
     getSuperAdminOrganizations: builder.query({
-      query: (limit = 500) => `/super-admin/organizations?limit=${limit}`,
+      query: (limit = 2000) => `/super-admin/organizations?limit=${limit}`,
       providesTags: ["SAOrganizations"],
     }),
     downloadSuperAdminOrganizationsPdf: builder.mutation({

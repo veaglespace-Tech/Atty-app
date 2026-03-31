@@ -26,6 +26,7 @@ const {
   userManagementSelect,
 } = require("../services/prisma-selects.service");
 const { archiveUser, restoreUserFromArchive } = require("../services/archive.service");
+const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
 
 const USER_STATUS = new Set(["APPROVED", "PENDING", "REJECTED"]);
 
@@ -58,7 +59,7 @@ const ensureOrgTargetUser = async ({ req, res, targetUserId, allowSelf = false }
 
 exports.getOrgUsers = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  const limit = parseLimit(req.query.limit, 250, 1000);
+  const limit = parseLimit(req.query.limit, 500, 2000);
 
   const users = await prisma.user.findMany({
     where: {
@@ -212,6 +213,7 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
 exports.createOrgUser = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE);
+  await assertWithinPlanUserLimit({ orgId, res });
 
   const name = truncateText(req.body?.name, 120);
   const email = normalizeEmail(req.body?.email);

@@ -11,7 +11,7 @@ export const teamLeaderApi = createApi({
       providesTags: ["TLDashboard"],
     }),
     getTeamLeaderTeams: builder.query({
-      query: (limit = 200) => `/team-leader/teams?limit=${limit}`,
+      query: (limit = 1200) => `/team-leader/teams?limit=${limit}`,
       providesTags: ["TLTeams"],
     }),
     createTeamLeaderTeam: builder.mutation({
@@ -38,7 +38,7 @@ export const teamLeaderApi = createApi({
       invalidatesTags: ["TLTeams"],
     }),
     getTeamLeaderUsers: builder.query({
-      query: (limit = 500) => `/team-leader/users?limit=${limit}`,
+      query: (limit = 1600) => `/team-leader/users?limit=${limit}`,
       providesTags: ["TLUsers"],
     }),
     getTeamLeaderAttendance: builder.query({

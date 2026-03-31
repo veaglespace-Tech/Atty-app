@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Loader2, Plus, RefreshCcw, Search, UserPlus, X } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useCreateOrgUserMutation,
   useGetOrgUsersQuery,
 } from "@/services/api/orgApi";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import {
   ORG_MANAGED_ROLE_OPTIONS,
   PERMISSION_GROUPS,
@@ -29,8 +32,7 @@ import {
 const STATUS_OPTIONS = ["APPROVED", "PENDING"];
 const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
-const fieldClassName =
-  "w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
+const fieldClassName = "dashboard-field-control";
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -66,7 +68,7 @@ export default function OrgUsersPage() {
     isLoading,
     isFetching,
     refetch,
-  } = useGetOrgUsersQuery(300);
+  } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
 
   const [createUserMutation] = useCreateOrgUserMutation();
 
@@ -99,6 +101,20 @@ export default function OrgUsersPage() {
       return haystack.includes(query);
     });
   }, [users, searchTerm, roleFilter, statusFilter, activeFilter]);
+
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedUsers,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(filteredUsers, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS[0],
+    dependencies: [searchTerm, roleFilter, statusFilter, activeFilter],
+  });
 
   useEffect(() => {
     const role = normalizeRole(form.role);
@@ -190,11 +206,11 @@ export default function OrgUsersPage() {
 
   return (
     <section className="space-y-6">
-      <div className={sectionCardClassName}>
+      <div className={`${sectionCardClassName} mobile-compact-panel`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Users</h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            <h2 className="mobile-compact-title text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Users</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600 dark:text-slate-300">
               Directory keeps core fields simple. Click a user row to open full profile and actions.
             </p>
           </div>
@@ -256,7 +272,7 @@ export default function OrgUsersPage() {
             value={form.name}
             onChange={onInputChange}
             placeholder="Full name"
-            className={fieldClassName}
+            className={`${fieldClassName} dashboard-select-control`}
             required
           />
           <input
@@ -265,7 +281,7 @@ export default function OrgUsersPage() {
             value={form.email}
             onChange={onInputChange}
             placeholder="Email"
-            className={fieldClassName}
+            className={`${fieldClassName} dashboard-select-control`}
             required
           />
           <div className="sm:col-span-2 xl:col-span-3">
@@ -397,7 +413,7 @@ export default function OrgUsersPage() {
               <select
                 value={roleFilter}
                 onChange={(event) => setRoleFilter(event.target.value)}
-                className={fieldClassName}
+                className={`${fieldClassName} dashboard-select-control`}
               >
                 <option value="ALL">All Roles</option>
                 {ORG_MANAGED_ROLE_OPTIONS.map((roleOption) => (
@@ -410,7 +426,7 @@ export default function OrgUsersPage() {
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className={fieldClassName}
+                className={`${fieldClassName} dashboard-select-control`}
               >
                 {DIRECTORY_STATUS_FILTERS.map((status) => (
                   <option key={status} value={status}>
@@ -421,7 +437,7 @@ export default function OrgUsersPage() {
               <select
                 value={activeFilter}
                 onChange={(event) => setActiveFilter(event.target.value)}
-                className={fieldClassName}
+                className={`${fieldClassName} dashboard-select-control`}
               >
                 <option value="ALL">All Access</option>
                 <option value="ACTIVE">Active</option>
@@ -429,8 +445,8 @@ export default function OrgUsersPage() {
               </select>
             </div>
 
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Showing {filteredUsers.length} of {users.length} users
+            <p className="mobile-hide-helper text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Showing {startIndex}-{endIndex} of {filteredUsers.length} filtered users
             </p>
 
             {filteredUsers.length === 0 ? (
@@ -440,12 +456,12 @@ export default function OrgUsersPage() {
             ) : (
               <>
                 <div className="grid gap-3 md:hidden">
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <button
                       type="button"
                       key={`card-${user.id}`}
                       onClick={() => router.push(`/org/users/${user.id}`)}
-                      className="rounded-[1.55rem] border border-slate-200 bg-white/90 p-4 text-left shadow-[0_14px_34px_rgba(59,130,246,0.08)] transition hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950/75"
+                      className="dashboard-mobile-record-card text-left transition hover:-translate-y-0.5"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -485,7 +501,7 @@ export default function OrgUsersPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {filteredUsers.map((user) => (
+                      {paginatedUsers.map((user) => (
                         <tr
                           key={user.id}
                           onClick={() => router.push(`/org/users/${user.id}`)}
@@ -526,6 +542,19 @@ export default function OrgUsersPage() {
                     </tbody>
                   </table>
                 </div>
+
+                <PaginationControls
+                  page={page}
+                  pageSize={pageSize}
+                  totalItems={filteredUsers.length}
+                  totalPages={totalPages}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.USERS}
+                  label="users"
+                />
               </>
             )}
           </div>
@@ -537,7 +566,7 @@ export default function OrgUsersPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft flex min-h-[7.75rem] flex-col justify-between rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
     </div>
@@ -546,7 +575,7 @@ function MetricCard({ label, value }) {
 
 function DetailPill({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</p>
     </div>

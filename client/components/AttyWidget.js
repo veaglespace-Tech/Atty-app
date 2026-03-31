@@ -112,15 +112,17 @@ const CHAT_THEME = {
 function BotAvatar({ avatarBorder }) {
   return (
     <div
-      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-[0.9rem] border bg-white p-0.5 shadow-[0_10px_24px_rgba(3,10,28,0.14)] sm:h-9 sm:w-9 sm:rounded-[1rem] ${avatarBorder}`}
+      className={`brand-logo-reveal flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-[0.9rem] border bg-white p-0.5 shadow-[0_10px_24px_rgba(3,10,28,0.14)] sm:h-9 sm:w-9 sm:rounded-[1rem] ${avatarBorder}`}
     >
-      <Image
-        src="/logo1-clean.webp"
-        alt="Atty"
-        width={32}
-        height={32}
-        className="h-full w-full object-contain"
-      />
+      <div className="brand-logo-spotlight h-full w-full">
+        <Image
+          src="/logo1-clean.webp"
+          alt="Atty"
+          width={32}
+          height={32}
+          className="brand-logo-mark h-full w-full object-contain"
+        />
+      </div>
     </div>
   );
 }
@@ -369,14 +371,17 @@ export default function AttyWidget() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.14),transparent_28%)]" />
 
-            <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/25 bg-white p-0.5 shadow-[0_14px_30px_rgba(3,10,28,0.18)] sm:h-10 sm:w-10 sm:rounded-[1.2rem]">
-              <Image
-                src="/logo1-clean.webp"
-                alt="Atty"
-                width={40}
-                height={40}
-                className="h-full w-full object-contain"
-              />
+            <div className="brand-logo-reveal relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/25 bg-white p-0.5 shadow-[0_14px_30px_rgba(3,10,28,0.18)] sm:h-10 sm:w-10 sm:rounded-[1.2rem]">
+              <div className="brand-logo-orbit absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.24),rgba(92,209,229,0.04)_72%)] blur-lg" />
+              <div className="brand-logo-spotlight relative h-full w-full">
+                <Image
+                  src="/logo1-clean.webp"
+                  alt="Atty"
+                  width={40}
+                  height={40}
+                  className="brand-logo-mark h-full w-full object-contain"
+                />
+              </div>
             </div>
 
             <div className="relative min-w-0 flex-1">

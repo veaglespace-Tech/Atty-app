@@ -57,7 +57,7 @@ export default function CountryPhoneField({
           onChange={onCountryCodeChange}
           disabled={disabled}
           className={cn(
-            "w-[5.25rem] shrink-0 border-r border-slate-200 bg-white px-2.5 py-3 text-xs font-semibold text-slate-900 outline-none sm:w-28 sm:px-3 sm:py-4 sm:text-sm dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-100",
+            "w-[5.5rem] shrink-0 border-r border-slate-200 bg-white px-2.5 py-3 text-xs font-semibold text-slate-900 outline-none sm:w-[6.75rem] sm:px-3 sm:py-4 sm:text-sm dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-100",
             selectClassName
           )}
         >

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDispatch } from "react-redux";
@@ -57,6 +57,7 @@ export default function LoginPage() {
   const [selectedOrganization, setSelectedOrganization] = React.useState(null);
 
   const {
+    control,
     register,
     handleSubmit,
     setValue,
@@ -74,6 +75,24 @@ export default function LoginPage() {
       organizationName: "",
     },
   });
+  const [watchedLoginAs, watchedEmail, watchedOrganizationId, watchedOrganizationCode, watchedOrganizationName] =
+    useWatch({
+      control,
+      name: ["loginAs", "email", "organizationId", "organizationCode", "organizationName"],
+    });
+
+  const forgotPasswordHref = (() => {
+    const params = new URLSearchParams();
+
+    if (watchedLoginAs) params.set("loginAs", watchedLoginAs);
+    if (watchedEmail) params.set("email", watchedEmail);
+    if (watchedOrganizationId) params.set("organizationId", watchedOrganizationId);
+    if (watchedOrganizationCode) params.set("organizationCode", watchedOrganizationCode);
+    if (watchedOrganizationName) params.set("organizationName", watchedOrganizationName);
+
+    const query = params.toString();
+    return query ? `/forgot-password?${query}` : "/forgot-password";
+  })();
 
   React.useEffect(() => {
     if (!hydrated || !token) return;
@@ -238,7 +257,7 @@ export default function LoginPage() {
                     Password
                   </label>
                   <Link
-                    href="#"
+                    href={forgotPasswordHref}
                     className="text-xs font-bold text-blue-600 transition hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
                   >
                     Forgot Password?

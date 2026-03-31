@@ -38,6 +38,27 @@ export const authApi = createApi({
         body: userData,
       }),
     }),
+    forgotPassword: builder.mutation({
+      query: (payload) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    validateResetPasswordToken: builder.mutation({
+      query: (payload) => ({
+        url: "/auth/reset-password/validate",
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (payload) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     userSignOut: builder.mutation({
       query: () => ({
         url: "/auth/logout",
@@ -66,6 +87,9 @@ export const {
   useUserSignUpMutation,
   useLazySearchOrganizationsQuery,
   useUserSignInMutation,
+  useForgotPasswordMutation,
+  useValidateResetPasswordTokenMutation,
+  useResetPasswordMutation,
   useUserSignOutMutation,
   useAdminSigninMutation,
   useAdminSignoutMutation,

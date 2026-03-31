@@ -68,11 +68,11 @@ export default function ReportsPage() {
 
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.28fr)_minmax(320px,0.72fr)]">
           <div>
-            <div className="brand-chip">
+            <div className="brand-chip mobile-hide-chip">
               Insights Workspace
             </div>
-            <h1 className="brand-hero-title mt-4">Intelligence & Reports</h1>
-            <p className="brand-copy mt-3 max-w-2xl">
+            <h1 className="brand-hero-title mobile-compact-hero-title mt-3 sm:mt-4">Intelligence & Reports</h1>
+            <p className="brand-copy mobile-hide-copy mt-3 max-w-2xl">
               Exportable attendance analytics for{" "}
               <strong>{user?.organizationCode || "your workspace"}</strong>. {roleSummary}
             </p>
@@ -81,7 +81,7 @@ export default function ReportsPage() {
               <span className="brand-chip">
                 {roleLabel}
               </span>
-              <span className="brand-chip">
+              <span className="brand-chip mobile-hide-chip">
                 {REPORT_TYPES.length} Artifact Types
               </span>
             </div>
@@ -96,7 +96,7 @@ export default function ReportsPage() {
               </button>
               <button
                 type="button"
-                className="brand-btn brand-btn-secondary brand-btn-lg rounded-[1.25rem]"
+                className="brand-btn brand-btn-secondary brand-btn-lg mobile-hide-chip rounded-[1.25rem]"
               >
                 <Filter size={18} />
                 Global Filters
@@ -123,12 +123,12 @@ export default function ReportsPage() {
           <div className="flex flex-col gap-3 border-b border-white/70 px-5 py-5 dark:border-slate-800 md:flex-row md:items-center md:justify-between md:px-6">
             <div>
               <h2 className="brand-section-title text-[1.35rem]">Available Artifacts</h2>
-              <p className="brand-copy-sm mt-2">
+              <p className="brand-copy-sm mobile-hide-helper mt-2">
                 Generate polished report packs for leadership review, payroll follow-up, and
                 daily monitoring.
               </p>
             </div>
-            <div className="brand-chip">Ready to Export</div>
+            <div className="brand-chip mobile-hide-chip">Ready to Export</div>
           </div>
 
           <div className="space-y-4 p-4 md:p-6">
@@ -150,11 +150,11 @@ export default function ReportsPage() {
                     <h3 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
                       {report.title}
                     </h3>
-                    <span className="brand-chip px-2.5 py-1 text-[10px]">
+                    <span className="brand-chip mobile-hide-chip px-2.5 py-1 text-[10px]">
                       {report.meta}
                     </span>
                   </div>
-                  <p className="brand-copy-sm mt-2">{report.desc}</p>
+                  <p className="brand-copy-sm mobile-hide-copy mt-2">{report.desc}</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -195,17 +195,17 @@ export default function ReportsPage() {
           <section className="brand-spotlight relative overflow-hidden rounded-[2.2rem] p-6">
             <div className="brand-spotlight-orb-primary absolute right-0 top-0 h-48 w-48 rounded-full blur-[120px]" />
             <div className="brand-spotlight-orb-secondary absolute bottom-0 left-0 h-40 w-40 rounded-full blur-[110px]" />
-            <p className="brand-spotlight-kicker relative text-[11px] font-black uppercase tracking-[0.2em]">
+            <p className="brand-spotlight-kicker mobile-hide-chip relative text-[11px] font-black uppercase tracking-[0.2em]">
               Protected Access
             </p>
             <h4 className="brand-spotlight-title relative mt-4 text-2xl font-black">
               Role-Aware Reporting
             </h4>
-            <p className="brand-spotlight-copy relative mt-3 text-sm leading-6">
+            <p className="brand-spotlight-copy mobile-hide-copy relative mt-3 text-sm leading-6">
               This workspace is configured for <strong>{roleLabel}</strong> visibility, so exported
               data stays aligned with the access level assigned to your session.
             </p>
-            <div className="brand-spotlight-chip relative mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">
+            <div className="brand-spotlight-chip mobile-hide-chip relative mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">
               Secure Artifact Generation
             </div>
           </section>
@@ -215,9 +215,9 @@ export default function ReportsPage() {
   );
 }
 
-function ReportMetric({ icon: Icon, label, value, tone }) {
+function ReportMetric({ icon: Icon, label, value }) {
   return (
-    <div className={`light-glow-soft rounded-[1.7rem] border p-5 ${getMetricToneStyles(tone)}`}>
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between gap-3">
         <div className="brand-icon-shell flex h-12 w-12 items-center justify-center rounded-2xl">
           <Icon size={20} />
@@ -229,20 +229,6 @@ function ReportMetric({ icon: Icon, label, value, tone }) {
       <p className="brand-kicker mt-2">{label}</p>
     </div>
   );
-}
-
-function getMetricToneStyles(tone) {
-  const tones = {
-    blue: "border-blue-100 bg-blue-50/90 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200",
-    emerald:
-      "border-emerald-100 bg-emerald-50/90 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
-    indigo:
-      "border-indigo-100 bg-indigo-50/90 text-indigo-600 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200",
-    amber:
-      "border-amber-100 bg-amber-50/90 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
-  };
-
-  return tones[tone] || tones.blue;
 }
 
 function getToneStyles(tone) {

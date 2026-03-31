@@ -18,24 +18,24 @@ import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
 const RECORD_THEMES = [
   {
     shell:
-      "border-white/80 bg-gradient-to-br from-white via-blue-50/90 to-indigo-50/70 dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950",
-    glow: "bg-blue-300/35 dark:bg-blue-500/18",
+      "border-[rgb(var(--brand-line)/0.8)] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_40%),linear-gradient(145deg,rgba(245,249,255,0.98),rgba(228,238,255,0.95),rgba(216,228,252,0.93))] dark:border-[rgb(var(--brand-line)/0.84)] dark:bg-[radial-gradient(circle_at_top_right,rgba(92,209,229,0.20),transparent_40%),linear-gradient(145deg,rgba(7,18,44,0.98),rgba(11,26,58,0.96),rgba(15,33,67,0.94))]",
+    glow: "bg-blue-300/35 dark:bg-cyan-400/18",
     chip:
-      "border-blue-200/80 bg-white/85 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200",
+      "border-blue-200/80 bg-white/88 text-slate-900 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-100",
   },
   {
     shell:
-      "border-white/80 bg-gradient-to-br from-white via-emerald-50/90 to-cyan-50/70 dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950",
-    glow: "bg-emerald-300/35 dark:bg-emerald-500/18",
+      "border-[rgb(var(--brand-line)/0.8)] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_40%),linear-gradient(145deg,rgba(245,249,255,0.98),rgba(228,238,255,0.95),rgba(216,228,252,0.93))] dark:border-[rgb(var(--brand-line)/0.84)] dark:bg-[radial-gradient(circle_at_top_right,rgba(92,209,229,0.20),transparent_40%),linear-gradient(145deg,rgba(7,18,44,0.98),rgba(11,26,58,0.96),rgba(15,33,67,0.94))]",
+    glow: "bg-blue-300/35 dark:bg-cyan-400/18",
     chip:
-      "border-emerald-200/80 bg-white/85 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
+      "border-blue-200/80 bg-white/88 text-slate-900 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-100",
   },
   {
     shell:
-      "border-white/80 bg-gradient-to-br from-white via-amber-50/90 to-rose-50/65 dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950",
-    glow: "bg-amber-300/35 dark:bg-amber-500/18",
+      "border-[rgb(var(--brand-line)/0.8)] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_40%),linear-gradient(145deg,rgba(245,249,255,0.98),rgba(228,238,255,0.95),rgba(216,228,252,0.93))] dark:border-[rgb(var(--brand-line)/0.84)] dark:bg-[radial-gradient(circle_at_top_right,rgba(92,209,229,0.20),transparent_40%),linear-gradient(145deg,rgba(7,18,44,0.98),rgba(11,26,58,0.96),rgba(15,33,67,0.94))]",
+    glow: "bg-blue-300/35 dark:bg-cyan-400/18",
     chip:
-      "border-amber-200/80 bg-white/85 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
+      "border-blue-200/80 bg-white/88 text-slate-900 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-100",
   },
 ];
 
@@ -795,17 +795,17 @@ export function DashboardRecordsSection({
       : "Detailed entries presented as quick-scan cards.");
 
   return (
-    <div className="light-glow-card-static rounded-[1.9rem] p-6">
+    <div className="light-glow-card-static rounded-[1.9rem] p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
             {title}
           </h3>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+          <p className="mobile-hide-copy mt-2 text-sm text-slate-500 dark:text-slate-300">
             {sectionDescription}
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+        <div className="mobile-hide-chip inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           {items.length} entries
         </div>
       </div>
@@ -831,7 +831,7 @@ export function DashboardRecordsSection({
               return (
                 <article
                   key={mobileRowKey}
-                  className="min-w-0 rounded-[1.5rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                  className="dashboard-mobile-record-card min-w-0"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -858,7 +858,7 @@ export function DashboardRecordsSection({
                     {visibleColumns.map((column) => (
                       <div
                         key={`${mobileRowKey}-${column.key}-mobile`}
-                        className="min-w-0 overflow-hidden rounded-[1.1rem] border border-slate-200 bg-slate-50/90 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+                        className="dashboard-detail-tile min-w-0 overflow-hidden"
                       >
                         <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                           {column.label}
@@ -1096,17 +1096,17 @@ export default function DataPanelPage({
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static relative overflow-hidden rounded-[2rem] p-6 lg:p-7">
+      <div className="light-glow-card-static mobile-compact-panel relative overflow-hidden rounded-[2rem] p-6 lg:p-7">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.14),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
         <div className="relative">
           <div className="max-w-3xl">
-            <SectionEyebrow className="border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+            <SectionEyebrow className="mobile-hide-chip border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
               {heroKicker}
             </SectionEyebrow>
-            <h2 className="mt-4 text-3xl font-black text-slate-900 dark:text-white">
+            <h2 className="mobile-compact-hero-title mt-3 sm:mt-4 text-3xl font-black text-slate-900 dark:text-white">
               {effectiveTitle}
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <p className="mobile-hide-copy mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
               {heroDescription}
             </p>
           </div>
@@ -1159,13 +1159,13 @@ export default function DataPanelPage({
       </div>
 
       {downloadSection ? (
-        <div className="light-glow-card-static relative z-20 overflow-visible rounded-[1.85rem] p-6">
+        <div className="light-glow-card-static mobile-compact-panel relative z-20 overflow-visible rounded-[1.85rem] p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
                 {downloadSection.title || "Records Download"}
               </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+              <p className="mobile-hide-copy mt-2 text-sm text-slate-500 dark:text-slate-300">
                 {downloadSection.description || "Download the visible records in PDF or Excel format."}
               </p>
             </div>
@@ -1248,19 +1248,19 @@ export default function DataPanelPage({
         </div>
       ) : null}
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
               Records
             </h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-500 dark:text-slate-300">
               {recordsView === "table"
                 ? "Detailed entries arranged in a roomy table for easier scanning."
                 : "Detailed entries presented as quick-scan cards."}
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          <div className="mobile-hide-chip inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
             {items.length} entries
           </div>
         </div>
@@ -1289,7 +1289,7 @@ export default function DataPanelPage({
                 return (
                   <article
                     key={mobileRowKey}
-                    className="min-w-0 rounded-[1.5rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                    className="dashboard-mobile-record-card min-w-0"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -1316,7 +1316,7 @@ export default function DataPanelPage({
                       {visibleColumns.map((column) => (
                         <div
                           key={`${mobileRowKey}-${column.key}-mobile`}
-                          className="min-w-0 overflow-hidden rounded-[1.1rem] border border-slate-200 bg-slate-50/90 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+                          className="dashboard-detail-tile min-w-0 overflow-hidden"
                         >
                           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                             {column.label}

@@ -71,11 +71,11 @@ export default function OrgNotificationsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Notifications</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Notifications</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               New user registration requests appear here. Approve to allow login access.
             </p>
           </div>
@@ -105,7 +105,7 @@ export default function OrgNotificationsPage() {
         <MetricCard label="Unread Notifications" value={summaryMap.get("Unread Notifications") || 0} />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Pending Requests</h3>
 
         {loading ? (
@@ -161,7 +161,7 @@ export default function OrgNotificationsPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className="dashboard-summary-card rounded-2xl">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>

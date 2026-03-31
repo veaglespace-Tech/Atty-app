@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetTeamLeaderAttendanceQuery,
   usePatchTeamLeaderTeamMutation,
   useGetTeamLeaderTeamsQuery,
 } from "@/services/api/teamLeaderApi";
 import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { hasPermission, normalizeRole, PERMISSIONS, ROLES } from "@/utils/roles";
 import {
   getErrorMessage,
@@ -86,7 +89,9 @@ export default function TeamLeaderAttendancePage() {
   const [filters, setFilters] = useState({
     ...DEFAULT_FILTERS,
   });
-  const [queryString, setQueryString] = useState("limit=300");
+  const [queryString, setQueryString] = useState(
+    `limit=${DASHBOARD_FETCH_LIMITS.TEAM_LEADER_ATTENDANCE}`
+  );
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
@@ -105,7 +110,8 @@ export default function TeamLeaderAttendancePage() {
   const [searchError, setSearchError] = useState("");
 
   const { data, isLoading, isFetching, refetch } = useGetTeamLeaderAttendanceQuery(queryString);
-  const { data: teamsData, isLoading: teamsLoading, refetch: refetchTeams } = useGetTeamLeaderTeamsQuery();
+  const { data: teamsData, isLoading: teamsLoading, refetch: refetchTeams } =
+    useGetTeamLeaderTeamsQuery(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_TEAMS);
   const [patchTeamMutation] = usePatchTeamLeaderTeamMutation();
 
   const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
@@ -184,6 +190,19 @@ export default function TeamLeaderAttendancePage() {
         .includes(query)
     );
   }, [records, filters.search]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedRecords,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(filteredRecords, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE[0],
+    dependencies: [filters.search, filters.status, filters.date, filters.from, filters.to],
+  });
 
   const activeFilterCount = useMemo(
     () =>
@@ -202,7 +221,9 @@ export default function TeamLeaderAttendancePage() {
   const isRangeMode = Boolean(filters.from || filters.to);
 
   const buildQueryString = (inputFilters = DEFAULT_FILTERS) => {
-    const params = new URLSearchParams({ limit: "300" });
+    const params = new URLSearchParams({
+      limit: String(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_ATTENDANCE),
+    });
     if (inputFilters.status && inputFilters.status !== "ALL") {
       params.set("status", inputFilters.status);
     }
@@ -385,11 +406,11 @@ export default function TeamLeaderAttendancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Team Leader Attendance</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Team Leader Attendance</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Track your team attendance logs, punch timings, and geo-validation status.
             </p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -431,9 +452,9 @@ export default function TeamLeaderAttendancePage() {
         />
       ) : null}
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Settings</h3>
-        <p className="mt-1 text-xs text-slate-500">Update the work location for {currentTeam?.name || "your team"}.</p>
+        <p className="mobile-hide-copy mt-1 text-xs text-slate-500">Update the work location for {currentTeam?.name || "your team"}.</p>
         {!canManageAttendanceSettings ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
             Admin must grant `Manage Attendance` permission before you can update team location or radius.
@@ -448,7 +469,7 @@ export default function TeamLeaderAttendancePage() {
             value={settings.attendanceRadius}
             onChange={onSettingsChange}
             placeholder="Attendance radius (meters)"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control"
             disabled={!canManageAttendanceSettings}
           />
 
@@ -459,7 +480,7 @@ export default function TeamLeaderAttendancePage() {
                 value={searchQuery}
                 onChange={(e) => onSearchLocation(e.target.value)}
                 placeholder="Search for a location (e.g. Mumbai Airport)"
-                className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm outline-none focus:border-blue-500"
+                className="dashboard-field-control w-full pl-10 pr-4"
                 disabled={!canManageAttendanceSettings}
               />
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
@@ -467,7 +488,7 @@ export default function TeamLeaderAttendancePage() {
             </div>
 
             {suggestions.length > 0 && (
-              <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+              <ul className="dashboard-dropdown-menu absolute z-50 mt-1 w-full overflow-hidden">
                 {suggestions.map((s, i) => (
                   <li
                     key={i}
@@ -502,7 +523,7 @@ export default function TeamLeaderAttendancePage() {
             Use Current Location
           </button>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input
               name="longitude"
               type="number"
@@ -510,7 +531,7 @@ export default function TeamLeaderAttendancePage() {
               value={settings.longitude}
               onChange={onSettingsChange}
               placeholder="Longitude"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className="dashboard-field-control"
               disabled={!canManageAttendanceSettings}
             />
             <input
@@ -520,7 +541,7 @@ export default function TeamLeaderAttendancePage() {
               value={settings.latitude}
               onChange={onSettingsChange}
               placeholder="Latitude"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className="dashboard-field-control"
               disabled={!canManageAttendanceSettings}
             />
           </div>
@@ -560,24 +581,24 @@ export default function TeamLeaderAttendancePage() {
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Logs</h3>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-500">
               Keep filters close to the list so it is easier to scan member records and narrow results.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <span className="mobile-hide-chip inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               {filteredRecords.length} Visible
             </span>
-            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <span className="mobile-hide-chip inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               {records.length} Total
             </span>
             {hasActiveFilters ? (
-              <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+              <span className="mobile-hide-chip inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
                 {activeFilterCount} Active Filters
               </span>
             ) : null}
@@ -586,7 +607,7 @@ export default function TeamLeaderAttendancePage() {
 
         <form
           onSubmit={onApplyFilters}
-          className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50/85 p-4 dark:border-slate-800 dark:bg-slate-900/70"
+          className="dashboard-filter-shell mt-5"
         >
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_220px_180px]">
             <label className="space-y-2">
@@ -600,7 +621,7 @@ export default function TeamLeaderAttendancePage() {
                   value={filters.search}
                   onChange={onFilterChange}
                   placeholder="Search member, role, status, location"
-                  className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/80"
+                  className="dashboard-field-control w-full pl-10 pr-3"
                 />
               </div>
             </label>
@@ -613,7 +634,7 @@ export default function TeamLeaderAttendancePage() {
                 name="status"
                 value={filters.status}
                 onChange={onFilterChange}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/80"
+                className="dashboard-field-control dashboard-select-control"
               >
                 <option value="ALL">All Status</option>
                 <option value="PRESENT">Present</option>
@@ -632,7 +653,7 @@ export default function TeamLeaderAttendancePage() {
                 value={filters.date}
                 onChange={onFilterChange}
                 disabled={isRangeMode}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/80"
+                className="dashboard-field-control disabled:cursor-not-allowed disabled:opacity-60"
               />
             </label>
           </div>
@@ -648,7 +669,7 @@ export default function TeamLeaderAttendancePage() {
                 value={filters.from}
                 onChange={onFilterChange}
                 disabled={isSingleDateMode}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/80"
+                className="dashboard-field-control disabled:cursor-not-allowed disabled:opacity-60"
               />
             </label>
 
@@ -662,12 +683,12 @@ export default function TeamLeaderAttendancePage() {
                 value={filters.to}
                 onChange={onFilterChange}
                 disabled={isSingleDateMode}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/80"
+                className="dashboard-field-control disabled:cursor-not-allowed disabled:opacity-60"
               />
             </label>
 
             <div className="flex flex-col justify-end gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <p className="text-xs text-slate-500">
+              <p className="mobile-hide-helper text-xs text-slate-500">
                 Search updates the visible list instantly. Status and date filters load matching team records.
               </p>
 
@@ -706,12 +727,16 @@ export default function TeamLeaderAttendancePage() {
               : "No team attendance records found."}
           </p>
         ) : (
-          <div className="mt-4 space-y-4">
-            <div className="grid gap-3 md:hidden">
-              {filteredRecords.map((record) => (
-                <article
+            <div className="mt-4 space-y-4">
+              <p className="mobile-hide-helper text-xs font-semibold text-slate-500">
+                Showing {startIndex}-{endIndex} of {filteredRecords.length} filtered records
+              </p>
+
+              <div className="grid gap-3 md:hidden">
+                {paginatedRecords.map((record) => (
+                  <article
                   key={`mobile-${record.id}`}
-                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                  className="dashboard-mobile-record-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -751,7 +776,7 @@ export default function TeamLeaderAttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredRecords.map((record) => (
+                  {paginatedRecords.map((record) => (
                     <tr key={record.id}>
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
                       <td className="px-3 py-2 font-semibold text-slate-900">{record.member}</td>
@@ -767,6 +792,19 @@ export default function TeamLeaderAttendancePage() {
                 </tbody>
               </table>
             </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={filteredRecords.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE}
+              label="records"
+            />
           </div>
         )}
       </div>
@@ -776,7 +814,7 @@ export default function TeamLeaderAttendancePage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>
@@ -785,7 +823,7 @@ function MetricCard({ label, value }) {
 
 function TeamAttendanceDetail({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>

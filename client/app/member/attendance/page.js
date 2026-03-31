@@ -3,8 +3,11 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
 import { usePunchInMutation, usePunchOutMutation } from "@/services/api/attendanceApi";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { getCurrentCoordinates } from "@/utils/location";
 
 const todayKey = () => new Date().toISOString().split("T")[0];
@@ -68,7 +71,7 @@ export default function MemberAttendancePage() {
     isLoading: attendanceLoading,
     isFetching: attendanceFetching,
     refetch: refetchAttendance,
-  } = useGetMemberAttendanceQuery(45, { skip: !user });
+  } = useGetMemberAttendanceQuery(DASHBOARD_FETCH_LIMITS.MEMBER_ATTENDANCE, { skip: !user });
   const [punchInMutation] = usePunchInMutation();
   const [punchOutMutation] = usePunchOutMutation();
 
@@ -83,6 +86,18 @@ export default function MemberAttendancePage() {
   const loading = dashboardLoading || dashboardFetching || attendanceLoading || attendanceFetching;
 
   const summaryMap = useMemo(() => toSummaryMap(summary), [summary]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedRecords,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(records, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE[0],
+  });
 
   const todayRecord = useMemo(
     () => records.find((record) => String(record.date) === todayKey()) || null,
@@ -147,11 +162,11 @@ export default function MemberAttendancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Member Attendance</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Member Attendance</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Punch in/out with device location or manual coordinates, and track your attendance history.
             </p>
           </div>
@@ -189,10 +204,12 @@ export default function MemberAttendancePage() {
           </button>
         </div>
 
-        <div className="mt-5 rounded-lg border border-slate-100 bg-slate-50 p-3">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance Mode</p>
-          <p className="mt-1 text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <p className="mobile-hide-chip rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+            Attendance Mode
+          </p>
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
             Live Location (GPS Only)
           </p>
         </div>
@@ -231,7 +248,7 @@ export default function MemberAttendancePage() {
         />
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Today Snapshot</h3>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -242,7 +259,7 @@ export default function MemberAttendancePage() {
         </div>
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance History</h3>
 
         {loading ? (
@@ -254,11 +271,15 @@ export default function MemberAttendancePage() {
           <p className="mt-4 text-sm text-slate-500">No attendance records found.</p>
         ) : (
           <div className="mt-4 space-y-4">
+            <p className="mobile-hide-helper text-xs font-semibold text-slate-500">
+              Showing {startIndex}-{endIndex} of {records.length} attendance records
+            </p>
+
             <div className="grid gap-3 md:hidden">
-              {records.map((record) => (
+              {paginatedRecords.map((record) => (
                 <article
                   key={`mobile-${record.id}`}
-                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                  className="dashboard-mobile-record-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -294,7 +315,7 @@ export default function MemberAttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {records.map((record) => (
+                  {paginatedRecords.map((record) => (
                     <tr key={record.id}>
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
                       <td className="px-3 py-2 text-slate-700">{record.status}</td>
@@ -310,6 +331,19 @@ export default function MemberAttendancePage() {
                 </tbody>
               </table>
             </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={records.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE}
+              label="records"
+            />
           </div>
         )}
       </div>
@@ -319,7 +353,7 @@ export default function MemberAttendancePage() {
 
 function MetricCard({ label, value, icon, valueClassName = "text-2xl" }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
         <span className="text-slate-500">{icon}</span>
@@ -331,7 +365,7 @@ function MetricCard({ label, value, icon, valueClassName = "text-2xl" }) {
 
 function Snapshot({ label, value }) {
   return (
-    <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
+    <div className="dashboard-detail-tile rounded-[1.25rem] px-4">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
     </div>
@@ -340,7 +374,7 @@ function Snapshot({ label, value }) {
 
 function HistoryDetail({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>

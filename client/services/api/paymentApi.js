@@ -15,9 +15,23 @@ export const paymentApi = createApi({
         body: payload,
       }),
     }),
+    createRenewalOrder: builder.mutation({
+      query: (payload) => ({
+        url: "/payment/create-renewal-order",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     verifyAndRegisterPayment: builder.mutation({
       query: (payload) => ({
         url: "/payment/verify-and-register",
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    verifyRenewalPayment: builder.mutation({
+      query: (payload) => ({
+        url: "/payment/verify-renewal",
         method: "POST",
         body: payload,
       }),
@@ -36,7 +50,9 @@ export const {
   useGetPaymentPublicKeyQuery,
   useLazyGetPaymentPublicKeyQuery,
   useCreatePaymentOrderMutation,
+  useCreateRenewalOrderMutation,
   useVerifyAndRegisterPaymentMutation,
+  useVerifyRenewalPaymentMutation,
   useArchiveFailedRegistrationMutation,
 } = paymentApi;
 

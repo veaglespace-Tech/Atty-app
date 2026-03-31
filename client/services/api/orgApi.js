@@ -42,7 +42,7 @@ export const orgApi = createApi({
       providesTags: ["OrgNotifications"],
     }),
     getOrgUsers: builder.query({
-      query: (limit = 300) => `/org/users?limit=${limit}`,
+      query: (limit = 1600) => `/org/users?limit=${limit}`,
       providesTags: ["OrgUsers"],
     }),
     getOrgUserById: builder.query({
@@ -89,7 +89,7 @@ export const orgApi = createApi({
       invalidatesTags: ["OrgUsers"],
     }),
     getOrgTeams: builder.query({
-      query: (limit = 200) => `/org/teams?limit=${limit}`,
+      query: (limit = 1200) => `/org/teams?limit=${limit}`,
       providesTags: ["OrgTeams"],
     }),
     getOrgTeamById: builder.query({
@@ -124,7 +124,7 @@ export const orgApi = createApi({
       invalidatesTags: ["OrgTeams"],
     }),
     getOrgAttendance: builder.query({
-      query: (limit = 200) => `/org/attendance?limit=${limit}`,
+      query: (limit = 2000) => `/org/attendance?limit=${limit}`,
       providesTags: ["OrgAttendance"],
     }),
     getOrgAttendanceSettings: builder.query({

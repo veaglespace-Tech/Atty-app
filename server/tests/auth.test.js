@@ -4,8 +4,15 @@ process.env.JWT_KEY = "test-secret";
 const request = require("supertest");
 
 jest.mock("../lib/prisma", () => ({
+  $transaction: jest.fn(async (operations) => Promise.all(operations)),
   organization: {
     findMany: jest.fn(),
+    update: jest.fn(),
+  },
+  subscription: {
+    findFirst: jest.fn(),
+    updateMany: jest.fn(),
+    update: jest.fn(),
   },
   user: {
     findUnique: jest.fn(),
@@ -33,6 +40,34 @@ describe("POST /api/auth/login", () => {
   });
 
   it("logs in successfully with valid credentials", async () => {
+    prisma.subscription.findFirst.mockResolvedValue({
+      id: 11,
+      orgId: 3,
+      planId: 2,
+      planName: "Pro",
+      planCode: "PRO_3M",
+      amount: 4500,
+      currency: "INR",
+      status: "ACTIVE",
+      endDate: new Date("2026-12-31T00:00:00.000Z"),
+    });
+    prisma.subscription.updateMany.mockResolvedValue({ count: 0 });
+    prisma.subscription.update.mockResolvedValue({ id: 11 });
+    prisma.organization.update.mockResolvedValue({
+      id: 3,
+      name: "Acme Workspace",
+      organizationCode: "ACME01",
+      city: "Mumbai",
+      state: "MH",
+      country: "India",
+      isBlocked: false,
+      isActive: true,
+      deletedAt: null,
+      subscriptionStatus: "ACTIVE",
+      subscriptionExpiry: new Date("2026-12-31T00:00:00.000Z"),
+      subscriptionId: 11,
+      planId: 2,
+    });
     prisma.user.findUnique.mockResolvedValue({
       id: 7,
       name: "Alice Admin",

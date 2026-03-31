@@ -93,13 +93,13 @@ export default function Dashboard() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.12),transparent_26%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
           <div>
-            <div className="brand-chip">
+            <div className="brand-chip mobile-hide-chip">
               Attendance Snapshot
             </div>
-            <h1 className="brand-hero-title mt-4">
+            <h1 className="brand-hero-title mobile-compact-hero-title mt-3 sm:mt-4">
               {firstName}&apos;s Dashboard
             </h1>
-            <p className="brand-copy mt-3 max-w-2xl">
+            <p className="brand-copy mobile-hide-copy mt-3 max-w-2xl">
               See today&apos;s attendance, recent activity, and the actions that matter most for your day.
             </p>
 
@@ -107,7 +107,7 @@ export default function Dashboard() {
               <span className="brand-chip">
                 {formatRoleLabel(userRole)}
               </span>
-              <span className="brand-chip">
+              <span className="brand-chip mobile-hide-chip">
                 {user?.organizationCode || "Workspace"}
               </span>
             </div>
@@ -196,16 +196,16 @@ export default function Dashboard() {
           <section className="brand-spotlight relative overflow-hidden rounded-[2.2rem] p-6">
             <div className="brand-spotlight-orb-primary absolute right-0 top-0 h-48 w-48 rounded-full blur-[120px]" />
             <div className="brand-spotlight-orb-secondary absolute bottom-0 left-0 h-40 w-40 rounded-full blur-[110px]" />
-            <p className="brand-spotlight-kicker relative text-[11px] font-black uppercase tracking-[0.2em]">
+            <p className="brand-spotlight-kicker mobile-hide-chip relative text-[11px] font-black uppercase tracking-[0.2em]">
               Privacy Check
             </p>
             <h4 className="brand-spotlight-title relative mt-4 text-2xl font-black">
               Organization Protected
             </h4>
-            <p className="brand-spotlight-copy relative mt-3 text-sm leading-6">
+            <p className="brand-spotlight-copy mobile-hide-copy relative mt-3 text-sm leading-6">
               Your data stays visible only inside <strong>{user?.organizationCode || "your organization"}</strong>.
             </p>
-            <div className="brand-spotlight-chip relative mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">
+            <div className="brand-spotlight-chip mobile-hide-chip relative mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">
               Encrypted Session
             </div>
           </section>
@@ -217,7 +217,7 @@ export default function Dashboard() {
 
 function MiniCard({ label, value }) {
   return (
-    <div className="brand-panel-soft rounded-[1.45rem] p-4">
+    <div className="dashboard-detail-tile rounded-[1.45rem] p-4">
       <p className="brand-kicker">{label}</p>
       <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
         {value}
@@ -226,21 +226,9 @@ function MiniCard({ label, value }) {
   );
 }
 
-function StatCard({ icon, label, value, tone }) {
-  const tones = {
-    blue: "border-blue-100 bg-blue-50/90 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200",
-    indigo:
-      "border-indigo-100 bg-indigo-50/90 text-indigo-600 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200",
-    emerald:
-      "border-emerald-100 bg-emerald-50/90 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
-    amber:
-      "border-amber-100 bg-amber-50/90 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
-  };
-
+function StatCard({ icon, label, value }) {
   return (
-    <div
-      className={`light-glow-soft rounded-[1.8rem] border p-5 transition-transform duration-300 hover:-translate-y-1 ${tones[tone]}`}
-    >
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between gap-3">
         <div className="brand-icon-shell flex h-12 w-12 items-center justify-center rounded-2xl">
           {React.cloneElement(icon, { size: 20 })}

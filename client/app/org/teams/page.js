@@ -15,6 +15,8 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useCreateOrgTeamMutation,
   useDeleteOrgTeamMutation,
@@ -22,6 +24,7 @@ import {
   useGetOrgUsersQuery,
   usePatchOrgTeamMutation,
 } from "@/services/api/orgApi";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { ROLES, formatRoleLabel, normalizeRole } from "@/utils/roles";
 import {
   getErrorMessage,
@@ -45,12 +48,9 @@ const summaryMapFromArray = (summary) => {
 };
 
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
-const fieldClassName =
-  "w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
-const selectorCardClassName =
-  "rounded-[1.35rem] border border-slate-200 bg-slate-50/90 p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70";
-const selectorSummaryClassName =
-  "mt-2 rounded-[1rem] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[0_12px_28px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/70";
+const fieldClassName = "dashboard-field-control";
+const selectorCardClassName = "dashboard-filter-shell";
+const selectorSummaryClassName = "dashboard-filter-field mt-2";
 const selectorSummaryLabelClassName =
   "text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400";
 const selectorSummaryValueClassName =
@@ -85,13 +85,13 @@ export default function OrgTeamsPage() {
     isFetching: teamsLoading,
     isLoading: teamsInitialLoading,
     refetch: refetchTeams,
-  } = useGetOrgTeamsQuery(200);
+  } = useGetOrgTeamsQuery(DASHBOARD_FETCH_LIMITS.ORG_TEAMS);
 
   const {
     data: usersData,
     isFetching: usersLoading,
     refetch: refetchUsers,
-  } = useGetOrgUsersQuery(500, { skip: !shouldLoadUsers });
+  } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS, { skip: !shouldLoadUsers });
 
   const [createTeamMutation] = useCreateOrgTeamMutation();
   const [patchTeamMutation] = usePatchOrgTeamMutation();
@@ -153,6 +153,19 @@ export default function OrgTeamsPage() {
     () => memberOptions.filter((user) => form.memberIds.includes(String(user.id))),
     [form.memberIds, memberOptions]
   );
+
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedTeams,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(teams, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS[0],
+  });
 
   const resetForm = () => {
     setForm({
@@ -282,11 +295,11 @@ export default function OrgTeamsPage() {
 
   return (
     <section className="space-y-6">
-      <div className={sectionCardClassName}>
+      <div className={`${sectionCardClassName} mobile-compact-panel`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Teams</h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            <h2 className="mobile-compact-title text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Teams</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600 dark:text-slate-300">
               Create teams, assign leader and members, and open each team for full management.
             </p>
           </div>
@@ -370,7 +383,7 @@ export default function OrgTeamsPage() {
               value={form.description}
               onChange={onInputChange}
               placeholder="Team description"
-              className="xl:col-span-2 w-full rounded-[1.1rem] border border-slate-200 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(59,130,246,0.08)] outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-500/10"
+              className="dashboard-field-control xl:col-span-2"
               rows={3}
             />
 
@@ -420,7 +433,7 @@ export default function OrgTeamsPage() {
               </div>
 
               {leaderOpen ? (
-                <div className="mt-2 max-h-52 space-y-1 overflow-auto rounded-[1.1rem] border border-slate-200 bg-white/95 p-1 pr-1 shadow-[0_18px_40px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/95">
+                <div className="dashboard-dropdown-menu mt-2 max-h-52 space-y-1 overflow-auto p-1 pr-1">
                   {filteredLeaders.map((leader) => {
                     const active = String(form.leaderId) === String(leader.id);
                     return (
@@ -498,7 +511,7 @@ export default function OrgTeamsPage() {
               </div>
 
               {memberOpen ? (
-                <div className="mt-2 max-h-52 space-y-1 overflow-auto rounded-[1.1rem] border border-slate-200 bg-white/95 p-1 pr-1 shadow-[0_18px_40px_rgba(59,130,246,0.08)] dark:border-slate-700 dark:bg-slate-950/95">
+                <div className="dashboard-dropdown-menu mt-2 max-h-52 space-y-1 overflow-auto p-1 pr-1">
                   {filteredMembers.map((member) => {
                     const active = form.memberIds.includes(String(member.id));
                     return (
@@ -539,8 +552,8 @@ export default function OrgTeamsPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {teams.slice(0, 6).map((team) => (
+      <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-3">
+        {paginatedTeams.slice(0, 6).map((team) => (
           <button
             type="button"
             key={`card-${team.id}`}
@@ -572,7 +585,7 @@ export default function OrgTeamsPage() {
         ))}
       </div>
 
-      <div className={sectionCardClassName}>
+      <div className={`${sectionCardClassName} mobile-compact-panel`}>
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Team Directory</h3>
 
         {teamsInitialLoading ? (
@@ -584,14 +597,18 @@ export default function OrgTeamsPage() {
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No teams found.</p>
         ) : (
           <div className="mt-4 space-y-4">
+            <p className="mobile-hide-helper text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Showing {startIndex}-{endIndex} of {teams.length} teams
+            </p>
+
             <div className="grid gap-3 md:hidden">
-              {teams.map((team) => {
+              {paginatedTeams.map((team) => {
                 const busy = actionTeamId === String(team.id);
 
                 return (
                   <article
                     key={`mobile-${team.id}`}
-                    className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                    className="dashboard-mobile-record-card"
                   >
                     <button
                       type="button"
@@ -660,7 +677,7 @@ export default function OrgTeamsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {teams.map((team) => {
+                  {paginatedTeams.map((team) => {
                     const busy = actionTeamId === String(team.id);
                     return (
                       <tr
@@ -699,6 +716,19 @@ export default function OrgTeamsPage() {
                 </tbody>
               </table>
             </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={teams.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS}
+              label="teams"
+            />
           </div>
         )}
       </div>
@@ -708,7 +738,7 @@ export default function OrgTeamsPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft flex min-h-[7.75rem] flex-col justify-between rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
     </div>
@@ -733,7 +763,7 @@ function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
 
 function DetailTile({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</p>
     </div>

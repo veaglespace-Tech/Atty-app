@@ -23,6 +23,7 @@ const {
   teamDetailSelect,
 } = require("../services/prisma-selects.service");
 const { PERMISSION_KEYS, hasPermission } = require("../constants/permissions");
+const { assertWithinPlanTeamLimit } = require("../services/organization-plan.service");
 
 const ensureOrgTeam = async ({ req, res, teamId }) => {
   const orgId = ensureOrganizationId(req, res);
@@ -132,7 +133,7 @@ const getTeamPatchPermissionState = (req) => {
 exports.getOrgTeams = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW);
-  const limit = parseLimit(req.query.limit, 200, 500);
+  const limit = parseLimit(req.query.limit, 300, 2000);
 
   const teams = await prisma.team.findMany({
     where: {
@@ -221,6 +222,7 @@ exports.getOrgTeamMembers = asyncHandler(async (req, res) => {
 exports.createOrgTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.TEAM_CREATE);
+  await assertWithinPlanTeamLimit({ orgId, res });
 
   const canAssignMembers = (() => {
     try {

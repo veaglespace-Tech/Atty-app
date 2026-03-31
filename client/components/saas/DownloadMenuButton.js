@@ -50,20 +50,20 @@ export default function DownloadMenuButton({
     align === "left" ? "left-0 origin-top-left" : "right-0 origin-top-right";
 
   return (
-    <div ref={rootRef} className="relative z-40">
+    <div ref={rootRef} className="relative z-40 w-full sm:w-auto">
       <button
         type="button"
         disabled={busy}
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className={`${className} min-w-[9rem] justify-center`}
+        className={`${className} w-full min-w-0 justify-center sm:min-w-[9rem]`}
       >
         {buttonLabel}
       </button>
 
       {open ? (
         <div
-          className={`absolute top-full z-50 mt-2 min-w-[12rem] rounded-[1.1rem] border border-slate-200 bg-white/96 p-2 shadow-[0_20px_48px_rgba(15,23,42,0.14)] backdrop-blur ${menuPositionClassName} dark:border-slate-700 dark:bg-slate-950/96`}
+          className={`dashboard-dropdown-menu absolute top-full z-50 mt-2 w-full p-2 ${menuPositionClassName} sm:min-w-[12rem] sm:w-auto`}
         >
           <button
             type="button"

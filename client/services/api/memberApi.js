@@ -11,7 +11,7 @@ export const memberApi = createApi({
       providesTags: ["MemberDashboard"],
     }),
     getMemberAttendance: builder.query({
-      query: (limit = 45) => `/member/attendance?limit=${limit}`,
+      query: (limit = 180) => `/member/attendance?limit=${limit}`,
       providesTags: ["MemberAttendance"],
     }),
   }),

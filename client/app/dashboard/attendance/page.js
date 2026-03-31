@@ -69,11 +69,11 @@ export default function AttendancePage() {
 
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.22fr)_minmax(320px,0.78fr)]">
           <div>
-            <div className="brand-chip">
+            <div className="brand-chip mobile-hide-chip">
               Live Attendance
             </div>
-            <h1 className="brand-hero-title mt-4">Daily Attendance Hub</h1>
-            <p className="brand-copy mt-3 max-w-2xl">
+            <h1 className="brand-hero-title mobile-compact-hero-title mt-3 sm:mt-4">Daily Attendance Hub</h1>
+            <p className="brand-copy mobile-hide-copy mt-3 max-w-2xl">
               Review who is on time, late, or away across{" "}
               <strong>{user?.organizationCode || "your workspace"}</strong> without leaving the
               dashboard.
@@ -83,7 +83,7 @@ export default function AttendancePage() {
               <span className="brand-chip">
                 {formatRoleLabel(user?.role)}
               </span>
-              <span className="brand-chip">
+              <span className="brand-chip mobile-hide-chip">
                 {totalRecords} Records Today
               </span>
             </div>
@@ -98,7 +98,7 @@ export default function AttendancePage() {
               </button>
               <button
                 type="button"
-                className="brand-btn brand-btn-secondary brand-btn-lg rounded-[1.25rem]"
+                className="brand-btn brand-btn-secondary brand-btn-lg mobile-hide-chip rounded-[1.25rem]"
               >
                 Review Logs
                 <ArrowUpRight size={18} />
@@ -124,7 +124,7 @@ export default function AttendancePage() {
         <div className="flex flex-col gap-4 border-b border-white/70 px-5 py-5 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between lg:px-6">
           <div>
             <h2 className="brand-section-title text-[1.35rem]">Attendance Records</h2>
-            <p className="brand-copy-sm mt-2">
+            <p className="brand-copy-sm mobile-hide-helper mt-2">
               {query
                 ? `Showing ${visibleRecords} of ${totalRecords} records matching "${searchValue}".`
                 : `Showing all ${totalRecords} attendance records for today.`}
@@ -277,18 +277,9 @@ export default function AttendancePage() {
   );
 }
 
-function AttendanceMetric({ icon: Icon, label, value, tone }) {
-  const tones = {
-    blue: "border-blue-100 bg-blue-50/90 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200",
-    emerald:
-      "border-emerald-100 bg-emerald-50/90 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
-    amber:
-      "border-amber-100 bg-amber-50/90 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
-    rose: "border-rose-100 bg-rose-50/90 text-rose-600 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200",
-  };
-
+function AttendanceMetric({ icon: Icon, label, value }) {
   return (
-    <div className={`light-glow-soft rounded-[1.7rem] border p-5 ${tones[tone]}`}>
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between gap-3">
         <div className="brand-icon-shell flex h-12 w-12 items-center justify-center rounded-2xl">
           <Icon size={20} />
@@ -304,7 +295,7 @@ function AttendanceMetric({ icon: Icon, label, value, tone }) {
 
 function AttendanceRecordDetail({ label, value }) {
   return (
-    <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+    <div className="dashboard-detail-tile px-4 py-3">
       <p className="brand-kicker">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-900 dark:text-white">
         {value}

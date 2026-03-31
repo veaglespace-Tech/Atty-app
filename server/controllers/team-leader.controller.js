@@ -31,6 +31,7 @@ const {
   attendanceRecordSelect,
   teamListSelect,
 } = require("../services/prisma-selects.service");
+const { assertWithinPlanTeamLimit } = require("../services/organization-plan.service");
 
 const MODULES = [
   {
@@ -283,7 +284,7 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
 exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW);
-  const limit = parseLimit(req.query.limit, 200, 500);
+  const limit = parseLimit(req.query.limit, 300, 2000);
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
     userId: Number(req.user.id),
@@ -327,7 +328,7 @@ exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
 exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW);
-  const limit = parseLimit(req.query.limit, 400, 1000);
+  const limit = parseLimit(req.query.limit, 500, 2000);
 
   const users = await prisma.user.findMany({
     where: {
@@ -361,6 +362,7 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
 exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.TEAM_CREATE);
+  await assertWithinPlanTeamLimit({ orgId, res });
 
   const canAssignMembers = hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS);
   const name = truncateText(req.body?.name, 120);
@@ -648,7 +650,7 @@ exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
 exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
-  const limit = parseLimit(req.query.limit, 300, 1000);
+  const limit = parseLimit(req.query.limit, 500, 2500);
 
   const accessibleTeams = await getAccessibleTeams({
     orgId,

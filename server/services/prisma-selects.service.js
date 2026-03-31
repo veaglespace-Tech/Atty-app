@@ -107,13 +107,22 @@ const organizationDashboardSelect = {
 };
 
 const organizationSubscriptionSelect = {
+  name: true,
   organizationCode: true,
   subscriptionStatus: true,
   subscriptionExpiry: true,
   attendanceRadius: true,
   plan: {
     select: {
+      id: true,
       name: true,
+      code: true,
+      price: true,
+      durationInDays: true,
+      memberLimit: true,
+      maxUsers: true,
+      maxTeams: true,
+      maxLocations: true,
     },
   },
 };

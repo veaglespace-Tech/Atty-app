@@ -14,6 +14,8 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useCreateTeamLeaderTeamMutation,
   useDeleteTeamLeaderTeamMutation,
@@ -21,6 +23,7 @@ import {
   useGetTeamLeaderUsersQuery,
   usePatchTeamLeaderTeamMutation,
 } from "@/services/api/teamLeaderApi";
+import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
 import {
   getErrorMessage,
@@ -59,7 +62,7 @@ const formatLocation = (location) => {
 };
 
 const selectorSummaryClassName =
-  "mt-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2.5 shadow-sm";
+  "dashboard-filter-field mt-2";
 const selectorSummaryLabelClassName =
   "text-[10px] font-black uppercase tracking-[0.16em] text-slate-500";
 const selectorSummaryValueClassName = "mt-1 text-sm font-semibold text-slate-900";
@@ -121,14 +124,16 @@ export default function TeamLeaderTeamsPage() {
     isLoading: teamsLoading,
     isFetching: teamsFetching,
     refetch: refetchTeams,
-  } = useGetTeamLeaderTeamsQuery(200);
+  } = useGetTeamLeaderTeamsQuery(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_TEAMS);
 
   const {
     data: usersData,
     isLoading: usersLoading,
     isFetching: usersFetching,
     refetch: refetchUsers,
-  } = useGetTeamLeaderUsersQuery(500, { skip: !(canCreateTeams && canAssignMembers) });
+  } = useGetTeamLeaderUsersQuery(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_USERS, {
+    skip: !(canCreateTeams && canAssignMembers),
+  });
 
   const [createTeamMutation] = useCreateTeamLeaderTeamMutation();
   const [patchTeamMutation] = usePatchTeamLeaderTeamMutation();
@@ -195,6 +200,19 @@ export default function TeamLeaderTeamsPage() {
     () => memberOptions.filter((user) => form.memberIds.includes(String(user.id))),
     [form.memberIds, memberOptions]
   );
+
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedTeams,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(teams, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS[0],
+  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -390,11 +408,11 @@ export default function TeamLeaderTeamsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Team Leader Teams</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Team Leader Teams</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Manage teams, assign members, and control team geofence based on your granted permissions.
             </p>
           </div>
@@ -425,7 +443,7 @@ export default function TeamLeaderTeamsPage() {
         <MetricCard label="Teams With Leader" value={summaryMap.get("Teams With Leader") || 0} />
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create Team</h3>
         {!canCreateTeams ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
@@ -451,7 +469,7 @@ export default function TeamLeaderTeamsPage() {
             value={form.attendanceRadius}
             onChange={onInputChange}
             placeholder="Attendance radius (optional, default 25)"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control"
             disabled={!canCreateTeams}
           />
 
@@ -460,14 +478,14 @@ export default function TeamLeaderTeamsPage() {
             value={form.description}
             onChange={onInputChange}
             placeholder="Team description"
-            className="lg:col-span-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            className="dashboard-field-control lg:col-span-2"
             disabled={!canCreateTeams}
             rows={3}
           />
 
           {canAssignMembers ? (
             <>
-              <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
+              <div className="dashboard-filter-shell">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Leader</p>
                 <div className="relative mt-2">
                   <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
@@ -516,7 +534,7 @@ export default function TeamLeaderTeamsPage() {
                 </div>
 
                 {leaderOpen ? (
-                  <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
+                  <div className="dashboard-dropdown-menu mt-2 max-h-40 space-y-1 overflow-auto p-1 pr-1">
                     {filteredLeaders.map((leader) => {
                       const active = String(form.leaderId) === String(leader.id);
 
@@ -544,7 +562,7 @@ export default function TeamLeaderTeamsPage() {
                 ) : null}
               </div>
 
-              <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
+              <div className="dashboard-filter-shell">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Members</p>
                 <div className="relative mt-2">
                   <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
@@ -597,7 +615,7 @@ export default function TeamLeaderTeamsPage() {
                 </div>
 
                 {memberOpen ? (
-                  <div className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1 pr-1">
+                  <div className="dashboard-dropdown-menu mt-2 max-h-40 space-y-1 overflow-auto p-1 pr-1">
                     {filteredMembers.map((member) => {
                       const active = form.memberIds.includes(String(member.id));
 
@@ -632,16 +650,16 @@ export default function TeamLeaderTeamsPage() {
           )}
 
           <div className="grid gap-3 lg:col-span-2 lg:grid-cols-3">
-            <input
-              name="longitude"
-              type="number"
-              step="any"
-              value={form.longitude}
-              onChange={onInputChange}
-              placeholder="Longitude"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              disabled={!canCreateTeams}
-            />
+          <input
+            name="longitude"
+            type="number"
+            step="any"
+            value={form.longitude}
+            onChange={onInputChange}
+            placeholder="Longitude"
+            className="dashboard-field-control"
+            disabled={!canCreateTeams}
+          />
             <input
               name="latitude"
               type="number"
@@ -649,7 +667,7 @@ export default function TeamLeaderTeamsPage() {
               value={form.latitude}
               onChange={onInputChange}
               placeholder="Latitude"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className="dashboard-field-control"
               disabled={!canCreateTeams}
             />
             <button
@@ -676,7 +694,7 @@ export default function TeamLeaderTeamsPage() {
         </form>
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Directory</h3>
 
         {loading ? (
@@ -688,14 +706,18 @@ export default function TeamLeaderTeamsPage() {
           <p className="mt-4 text-sm text-slate-500">No teams found.</p>
         ) : (
           <div className="mt-4 space-y-4">
+            <p className="mobile-hide-helper text-xs font-semibold text-slate-500">
+              Showing {startIndex}-{endIndex} of {teams.length} teams
+            </p>
+
             <div className="grid gap-3 md:hidden">
-              {teams.map((team) => {
+              {paginatedTeams.map((team) => {
                 const busy = actionTeamId === team.id;
 
                 return (
                   <article
                     key={`mobile-${team.id}`}
-                    className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                  className="dashboard-mobile-record-card"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -763,7 +785,7 @@ export default function TeamLeaderTeamsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {teams.map((team) => {
+                  {paginatedTeams.map((team) => {
                     const busy = actionTeamId === team.id;
 
                     return (
@@ -806,6 +828,19 @@ export default function TeamLeaderTeamsPage() {
                 </tbody>
               </table>
             </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={teams.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS}
+              label="teams"
+            />
           </div>
         )}
       </div>
@@ -815,7 +850,7 @@ export default function TeamLeaderTeamsPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>
@@ -840,7 +875,7 @@ function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
 
 function ResponsiveInfo({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
     </div>

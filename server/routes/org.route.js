@@ -38,8 +38,11 @@ const { checkActiveSubscription } = require("../middlewares/subscription.middlew
 
 router.post("/onboard", onboardOrganization);
 
+router.use(userProtected);
+
+router.get("/subscription", allowRoles("ORG_ADMIN"), getOrgSubscription);
+
 router.use(
-  userProtected,
   checkActiveSubscription,
   allowRoles("ORG_ADMIN", "SUB_ADMIN")
 );
@@ -48,7 +51,6 @@ router.get("/dashboard", getOrgDashboard);
 router.get("/reports", getOrgReports);
 router.get("/reports/pdf", downloadOrgReportsPdf);
 router.get("/reports/excel", downloadOrgReportsExcel);
-router.get("/subscription", getOrgSubscription);
 
 router.get("/notifications", getOrgNotifications);
 

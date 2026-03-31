@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
+const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
 
 const isProtectionBypassed = () =>
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
@@ -35,91 +36,20 @@ const checkActiveSubscription = asyncHandler(async (req, res, next) => {
     throw new Error("Organization access is blocked");
   }
 
-  const now = new Date();
-  const activeKey = `ORG_${organizationId}`;
-  const activeSubscription = await prisma.subscription.findFirst({
-    where: {
-      orgId: Number(organizationId),
-      status: "ACTIVE",
-      OR: [
-        { activeKey },
-        { activeKey: null },
-      ],
-      endDate: {
-        gte: now,
-      },
-    },
-    orderBy: {
-      endDate: "desc",
-    },
-  });
+  const { organization: syncedOrganization, activeSubscription } =
+    await syncOrganizationSubscriptionState({
+      organizationId: Number(organizationId),
+      organization,
+      now: new Date(),
+    });
 
   if (!activeSubscription) {
-    await prisma.$transaction([
-      prisma.subscription.updateMany({
-        where: {
-          orgId: Number(organizationId),
-          status: "ACTIVE",
-          endDate: {
-            lt: now,
-          },
-        },
-        data: {
-          status: "EXPIRED",
-          activeKey: null,
-        },
-      }),
-      prisma.organization.update({
-        where: {
-          id: Number(organizationId),
-        },
-        data: {
-          subscriptionStatus: "EXPIRED",
-          subscriptionId: null,
-        },
-      }),
-    ]);
-
     res.status(402);
     throw new Error("Subscription expired. Please renew to continue.");
   }
 
-  await prisma.$transaction([
-    prisma.subscription.updateMany({
-      where: {
-        orgId: Number(organizationId),
-        status: "ACTIVE",
-        id: {
-          not: activeSubscription.id,
-        },
-      },
-      data: {
-        status: "EXPIRED",
-        activeKey: null,
-      },
-    }),
-    prisma.subscription.update({
-      where: {
-        id: activeSubscription.id,
-      },
-      data: {
-        activeKey,
-      },
-    }),
-    prisma.organization.update({
-      where: {
-        id: Number(organizationId),
-      },
-      data: {
-        subscriptionStatus: "ACTIVE",
-        subscriptionId: activeSubscription.id,
-        subscriptionExpiry: activeSubscription.endDate,
-      },
-    }),
-  ]);
-
   req.subscription = activeSubscription;
-  req.organization = organization;
+  req.organization = syncedOrganization || organization;
   next();
 });
 

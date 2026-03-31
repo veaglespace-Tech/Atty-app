@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDispatch } from "react-redux";
@@ -37,6 +37,7 @@ export default function SuperAdminLoginPage() {
   const [adminSignin, { error: apiError }] = useAdminSigninMutation();
 
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
@@ -48,6 +49,13 @@ export default function SuperAdminLoginPage() {
       password: "",
     },
   });
+  const watchedEmail = useWatch({
+    control,
+    name: "email",
+  });
+  const forgotPasswordHref = watchedEmail
+    ? `/super-admin/forgot-password?email=${encodeURIComponent(watchedEmail)}`
+    : "/super-admin/forgot-password";
 
   React.useEffect(() => {
     if (!hydrated || !token) return;
@@ -136,9 +144,17 @@ export default function SuperAdminLoginPage() {
               </div>
 
               <div className="group relative">
-                <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Password
-                </label>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    Password
+                  </label>
+                  <Link
+                    href={forgotPasswordHref}
+                    className="text-xs font-bold text-blue-600 transition hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
                     <Lock size={20} />

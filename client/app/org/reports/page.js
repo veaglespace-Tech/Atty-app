@@ -102,11 +102,11 @@ export default function OrgReportsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Organization Reports</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Organization Reports</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Generate attendance reports and download PDF/Excel for daily, weekly, or monthly period.
             </p>
           </div>
@@ -213,10 +213,10 @@ export default function OrgReportsPage() {
         <MetricCard label="Hours" value={summaryMap.get("Worked Hours") || 0} />
       </div>
 
-      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Report Records</h3>
-          <p className="text-xs font-semibold text-slate-500">Range: {formatRange(data?.meta)}</p>
+          <p className="mobile-hide-helper text-xs font-semibold text-slate-500">Range: {formatRange(data?.meta)}</p>
         </div>
 
         {loading ? (
@@ -235,7 +235,7 @@ export default function OrgReportsPage() {
               {items.map((item) => (
                 <article
                   key={`mobile-${item.id}`}
-                  className="rounded-[1.45rem] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_34px_rgba(59,130,246,0.08)] dark:border-slate-800 dark:bg-slate-950/75"
+                  className="dashboard-mobile-record-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -292,7 +292,7 @@ export default function OrgReportsPage() {
 
 function MetricCard({ label, value }) {
   return (
-    <div className="light-glow-soft rounded-[1.5rem] border border-white/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/75">
+    <div className="dashboard-summary-card">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>
@@ -301,7 +301,7 @@ function MetricCard({ label, value }) {
 
 function ReportMetric({ label, value }) {
   return (
-    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-800">{value}</p>
     </div>

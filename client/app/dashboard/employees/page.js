@@ -79,18 +79,18 @@ export default function EmployeesPage() {
 
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.24fr)_minmax(320px,0.76fr)]">
           <div>
-            <div className="brand-chip">
+            <div className="brand-chip mobile-hide-chip">
               Workspace Directory
             </div>
-            <h1 className="brand-hero-title mt-4">Team Members & Access</h1>
-            <p className="brand-copy mt-3 max-w-2xl">
+            <h1 className="brand-hero-title mobile-compact-hero-title mt-3 sm:mt-4">Team Members & Access</h1>
+            <p className="brand-copy mobile-hide-copy mt-3 max-w-2xl">
               Review people, hierarchy, and access status inside{" "}
               <strong>{user?.organizationCode || "your workspace"}</strong> from one place.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <span className="brand-chip">{formatRoleLabel(userRole)}</span>
-              <span className="brand-chip">{filteredStaff.length} Visible Members</span>
+              <span className="brand-chip mobile-hide-chip">{filteredStaff.length} Visible Members</span>
             </div>
 
             {userRole === ROLES.ADMIN ? (
@@ -125,7 +125,7 @@ export default function EmployeesPage() {
         <div className="flex flex-col gap-4 border-b border-white/70 px-5 py-5 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between lg:px-6">
           <div>
             <h2 className="brand-section-title text-[1.35rem]">Directory</h2>
-            <p className="brand-copy-sm mt-2">
+            <p className="brand-copy-sm mobile-hide-helper mt-2">
               {searchValue.trim()
                 ? `Showing ${filteredStaff.length} of ${staff.length} members matching "${searchValue}".`
                 : `Showing all ${staff.length} members in this workspace.`}
@@ -373,19 +373,9 @@ export default function EmployeesPage() {
   );
 }
 
-function StatsBox({ icon: Icon, label, value, tone }) {
-  const tones = {
-    blue: "border-blue-100 bg-blue-50/90 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200",
-    emerald:
-      "border-emerald-100 bg-emerald-50/90 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
-    amber:
-      "border-amber-100 bg-amber-50/90 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
-    indigo:
-      "border-indigo-100 bg-indigo-50/90 text-indigo-600 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200",
-  };
-
+function StatsBox({ icon: Icon, label, value }) {
   return (
-    <div className={`light-glow-soft rounded-[1.7rem] border p-5 ${tones[tone]}`}>
+    <div className="dashboard-summary-card">
       <div className="flex items-center justify-between gap-3">
         <div className="brand-icon-shell flex h-12 w-12 items-center justify-center rounded-2xl">
           <Icon size={20} />
@@ -401,7 +391,7 @@ function StatsBox({ icon: Icon, label, value, tone }) {
 
 function StaffCardDetail({ label, value }) {
   return (
-    <div className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+    <div className="dashboard-detail-tile px-4 py-3">
       <p className="brand-kicker">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-900 dark:text-white">{value}</p>
     </div>
