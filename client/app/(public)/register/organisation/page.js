@@ -29,24 +29,28 @@ const organisationSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(2, "Minimum 2 characters")
-    .max(100, "Maximum 100 characters")
+    .min(2, "Organisation name is required")
+    .max(100, "Organisation name is too long")
     .regex(
       ORGANIZATION_NAME_REGEX,
       "Organisation name can only include letters, numbers, spaces, and . & ( ) - characters"
     ),
-  email: z.string().trim().min(1, "Business email is required").email("Invalid business email"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Business email is required")
+    .email("Invalid business email address"),
   phoneCountryCode: z.string().regex(/^\+\d{1,3}$/, "Select a valid country code"),
   phone: z
     .string()
     .trim()
     .refine(
       (value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
-      `Phone number is too short`
+      "Business phone number is too short"
     )
     .refine(
       (value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
-      `Phone number is too long`
+      "Business phone number is too long"
     ),
   city: z
     .string()
@@ -161,16 +165,19 @@ export default function OrganisationForm() {
             setValue("phoneCountryCode", event.target.value, {
               shouldValidate: true,
               shouldDirty: true,
+              shouldTouch: true,
             })
           }
           onPhoneChange={(event) =>
             setValue("phone", event.target.value.replace(/[^\d]/g, ""), {
               shouldValidate: true,
               shouldDirty: true,
+              shouldTouch: true,
             })
           }
           countryCodeError={errors.phoneCountryCode?.message}
           phoneError={errors.phone?.message}
+          helpText=""
           containerClassName="space-y-1.5 md:col-span-2"
           labelClassName="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 dark:text-slate-300"
         />
