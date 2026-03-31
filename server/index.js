@@ -77,7 +77,11 @@ app.use(
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 app.use("/api", apiRateLimiter);
-app.use(express.json());
+app.use(
+  express.json({
+    limit: getEnv("JSON_BODY_LIMIT", "6mb"),
+  }),
+);
 app.use(cookieParser());
 
 app.use("/api/auth", require("./routes/auth.route"));

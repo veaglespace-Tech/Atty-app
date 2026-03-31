@@ -26,6 +26,7 @@ import { logout } from "@/store/slices/authSlice";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
 import { useUserSignOutMutation } from "@/services/api/authApi";
+import UserAvatar from "@/components/UserAvatar";
 import {
   formatRoleLabel,
   getRoleBadgeTheme,
@@ -221,12 +222,23 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                 >
                   {roleLabel}
                 </div>
-                <p className="text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
-                  {user?.name || "User"}
-                </p>
-                <p className="brand-copy-sm mt-1 text-left text-xs">
-                  {user?.email || "-"}
-                </p>
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    src={user?.profileImageUrl}
+                    name={user?.name || "User"}
+                    className="h-12 w-12 rounded-2xl text-sm"
+                    fallbackClassName={roleBadgeTheme.accent}
+                    sizes="48px"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                      {user?.name || "User"}
+                    </p>
+                    <p className="brand-copy-sm mt-1 truncate text-left text-xs">
+                      {user?.email || "-"}
+                    </p>
+                  </div>
+                </div>
               </div>
               <ThemeToggle className="w-11 px-0 sm:w-auto sm:px-4" showLabel={false} />
               <button

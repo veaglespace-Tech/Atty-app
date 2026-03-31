@@ -79,9 +79,29 @@ const updateMeSchema = z
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.string().trim().min(4, "Mobile number is too short").optional(),
     mobileCountryCode: z.string().trim().min(1, "Country code is required").optional(),
+    profileImageDataUrl: z
+      .string()
+      .trim()
+      .min(1, "Profile image is required")
+      .max(4_500_000, "Profile image is too large")
+      .optional(),
+    removeProfileImage: z.boolean().optional(),
   })
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "Provide at least one profile field to update",
+  .superRefine((value, ctx) => {
+    if (Object.keys(value).length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide at least one profile field to update",
+      });
+    }
+
+    if (value.profileImageDataUrl && value.removeProfileImage) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["removeProfileImage"],
+        message: "Choose either a new profile image or remove the current one",
+      });
+    }
   });
 
 router.get("/organizations/search", searchOrganizations);

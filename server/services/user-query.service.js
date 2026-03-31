@@ -17,6 +17,7 @@ const mapUserForManagement = (user) => {
     email: user.email,
     mobile: user.mobile,
     mobileCountryCode: user.mobileCountryCode || null,
+    profileImageUrl: user.profileImageUrl || null,
     role: normalizeRole(user.role),
     permissions: resolvedPermissions,
     approvalStatus: user.status,

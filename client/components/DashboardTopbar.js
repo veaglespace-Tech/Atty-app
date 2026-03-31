@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import UserAvatar from "@/components/UserAvatar";
 import { cn } from "@/lib/utils";
 import { logout } from "@/store/slices/authSlice";
 import { useUserSignOutMutation } from "@/services/api/authApi";
@@ -18,7 +19,6 @@ export default function DashboardTopbar() {
   const roleTheme = getRoleBadgeTheme(user?.role);
   const displayName = user?.name || "User";
   const identityLabel = user?.organizationCode || user?.email || "Workspace";
-  const userInitial = String(displayName).trim().charAt(0).toUpperCase() || "U";
 
   const onLogout = async () => {
     try {
@@ -47,10 +47,21 @@ export default function DashboardTopbar() {
               >
                 {roleLabel}
               </div>
-              <p className="text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
-                {displayName}
-              </p>
-              <p className="brand-copy-sm mt-1 text-xs">{identityLabel}</p>
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  src={user?.profileImageUrl}
+                  name={displayName}
+                  className="h-12 w-12 rounded-2xl text-sm"
+                  fallbackClassName={roleTheme.accent}
+                  sizes="48px"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                    {displayName}
+                  </p>
+                  <p className="brand-copy-sm mt-1 truncate text-xs">{identityLabel}</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -69,14 +80,13 @@ export default function DashboardTopbar() {
 
         <div className="mt-3 md:hidden">
           <div className="brand-panel-soft flex items-center gap-3 rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
-            <div
-              className={cn(
-                "brand-icon-shell flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
-                roleTheme.accent
-              )}
-            >
-              {userInitial}
-            </div>
+            <UserAvatar
+              src={user?.profileImageUrl}
+              name={displayName}
+              className="h-12 w-12 rounded-2xl text-sm"
+              fallbackClassName={roleTheme.accent}
+              sizes="48px"
+            />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
                 {displayName}

@@ -55,6 +55,8 @@ model User {
   email                 String   @unique
   mobile                String
   mobileCountryCode     String?
+  profileImageUrl       String?
+  profileImagePublicId  String?
   password              String
   role                  String   @default("MEMBER")
   permissions           Json?
@@ -219,10 +221,14 @@ model Attendance {
   punchInLatitude        Float?
   punchInLongitude       Float?
   punchInLocationMeta    Json?
+  punchInSelfieUrl       String?
+  punchInSelfiePublicId  String?
   punchOutAt             DateTime?
   punchOutLatitude       Float?
   punchOutLongitude      Float?
   punchOutLocationMeta   Json?
+  punchOutSelfieUrl      String?
+  punchOutSelfiePublicId String?
   punchInDistanceMeters  Float?
   punchOutDistanceMeters Float?
   isPunchInValid         Boolean  @default(false)

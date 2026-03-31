@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin } from "lucide-react";
+import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetTeamLeaderAttendanceQuery,
@@ -755,6 +756,15 @@ export default function TeamLeaderAttendancePage() {
                     <TeamAttendanceDetail label="Location" value={formatLocation(record)} />
                     <TeamAttendanceDetail label="Worked (min)" value={record.workedMinutes || 0} />
                     <TeamAttendanceDetail label="Geo Valid" value={formatGeoStatus(record)} />
+                    <TeamAttendanceDetail
+                      label="Selfie Proof"
+                      value={
+                        <AttendanceSelfieProofLinks
+                          punchInSelfieUrl={record.punchInSelfieUrl}
+                          punchOutSelfieUrl={record.punchOutSelfieUrl}
+                        />
+                      }
+                    />
                   </div>
                 </article>
               ))}
@@ -773,6 +783,7 @@ export default function TeamLeaderAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked (min)</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -787,6 +798,12 @@ export default function TeamLeaderAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{record.workedMinutes || 0}</td>
                       <td className="px-3 py-2 text-slate-700">{formatGeoStatus(record)}</td>
+                      <td className="px-3 py-2 text-slate-700">
+                        <AttendanceSelfieProofLinks
+                          punchInSelfieUrl={record.punchInSelfieUrl}
+                          punchOutSelfieUrl={record.punchOutSelfieUrl}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -825,7 +842,7 @@ function TeamAttendanceDetail({ label, value }) {
   return (
     <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
+      <div className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</div>
     </div>
   );
 }

@@ -3,17 +3,7 @@
 import Link from "next/link";
 import { Loader2, RefreshCcw, Sparkles } from "lucide-react";
 import { useGetOrgSubscriptionQuery } from "@/services/api/orgApi";
-
-const formatDate = (value) => {
-  if (!value) return "Not active";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Not active";
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
+import { formatCalendarDate } from "@/utils/date";
 
 export default function OrgSubscriptionPage() {
   const { data, isLoading, isFetching, error, refetch } = useGetOrgSubscriptionQuery();
@@ -78,7 +68,7 @@ export default function OrgSubscriptionPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <InfoCard label="Current Plan" value={meta.currentPlanName || "No active plan"} />
         <InfoCard label="Status" value={meta.subscriptionStatus || "TRIAL"} />
-        <InfoCard label="Expiry" value={formatDate(meta.subscriptionExpiry)} />
+        <InfoCard label="Expiry" value={formatCalendarDate(meta.subscriptionExpiry)} />
         <InfoCard label="Workspace Code" value={meta.organizationCode || "--"} />
       </div>
 

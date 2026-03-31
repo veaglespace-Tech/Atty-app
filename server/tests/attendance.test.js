@@ -14,6 +14,7 @@ jest.mock("../lib/prisma", () => ({
   attendance: {
     findFirst: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
   },
   teamMember: {
     findFirst: jest.fn(),
@@ -26,7 +27,15 @@ jest.mock("../lib/prisma", () => ({
   $transaction: jest.fn((operations) => Promise.all(operations)),
 }));
 
+jest.mock("../services/attendance-selfie.service", () => ({
+  uploadAttendanceSelfie: jest.fn(),
+  deleteAttendanceSelfie: jest.fn(),
+}));
+
 const prisma = require("../lib/prisma");
+const {
+  uploadAttendanceSelfie,
+} = require("../services/attendance-selfie.service");
 const { app } = require("../index");
 
 describe("POST /api/attendance/punch-in", () => {
@@ -43,6 +52,10 @@ describe("POST /api/attendance/punch-in", () => {
     prisma.attendance.findFirst.mockResolvedValue(null);
     prisma.teamMember.findFirst.mockResolvedValue(null);
     prisma.team.findFirst.mockResolvedValue(null);
+    uploadAttendanceSelfie.mockResolvedValue({
+      url: "https://res.cloudinary.com/demo/image/upload/v1/attendance/punch-in.jpg",
+      publicId: "attendance/punch-in",
+    });
     prisma.attendance.create.mockResolvedValue({
       id: 11,
       orgId: 3,
@@ -57,11 +70,13 @@ describe("POST /api/attendance/punch-in", () => {
       .set("x-test-role", "MEMBER")
       .send({
         userLocation: [72.8777, 19.076],
+        selfieImageDataUrl: "data:image/jpeg;base64,AAAA",
       });
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
     expect(prisma.attendance.create).toHaveBeenCalledTimes(1);
+    expect(uploadAttendanceSelfie).toHaveBeenCalledTimes(1);
   });
 
   it("returns 400 when location payload is missing", async () => {
@@ -70,10 +85,27 @@ describe("POST /api/attendance/punch-in", () => {
       .set("x-test-org-id", "3")
       .set("x-test-user-id", "9")
       .set("x-test-role", "MEMBER")
-      .send({});
+      .send({
+        selfieImageDataUrl: "data:image/jpeg;base64,AAAA",
+      });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toMatch(/location/i);
     expect(prisma.organization.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when selfie capture is missing", async () => {
+    const response = await request(app)
+      .post("/api/attendance/punch-in")
+      .set("x-test-org-id", "3")
+      .set("x-test-user-id", "9")
+      .set("x-test-role", "MEMBER")
+      .send({
+        userLocation: [72.8777, 19.076],
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toMatch(/selfie/i);
+    expect(uploadAttendanceSelfie).not.toHaveBeenCalled();
   });
 });

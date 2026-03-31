@@ -15,6 +15,10 @@ const {
   calculateLateMinutes,
   resolveAttendanceLateMinutes,
 } = require("../services/attendance-time.service");
+const {
+  deleteAttendanceSelfie,
+  uploadAttendanceSelfie,
+} = require("../services/attendance-selfie.service");
 
 const attendanceTargetTeamSelect = {
   id: true,
@@ -210,6 +214,7 @@ exports.punchIn = asyncHandler(async (req, res) => {
   const input = req.validatedBody || req.body || {};
   const locationPayload = resolveLocationPayload(input);
   const parsedLocation = locationPayload?.coordinates;
+  const selfieImageDataUrl = String(input.selfieImageDataUrl || "").trim();
   const userId = Number(req.user.id);
   const orgId = ensureOrganizationId(req, res);
 
@@ -283,35 +288,59 @@ exports.punchIn = asyncHandler(async (req, res) => {
 
   const punchInAt = new Date();
   const lateMinutes = calculateLateMinutes({ punchInAt });
+  let uploadedSelfie = null;
 
-  const attendance = await prisma.attendance.create({
-    data: {
-      orgId,
-      teamId: attendanceTarget.teamId,
+  try {
+    uploadedSelfie = await uploadAttendanceSelfie({
       userId,
-      date: today,
-      punchInAt,
-      punchInLongitude: parsedLocation[0],
-      punchInLatitude: parsedLocation[1],
-      punchInLocationMeta: locationPayload?.meta || undefined,
-      punchInDistanceMeters: distance,
-      isPunchInValid: isValid,
-      lateMinutes,
-      markedById: userId,
-    },
-  });
+      dateKey: today,
+      stage: "punch-in",
+      dataUrl: selfieImageDataUrl,
+    });
 
-  res.status(201).json({
-    success: true,
-    message: "Punched in successfully!",
-    data: attendance,
-  });
+    const attendance = await prisma.attendance.create({
+      data: {
+        orgId,
+        teamId: attendanceTarget.teamId,
+        userId,
+        date: today,
+        punchInAt,
+        punchInLongitude: parsedLocation[0],
+        punchInLatitude: parsedLocation[1],
+        punchInLocationMeta: locationPayload?.meta || undefined,
+        punchInSelfieUrl: uploadedSelfie.url,
+        punchInSelfiePublicId: uploadedSelfie.publicId,
+        punchInDistanceMeters: distance,
+        isPunchInValid: isValid,
+        lateMinutes,
+        markedById: userId,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Punched in successfully with face check.",
+      data: attendance,
+    });
+  } catch (error) {
+    if (uploadedSelfie?.publicId) {
+      await deleteAttendanceSelfie(uploadedSelfie.publicId);
+    }
+
+    if (error?.statusCode) {
+      res.status(error.statusCode);
+      throw new Error(error.message);
+    }
+
+    throw error;
+  }
 });
 
 exports.punchOut = asyncHandler(async (req, res) => {
   const input = req.validatedBody || req.body || {};
   const locationPayload = resolveLocationPayload(input);
   const parsedLocation = locationPayload?.coordinates;
+  const selfieImageDataUrl = String(input.selfieImageDataUrl || "").trim();
   const userId = Number(req.user.id);
   const orgId = ensureOrganizationId(req, res);
   const today = new Date().toISOString().split("T")[0];
@@ -389,27 +418,50 @@ exports.punchOut = asyncHandler(async (req, res) => {
   const punchOutAt = new Date();
   const diff = attendance.punchInAt ? Math.abs(punchOutAt - attendance.punchInAt) : 0;
   const totalMinutesWorked = Math.floor(diff / 1000 / 60);
+  let uploadedSelfie = null;
 
-  const updated = await prisma.attendance.update({
-    where: {
-      id: attendance.id,
-    },
-    data: {
-      punchOutAt,
-      punchOutLongitude: parsedLocation[0],
-      punchOutLatitude: parsedLocation[1],
-      punchOutLocationMeta: locationPayload?.meta || undefined,
-      punchOutDistanceMeters: distance,
-      isPunchOutValid: isValid,
-      totalMinutesWorked,
-    },
-  });
+  try {
+    uploadedSelfie = await uploadAttendanceSelfie({
+      userId,
+      dateKey: today,
+      stage: "punch-out",
+      dataUrl: selfieImageDataUrl,
+    });
 
-  res.status(200).json({
-    success: true,
-    message: "Punched out successfully!",
-    data: updated,
-  });
+    const updated = await prisma.attendance.update({
+      where: {
+        id: attendance.id,
+      },
+      data: {
+        punchOutAt,
+        punchOutLongitude: parsedLocation[0],
+        punchOutLatitude: parsedLocation[1],
+        punchOutLocationMeta: locationPayload?.meta || undefined,
+        punchOutSelfieUrl: uploadedSelfie.url,
+        punchOutSelfiePublicId: uploadedSelfie.publicId,
+        punchOutDistanceMeters: distance,
+        isPunchOutValid: isValid,
+        totalMinutesWorked,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Punched out successfully with face check.",
+      data: updated,
+    });
+  } catch (error) {
+    if (uploadedSelfie?.publicId) {
+      await deleteAttendanceSelfie(uploadedSelfie.publicId);
+    }
+
+    if (error?.statusCode) {
+      res.status(error.statusCode);
+      throw new Error(error.message);
+    }
+
+    throw error;
+  }
 });
 
 exports.getMyAttendance = asyncHandler(async (req, res) => {
@@ -451,12 +503,14 @@ exports.getAttendance = asyncHandler(async (req, res) => {
       lateMinutes: true,
       punchInAt: true,
       punchOutAt: true,
-      punchInLatitude: true,
-      punchInLongitude: true,
-      punchInLocationMeta: true,
-      user: {
-        select: {
-          name: true,
+        punchInLatitude: true,
+        punchInLongitude: true,
+        punchInLocationMeta: true,
+        punchInSelfieUrl: true,
+        punchOutSelfieUrl: true,
+        user: {
+          select: {
+            name: true,
           role: true,
         },
       },
@@ -485,6 +539,8 @@ exports.getAttendance = asyncHandler(async (req, res) => {
       lateMinutes: resolveAttendanceLateMinutes(record),
       locationName,
       locationMeta: punchInMeta,
+      punchInSelfieUrl: record.punchInSelfieUrl || null,
+      punchOutSelfieUrl: record.punchOutSelfieUrl || null,
     };
   });
 

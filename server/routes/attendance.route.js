@@ -18,6 +18,11 @@ const attendanceLocationSchema = z
   .object({
     location: z.unknown().optional(),
     userLocation: z.unknown().optional(),
+    selfieImageDataUrl: z
+      .string()
+      .trim()
+      .min(1, "Selfie capture is required")
+      .max(4_500_000, "Selfie image is too large"),
   })
   .passthrough()
   .superRefine((value, ctx) => {
