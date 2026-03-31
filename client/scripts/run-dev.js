@@ -86,7 +86,7 @@ if (cleanMode) {
 }
 
 const nextCli = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
-const nextArgs = ["dev", "--webpack", "-p", String(port)];
+const nextArgs = ["dev", "--turbopack", "-p", String(port)];
 
 const child = spawn(process.execPath, [nextCli, ...nextArgs], {
   cwd: projectRoot,
