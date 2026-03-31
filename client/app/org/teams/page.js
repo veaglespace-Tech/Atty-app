@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowRight,
   ChevronDown,
   ChevronUp,
   Loader2,
@@ -39,14 +38,6 @@ const formatDate = (value) => {
   return date.toLocaleString();
 };
 
-const summaryMapFromArray = (summary) => {
-  const map = new Map();
-  for (const item of summary || []) {
-    if (item?.label) map.set(item.label, item.value);
-  }
-  return map;
-};
-
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
 const fieldClassName = "dashboard-field-control";
 const selectorCardClassName = "dashboard-filter-shell";
@@ -57,6 +48,11 @@ const selectorSummaryValueClassName =
   "mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100";
 const selectorSummaryHelperClassName =
   "mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400";
+const selectorSearchFieldClassName = `${fieldClassName} !pl-10 pr-10`;
+const selectorSearchIconClassName =
+  "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400";
+const selectorSearchToggleClassName =
+  "absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400";
 const selectorChipClassName =
   "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200";
 
@@ -99,8 +95,6 @@ export default function OrgTeamsPage() {
 
   const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
   const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
-  const summary = useMemo(() => (Array.isArray(teamsData?.summary) ? teamsData.summary : []), [teamsData]);
-  const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
 
   const leaderOptions = useMemo(
     () =>
@@ -336,12 +330,6 @@ export default function OrgTeamsPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard label="Teams" value={summaryMap.get("Teams") || 0} />
-        <MetricCard label="Assigned Members" value={summaryMap.get("Total Members Assigned") || 0} />
-        <MetricCard label="Teams With Leader" value={summaryMap.get("Teams With Leader") || 0} />
-      </div>
-
       {createOpen ? (
         <div className={sectionCardClassName}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -390,7 +378,7 @@ export default function OrgTeamsPage() {
             <div className={selectorCardClassName}>
               <p className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Team Leader</p>
               <div className="mt-2 relative">
-                <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                <Search size={14} className={selectorSearchIconClassName} />
                 <input
                   value={leaderSearch}
                   onFocus={() => setLeaderOpen(true)}
@@ -399,12 +387,12 @@ export default function OrgTeamsPage() {
                     setLeaderSearch(event.target.value);
                   }}
                   placeholder="Search leader"
-                  className={fieldClassName}
+                  className={selectorSearchFieldClassName}
                 />
                 <button
                   type="button"
                   onClick={() => setLeaderOpen((prev) => !prev)}
-                  className="absolute right-3 top-3 text-slate-500 dark:text-slate-400"
+                  className={selectorSearchToggleClassName}
                 >
                   {leaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
@@ -463,7 +451,7 @@ export default function OrgTeamsPage() {
             <div className={selectorCardClassName}>
               <p className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Team Members</p>
               <div className="mt-2 relative">
-                <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                <Search size={14} className={selectorSearchIconClassName} />
                 <input
                   value={memberSearch}
                   onFocus={() => setMemberOpen(true)}
@@ -472,12 +460,12 @@ export default function OrgTeamsPage() {
                     setMemberSearch(event.target.value);
                   }}
                   placeholder="Search members"
-                  className={fieldClassName}
+                  className={selectorSearchFieldClassName}
                 />
                 <button
                   type="button"
                   onClick={() => setMemberOpen((prev) => !prev)}
-                  className="absolute right-3 top-3 text-slate-500 dark:text-slate-400"
+                  className={selectorSearchToggleClassName}
                 >
                   {memberOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
@@ -551,39 +539,6 @@ export default function OrgTeamsPage() {
           </form>
         </div>
       ) : null}
-
-      <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-3">
-        {paginatedTeams.slice(0, 6).map((team) => (
-          <button
-            type="button"
-            key={`card-${team.id}`}
-            onClick={() => router.push(`/org/teams/${team.id}`)}
-            className="light-glow-soft rounded-[1.75rem] border border-white/80 bg-white/90 p-5 text-left transition dark:border-slate-800 dark:bg-slate-950/75"
-          >
-            <div className="flex items-center justify-between">
-              <h4 className="text-lg font-black text-slate-900 dark:text-white">{team.name}</h4>
-              <span
-                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
-                  team.isActive
-                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
-                    : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                }`}
-              >
-                {team.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
-            <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-              Leader: <span className="text-slate-900 dark:text-white">{team.leaderName || "Unassigned"}</span>
-            </p>
-            <p className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-300">
-              Members: <span className="text-slate-900 dark:text-white">{team.memberCount || 0}</span>
-            </p>
-            <p className="mt-3 inline-flex items-center gap-1 text-xs font-black uppercase tracking-wide text-blue-600 dark:text-blue-200">
-              Open Team <ArrowRight size={12} />
-            </p>
-          </button>
-        ))}
-      </div>
 
       <div className={`${sectionCardClassName} mobile-compact-panel`}>
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Team Directory</h3>
@@ -733,15 +688,6 @@ export default function OrgTeamsPage() {
         )}
       </div>
     </section>
-  );
-}
-
-function MetricCard({ label, value }) {
-  return (
-    <div className="dashboard-summary-card">
-      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
-    </div>
   );
 }
 

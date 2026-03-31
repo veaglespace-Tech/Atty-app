@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import OrganizationLookupField from "@/components/OrganizationLookupField";
+import PasswordInput from "@/components/PasswordInput";
 import RegisterFlowShell from "@/components/register/RegisterFlowShell";
 import { useUserSignUpMutation } from "@/services/api/authApi";
 import { ROLES } from "@/utils/roles";
@@ -273,8 +274,8 @@ export default function UserRegisterPage() {
             placeholder="Enter your password"
             error={errors.password?.message}
           >
-            <input
-              type="password"
+            <PasswordInput
+              icon={null}
               {...register("password")}
               className={`${fieldClassName} !pl-12 ${errors.password ? errorFieldClassName : normalFieldClassName}`}
             />
@@ -286,8 +287,8 @@ export default function UserRegisterPage() {
             placeholder="Confirm your password"
             error={errors.confirmPassword?.message}
           >
-            <input
-              type="password"
+            <PasswordInput
+              icon={null}
               {...register("confirmPassword")}
               className={`${fieldClassName} !pl-12 ${errors.confirmPassword ? errorFieldClassName : normalFieldClassName}`}
             />

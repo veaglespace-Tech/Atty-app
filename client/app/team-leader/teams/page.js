@@ -38,16 +38,6 @@ const formatDate = (value) => {
   return date.toLocaleString();
 };
 
-const summaryMapFromArray = (summary) => {
-  const map = new Map();
-  for (const item of summary || []) {
-    if (item?.label) {
-      map.set(item.label, item.value);
-    }
-  }
-  return map;
-};
-
 const toCoordinates = (lng, lat) => {
   const longitude = Number(lng);
   const latitude = Number(lat);
@@ -67,6 +57,11 @@ const selectorSummaryLabelClassName =
   "text-[10px] font-black uppercase tracking-[0.16em] text-slate-500";
 const selectorSummaryValueClassName = "mt-1 text-sm font-semibold text-slate-900";
 const selectorSummaryHelperClassName = "mt-2 text-xs font-semibold text-slate-500";
+const selectorSearchFieldClassName =
+  "w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-10 text-sm outline-none transition focus:border-blue-500";
+const selectorSearchIconClassName =
+  "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400";
+const selectorSearchToggleClassName = "absolute right-3 top-1/2 -translate-y-1/2 text-slate-500";
 const selectorChipClassName =
   "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200";
 
@@ -141,8 +136,6 @@ export default function TeamLeaderTeamsPage() {
 
   const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
   const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
-  const summary = useMemo(() => (Array.isArray(teamsData?.summary) ? teamsData.summary : []), [teamsData]);
-  const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
 
   const loading = teamsLoading || teamsFetching || usersLoading || usersFetching;
 
@@ -437,12 +430,6 @@ export default function TeamLeaderTeamsPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard label="Teams" value={summaryMap.get("Teams") || 0} />
-        <MetricCard label="Assigned Members" value={summaryMap.get("Total Members Assigned") || 0} />
-        <MetricCard label="Teams With Leader" value={summaryMap.get("Teams With Leader") || 0} />
-      </div>
-
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create Team</h3>
         {!canCreateTeams ? (
@@ -488,7 +475,7 @@ export default function TeamLeaderTeamsPage() {
               <div className="dashboard-filter-shell">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Leader</p>
                 <div className="relative mt-2">
-                  <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                  <Search size={14} className={selectorSearchIconClassName} />
                   <input
                     value={leaderSearch}
                     onFocus={() => setLeaderOpen(true)}
@@ -497,13 +484,13 @@ export default function TeamLeaderTeamsPage() {
                       setLeaderSearch(event.target.value);
                     }}
                     placeholder="Search leader"
-                    className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+                    className={selectorSearchFieldClassName}
                     disabled={!canCreateTeams}
                   />
                   <button
                     type="button"
                     onClick={() => setLeaderOpen((prev) => !prev)}
-                    className="absolute right-2 top-2 text-slate-500"
+                    className={selectorSearchToggleClassName}
                     disabled={!canCreateTeams}
                   >
                     {leaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -565,7 +552,7 @@ export default function TeamLeaderTeamsPage() {
               <div className="dashboard-filter-shell">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Members</p>
                 <div className="relative mt-2">
-                  <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                  <Search size={14} className={selectorSearchIconClassName} />
                   <input
                     value={memberSearch}
                     onFocus={() => setMemberOpen(true)}
@@ -574,13 +561,13 @@ export default function TeamLeaderTeamsPage() {
                       setMemberSearch(event.target.value);
                     }}
                     placeholder="Search members"
-                    className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+                    className={selectorSearchFieldClassName}
                     disabled={!canCreateTeams}
                   />
                   <button
                     type="button"
                     onClick={() => setMemberOpen((prev) => !prev)}
-                    className="absolute right-2 top-2 text-slate-500"
+                    className={selectorSearchToggleClassName}
                     disabled={!canCreateTeams}
                   >
                     {memberOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -845,15 +832,6 @@ export default function TeamLeaderTeamsPage() {
         )}
       </div>
     </section>
-  );
-}
-
-function MetricCard({ label, value }) {
-  return (
-    <div className="dashboard-summary-card">
-      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
-    </div>
   );
 }
 

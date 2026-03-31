@@ -9,6 +9,7 @@ const { normalizeUser } = require("../utils/identity");
 const { truncateText } = require("../services/common.service");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
 const sendEmail = require("../utils/email");
+const { buildEmailTemplate } = require("../utils/email-template");
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 15;
 const PASSWORD_RESET_TOKEN_TTL_SECONDS = PASSWORD_RESET_TOKEN_TTL_MINUTES * 60;
@@ -57,14 +58,6 @@ const maskEmailAddress = (value) => {
 
   return `${maskedName}@${maskedDomain}${suffix}`;
 };
-
-const escapeHtml = (value) =>
-  String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 
 const buildPasswordResetSecret = (user) =>
   `${String(process.env.JWT_KEY || "")}:${String(user?.password || "")}`;
@@ -195,12 +188,6 @@ const sendPasswordResetEmail = async ({ user, token }) => {
           .filter(Boolean)
           .join(" - ")
       : "Platform account";
-  const safeName = escapeHtml(user.name || "there");
-  const safeRoleLabel = escapeHtml(roleLabel);
-  const safeEmail = escapeHtml(user.email || "");
-  const safeOrganizationSummary = escapeHtml(organizationSummary);
-  const safeResetUrl = escapeHtml(resetUrl);
-  const safeLoginUrl = escapeHtml(loginUrl);
   const subject = "Reset your Veagle Attendee password";
   const message = `Hello ${user.name},
 
@@ -222,53 +209,44 @@ Login page:
 ${loginUrl}
 
 If you did not request this, you can ignore this email.`;
-  const html = `
-    <div style="font-family:Arial,sans-serif;background:#f8fafc;padding:32px 16px;color:#0f172a">
-      <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dbeafe;border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(15,23,42,0.08)">
-        <div style="padding:28px 32px;background:linear-gradient(135deg,#0c447c,#1e70d1,#5cd1e5);color:#ffffff">
-          <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.24em;text-transform:uppercase;font-weight:700;opacity:0.85">Password Reset</p>
-          <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:800">Reset your Veagle Attendee password</h1>
-        </div>
-        <div style="padding:32px">
-          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">Hello <strong>${safeName}</strong>,</p>
-          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">
-            We received a request to reset the password for your <strong>${safeRoleLabel}</strong> account.
-          </p>
-          <div style="margin:0 0 24px;border:1px solid #dbeafe;border-radius:18px;background:#eff6ff;padding:18px 20px">
-            <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;color:#1d4ed8">Account Details</p>
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Email:</strong> ${safeEmail}</p>
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Role:</strong> ${safeRoleLabel}</p>
-            <p style="margin:0;font-size:14px;line-height:1.7;color:#0f172a"><strong>Workspace:</strong> ${safeOrganizationSummary}</p>
-          </div>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.7">
-            Click the button below to set a new password. This link will expire in
-            <strong> ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes</strong>.
-          </p>
-          <a href="${safeResetUrl}" style="display:inline-block;padding:14px 22px;border-radius:16px;background:#1e70d1;color:#ffffff;text-decoration:none;font-weight:700">
-            Reset Password
-          </a>
-          <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#475569">
-            After you save a new password, your previous password will stop working immediately.
-          </p>
-          <p style="margin:24px 0 10px;font-size:13px;line-height:1.7;color:#475569">
-            If the button does not open, copy and paste this link into your browser:
-          </p>
-          <p style="margin:0;word-break:break-all;font-size:13px;line-height:1.7;color:#1d4ed8">
-            ${safeResetUrl}
-          </p>
-          <p style="margin:20px 0 0;font-size:13px;line-height:1.7;color:#475569">
-            Sign-in page:
-          </p>
-          <p style="margin:0;word-break:break-all;font-size:13px;line-height:1.7;color:#1d4ed8">
-            ${safeLoginUrl}
-          </p>
-          <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
-            If you did not request this, you can safely ignore this email.
-          </p>
-        </div>
-      </div>
-    </div>
-  `;
+  const html = buildEmailTemplate({
+    eyebrow: "Password Reset",
+    title: "Reset your Veagle Attendee password",
+    subtitle: "Secure access recovery for your workspace account.",
+    greeting: `Hello ${user.name || "there"}`,
+    intro: [`We received a request to reset the password for your ${roleLabel} account.`],
+    sections: [
+      {
+        eyebrow: "Account Details",
+        title: "Review the account before changing the password",
+        rows: [
+          { label: "Email", value: user.email || "-" },
+          { label: "Role", value: roleLabel },
+          { label: "Workspace", value: organizationSummary },
+        ],
+      },
+    ],
+    action: {
+      label: "Reset Password",
+      href: resetUrl,
+    },
+    secondaryLinks: [
+      {
+        label: "If the button does not open, use this reset link:",
+        href: resetUrl,
+      },
+      {
+        label: "Sign-in page:",
+        href: loginUrl,
+      },
+    ],
+    footnotes: [
+      `This link expires in ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes and becomes invalid after your password changes.`,
+      "After you save a new password, your previous password will stop working immediately.",
+      "If you did not request this, you can safely ignore this email.",
+    ],
+    footerNote: "Secure attendance access for every role and workspace.",
+  });
 
   return sendEmail({
     email: user.email,
@@ -288,6 +266,115 @@ const parseSearchLimit = (value, fallback = 8, max = 12) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
   return Math.min(max, Math.max(1, Math.floor(parsed)));
+};
+
+const normalizeOrganizationText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildOrganizationSearchTerms = (value) => {
+  const trimmedValue = String(value || "").trim();
+  if (trimmedValue.length < 2) return [];
+
+  const terms = new Set([trimmedValue]);
+  const tokens = trimmedValue
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+
+  tokens.forEach((token) => {
+    const lowerToken = token.toLowerCase();
+    const variants = [token];
+
+    if (lowerToken.length >= 5 && lowerToken.endsWith("ies")) {
+      variants.push(token.slice(0, -3));
+    }
+
+    if (lowerToken.length >= 5 && lowerToken.endsWith("y")) {
+      variants.push(token.slice(0, -1));
+    }
+
+    if (lowerToken.length >= 5 && lowerToken.endsWith("es")) {
+      variants.push(token.slice(0, -2));
+    }
+
+    if (lowerToken.length >= 4 && lowerToken.endsWith("s")) {
+      variants.push(token.slice(0, -1));
+    }
+
+    variants
+      .map((variant) => variant.trim())
+      .filter((variant) => variant.length >= 2)
+      .forEach((variant) => terms.add(variant));
+  });
+
+  return Array.from(terms);
+};
+
+const buildOrganizationSearchWhere = ({ query, activeOnly = true }) => {
+  const terms = buildOrganizationSearchTerms(query);
+  if (terms.length === 0) return null;
+
+  const where = {
+    deletedAt: null,
+    OR: terms.flatMap((term) => [
+      { name: { contains: term } },
+      { organizationCode: { contains: term } },
+      { city: { contains: term } },
+      { state: { contains: term } },
+      { country: { contains: term } },
+    ]),
+  };
+
+  if (activeOnly) {
+    where.isActive = true;
+    where.isBlocked = false;
+  }
+
+  return where;
+};
+
+const organizationMatchesQuery = (organization, query) => {
+  if (!organization) return false;
+
+  const normalizedQuery = normalizeOrganizationText(query);
+  if (!normalizedQuery) return false;
+
+  const searchableFields = [
+    organization.name,
+    organization.organizationCode,
+    organization.city,
+    organization.state,
+    organization.country,
+  ]
+    .map(normalizeOrganizationText)
+    .filter(Boolean);
+
+  if (
+    searchableFields.some(
+      (fieldValue) => fieldValue === normalizedQuery || fieldValue.includes(normalizedQuery)
+    )
+  ) {
+    return true;
+  }
+
+  const longTerms = buildOrganizationSearchTerms(query)
+    .map(normalizeOrganizationText)
+    .filter((term) => term.length >= 4);
+
+  if (longTerms.length === 0) {
+    return false;
+  }
+
+  const matchedTerms = longTerms.filter((term) =>
+    searchableFields.some((fieldValue) => fieldValue.includes(term))
+  );
+
+  return matchedTerms.length >= Math.max(1, Math.ceil(longTerms.length * 0.6));
 };
 
 const organizationLookupSelect = {
@@ -560,7 +647,7 @@ exports.register = asyncHandler(async (req, res) => {
 });
 
 exports.login = asyncHandler(async (req, res) => {
-  const { email, password, organizationCode, organizationId, loginAs } =
+  const { email, password, organizationCode, organizationId, organizationName, loginAs } =
     req.validatedBody || req.body || {};
   const normalizedEmail = normalizeEmail(email);
 
@@ -603,6 +690,7 @@ exports.login = asyncHandler(async (req, res) => {
   const effectiveRole = requestedRole || normalizedRole;
   const requestedOrganizationId = parseOrganizationId(organizationId);
   const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
+  const normalizedOrganizationName = String(organizationName || "").trim();
 
   if (user.deletedAt) {
     res.status(403);
@@ -629,7 +717,12 @@ exports.login = asyncHandler(async (req, res) => {
     throw new Error(`Selected role (${requestedRole}) does not match this account`);
   }
 
-  if (effectiveRole !== "SUPER_ADMIN" && !requestedOrganizationId && !normalizedOrganizationCode) {
+  if (
+    effectiveRole !== "SUPER_ADMIN" &&
+    !requestedOrganizationId &&
+    !normalizedOrganizationCode &&
+    !normalizedOrganizationName
+  ) {
     res.status(400);
     throw new Error("Organization selection is required for this role");
   }
@@ -638,7 +731,9 @@ exports.login = asyncHandler(async (req, res) => {
     const organizationMismatch =
       !org ||
       (requestedOrganizationId && Number(org.id) !== requestedOrganizationId) ||
-      (normalizedOrganizationCode && org.organizationCode !== normalizedOrganizationCode);
+      (normalizedOrganizationCode &&
+        String(org.organizationCode || "").trim().toUpperCase() !== normalizedOrganizationCode) ||
+      (normalizedOrganizationName && !organizationMatchesQuery(org, normalizedOrganizationName));
 
     if (organizationMismatch) {
       res.status(401);
@@ -719,31 +814,24 @@ exports.login = asyncHandler(async (req, res) => {
 exports.searchOrganizations = asyncHandler(async (req, res) => {
   const query = String(req.query.query || "").trim();
   const limit = parseSearchLimit(req.query.limit, 8, 12);
-  const normalizedQuery = query;
+  const searchWhere = buildOrganizationSearchWhere({
+    query,
+    activeOnly: true,
+  });
 
-  if (normalizedQuery.length < 2) {
+  if (!searchWhere) {
     return res.status(200).json({
       success: true,
       items: [],
       meta: {
-        query: normalizedQuery,
+        query,
         limit,
       },
     });
   }
 
   const items = await prisma.organization.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-      isBlocked: false,
-      OR: [
-        { name: { contains: normalizedQuery } },
-        { organizationCode: { contains: normalizedQuery } },
-        { city: { contains: normalizedQuery } },
-        { state: { contains: normalizedQuery } },
-      ],
-    },
+    where: searchWhere,
     select: organizationSearchSelect,
     orderBy: [{ name: "asc" }],
     take: limit,

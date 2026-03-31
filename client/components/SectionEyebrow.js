@@ -11,14 +11,21 @@ export default function SectionEyebrow({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-600 shadow-[0_14px_34px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900/75 dark:text-slate-200 dark:shadow-black/20 sm:px-4 sm:py-2 sm:text-[10px] sm:tracking-[0.18em]",
+        "relative inline-flex items-center gap-2 overflow-visible rounded-full border border-slate-200/85 bg-white/78 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-slate-600 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-blue-400/18 dark:bg-slate-950/58 dark:text-slate-100 dark:shadow-[0_18px_48px_rgba(2,6,23,0.24)] sm:px-4 sm:py-2 sm:text-[10px]",
         className
       )}
     >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-5 -inset-y-1 rounded-full bg-[radial-gradient(circle,rgba(92,209,229,0.20),rgba(30,112,209,0.02)_70%)] blur-xl dark:bg-[radial-gradient(circle,rgba(92,209,229,0.18),rgba(30,112,209,0.03)_70%)]"
+      />
       {Icon ? (
-        <Icon size={14} className={cn("shrink-0 text-blue-600 dark:text-blue-300", iconClassName)} />
+        <Icon
+          size={14}
+          className={cn("relative shrink-0 text-blue-600 dark:text-blue-300", iconClassName)}
+        />
       ) : null}
-      <span className="leading-none">{children}</span>
+      <span className="relative leading-none">{children}</span>
     </div>
   );
 }

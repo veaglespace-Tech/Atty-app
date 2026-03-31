@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Loader2, Plus, RefreshCcw, Search, UserPlus, X } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import PasswordInput from "@/components/PasswordInput";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useCreateOrgUserMutation,
@@ -334,9 +335,9 @@ export default function OrgUsersPage() {
             ))}
           </select>
 
-          <input
+          <PasswordInput
+            icon={null}
             name="password"
-            type="text"
             value={form.password}
             onChange={onInputChange}
             placeholder="Password (optional)"

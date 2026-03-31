@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDispatch } from "react-redux";
 import { ArrowRight, Loader2, Lock, Mail } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useAdminSigninMutation } from "@/services/api/authApi";
@@ -155,17 +156,12 @@ export default function SuperAdminLoginPage() {
                     Forgot Password?
                   </Link>
                 </div>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                    <Lock size={20} />
-                  </span>
-                  <input
-                    type="password"
-                    placeholder="Enter your password"
-                    className={`${fieldClassName} !pl-12 ${errors.password ? errorFieldClassName : normalFieldClassName}`}
-                    {...register("password")}
-                  />
-                </div>
+                <PasswordInput
+                  icon={Lock}
+                  placeholder="Enter your password"
+                  className={`${fieldClassName} !pl-12 ${errors.password ? errorFieldClassName : normalFieldClassName}`}
+                  {...register("password")}
+                />
                 {errors.password ? (
                   <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
                     {errors.password.message}

@@ -116,6 +116,82 @@ describe("POST /api/auth/login", () => {
     expect(jwt.sign).toHaveBeenCalledTimes(1);
   });
 
+  it("logs in successfully when the organization name is typed instead of selected", async () => {
+    prisma.subscription.findFirst.mockResolvedValue({
+      id: 11,
+      orgId: 3,
+      planId: 2,
+      planName: "Pro",
+      planCode: "PRO_3M",
+      amount: 4500,
+      currency: "INR",
+      status: "ACTIVE",
+      endDate: new Date("2026-12-31T00:00:00.000Z"),
+    });
+    prisma.subscription.updateMany.mockResolvedValue({ count: 0 });
+    prisma.subscription.update.mockResolvedValue({ id: 11 });
+    prisma.organization.update.mockResolvedValue({
+      id: 3,
+      name: "Veagle Space Technologies Pvt Ltd",
+      organizationCode: "VEAGLE01",
+      city: "Pune",
+      state: "MH",
+      country: "India",
+      isBlocked: false,
+      isActive: true,
+      deletedAt: null,
+      subscriptionStatus: "ACTIVE",
+      subscriptionExpiry: new Date("2026-12-31T00:00:00.000Z"),
+      subscriptionId: 11,
+      planId: 2,
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      name: "Alice Admin",
+      email: "alice@example.com",
+      mobile: "+919999999999",
+      mobileCountryCode: "+91",
+      password: "hashed-password",
+      role: "ORG_ADMIN",
+      permissions: [],
+      status: "APPROVED",
+      isActive: true,
+      deletedAt: null,
+      organization: {
+        id: 3,
+        name: "Veagle Space Technologies Pvt Ltd",
+        organizationCode: "VEAGLE01",
+        city: "Pune",
+        state: "MH",
+        country: "India",
+        isBlocked: false,
+        isActive: true,
+        deletedAt: null,
+        subscriptionStatus: "ACTIVE",
+        plan: {
+          id: 2,
+          name: "Pro",
+          code: "PRO",
+          memberLimit: 100,
+          maxUsers: 100,
+        },
+      },
+    });
+    bcrypt.compare.mockResolvedValue(true);
+    prisma.user.update.mockResolvedValue({ id: 7 });
+
+    const response = await request(app).post("/api/auth/login").send({
+      email: "alice@example.com",
+      password: "Secret123!",
+      organizationName: "Veagle Space Technology Pvt Ltd",
+      loginAs: "ORG_ADMIN",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.token).toBe("signed-jwt-token");
+    expect(response.body.user.organization.name).toBe("Veagle Space Technologies Pvt Ltd");
+  });
+
   it("returns 400 when login payload is invalid", async () => {
     const response = await request(app).post("/api/auth/login").send({
       email: "wrong-email",
@@ -161,6 +237,7 @@ describe("GET /api/auth/organizations/search", () => {
           { organizationCode: { contains: "Acme" } },
           { city: { contains: "Acme" } },
           { state: { contains: "Acme" } },
+          { country: { contains: "Acme" } },
         ],
       },
       select: {

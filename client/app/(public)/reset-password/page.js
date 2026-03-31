@@ -20,6 +20,7 @@ import AuthPageShell, {
   authFieldErrorClassName,
   authFieldNormalClassName,
 } from "@/components/auth/AuthPageShell";
+import PasswordInput from "@/components/PasswordInput";
 import {
   useResetPasswordMutation,
   useValidateResetPasswordTokenMutation,
@@ -256,17 +257,12 @@ function ResetPasswordPageContent() {
               <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 New Password
               </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                  <Lock size={20} />
-                </span>
-                <input
-                  type="password"
-                  placeholder="Enter your new password"
-                  className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
-                  {...register("password")}
-                />
-              </div>
+              <PasswordInput
+                icon={Lock}
+                placeholder="Enter your new password"
+                className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
+                {...register("password")}
+              />
               <p className="ml-1 mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
                 Use at least 8 characters so your account stays secure.
               </p>
@@ -281,17 +277,12 @@ function ResetPasswordPageContent() {
               <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Confirm Password
               </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                  <Lock size={20} />
-                </span>
-                <input
-                  type="password"
-                  placeholder="Re-enter your new password"
-                  className={`${authFieldClassName} !pl-12 ${errors.confirmPassword ? authFieldErrorClassName : authFieldNormalClassName}`}
-                  {...register("confirmPassword")}
-                />
-              </div>
+              <PasswordInput
+                icon={ShieldCheck}
+                placeholder="Re-enter your new password"
+                className={`${authFieldClassName} !pl-12 ${errors.confirmPassword ? authFieldErrorClassName : authFieldNormalClassName}`}
+                {...register("confirmPassword")}
+              />
               {errors.confirmPassword ? (
                 <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
                   {errors.confirmPassword.message}
