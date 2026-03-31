@@ -22,7 +22,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import { useUserSignInMutation } from "@/services/api/authApi";
 import { setSession } from "@/store/slices/authSlice";
 import { LOGIN_ROLE_OPTIONS, resolveDashboardPath, ROLES } from "@/utils/roles";
-import { normalizeEmailInput } from "@/utils/formValidation";
+import { getErrorMessage, normalizeEmailInput } from "@/utils/formValidation";
 
 const loginSchema = z
   .object({
@@ -133,7 +133,7 @@ export default function LoginPage() {
         "/member/dashboard";
       router.replace(nextPath);
     } catch (err) {
-      console.error("Login failed:", err);
+      console.error("Login failed:", getErrorMessage(err, "Unable to sign in"));
     }
   };
 

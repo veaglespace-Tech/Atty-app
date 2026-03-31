@@ -14,7 +14,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import { useAdminSigninMutation } from "@/services/api/authApi";
 import { setSession } from "@/store/slices/authSlice";
 import { resolveDashboardPath, ROLES } from "@/utils/roles";
-import { normalizeEmailInput } from "@/utils/formValidation";
+import { getErrorMessage, normalizeEmailInput } from "@/utils/formValidation";
 
 const superAdminLoginSchema = z.object({
   email: z.string().trim().min(1, "Email is required").email("Invalid email address"),
@@ -85,7 +85,7 @@ export default function SuperAdminLoginPage() {
         "/super-admin/dashboard";
       router.replace(nextPath);
     } catch (err) {
-      console.error("Super Admin Login failed:", err);
+      console.error("Super Admin Login failed:", getErrorMessage(err, "Unable to sign in"));
     }
   };
 
