@@ -95,6 +95,7 @@ app.use("/api/team-leader", require("./routes/team-leader.route"));
 app.use("/api/member", require("./routes/member.route"));
 app.use("/api/posts", require("./routes/post.route"));
 app.use("/api/atty", require("./routes/atty.route"));
+app.use("/api/contact", require("./routes/contact.route"));
 
 app.use("*", (req, res) => {
   res.status(404).json({ message: "resource not found" });

@@ -16,6 +16,7 @@ const {
   archiveOrganizationAction,
   restoreOrganizationAction,
 } = require("../controllers/super-admin.controller");
+const { getSuperAdminContactInquiries } = require("../controllers/contact.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 
@@ -31,6 +32,7 @@ router.get("/organizations/excel", downloadSuperAdminOrganizationsExcel);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);
 router.post("/organizations/:organizationId/archive", archiveOrganizationAction);
 router.post("/organizations/:organizationId/restore", restoreOrganizationAction);
+router.get("/contacts", getSuperAdminContactInquiries);
 router.get("/plans", getSuperAdminPlans);
 router.get("/payments", getSuperAdminPayments);
 router.get("/payments/pdf", downloadSuperAdminPaymentsPdf);

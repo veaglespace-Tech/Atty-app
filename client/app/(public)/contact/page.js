@@ -2,6 +2,7 @@
 
 import { Mail, Phone, MapPin, Send, MessageSquare, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { API_BASE_URL } from "@/services/api/baseApi";
 import {
   PERSON_NAME_REGEX,
   normalizeEmailInput,
@@ -10,73 +11,132 @@ import {
   validateRequiredText,
 } from "@/utils/formValidation";
 
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+};
+
+const SUBJECT_MAX_LENGTH = 120;
+const MESSAGE_MAX_LENGTH = 500;
+
+const getValidationState = (form) => {
+  const normalizedForm = {
+    name: normalizeTextInput(form.name),
+    email: normalizeEmailInput(form.email),
+    subject: normalizeTextInput(form.subject),
+    message: String(form.message ?? "")
+      .replace(/\r\n/g, "\n")
+      .trim(),
+  };
+
+  const errors = {
+    name: validateRequiredText({
+      value: normalizedForm.name,
+      label: "Full name",
+      min: 2,
+      max: 120,
+      pattern: PERSON_NAME_REGEX,
+      patternMessage: "Full name can only include letters, spaces, apostrophes, dots, or hyphens",
+    }),
+    email: validateEmailInput(normalizedForm.email, "Email address"),
+    subject: validateRequiredText({
+      value: normalizedForm.subject,
+      label: "Subject",
+      min: 3,
+      max: SUBJECT_MAX_LENGTH,
+    }),
+    message: validateRequiredText({
+      value: normalizedForm.message,
+      label: "Message",
+      min: 10,
+      max: MESSAGE_MAX_LENGTH,
+    }),
+  };
+
+  return {
+    normalizedForm,
+    errors,
+  };
+};
+
 export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
   const [success, setSuccess] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const onInputChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev;
+      return {
+        ...prev,
+        [name]: "",
+      };
+    });
+    setError("");
+    setSuccess("");
+    setWarning("");
   };
 
-  const handleSubmit = (event) => {
+  const onFieldBlur = (event) => {
+    const { name, value } = event.target;
+    const nextForm = {
+      ...form,
+      [name]: value,
+    };
+    const validationState = getValidationState(nextForm);
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: validationState.errors[name] || "",
+    }));
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setWarning("");
 
-    const normalizedForm = {
-      name: normalizeTextInput(form.name),
-      email: normalizeEmailInput(form.email),
-      subject: normalizeTextInput(form.subject),
-      message: normalizeTextInput(form.message),
-    };
+    const { normalizedForm, errors } = getValidationState(form);
+    setFieldErrors(errors);
 
-    const validationError =
-      validateRequiredText({
-        value: normalizedForm.name,
-        label: "Full name",
-        min: 2,
-        max: 120,
-        pattern: PERSON_NAME_REGEX,
-        patternMessage: "Full name can only include letters, spaces, apostrophes, dots, or hyphens",
-      }) ||
-      validateEmailInput(normalizedForm.email, "Email address") ||
-      validateRequiredText({
-        value: normalizedForm.subject,
-        label: "Subject",
-        min: 3,
-        max: 120,
-      }) ||
-      validateRequiredText({
-        value: normalizedForm.message,
-        label: "Message",
-        min: 10,
-        max: 500,
-      });
-
+    const validationError = Object.values(errors).find(Boolean);
     if (validationError) {
       setError(validationError);
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setSuccess("Message sent successfully!");
-      setForm({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(normalizedForm),
       });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to send message right now.");
+      }
+
+      setSuccess(data?.message || "Message sent successfully!");
+      setWarning(data?.warning || "");
+      setForm(EMPTY_FORM);
+      setFieldErrors({});
+    } catch (submitError) {
+      setError(submitError?.message || "Failed to send message right now.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -138,6 +198,12 @@ export default function ContactPage() {
               </p>
             ) : null}
 
+            {warning ? (
+              <p className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+                {warning}
+              </p>
+            ) : null}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <InputGroup
@@ -145,15 +211,23 @@ export default function ContactPage() {
                   name="name"
                   value={form.name}
                   onChange={onInputChange}
+                  onBlur={onFieldBlur}
                   placeholder="John Doe"
+                  error={fieldErrors.name}
+                  disabled={loading}
+                  maxLength={120}
                 />
                 <InputGroup
                   label="Email Address"
                   name="email"
                   value={form.email}
                   onChange={onInputChange}
+                  onBlur={onFieldBlur}
                   type="email"
                   placeholder="john@example.com"
+                  error={fieldErrors.email}
+                  disabled={loading}
+                  maxLength={191}
                 />
               </div>
 
@@ -162,7 +236,11 @@ export default function ContactPage() {
                 name="subject"
                 value={form.subject}
                 onChange={onInputChange}
+                onBlur={onFieldBlur}
                 placeholder="Inquiry about Pro Plan"
+                error={fieldErrors.subject}
+                disabled={loading}
+                maxLength={SUBJECT_MAX_LENGTH}
               />
 
               <div className="space-y-2">
@@ -174,9 +252,25 @@ export default function ContactPage() {
                   rows={5}
                   value={form.message}
                   onChange={onInputChange}
+                  onBlur={onFieldBlur}
                   placeholder="How can we help you?"
-                  className="w-full resize-none rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 font-medium outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  disabled={loading}
+                  maxLength={MESSAGE_MAX_LENGTH}
+                  aria-invalid={Boolean(fieldErrors.message)}
+                  className={`w-full resize-none rounded-2xl border-2 bg-slate-50 p-4 font-medium outline-none transition-all focus:bg-white focus:ring-4 ${
+                    fieldErrors.message
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                      : "border-slate-100 focus:border-blue-600 focus:ring-blue-100"
+                  }`}
                 />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="ml-1 text-xs font-medium text-slate-400">
+                    {fieldErrors.message || "Minimum 10 characters required."}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400">
+                    {form.message.length}/{MESSAGE_MAX_LENGTH}
+                  </span>
+                </div>
               </div>
 
               <button
@@ -234,7 +328,18 @@ function ContactInfo({
   );
 }
 
-function InputGroup({ label, name, value, onChange, placeholder, type = "text" }) {
+function InputGroup({
+  label,
+  name,
+  value,
+  onChange,
+  onBlur,
+  placeholder,
+  type = "text",
+  error = "",
+  disabled = false,
+  maxLength,
+}) {
   return (
     <div className="space-y-2">
       <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -244,10 +349,19 @@ function InputGroup({ label, name, value, onChange, placeholder, type = "text" }
         name={name}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         type={type}
         placeholder={placeholder}
-        className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 p-4 font-medium outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
+        disabled={disabled}
+        maxLength={maxLength}
+        aria-invalid={Boolean(error)}
+        className={`w-full rounded-2xl border-2 bg-slate-50 p-4 font-medium outline-none transition-all focus:bg-white focus:ring-4 ${
+          error
+            ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+            : "border-slate-100 focus:border-blue-600 focus:ring-blue-100"
+        }`}
       />
+      <p className="ml-1 text-xs font-medium text-slate-400">{error || "\u00a0"}</p>
     </div>
   );
 }
