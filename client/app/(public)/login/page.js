@@ -15,6 +15,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import OrganizationLookupField from "@/components/OrganizationLookupField";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -23,17 +24,27 @@ import { setSession } from "@/store/slices/authSlice";
 import { LOGIN_ROLE_OPTIONS, resolveDashboardPath, ROLES } from "@/utils/roles";
 import { normalizeEmailInput } from "@/utils/formValidation";
 
-const loginSchema = z.object({
-  loginAs: z.string().min(1, "Login role is required"),
-  email: z.string().trim().min(1, "Email is required").email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128, "Password is too long"),
-  organizationId: z.string().min(1, "Please select your organization"),
-  organizationCode: z.string().optional(),
-  organizationName: z.string().optional(),
-});
+const loginSchema = z
+  .object({
+    loginAs: z.string().min(1, "Login role is required"),
+    email: z.string().trim().min(1, "Email is required").email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password is too long"),
+    organizationId: z.string().optional(),
+    organizationCode: z.string().optional(),
+    organizationName: z.string().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.organizationId?.trim() && !value.organizationName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select or enter your organization",
+        path: ["organizationId"],
+      });
+    }
+  });
 
 const pageShellClassName =
   "relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 pb-12 pt-32 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900";
@@ -88,7 +99,9 @@ export default function LoginPage() {
     if (watchedEmail) params.set("email", watchedEmail);
     if (watchedOrganizationId) params.set("organizationId", watchedOrganizationId);
     if (watchedOrganizationCode) params.set("organizationCode", watchedOrganizationCode);
-    if (watchedOrganizationName) params.set("organizationName", watchedOrganizationName);
+    if (watchedOrganizationId && watchedOrganizationName) {
+      params.set("organizationName", watchedOrganizationName);
+    }
 
     const query = params.toString();
     return query ? `/forgot-password?${query}` : "/forgot-password";
@@ -106,8 +119,9 @@ export default function LoginPage() {
       const payload = {
         ...values,
         email: normalizeEmailInput(values.email),
-        organizationId: Number(values.organizationId),
-        organizationCode: values.organizationCode?.trim().toUpperCase(),
+        organizationId: values.organizationId ? Number(values.organizationId) : undefined,
+        organizationCode: values.organizationCode?.trim().toUpperCase() || undefined,
+        organizationName: values.organizationName?.trim() || undefined,
       };
 
       const result = await userSignIn(payload).unwrap();
@@ -219,6 +233,15 @@ export default function LoginPage() {
                     setValue("organizationCode", "", { shouldDirty: true });
                     setValue("organizationName", "", { shouldDirty: true });
                   }}
+                  onInputValueChange={(value) => {
+                    setValue("organizationName", value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    if (value.trim()) {
+                      clearErrors("organizationId");
+                    }
+                  }}
                   labelClassName="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
                   inputClassName={fieldClassName}
                   normalFieldClassName={normalFieldClassName}
@@ -263,17 +286,12 @@ export default function LoginPage() {
                     Forgot Password?
                   </Link>
                 </div>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                    <Lock size={20} />
-                  </span>
-                  <input
-                    type="password"
-                    placeholder="Enter your password"
-                    className={`${fieldClassName} !pl-12 ${errors.password ? errorFieldClassName : normalFieldClassName}`}
-                    {...register("password")}
-                  />
-                </div>
+                <PasswordInput
+                  icon={Lock}
+                  placeholder="Enter your password"
+                  className={`${fieldClassName} !pl-12 ${errors.password ? errorFieldClassName : normalFieldClassName}`}
+                  {...register("password")}
+                />
                 {errors.password ? (
                   <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
                     {errors.password.message}

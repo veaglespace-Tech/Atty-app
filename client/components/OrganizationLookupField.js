@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
-import { Building2, Check, Loader2, Search, X } from "lucide-react";
+import { Building2, Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLazySearchOrganizationsQuery } from "@/services/api/authApi";
 
@@ -16,6 +16,7 @@ export default function OrganizationLookupField({
   selectedOrganization = null,
   onSelect,
   onClear,
+  onInputValueChange,
   labelClassName = "",
   inputClassName = "",
   normalFieldClassName = "",
@@ -80,6 +81,7 @@ export default function OrganizationLookupField({
     const nextValue = event.target.value;
     setQuery(nextValue);
     setOpen(true);
+    onInputValueChange?.(nextValue);
 
     if (nextValue.trim().length < 2) {
       setResults([]);
@@ -92,6 +94,7 @@ export default function OrganizationLookupField({
 
   const handleSelect = (organization) => {
     onSelect?.(organization);
+    onInputValueChange?.(organization?.name || "");
     setQuery(organization?.name || "");
     startTransition(() => {
       setResults([]);
@@ -110,9 +113,6 @@ export default function OrganizationLookupField({
         <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
           <Building2 size={20} />
         </span>
-        <span className="absolute left-11 top-1/2 z-10 -translate-y-1/2 text-slate-300">
-          <Search size={15} />
-        </span>
 
         <input
           type="text"
@@ -122,7 +122,7 @@ export default function OrganizationLookupField({
           placeholder={placeholder}
           className={cn(
             inputClassName,
-            "!pl-16 pr-12",
+            "!pl-12 pr-12",
             hasError ? errorFieldClassName : normalFieldClassName
           )}
         />
@@ -134,6 +134,7 @@ export default function OrganizationLookupField({
               setQuery("");
               setResults([]);
               setOpen(false);
+              onInputValueChange?.("");
               onClear?.();
             }}
             className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"

@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import PasswordInput from "@/components/PasswordInput";
 import RegisterFlowShell from "@/components/register/RegisterFlowShell";
 import { ROLES } from "@/utils/roles";
 import {
@@ -162,11 +163,19 @@ export default function AdminRegistration() {
             placeholder={field.placeholder}
             error={errors[field.name]?.message}
           >
-            <input
-              type={field.type || "text"}
-              {...register(field.name)}
-              className={`${fieldClassName} !pl-12 ${errors[field.name] ? errorFieldClassName : normalFieldClassName}`}
-            />
+            {field.type === "password" ? (
+              <PasswordInput
+                icon={null}
+                {...register(field.name)}
+                className={`${fieldClassName} !pl-12 ${errors[field.name] ? errorFieldClassName : normalFieldClassName}`}
+              />
+            ) : (
+              <input
+                type={field.type || "text"}
+                {...register(field.name)}
+                className={`${fieldClassName} !pl-12 ${errors[field.name] ? errorFieldClassName : normalFieldClassName}`}
+              />
+            )}
           </Field>
         ))}
 

@@ -76,11 +76,13 @@ const sendEmail = async (options) => {
     const transporter = nodemailer.createTransport(transportOptions);
 
     const mailOptions = {
-      from: `"${fromName}" <${user}>`,
+      from: options.from || `"${options.fromName || fromName}" <${user}>`,
       to: options.email,
       subject: options.subject,
       text: options.message,
       html: options.html,
+      replyTo: options.replyTo || undefined,
+      attachments: Array.isArray(options.attachments) ? options.attachments : undefined,
     };
 
     return transporter.sendMail(mailOptions);

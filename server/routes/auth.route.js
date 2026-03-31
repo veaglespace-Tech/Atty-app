@@ -22,6 +22,7 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
   organizationCode: z.string().trim().optional(),
   organizationId: numericIdSchema.optional(),
+  organizationName: z.string().trim().optional(),
   loginAs: z.string().trim().optional(),
 });
 

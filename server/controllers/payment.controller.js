@@ -9,6 +9,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
 const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
 const sendEmail = require("../utils/email");
+const { buildEmailTemplate } = require("../utils/email-template");
 const { truncateText, formatDate } = require("../services/common.service");
 
 const FALLBACK_PLANS = {
@@ -35,6 +36,24 @@ const FALLBACK_PLANS = {
   },
 };
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const getClientBaseUrl = () => {
+  const explicitBaseUrl = String(process.env.CLIENT_URL || process.env.APP_URL || "").trim();
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/+$/, "");
+  }
+
+  const firstAllowedOrigin = String(process.env.CLIENT_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .find(Boolean);
+
+  if (firstAllowedOrigin) {
+    return firstAllowedOrigin.replace(/\/+$/, "");
+  }
+
+  return "http://localhost:3000";
+};
 
 const getRazorpayCredentials = () => ({
   keyId:
@@ -319,6 +338,7 @@ const sendRenewalConfirmationEmail = async ({
 }) => {
   const actionLabel =
     mode === "UPGRADE" ? "upgraded" : mode === "EXTEND" ? "extended" : "renewed";
+  const loginUrl = `${getClientBaseUrl()}/login`;
   const emailMessage = `Hello ${user.name},
 
 Your Veagle Attendee subscription has been ${actionLabel} successfully.
@@ -337,34 +357,41 @@ You can now continue using your workspace with full access.
 
 Best Regards,
 Veagle Attendee Team`;
-
-  const emailHtml = `
-    <div style="font-family:Arial,sans-serif;background:#f8fafc;padding:32px 16px;color:#0f172a">
-      <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dbeafe;border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(15,23,42,0.08)">
-        <div style="padding:28px 32px;background:linear-gradient(135deg,#0c447c,#1e70d1,#5cd1e5);color:#ffffff">
-          <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.24em;text-transform:uppercase;font-weight:700;opacity:0.85">Subscription Renewed</p>
-          <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:800">Your workspace is active again</h1>
-        </div>
-        <div style="padding:32px">
-          <p style="margin:0 0 12px;font-size:15px;line-height:1.7">Hello <strong>${user.name}</strong>,</p>
-          <p style="margin:0 0 18px;font-size:15px;line-height:1.7">
-            Your Veagle Attendee subscription has been renewed successfully for
-            <strong> ${organization.name}</strong>.
-          </p>
-          <div style="margin:0 0 20px;border:1px solid #dbeafe;border-radius:18px;background:#eff6ff;padding:18px 20px">
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Organization Code:</strong> ${organization.organizationCode}</p>
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Plan:</strong> ${plan.name}</p>
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Charged Amount:</strong> Rs. ${Number(chargedAmount || 0).toLocaleString("en-IN")}</p>
-            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#0f172a"><strong>Credit Applied:</strong> Rs. ${Number(creditAmount || 0).toLocaleString("en-IN")}</p>
-            <p style="margin:0;font-size:14px;line-height:1.7;color:#0f172a"><strong>Expiry Date:</strong> ${formatDate(expiryDate)}</p>
-          </div>
-          <p style="margin:0;font-size:14px;line-height:1.7;color:#475569">
-            Your admin dashboard and related workspace access are now active again.
-          </p>
-        </div>
-      </div>
-    </div>
-  `;
+  const emailHtml = buildEmailTemplate({
+    eyebrow: mode === "UPGRADE" ? "Plan Upgrade" : "Subscription Updated",
+    title: "Your workspace is active again",
+    subtitle: `Plan changes for ${organization.name}`,
+    greeting: `Hello ${user.name || "there"}`,
+    intro: [`Your Veagle Attendee subscription has been ${actionLabel} successfully.`],
+    sections: [
+      {
+        eyebrow: "Workspace Details",
+        title: "Subscription summary",
+        rows: [
+          { label: "Organization", value: organization.name },
+          { label: "Org Code", value: organization.organizationCode },
+          { label: "Plan", value: plan.name },
+          {
+            label: "Charged",
+            value: `Rs. ${Number(chargedAmount || 0).toLocaleString("en-IN")}`,
+          },
+          {
+            label: "Credit Applied",
+            value: `Rs. ${Number(creditAmount || 0).toLocaleString("en-IN")}`,
+          },
+          { label: "Expiry Date", value: formatDate(expiryDate) },
+        ],
+      },
+    ],
+    action: {
+      label: "Open Login",
+      href: loginUrl,
+    },
+    footnotes: [
+      "Your admin dashboard and related workspace access are now active again.",
+    ],
+    footerNote: "Manage attendance, teams, and subscriptions from one workspace.",
+  });
 
   return sendEmail({
     email: user.email,
@@ -1043,6 +1070,7 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       const planDisplayName = resolvedPlan.name || (freeTrialPlan ? "Free Trial" : "Subscription Plan");
       const subStartDate = new Date();
       const subEndDate = new Date(result.newOrg.subscriptionExpiry);
+      const loginUrl = `${getClientBaseUrl()}/login`;
 
       const emailMessage = `Hello ${result.newUser.name},
 
@@ -1060,55 +1088,45 @@ You will need the Organization Code, along with your registered email and passwo
 
 Best Regards,
 Veagle Attendee Team`;
-
-      const emailHtml = `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; padding: 30px; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-          <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="color: #2563eb; margin: 0; font-size: 28px;">Welcome to Veagle Attendee!</h2>
-            <p style="color: #666; font-size: 16px;">Your workspace is ready.</p>
-          </div>
-
-          <p>Hello <strong>${result.newUser.name}</strong>,</p>
-          <p>Thank you for registering your organization "<strong>${result.newOrg.name}</strong>". We are excited to have you on board.</p>
-
-          <div style="background-color: #f9f9f9; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center; border: 1px dashed #4CAF50;">
-            <p style="margin: 0; font-size: 14px; color: #777; text-transform: uppercase; letter-spacing: 1px;">Your Organization Code</p>
-            <h1 style="color: #222; margin: 10px 0; letter-spacing: 5px; font-size: 36px; font-weight: 800;">${result.newOrg.organizationCode}</h1>
-            <p style="margin: 0; font-size: 13px; color: #999;">Keep this code safe. You will need it to log in.</p>
-          </div>
-
-          <div style="margin: 25px 0; padding: 20px; background-color: #fff; border: 1px solid #eee; border-radius: 8px;">
-            <h3 style="margin-top: 0; color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 18px;">Subscription Summary</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Plan Name:</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: 600;">${planDisplayName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Status:</td>
-                <td style="padding: 8px 0; text-align: right;"><span style="background-color: ${freeTrialPlan ? "#fff3cd" : "#d4edda"}; color: ${freeTrialPlan ? "#856404" : "#155724"}; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">${freeTrialPlan ? "TRIAL" : "ACTIVE"}</span></td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Start Date:</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: 600;">${formatDate(subStartDate)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Expiry Date:</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #e74c3c;">${formatDate(subEndDate)}</td>
-              </tr>
-            </table>
-          </div>
-
-          <p style="font-size: 15px; line-height: 1.5;">You and your team members will need the <strong>Organization Code</strong> as a primary identifier to access your specific workspace.</p>
-
-          <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
-            <p style="font-size: 14px; color: #888; margin: 0;">
-              Best Regards,<br/>
-              <strong style="color: #333;">Veagle Attendee Pvt Ltd</strong>
-            </p>
-          </div>
-        </div>
-      `;
+      const emailHtml = buildEmailTemplate({
+        eyebrow: "Welcome Onboard",
+        title: "Your workspace is ready",
+        subtitle: `Welcome to Veagle Attendee, ${result.newUser.name}`,
+        greeting: `Hello ${result.newUser.name}`,
+        intro: [
+          `Thank you for registering your organization "${result.newOrg.name}" on Veagle Attendee.`,
+          "Your organization code is the primary workspace key for admin and team login access.",
+        ],
+        sections: [
+          {
+            eyebrow: "Workspace Access",
+            title: "Keep this organization code ready",
+            rows: [
+              { label: "Organization", value: result.newOrg.name },
+              { label: "Org Code", value: result.newOrg.organizationCode },
+              { label: "Admin Email", value: result.newUser.email },
+            ],
+          },
+          {
+            eyebrow: "Subscription Summary",
+            title: "Current plan details",
+            rows: [
+              { label: "Plan", value: planDisplayName },
+              { label: "Status", value: freeTrialPlan ? "TRIAL" : "ACTIVE" },
+              { label: "Start Date", value: formatDate(subStartDate) },
+              { label: "Expiry Date", value: formatDate(subEndDate) },
+            ],
+          },
+        ],
+        action: {
+          label: "Open Login",
+          href: loginUrl,
+        },
+        footnotes: [
+          "You will need your registered email, password, and organization code to enter the correct workspace.",
+        ],
+        footerNote: "Attendance made simple for growing teams and organizations.",
+      });
 
       await sendEmail({
         email: result.newUser.email,
