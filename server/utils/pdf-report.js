@@ -15,6 +15,7 @@ const TABLE_HEADER_HEIGHT = 24;
 const TABLE_ROW_HEIGHT = 22;
 
 const TABLE_COLUMNS = [
+  { key: "entryNo", label: "No.", width: 44, align: "center" },
   { key: "userId", label: "ID", width: 44, align: "center" },
   { key: "userName", label: "Member", width: 102, align: "left" },
   { key: "contact", label: "Phone", width: 88, align: "left" },

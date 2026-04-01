@@ -28,6 +28,10 @@ export const superAdminApi = createApi({
       query: (limit = 2000) => `/super-admin/organizations?limit=${limit}`,
       providesTags: ["SAOrganizations"],
     }),
+    getSuperAdminOrganizationById: builder.query({
+      query: (organizationId) => `/super-admin/organizations/${organizationId}`,
+      providesTags: ["SAOrganizations"],
+    }),
     downloadSuperAdminOrganizationsPdf: builder.mutation({
       query: (queryString = "") => ({
         url: `/super-admin/organizations/pdf${queryString ? `?${queryString}` : ""}`,
@@ -41,6 +45,14 @@ export const superAdminApi = createApi({
         method: "GET",
         responseHandler: (response) => response.blob(),
       }),
+    }),
+    patchSuperAdminOrganization: builder.mutation({
+      query: ({ organizationId, ...payload }) => ({
+        url: `/super-admin/organizations/${organizationId}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SAOrganizations", "SADashboard"],
     }),
     updateOrganizationAccess: builder.mutation({
       query: ({ organizationId, ...payload }) => ({
@@ -57,6 +69,25 @@ export const superAdminApi = createApi({
     getSuperAdminPayments: builder.query({
       query: (queryString = "") => `/super-admin/payments${queryString ? `?${queryString}` : ""}`,
       providesTags: ["SAPayments"],
+    }),
+    getSuperAdminPaymentById: builder.query({
+      query: (paymentId) => `/super-admin/payments/${paymentId}`,
+      providesTags: ["SAPayments"],
+    }),
+    updateSuperAdminPayment: builder.mutation({
+      query: ({ paymentId, ...payload }) => ({
+        url: `/super-admin/payments/${paymentId}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SAPayments", "SAOrganizations", "SADashboard"],
+    }),
+    deleteSuperAdminPayment: builder.mutation({
+      query: (paymentId) => ({
+        url: `/super-admin/payments/${paymentId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SAPayments", "SAOrganizations", "SADashboard"],
     }),
     downloadSuperAdminPaymentsPdf: builder.mutation({
       query: (queryString = "") => ({
@@ -84,11 +115,16 @@ export const {
   useDownloadSuperAdminDashboardPdfMutation,
   useDownloadSuperAdminDashboardExcelMutation,
   useGetSuperAdminOrganizationsQuery,
+  useGetSuperAdminOrganizationByIdQuery,
   useDownloadSuperAdminOrganizationsPdfMutation,
   useDownloadSuperAdminOrganizationsExcelMutation,
+  usePatchSuperAdminOrganizationMutation,
   useUpdateOrganizationAccessMutation,
   useGetSuperAdminPlansQuery,
   useGetSuperAdminPaymentsQuery,
+  useGetSuperAdminPaymentByIdQuery,
+  useUpdateSuperAdminPaymentMutation,
+  useDeleteSuperAdminPaymentMutation,
   useDownloadSuperAdminPaymentsPdfMutation,
   useDownloadSuperAdminPaymentsExcelMutation,
   useGetSuperAdminAnalyticsQuery,

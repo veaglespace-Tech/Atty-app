@@ -6,9 +6,14 @@ import { useGetOrgSubscriptionQuery } from "@/services/api/orgApi";
 import { formatCalendarDate } from "@/utils/date";
 
 export default function OrgSubscriptionPage() {
-  const { data, isLoading, isFetching, error, refetch } = useGetOrgSubscriptionQuery();
+  const { data, isLoading, isFetching, error, refetch } = useGetOrgSubscriptionQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const meta = data?.meta || {};
   const usage = meta.usage || {};
+  const subscriptions = Array.isArray(data?.items) ? data.items : [];
 
   if (isLoading) {
     return (
@@ -68,6 +73,11 @@ export default function OrgSubscriptionPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <InfoCard label="Current Plan" value={meta.currentPlanName || "No active plan"} />
         <InfoCard label="Status" value={meta.subscriptionStatus || "TRIAL"} />
+        <InfoCard label="Start Date" value={formatCalendarDate(meta.subscriptionStartDate)} />
+        <InfoCard label="End Date" value={formatCalendarDate(meta.subscriptionEndDate || meta.subscriptionExpiry)} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <InfoCard label="Expiry" value={formatCalendarDate(meta.subscriptionExpiry)} />
         <InfoCard label="Workspace Code" value={meta.organizationCode || "--"} />
       </div>
@@ -83,6 +93,70 @@ export default function OrgSubscriptionPage() {
           value={Number(usage.teams || 0)}
           helper="Live teams currently present in this organization"
         />
+      </div>
+
+      <div className="light-glow-card-static rounded-[1.9rem] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              Subscription History
+            </h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+              Any date updates on the active subscription will appear here after refresh.
+            </p>
+          </div>
+        </div>
+
+        {subscriptions.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">
+            No subscription records found.
+          </p>
+        ) : (
+          <div className="mt-5 overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">
+            <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+              <thead className="bg-slate-50/90 dark:bg-slate-900/85">
+                <tr>
+                  <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    Plan
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    Start Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    End Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {subscriptions.map((subscription) => (
+                  <tr key={subscription.id}>
+                    <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white">
+                      {subscription.planName || subscription.planCode || "-"}
+                    </td>
+                    <td className="px-4 py-4 text-slate-700 dark:text-slate-200">
+                      {subscription.status || "-"}
+                    </td>
+                    <td className="px-4 py-4 text-slate-700 dark:text-slate-200">
+                      {formatCalendarDate(subscription.startDate)}
+                    </td>
+                    <td className="px-4 py-4 text-slate-700 dark:text-slate-200">
+                      {formatCalendarDate(subscription.endDate)}
+                    </td>
+                    <td className="px-4 py-4 text-slate-700 dark:text-slate-200">
+                      {Number(subscription.amount || 0).toLocaleString("en-IN")} {subscription.currency || "INR"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </section>
   );

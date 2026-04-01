@@ -230,3 +230,32 @@ describe("GET /api/super-admin/payments/pdf", () => {
     expect(response.body.length).toBeGreaterThan(0);
   });
 });
+
+const { resolveManagedSubscriptionWindow } = require("../services/subscription.service");
+
+describe("resolveManagedSubscriptionWindow", () => {
+  it("recalculates endDate when startDate changes and no endDate is provided", () => {
+    const { startDate, endDate } = resolveManagedSubscriptionWindow({
+      currentStartDate: new Date("2023-02-01T00:00:00.000Z"),
+      currentEndDate: new Date("2023-05-01T00:00:00.000Z"),
+      startDateInput: "2023-03-01",
+      durationInDays: 90,
+      forceEndDateRecalc: true,
+    });
+
+    expect(startDate.toISOString()).toBe("2023-03-01T00:00:00.000Z");
+    expect(endDate.toISOString()).toBe("2023-05-30T00:00:00.000Z");
+  });
+
+  it("recalculates endDate on plan change with existing startDate when no date patch is provided", () => {
+    const { startDate, endDate } = resolveManagedSubscriptionWindow({
+      currentStartDate: new Date("2023-02-01T00:00:00.000Z"),
+      currentEndDate: new Date("2023-05-01T00:00:00.000Z"),
+      durationInDays: 180,
+      forceEndDateRecalc: true,
+    });
+
+    expect(startDate.toISOString()).toBe("2023-02-01T00:00:00.000Z");
+    expect(endDate.toISOString()).toBe("2023-07-31T00:00:00.000Z");
+  });
+});

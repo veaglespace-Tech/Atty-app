@@ -1,10 +1,24 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
-const { parseBoolean, parseId, parseLimit, toSummaryItem } = require("../services/common.service");
+const {
+  parseBoolean,
+  parseId,
+  parseLimit,
+  toSummaryItem,
+  truncateText,
+} = require("../services/common.service");
+const { filterVisiblePlans } = require("../services/plan.service");
+const { archiveOrganization, restoreOrganizationFromArchive } = require("../services/archive.service");
+const {
+  resolveManagedSubscriptionWindow,
+  syncOrganizationSubscriptionState,
+} = require("../services/subscription.service");
+const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const xlsx = require("xlsx");
 
 const SUBSCRIPTION_STATUS = new Set(["TRIAL", "ACTIVE", "EXPIRED", "PAYMENT_PENDING"]);
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const toMonthKey = (value) => {
   const date = new Date(value);
@@ -41,6 +55,76 @@ const formatMoney = (amount, currency = "INR") => {
 };
 
 const formatExportSequence = (index) => String(Number(index || 0) + 1).padStart(3, "0");
+const normalizeCurrencyCode = (value, fallback = "INR") =>
+  String(value || fallback)
+    .trim()
+    .toUpperCase()
+    .slice(0, 10) || fallback;
+
+const normalizeTextValue = (value, limit = 191) => truncateText(value, limit);
+
+const normalizeOptionalTextValue = (value, limit = 191) => {
+  if (value === undefined) return undefined;
+  const normalized = truncateText(value, limit);
+  return normalized || "";
+};
+
+const normalizeOptionalNullableTextValue = (value, limit = 191) => {
+  if (value === undefined) return undefined;
+  const normalized = truncateText(value, limit);
+  return normalized || null;
+};
+
+const normalizePaymentRecordStatus = (value, fallback = "CREATED") =>
+  String(value || fallback)
+    .trim()
+    .toUpperCase()
+    .slice(0, 40) || fallback;
+
+const normalizeSubscriptionRecordStatus = (value, fallback = "ACTIVE") =>
+  String(value || fallback)
+    .trim()
+    .toUpperCase()
+    .slice(0, 40) || fallback;
+
+const normalizeOptionalNumber = (value, { label = "Value", min = 0 } = {}) => {
+  if (value === undefined) return undefined;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < min) {
+    const error = new Error(`${label} must be a valid number${min > 0 ? ` and at least ${min}` : ""}`);
+    error.statusCode = 400;
+    throw error;
+  }
+  return Number(numeric.toFixed(2));
+};
+
+const normalizeCoordinateValue = (value, { label, min, max } = {}) => {
+  if (value === undefined) return undefined;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < min || numeric > max) {
+    const error = new Error(`${label} is out of range`);
+    error.statusCode = 400;
+    throw error;
+  }
+  return numeric;
+};
+
+const normalizeAttendanceRadiusValue = (value) => {
+  if (value === undefined) return undefined;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 5 || numeric > 1000) {
+    const error = new Error("Attendance radius must be between 5 and 1000");
+    error.statusCode = 400;
+    throw error;
+  }
+  return Math.round(numeric);
+};
+
+const getSubscriptionPlanDuration = (subscription, organization) =>
+  Number(subscription?.plan?.durationInDays || organization?.plan?.durationInDays || 0);
+
+const buildOrganizationAccessLabel = (item) =>
+  item?.blocked ? "BLOCKED" : item?.active ? "ACTIVE" : "INACTIVE";
 
 const getSummaryValue = (summary = [], label) =>
   summary.find((item) => String(item?.label || "").toLowerCase() === String(label || "").toLowerCase())
@@ -415,6 +499,7 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
       include: {
         organization: {
           select: {
+            id: true,
             name: true,
             organizationCode: true,
           },
@@ -465,6 +550,7 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
     gateway: payment.gateway,
     orderId: payment.razorpayOrderId,
     paymentId: payment.razorpayPaymentId || "",
+    subscriptionId: payment.subscriptionId,
     createdAt: payment.createdAt,
   }));
 
@@ -483,6 +569,373 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
   };
 };
 
+const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
+  const organization = await prisma.organization.findUnique({
+    where: {
+      id: Number(organizationId),
+    },
+    include: {
+      plan: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          price: true,
+          currency: true,
+          durationInDays: true,
+          memberLimit: true,
+          maxUsers: true,
+          maxTeams: true,
+          maxLocations: true,
+          isActive: true,
+        },
+      },
+      orgAdmin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          mobile: true,
+          mobileCountryCode: true,
+          role: true,
+          status: true,
+          isActive: true,
+          createdAt: true,
+        },
+      },
+      activeSubscription: {
+        select: {
+          id: true,
+          planId: true,
+          planName: true,
+          planCode: true,
+          amount: true,
+          currency: true,
+          status: true,
+          startDate: true,
+          endDate: true,
+          paymentGateway: true,
+          razorpayOrderId: true,
+          razorpayPaymentId: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      _count: {
+        select: {
+          users: {
+            where: {
+              deletedAt: null,
+            },
+          },
+          teams: {
+            where: {
+              deletedAt: null,
+            },
+          },
+          payments: true,
+          subscriptions: true,
+        },
+      },
+    },
+  });
+
+  if (!organization || organization.deletedAt) {
+    return null;
+  }
+
+  const [paymentAggregate, recentPayments, recentSubscriptions] = await Promise.all([
+    prisma.payment.aggregate({
+      where: {
+        orgId: Number(organization.id),
+        status: "SUCCESS",
+      },
+      _sum: {
+        amount: true,
+      },
+      _count: {
+        _all: true,
+      },
+      _max: {
+        createdAt: true,
+      },
+    }),
+    prisma.payment.findMany({
+      where: {
+        orgId: Number(organization.id),
+      },
+      orderBy: [{ createdAt: "desc" }],
+      take: 5,
+      select: {
+        id: true,
+        planName: true,
+        planCode: true,
+        amount: true,
+        currency: true,
+        status: true,
+        razorpayOrderId: true,
+        razorpayPaymentId: true,
+        createdAt: true,
+      },
+    }),
+    prisma.subscription.findMany({
+      where: {
+        orgId: Number(organization.id),
+      },
+      orderBy: [{ createdAt: "desc" }],
+      take: 5,
+      select: {
+        id: true,
+        planName: true,
+        planCode: true,
+        amount: true,
+        currency: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        notes: true,
+        createdAt: true,
+      },
+    }),
+  ]);
+
+  return {
+    id: organization.id,
+    name: organization.name,
+    code: organization.organizationCode,
+    email: organization.email || "",
+    phone: organization.phone || "",
+    phoneCountryCode: organization.phoneCountryCode || "",
+    address: organization.address || "",
+    city: organization.city || "",
+    state: organization.state || "",
+    country: organization.country || "India",
+    latitude: organization.latitude,
+    longitude: organization.longitude,
+    attendanceRadius: organization.attendanceRadius || 25,
+    subscriptionStatus: organization.subscriptionStatus || "TRIAL",
+    subscriptionExpiry: organization.subscriptionExpiry || null,
+    blocked: Boolean(organization.isBlocked),
+    active: Boolean(organization.isActive),
+    createdAt: organization.createdAt,
+    updatedAt: organization.updatedAt,
+    counts: {
+      users: Number(organization._count?.users || 0),
+      teams: Number(organization._count?.teams || 0),
+      payments: Number(organization._count?.payments || 0),
+      subscriptions: Number(organization._count?.subscriptions || 0),
+    },
+    plan: organization.plan
+      ? {
+          id: organization.plan.id,
+          name: organization.plan.name,
+          code: organization.plan.code,
+          price: Number(organization.plan.price || 0),
+          currency: organization.plan.currency || "INR",
+          durationInDays: Number(organization.plan.durationInDays || 0),
+          memberLimit: Number(organization.plan.memberLimit || organization.plan.maxUsers || 0),
+          maxTeams: Number(organization.plan.maxTeams || 0),
+          maxLocations: Number(organization.plan.maxLocations || 0),
+          active: Boolean(organization.plan.isActive),
+        }
+      : null,
+    admin: organization.orgAdmin
+      ? {
+          id: organization.orgAdmin.id,
+          name: organization.orgAdmin.name,
+          email: organization.orgAdmin.email,
+          mobile: organization.orgAdmin.mobile,
+          mobileCountryCode: organization.orgAdmin.mobileCountryCode || "",
+          role: organization.orgAdmin.role,
+          status: organization.orgAdmin.status,
+          active: Boolean(organization.orgAdmin.isActive),
+          createdAt: organization.orgAdmin.createdAt,
+        }
+      : null,
+    activeSubscription: organization.activeSubscription
+      ? {
+          id: organization.activeSubscription.id,
+          planId: organization.activeSubscription.planId,
+          planName: organization.activeSubscription.planName,
+          planCode: organization.activeSubscription.planCode,
+          amount: Number(organization.activeSubscription.amount || 0),
+          currency: organization.activeSubscription.currency || "INR",
+          status: organization.activeSubscription.status,
+          startDate: organization.activeSubscription.startDate,
+          endDate: organization.activeSubscription.endDate,
+          paymentGateway: organization.activeSubscription.paymentGateway || "",
+          orderId: organization.activeSubscription.razorpayOrderId || "",
+          paymentId: organization.activeSubscription.razorpayPaymentId || "",
+          notes: organization.activeSubscription.notes || "",
+          createdAt: organization.activeSubscription.createdAt,
+          updatedAt: organization.activeSubscription.updatedAt,
+        }
+      : null,
+    paymentSummary: {
+      successfulPayments: Number(paymentAggregate?._count?._all || 0),
+      totalRevenue: Number(paymentAggregate?._sum?.amount || 0),
+      lastPaymentAt: paymentAggregate?._max?.createdAt || null,
+    },
+    recentPayments: recentPayments.map((payment) => ({
+      id: payment.id,
+      planName: payment.planName || payment.planCode || "",
+      planCode: payment.planCode || "",
+      amount: Number(payment.amount || 0),
+      currency: payment.currency || "INR",
+      status: payment.status,
+      orderId: payment.razorpayOrderId || "",
+      paymentId: payment.razorpayPaymentId || "",
+      createdAt: payment.createdAt,
+    })),
+    recentSubscriptions: recentSubscriptions.map((subscription) => ({
+      id: subscription.id,
+      planName: subscription.planName || "",
+      planCode: subscription.planCode || "",
+      amount: Number(subscription.amount || 0),
+      currency: subscription.currency || "INR",
+      status: subscription.status,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      notes: subscription.notes || "",
+      createdAt: subscription.createdAt,
+    })),
+  };
+};
+
+const buildSuperAdminPaymentDetailPayload = async (paymentId) => {
+  const payment = await prisma.payment.findUnique({
+    where: {
+      id: Number(paymentId),
+    },
+    include: {
+      organization: {
+        include: {
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              price: true,
+              currency: true,
+              durationInDays: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          mobile: true,
+          mobileCountryCode: true,
+          role: true,
+          status: true,
+        },
+      },
+      subscription: {
+        include: {
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              price: true,
+              currency: true,
+              durationInDays: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!payment || payment.organization?.deletedAt) {
+    return null;
+  }
+
+  const subscriptionPaymentCount = await prisma.payment.count({
+    where: {
+      subscriptionId: Number(payment.subscriptionId),
+    },
+  });
+
+  return {
+    id: payment.id,
+    status: payment.status,
+    amount: Number(payment.amount || 0),
+    currency: payment.currency || "INR",
+    gateway: payment.gateway || "",
+    planName: payment.planName || payment.subscription?.planName || "",
+    planCode: payment.planCode || payment.subscription?.planCode || "",
+    orderId: payment.razorpayOrderId || "",
+    paymentId: payment.razorpayPaymentId || "",
+    signature: payment.razorpaySignature || "",
+    failureReason: payment.failureReason || "",
+    rawResponse: payment.rawResponse || null,
+    createdAt: payment.createdAt,
+    updatedAt: payment.updatedAt,
+    organization: {
+      id: payment.organization.id,
+      name: payment.organization.name,
+      code: payment.organization.organizationCode,
+      email: payment.organization.email || "",
+      phone: payment.organization.phone || "",
+      phoneCountryCode: payment.organization.phoneCountryCode || "",
+      subscriptionStatus: payment.organization.subscriptionStatus || "TRIAL",
+      subscriptionExpiry: payment.organization.subscriptionExpiry || null,
+      blocked: Boolean(payment.organization.isBlocked),
+      active: Boolean(payment.organization.isActive),
+      planName: payment.organization.plan?.name || payment.subscription?.planName || "",
+      planCode: payment.organization.plan?.code || payment.subscription?.planCode || "",
+    },
+    user: payment.user
+      ? {
+          id: payment.user.id,
+          name: payment.user.name,
+          email: payment.user.email,
+          mobile: payment.user.mobile || "",
+          mobileCountryCode: payment.user.mobileCountryCode || "",
+          role: payment.user.role,
+          status: payment.user.status,
+        }
+      : null,
+    subscription: payment.subscription
+      ? {
+          id: payment.subscription.id,
+          planId: payment.subscription.planId,
+          planName: payment.subscription.planName || "",
+          planCode: payment.subscription.planCode || "",
+          amount: Number(payment.subscription.amount || 0),
+          currency: payment.subscription.currency || "INR",
+          status: payment.subscription.status,
+          startDate: payment.subscription.startDate,
+          endDate: payment.subscription.endDate,
+          paymentGateway: payment.subscription.paymentGateway || "",
+          orderId: payment.subscription.razorpayOrderId || "",
+          paymentId: payment.subscription.razorpayPaymentId || "",
+          signature: payment.subscription.razorpaySignature || "",
+          notes: payment.subscription.notes || "",
+          activeKey: payment.subscription.activeKey || "",
+          createdAt: payment.subscription.createdAt,
+          updatedAt: payment.subscription.updatedAt,
+          plan: payment.subscription.plan
+            ? {
+                id: payment.subscription.plan.id,
+                name: payment.subscription.plan.name,
+                code: payment.subscription.plan.code,
+                price: Number(payment.subscription.plan.price || 0),
+                currency: payment.subscription.plan.currency || "INR",
+                durationInDays: Number(payment.subscription.plan.durationInDays || 0),
+              }
+            : null,
+          paymentCount: subscriptionPaymentCount,
+        }
+      : null,
+  };
+};
+
 exports.getSuperAdminDashboard = asyncHandler(async (req, res) => {
   const payload = await buildSuperAdminDashboardPayload(12);
   res.status(200).json({
@@ -498,6 +951,147 @@ exports.getSuperAdminOrganizations = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     ...payload,
+  });
+});
+
+exports.getSuperAdminOrganizationById = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  await syncOrganizationSubscriptionState({
+    organizationId,
+    now: new Date(),
+  });
+
+  const item = await buildSuperAdminOrganizationDetailPayload(organizationId);
+  if (!item) {
+    res.status(404);
+    throw new Error("Organization not found");
+  }
+
+  res.status(200).json({
+    success: true,
+    item,
+  });
+});
+
+exports.patchSuperAdminOrganization = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  const currentOrganization = await prisma.organization.findUnique({
+    where: {
+      id: organizationId,
+    },
+  });
+
+  if (!currentOrganization || currentOrganization.deletedAt) {
+    res.status(404);
+    throw new Error("Organization not found");
+  }
+
+  const updates = {};
+
+  if (typeof req.body?.name === "string") {
+    const name = normalizeTextValue(req.body.name, 120);
+    if (!name) {
+      res.status(400);
+      throw new Error("Organization name is required");
+    }
+    updates.name = name;
+  }
+
+  if (req.body?.email !== undefined) {
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+      res.status(400);
+      throw new Error("Organization email is required");
+    }
+    updates.email = email;
+  }
+
+  if (req.body?.phone !== undefined || req.body?.phoneCountryCode !== undefined) {
+    const normalizedPhone = normalizePhoneNumber({
+      phone: req.body?.phone !== undefined ? req.body.phone : currentOrganization.phone,
+      countryCode:
+        req.body?.phoneCountryCode !== undefined
+          ? req.body.phoneCountryCode
+          : currentOrganization.phoneCountryCode,
+      requireCountryCode: true,
+    });
+    updates.phone = normalizedPhone.e164;
+    updates.phoneCountryCode = normalizedPhone.countryCode;
+  }
+
+  const optionalTextFields = [
+    ["address", 191],
+    ["city", 120],
+    ["state", 120],
+    ["country", 120],
+  ];
+
+  optionalTextFields.forEach(([field, limit]) => {
+    const normalized = normalizeOptionalNullableTextValue(req.body?.[field], limit);
+    if (normalized !== undefined) {
+      updates[field] = normalized || (field === "country" ? "India" : null);
+    }
+  });
+
+  const attendanceRadius = normalizeAttendanceRadiusValue(req.body?.attendanceRadius);
+  if (attendanceRadius !== undefined) {
+    updates.attendanceRadius = attendanceRadius;
+  }
+
+  const latitude = normalizeCoordinateValue(req.body?.latitude, {
+    label: "Latitude",
+    min: -90,
+    max: 90,
+  });
+  if (latitude !== undefined) {
+    updates.latitude = latitude;
+  }
+
+  const longitude = normalizeCoordinateValue(req.body?.longitude, {
+    label: "Longitude",
+    min: -180,
+    max: 180,
+  });
+  if (longitude !== undefined) {
+    updates.longitude = longitude;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400);
+    throw new Error("No valid organization fields provided");
+  }
+
+  try {
+    await prisma.organization.update({
+      where: {
+        id: organizationId,
+      },
+      data: updates,
+    });
+  } catch (error) {
+    if (error?.code === "P2002") {
+      res.status(409);
+      throw new Error("Organization email already exists");
+    }
+    throw error;
+  }
+
+  const item = await buildSuperAdminOrganizationDetailPayload(organizationId);
+
+  res.status(200).json({
+    success: true,
+    message: "Organization details updated successfully",
+    item,
   });
 });
 
@@ -748,6 +1342,290 @@ exports.getSuperAdminPayments = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getSuperAdminPaymentById = asyncHandler(async (req, res) => {
+  const paymentId = parseId(req.params.paymentId);
+  if (!paymentId) {
+    res.status(400);
+    throw new Error("Invalid payment id");
+  }
+
+  const item = await buildSuperAdminPaymentDetailPayload(paymentId);
+  if (!item) {
+    res.status(404);
+    throw new Error("Payment record not found");
+  }
+
+  res.status(200).json({
+    success: true,
+    item,
+  });
+});
+
+exports.updateSuperAdminPayment = asyncHandler(async (req, res) => {
+  const paymentId = parseId(req.params.paymentId);
+  if (!paymentId) {
+    res.status(400);
+    throw new Error("Invalid payment id");
+  }
+
+  const existingPayment = await prisma.payment.findUnique({
+    where: {
+      id: paymentId,
+    },
+    include: {
+      organization: {
+        include: {
+          plan: {
+            select: {
+              durationInDays: true,
+            },
+          },
+        },
+      },
+      subscription: {
+        include: {
+          plan: {
+            select: {
+              durationInDays: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!existingPayment || existingPayment.organization?.deletedAt) {
+    res.status(404);
+    throw new Error("Payment record not found");
+  }
+
+  const paymentPatch =
+    req.body?.payment && typeof req.body.payment === "object" ? req.body.payment : {};
+  const subscriptionPatch =
+    req.body?.subscription && typeof req.body.subscription === "object" ? req.body.subscription : {};
+
+  const paymentUpdates = {};
+  const subscriptionUpdates = {};
+
+  const requestedPaymentAmount = normalizeOptionalNumber(paymentPatch.amount, {
+    label: "Payment amount",
+    min: 0,
+  });
+  if (requestedPaymentAmount !== undefined) {
+    paymentUpdates.amount = requestedPaymentAmount;
+  }
+
+  const requestedSubscriptionAmount = normalizeOptionalNumber(subscriptionPatch.amount, {
+    label: "Subscription amount",
+    min: 0,
+  });
+  if (requestedSubscriptionAmount !== undefined) {
+    subscriptionUpdates.amount = requestedSubscriptionAmount;
+  }
+
+  if (paymentPatch.status !== undefined) {
+    paymentUpdates.status = normalizePaymentRecordStatus(paymentPatch.status, existingPayment.status);
+  }
+  if (paymentPatch.currency !== undefined) {
+    paymentUpdates.currency = normalizeCurrencyCode(paymentPatch.currency, existingPayment.currency || "INR");
+  }
+  if (paymentPatch.gateway !== undefined) {
+    paymentUpdates.gateway = normalizeTextValue(paymentPatch.gateway, 60) || existingPayment.gateway;
+  }
+  if (paymentPatch.planName !== undefined) {
+    paymentUpdates.planName = normalizeTextValue(paymentPatch.planName, 120);
+  }
+  if (paymentPatch.planCode !== undefined) {
+    paymentUpdates.planCode = normalizeTextValue(paymentPatch.planCode, 24).toUpperCase();
+  }
+  if (paymentPatch.orderId !== undefined) {
+    paymentUpdates.razorpayOrderId = normalizeOptionalNullableTextValue(paymentPatch.orderId, 191);
+  }
+  if (paymentPatch.paymentId !== undefined) {
+    paymentUpdates.razorpayPaymentId = normalizeOptionalNullableTextValue(paymentPatch.paymentId, 191);
+  }
+  if (paymentPatch.signature !== undefined) {
+    paymentUpdates.razorpaySignature = normalizeOptionalNullableTextValue(paymentPatch.signature, 191);
+  }
+  if (paymentPatch.failureReason !== undefined) {
+    paymentUpdates.failureReason = normalizeOptionalTextValue(paymentPatch.failureReason, 191) || "";
+  }
+
+  let matchedPlan = existingPayment.subscription?.plan || null;
+  const hasSubscriptionPlanCode = Object.prototype.hasOwnProperty.call(subscriptionPatch, "planCode");
+  const nextPlanCode = hasSubscriptionPlanCode
+    ? normalizeTextValue(subscriptionPatch.planCode, 24).toUpperCase()
+    : existingPayment.subscription?.planCode || "";
+
+  if (nextPlanCode) {
+    matchedPlan = await prisma.plan.findFirst({
+      where: {
+        code: nextPlanCode,
+      },
+    });
+  }
+
+  if (subscriptionPatch.status !== undefined) {
+    subscriptionUpdates.status = normalizeSubscriptionRecordStatus(
+      subscriptionPatch.status,
+      existingPayment.subscription?.status || "ACTIVE"
+    );
+  }
+  if (subscriptionPatch.currency !== undefined) {
+    subscriptionUpdates.currency = normalizeCurrencyCode(
+      subscriptionPatch.currency,
+      existingPayment.subscription?.currency || "INR"
+    );
+  }
+  if (subscriptionPatch.planName !== undefined) {
+    subscriptionUpdates.planName = normalizeTextValue(subscriptionPatch.planName, 120);
+  } else if (hasSubscriptionPlanCode && matchedPlan?.name) {
+    subscriptionUpdates.planName = matchedPlan.name;
+  }
+  if (hasSubscriptionPlanCode) {
+    subscriptionUpdates.planCode = nextPlanCode;
+    subscriptionUpdates.planId = matchedPlan?.id || null;
+  }
+  if (subscriptionPatch.orderId !== undefined) {
+    subscriptionUpdates.razorpayOrderId = normalizeOptionalNullableTextValue(subscriptionPatch.orderId, 191);
+  }
+  if (subscriptionPatch.paymentId !== undefined) {
+    subscriptionUpdates.razorpayPaymentId = normalizeOptionalNullableTextValue(subscriptionPatch.paymentId, 191);
+  }
+  if (subscriptionPatch.signature !== undefined) {
+    subscriptionUpdates.razorpaySignature = normalizeOptionalNullableTextValue(subscriptionPatch.signature, 191);
+  }
+  if (subscriptionPatch.notes !== undefined) {
+    subscriptionUpdates.notes = normalizeOptionalTextValue(subscriptionPatch.notes, 191) || "";
+  }
+
+  const hasStartDatePatch = Object.prototype.hasOwnProperty.call(subscriptionPatch, "startDate");
+  const hasEndDatePatch = Object.prototype.hasOwnProperty.call(subscriptionPatch, "endDate");
+  const hasWindowPatch = hasStartDatePatch || hasEndDatePatch;
+
+  if (existingPayment.subscription && (hasWindowPatch || hasSubscriptionPlanCode)) {
+    const { startDate, endDate } = resolveManagedSubscriptionWindow({
+      currentStartDate: existingPayment.subscription.startDate,
+      currentEndDate: existingPayment.subscription.endDate,
+      startDateInput: subscriptionPatch.startDate,
+      endDateInput: subscriptionPatch.endDate,
+      durationInDays:
+        matchedPlan?.durationInDays ||
+        getSubscriptionPlanDuration(existingPayment.subscription, existingPayment.organization),
+      forceEndDateRecalc: hasSubscriptionPlanCode || hasStartDatePatch,
+    });
+
+    subscriptionUpdates.startDate = startDate;
+    subscriptionUpdates.endDate = endDate;
+  }
+
+  if (
+    subscriptionUpdates.status === "EXPIRED" &&
+    !Object.prototype.hasOwnProperty.call(subscriptionUpdates, "endDate")
+  ) {
+    subscriptionUpdates.endDate = new Date();
+  }
+
+  if (Object.keys(paymentUpdates).length === 0 && Object.keys(subscriptionUpdates).length === 0) {
+    res.status(400);
+    throw new Error("No valid payment or subscription fields provided");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(paymentUpdates).length > 0) {
+      await tx.payment.update({
+        where: {
+          id: paymentId,
+        },
+        data: paymentUpdates,
+      });
+    }
+
+    if (existingPayment.subscription && Object.keys(subscriptionUpdates).length > 0) {
+      await tx.subscription.update({
+        where: {
+          id: existingPayment.subscription.id,
+        },
+        data: subscriptionUpdates,
+      });
+    }
+  });
+
+  if (existingPayment.subscription && Object.keys(subscriptionUpdates).length > 0) {
+    await syncOrganizationSubscriptionState({
+      organizationId: existingPayment.orgId,
+      now: new Date(),
+    });
+  }
+
+  const item = await buildSuperAdminPaymentDetailPayload(paymentId);
+
+  res.status(200).json({
+    success: true,
+    message: "Payment record updated successfully",
+    item,
+  });
+});
+
+exports.deleteSuperAdminPayment = asyncHandler(async (req, res) => {
+  const paymentId = parseId(req.params.paymentId);
+  if (!paymentId) {
+    res.status(400);
+    throw new Error("Invalid payment id");
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: {
+      id: paymentId,
+    },
+    include: {
+      organization: true,
+    },
+  });
+
+  if (!payment || payment.organization?.deletedAt) {
+    res.status(404);
+    throw new Error("Payment record not found");
+  }
+
+  let deletedSubscriptionId = null;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payment.delete({
+      where: {
+        id: paymentId,
+      },
+    });
+
+    const remainingPayments = await tx.payment.count({
+      where: {
+        subscriptionId: Number(payment.subscriptionId),
+      },
+    });
+
+    if (remainingPayments === 0 && payment.subscriptionId) {
+      deletedSubscriptionId = Number(payment.subscriptionId);
+      await tx.subscription.delete({
+        where: {
+          id: Number(payment.subscriptionId),
+        },
+      });
+    }
+  });
+
+  await syncOrganizationSubscriptionState({
+    organizationId: payment.orgId,
+    now: new Date(),
+  });
+
+  res.status(200).json({
+    success: true,
+    message: deletedSubscriptionId
+      ? "Payment and linked subscription record deleted successfully"
+      : "Payment record deleted successfully",
+  });
+});
+
 exports.downloadSuperAdminOrganizationsPdf = asyncHandler(async (req, res) => {
   const limit = parseLimit(req.query.limit, 500, 2000);
   const filters = buildOrganizationFilters(req.query);
@@ -871,6 +1749,7 @@ exports.downloadSuperAdminDashboardPdf = asyncHandler(async (req, res) => {
       },
     ],
     columns: [
+      { key: "entryNo", label: "No.", width: 42, align: "left" },
       { key: "organization", label: "Organization", width: 140 },
       { key: "code", label: "Code", width: 78 },
       { key: "planName", label: "Plan", width: 92 },
@@ -880,9 +1759,10 @@ exports.downloadSuperAdminDashboardPdf = asyncHandler(async (req, res) => {
       { key: "access", label: "Access", width: 62, align: "center" },
       { key: "createdAtLabel", label: "Created At", width: 140 },
     ],
-    rows: payload.items.map((item) => ({
+    rows: payload.items.map((item, index) => ({
       ...item,
-      access: item.blocked ? "BLOCKED" : item.active ? "ACTIVE" : "INACTIVE",
+      entryNo: formatExportSequence(index),
+      access: buildOrganizationAccessLabel(item),
       createdAtLabel: formatDateTime(item.createdAt),
     })),
   });
@@ -904,14 +1784,15 @@ exports.downloadSuperAdminDashboardExcel = asyncHandler(async (req, res) => {
   );
 
   const recordSheet = xlsx.utils.json_to_sheet(
-    payload.items.map((item) => ({
+    payload.items.map((item, index) => ({
+      "No.": formatExportSequence(index),
       Organization: item.organization,
       Code: item.code,
       Plan: item.planName,
       Subscription: item.subscriptionStatus,
       Users: item.users,
       Teams: item.teams,
-      Access: item.blocked ? "BLOCKED" : item.active ? "ACTIVE" : "INACTIVE",
+      Access: buildOrganizationAccessLabel(item),
       "Created At": formatDateTime(item.createdAt),
     }))
   );

@@ -13,5 +13,6 @@ export const DASHBOARD_PAGE_SIZE_OPTIONS = Object.freeze({
   USERS: [12, 24, 48, 96],
   TEAMS: [9, 18, 36, 72],
   ATTENDANCE: [10, 25, 50, 100],
+  PAYMENTS: [10, 25, 50, 100],
   ORGANIZATIONS: [10, 25, 50, 100],
 });

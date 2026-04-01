@@ -10,6 +10,7 @@ const {
   reportPdfUserSelect,
 } = require("../services/prisma-selects.service")
 const { buildAttendanceDetailedPdf, minutesToDuration } = require("../utils/pdf-report")
+const { syncOrganizationSubscriptionState } = require("../services/subscription.service")
 const xlsx = require("xlsx")
 
 const defaultRange = () => {
@@ -105,7 +106,7 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
   let totalWorkedMinutes = 0
   let totalPresentMinutes = 0
 
-  const rows = records.map((record) => {
+  const rows = records.map((record, index) => {
     const totalMinutesWorked = Number(record.totalMinutesWorked || 0)
     const isAbsent = String(record.status || "").toUpperCase() === "ABSENT"
     const presentMinutes = isAbsent ? 0 : totalMinutesWorked
@@ -117,6 +118,7 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
     totalPresentMinutes += presentMinutes
 
     return {
+      entryNo: String(index + 1).padStart(3, "0"),
       userId: String(record.user?.id ?? record.userId ?? "-"),
       userName: record.user?.name || "-",
       contact: toPdfContact(record.user),
@@ -286,6 +288,7 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
 
   // Transform rows for better Excel display (optional, but good for readability)
   const excelRows = reportData.rows.map(row => ({
+    "No.": row.entryNo,
     "Date": row.date,
     "Member ID": row.userId,
     "Member Name": row.userName,
@@ -318,6 +321,10 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
 exports.getOrgSubscription = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
   const limit = parseLimit(req.query.limit, 25, 200)
+  const { activeSubscription } = await syncOrganizationSubscriptionState({
+    organizationId: orgId,
+    now: new Date(),
+  })
 
   const [organization, subscriptions, paymentAggregate, userCount, teamCount] = await Promise.all([
     prisma.organization.findUnique({
@@ -400,6 +407,8 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
       subscriptionStatus: organization?.subscriptionStatus || "TRIAL",
       subscriptionExpiry: organization?.subscriptionExpiry || null,
       activeSubscriptionId: organization?.subscriptionId || null,
+      subscriptionStartDate: activeSubscription?.startDate || null,
+      subscriptionEndDate: activeSubscription?.endDate || organization?.subscriptionExpiry || null,
       attendanceRadius: organization?.attendanceRadius || 25,
       limit,
     },
