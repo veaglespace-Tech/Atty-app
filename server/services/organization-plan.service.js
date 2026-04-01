@@ -6,6 +6,15 @@ const normalizeLimit = (value) => {
   return Math.floor(parsed);
 };
 
+const isFreePlan = ({ plan = null, subscriptionStatus = "" } = {}) => {
+  const normalizedStatus = String(subscriptionStatus || "").trim().toUpperCase();
+  const code = String(plan?.code || "").trim().toUpperCase();
+  const price = Number(plan?.price || 0);
+
+  if (normalizedStatus === "TRIAL") return true;
+  return code.includes("FREE") || price <= 0;
+};
+
 const getOrganizationPlanLimits = async (orgId) => {
   const organization = await prisma.organization.findUnique({
     where: { id: Number(orgId) },
@@ -88,4 +97,5 @@ module.exports = {
   getOrganizationPlanLimits,
   assertWithinPlanUserLimit,
   assertWithinPlanTeamLimit,
+  isFreePlan,
 };

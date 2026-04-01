@@ -66,6 +66,7 @@ const getAccessibleTeams = async ({ orgId, userId, role }) => {
         id: true,
         name: true,
       },
+      orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     });
   }
 
@@ -89,6 +90,7 @@ const getAccessibleTeams = async ({ orgId, userId, role }) => {
       id: true,
       name: true,
     },
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
   });
 };
 
@@ -309,7 +311,7 @@ exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
       deletedAt: null,
     },
     select: teamListSelect,
-    orderBy: [{ createdAt: "desc" }],
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
 
@@ -340,7 +342,7 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
       isActive: true,
     },
     select: userManagementSelect,
-    orderBy: [{ createdAt: "desc" }],
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
 

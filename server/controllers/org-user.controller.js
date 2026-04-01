@@ -70,7 +70,7 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
       },
     },
     select: userManagementSelect,
-    orderBy: [{ createdAt: "desc" }],
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
 

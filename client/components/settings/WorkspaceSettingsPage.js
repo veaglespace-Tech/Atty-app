@@ -26,7 +26,7 @@ import { z } from "zod";
 import ThemeToggle from "@/components/ThemeToggle";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
-import { useUpdateMeMutation } from "@/services/api/authApi";
+import { useForgotPasswordMutation, useUpdateMeMutation } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { formatRoleLabel, resolveUserPermissions, ROLES } from "@/utils/roles";
 import { getLocalPhoneNumber } from "@/utils/phone";
@@ -137,7 +137,9 @@ export default function WorkspaceSettingsPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
+  const [forgotPassword, { isLoading: sendingResetLink }] = useForgotPasswordMutation();
   const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [passwordResetFeedback, setPasswordResetFeedback] = useState({ type: "", message: "" });
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImageError, setProfileImageError] = useState("");
@@ -197,6 +199,7 @@ export default function WorkspaceSettingsPage() {
   const resetForm = () => {
     reset(getFormDefaults(user));
     setFeedback({ type: "", message: "" });
+    setPasswordResetFeedback({ type: "", message: "" });
     setProfileImageDataUrl("");
     setRemoveProfileImage(false);
     setProfileImageError("");
@@ -294,6 +297,52 @@ export default function WorkspaceSettingsPage() {
       setFeedback({
         type: "error",
         message: error?.data?.message || error?.message || "Failed to update profile.",
+      });
+    }
+  };
+
+  const sendResetPasswordLink = async () => {
+    setPasswordResetFeedback({ type: "", message: "" });
+
+    const organizationId = user?.organizationId || user?.organization?.id || null;
+    const organizationCode = user?.organizationCode || user?.organization?.organizationCode || "";
+    if (!user?.email || !user?.role) {
+      setPasswordResetFeedback({
+        type: "error",
+        message: "Unable to prepare password reset request for this account.",
+      });
+      return;
+    }
+
+    if (!isSuperAdmin && !organizationId && !organizationCode) {
+      setPasswordResetFeedback({
+        type: "error",
+        message: "Organization details are missing for this account.",
+      });
+      return;
+    }
+
+    try {
+      const payload = {
+        email: user.email,
+        loginAs: user.role,
+      };
+
+      if (!isSuperAdmin) {
+        if (organizationId) payload.organizationId = organizationId;
+        if (organizationCode) payload.organizationCode = organizationCode;
+      }
+
+      const result = await forgotPassword(payload).unwrap();
+      setPasswordResetFeedback({
+        type: "success",
+        message:
+          result?.message || "If this account exists, we have sent a reset link to the registered email address.",
+      });
+    } catch (error) {
+      setPasswordResetFeedback({
+        type: "error",
+        message: error?.data?.message || error?.message || "Failed to send reset password email.",
       });
     }
   };
@@ -552,7 +601,34 @@ export default function WorkspaceSettingsPage() {
             icon={LockKeyhole}
             title="Security"
             value="Your account is protected by role-based access and secure sessions."
-          />
+          >
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={sendResetPasswordLink}
+                disabled={sendingResetLink}
+                className="brand-btn brand-btn-secondary brand-btn-md w-full"
+              >
+                {sendingResetLink ? <Loader2 size={16} className="animate-spin" /> : <LockKeyhole size={16} />}
+                Send Reset Password Link
+              </button>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-300">
+                A secure reset link will be sent to {previewEmail}. Use it to set a new password.
+              </p>
+              {passwordResetFeedback.message ? (
+                <p
+                  className={cn(
+                    "rounded-2xl border px-4 py-3 text-sm font-medium",
+                    passwordResetFeedback.type === "error"
+                      ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+                  )}
+                >
+                  {passwordResetFeedback.message}
+                </p>
+              ) : null}
+            </div>
+          </PreferenceCard>
 
           <div className="light-glow-card-static rounded-[1.75rem] p-6">
             <h3 className="brand-kicker">Workspace Details</h3>

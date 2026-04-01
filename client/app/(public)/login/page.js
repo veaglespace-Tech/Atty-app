@@ -59,6 +59,10 @@ const errorFieldClassName =
 const publicRoleOptions = LOGIN_ROLE_OPTIONS.filter(
   (roleOption) => roleOption.value !== ROLES.SUPER_ADMIN
 );
+const shouldReportUnexpectedAuthError = (error) => {
+  const status = error?.status ?? error?.originalStatus;
+  return status === "FETCH_ERROR" || status === "PARSING_ERROR" || !status || Number(status) >= 500;
+};
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -133,7 +137,9 @@ export default function LoginPage() {
         "/member/dashboard";
       router.replace(nextPath);
     } catch (err) {
-      console.error("Login failed:", getErrorMessage(err, "Unable to sign in"));
+      if (shouldReportUnexpectedAuthError(err)) {
+        console.error("Login failed:", getErrorMessage(err, "Unable to sign in"));
+      }
     }
   };
 

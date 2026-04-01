@@ -2,6 +2,18 @@ const prisma = require("../lib/prisma");
 const { toSummaryItem } = require("./common.service");
 const { reportUserSelect } = require("./prisma-selects.service");
 
+const compareReportEntries = (left, right) => {
+  const leftName = String(left?.member || "").trim().toLowerCase();
+  const rightName = String(right?.member || "").trim().toLowerCase();
+  if (leftName !== rightName) return leftName.localeCompare(rightName);
+
+  const leftRole = String(left?.role || "").trim().toLowerCase();
+  const rightRole = String(right?.role || "").trim().toLowerCase();
+  if (leftRole !== rightRole) return leftRole.localeCompare(rightRole);
+
+  return Number(left?.id || 0) - Number(right?.id || 0);
+};
+
 const toReportSummary = (items = []) => {
   const totals = items.reduce(
     (acc, item) => {
@@ -115,7 +127,14 @@ const buildAttendanceReport = async ({
   }));
 
   if (sortByWorkedMinutes) {
-    items.sort((a, b) => b.workedMinutes - a.workedMinutes);
+    items.sort((a, b) => {
+      if (Number(b.workedMinutes || 0) !== Number(a.workedMinutes || 0)) {
+        return Number(b.workedMinutes || 0) - Number(a.workedMinutes || 0);
+      }
+      return compareReportEntries(a, b);
+    });
+  } else {
+    items.sort(compareReportEntries);
   }
 
   return {

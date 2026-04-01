@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler")
 const prisma = require("../lib/prisma")
-const { ensureOrganizationId, parseLimit, toSummaryItem, todayKey } = require("../services/common.service")
+const { ensureOrganizationId, parseLimit, toDateKey, toSummaryItem, todayKey } = require("../services/common.service")
 const { mapAttendanceRecord } = require("../services/attendance-query.service")
 const { buildAttendanceReport } = require("../services/report-query.service")
 const {
@@ -9,9 +9,15 @@ const {
   organizationSubscriptionSelect,
   reportPdfUserSelect,
 } = require("../services/prisma-selects.service")
+const { isFreePlan } = require("../services/organization-plan.service")
 const { buildAttendanceDetailedPdf, minutesToDuration } = require("../utils/pdf-report")
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service")
 const xlsx = require("xlsx")
+
+const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"])
+const CUSTOM_REPORT_MIN_DAYS = 90
+const CUSTOM_REPORT_MAX_DAYS = 364
+const DAY_IN_MS = 24 * 60 * 60 * 1000
 
 const defaultRange = () => {
   const now = new Date()
@@ -50,6 +56,147 @@ const rangeFromPeriod = (period = "monthly") => {
   }
 }
 
+const toUtcDate = (value) => new Date(`${value}T00:00:00.000Z`)
+
+const getInclusiveDaySpan = (from, to) =>
+  Math.floor((toUtcDate(to).getTime() - toUtcDate(from).getTime()) / DAY_IN_MS) + 1
+
+const createBadRequestError = (message) => {
+  const error = new Error(message)
+  error.statusCode = 400
+  return error
+}
+
+const getReportAccessMeta = (organization = null) => {
+  const plan = organization?.plan || null
+  const restricted = isFreePlan({
+    plan,
+    subscriptionStatus: organization?.subscriptionStatus || "",
+  })
+
+  return {
+    planName: plan?.name || "TRIAL",
+    planCode: plan?.code || "",
+    canDownload: !restricted,
+    downloadRestrictedReason: restricted
+      ? "Report downloads are available only on paid plans."
+      : "",
+  }
+}
+
+const assertReportDownloadAccess = ({ organization, res }) => {
+  const accessMeta = getReportAccessMeta(organization)
+  if (accessMeta.canDownload) return accessMeta
+
+  res.status(403)
+  throw new Error(accessMeta.downloadRestrictedReason)
+}
+
+const resolveReportRange = ({ period, fromInput, toInput }) => {
+  const normalizedPeriod = REPORT_PERIODS.has(String(period || "").trim().toLowerCase())
+    ? String(period || "").trim().toLowerCase()
+    : "monthly"
+
+  if (normalizedPeriod !== "custom") {
+    return {
+      ...rangeFromPeriod(normalizedPeriod),
+      period: normalizedPeriod,
+      customDays: null,
+    }
+  }
+
+  const rangeFrom = toDateKey(fromInput)
+  const rangeTo = toDateKey(toInput)
+  if (!rangeFrom || !rangeTo) {
+    throw createBadRequestError("Custom reports require both from and to dates.")
+  }
+
+  if (rangeFrom > rangeTo) {
+    throw createBadRequestError("From date cannot be after to date.")
+  }
+
+  const today = todayKey()
+  if (rangeTo > today) {
+    throw createBadRequestError("Custom report range cannot extend into future dates.")
+  }
+
+  const customDays = getInclusiveDaySpan(rangeFrom, rangeTo)
+  if (customDays < CUSTOM_REPORT_MIN_DAYS || customDays > CUSTOM_REPORT_MAX_DAYS) {
+    throw createBadRequestError(
+      `Custom report range must stay between ${CUSTOM_REPORT_MIN_DAYS} and ${CUSTOM_REPORT_MAX_DAYS} days.`
+    )
+  }
+
+  return {
+    from: rangeFrom,
+    to: rangeTo,
+    period: "custom",
+    periodLabel: "Custom",
+    customDays,
+  }
+}
+
+const compareNames = (left, right) =>
+  String(left || "").trim().toLowerCase().localeCompare(String(right || "").trim().toLowerCase())
+
+const buildAttendanceExcelBuffer = ({
+  organization,
+  periodLabel,
+  rangeFrom,
+  rangeTo,
+  summary,
+  rows,
+}) => {
+  const columns = [
+    { key: "entryNo", label: "No.", width: 42 },
+    { key: "date", label: "Date", width: 80 },
+    { key: "userId", label: "Member ID", width: 68 },
+    { key: "userName", label: "Member Name", width: 120 },
+    { key: "contact", label: "Contact", width: 92 },
+    { key: "email", label: "Email", width: 132 },
+    { key: "punchIn", label: "Punch In", width: 70 },
+    { key: "punchOut", label: "Punch Out", width: 70 },
+    { key: "totalDuration", label: "Total Duration", width: 88 },
+    { key: "presentDuration", label: "Present Duration", width: 96 },
+    { key: "absent", label: "Is Absent", width: 64 },
+  ]
+
+  const infoLines = [
+    `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
+    `Period: ${String(periodLabel || "Report").toUpperCase()} | Range: ${rangeFrom} to ${rangeTo}`,
+    `Records: ${Number(summary?.totalRecords || 0)} | Present Entries: ${Number(summary?.presentEntries || 0)} | Absent Entries: ${Number(summary?.absentEntries || 0)}`,
+    `Worked Time: ${minutesToDuration(summary?.totalWorkedMinutes || 0)} | Present Time: ${minutesToDuration(summary?.totalPresentMinutes || 0)}`,
+  ]
+
+  const sheetData = [
+    ["ATTENDANCE REPORT"],
+    ...infoLines.map((line) => [line]),
+    [],
+    columns.map((column) => column.label),
+    ...rows.map((row) => columns.map((column) => row?.[column.key] ?? "-")),
+  ]
+
+  const worksheet = xlsx.utils.aoa_to_sheet(sheetData)
+  const lastColumnIndex = Math.max(columns.length - 1, 0)
+  const lastColumnLabel = xlsx.utils.encode_col(lastColumnIndex)
+  const headerRowNumber = infoLines.length + 3
+
+  worksheet["!cols"] = columns.map((column) => ({
+    wch: Math.max(12, Math.round(Number(column.width || 84) / 6)),
+  }))
+  worksheet["!merges"] = Array.from({ length: infoLines.length + 1 }, (_, index) => ({
+    s: { r: index, c: 0 },
+    e: { r: index, c: lastColumnIndex },
+  }))
+  worksheet["!autofilter"] = {
+    ref: `A${headerRowNumber}:${lastColumnLabel}${headerRowNumber}`,
+  }
+
+  const workbook = xlsx.utils.book_new()
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report")
+  return xlsx.write(workbook, { type: "buffer", bookType: "xlsx" })
+}
+
 const toPdfTime = (value) => {
   if (!value) return "-"
   const date = new Date(value)
@@ -73,7 +220,6 @@ const buildOrganizationReportData = async ({ orgId, rangeFrom, rangeTo }) => {
     orgId,
     rangeFrom,
     rangeTo,
-    sortByWorkedMinutes: true,
   })
 }
 
@@ -106,7 +252,18 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
   let totalWorkedMinutes = 0
   let totalPresentMinutes = 0
 
-  const rows = records.map((record, index) => {
+  const sortedRecords = [...records].sort((left, right) => {
+    if (String(left.date || "") !== String(right.date || "")) {
+      return String(left.date || "").localeCompare(String(right.date || ""))
+    }
+
+    const nameComparison = compareNames(left.user?.name, right.user?.name)
+    if (nameComparison !== 0) return nameComparison
+
+    return Number(left.userId || 0) - Number(right.userId || 0)
+  })
+
+  const rows = sortedRecords.map((record, index) => {
     const totalMinutesWorked = Number(record.totalMinutesWorked || 0)
     const isAbsent = String(record.status || "").toUpperCase() === "ABSENT"
     const presentMinutes = isAbsent ? 0 : totalMinutesWorked
@@ -207,66 +364,78 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
 
 exports.getOrgReports = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  const preset = rangeFromPeriod(req.query.period || "monthly")
-  const fallback = defaultRange()
-  const rangeFrom = String(req.query.from || preset.from || fallback.from)
-  const rangeTo = String(req.query.to || preset.to || fallback.to)
-  const { summary, items, recordsCount } = await buildOrganizationReportData({
-    orgId,
-    rangeFrom,
-    rangeTo,
+  const range = resolveReportRange({
+    period: req.query.period || "monthly",
+    fromInput: req.query.from,
+    toInput: req.query.to,
   })
+
+  const [organization, reportData] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: organizationSubscriptionSelect,
+    }),
+    buildOrganizationReportData({
+      orgId,
+      rangeFrom: range.from,
+      rangeTo: range.to,
+    }),
+  ])
+
+  const accessMeta = getReportAccessMeta(organization)
 
   res.status(200).json({
     success: true,
-    summary,
-    items,
+    summary: reportData.summary,
+    items: reportData.items,
     meta: {
-      from: rangeFrom,
-      to: rangeTo,
-      period: String(req.query.period || "custom").toLowerCase(),
-      records: recordsCount,
+      from: range.from,
+      to: range.to,
+      period: range.period,
+      periodLabel: range.periodLabel,
+      records: reportData.recordsCount,
+      customDays: range.customDays,
+      customRangeMinDays: CUSTOM_REPORT_MIN_DAYS,
+      customRangeMaxDays: CUSTOM_REPORT_MAX_DAYS,
+      ...accessMeta,
     },
   })
 })
 
 exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  const preset = rangeFromPeriod(req.query.period || "monthly")
-  const fallback = defaultRange()
-  const rangeFrom = String(req.query.from || preset.from || fallback.from)
-  const rangeTo = String(req.query.to || preset.to || fallback.to)
+  const range = resolveReportRange({
+    period: req.query.period || "monthly",
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  })
 
   const [organization, reportData] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: {
-        name: true,
-        organizationCode: true,
-      },
+      select: organizationSubscriptionSelect,
     }),
     buildOrganizationPdfReportData({
       orgId,
-      rangeFrom,
-      rangeTo,
+      rangeFrom: range.from,
+      rangeTo: range.to,
     }),
   ])
 
-  const periodLabel = req.query.period
-    ? String(req.query.period).trim().toLowerCase()
-    : preset.periodLabel.toLowerCase()
+  assertReportDownloadAccess({ organization, res })
+
   const pdfBuffer = await buildAttendanceDetailedPdf({
     organizationName: organization?.name || "Organization",
     organizationCode: organization?.organizationCode || "",
-    periodLabel: String(periodLabel).toUpperCase(),
-    rangeFrom,
-    rangeTo,
+    periodLabel: String(range.periodLabel || "Report").toUpperCase(),
+    rangeFrom: range.from,
+    rangeTo: range.to,
     summary: reportData.summary,
     rows: reportData.rows,
   })
 
-  const safePeriod = String(periodLabel || "report").replace(/[^a-z0-9_-]+/gi, "-")
-  const filename = `attendance-report-${safePeriod}-${rangeFrom}-to-${rangeTo}.pdf`
+  const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-")
+  const filename = `attendance-report-${safePeriod}-${range.from}-to-${range.to}.pdf`
 
   res.setHeader("Content-Type", "application/pdf")
   res.setHeader("Content-Disposition", `attachment filename=\"${filename}\"`)
@@ -275,43 +444,37 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  const preset = rangeFromPeriod(req.query.period || "monthly")
-  const fallback = defaultRange()
-  const rangeFrom = String(req.query.from || preset.from || fallback.from)
-  const rangeTo = String(req.query.to || preset.to || fallback.to)
-
-  const reportData = await buildOrganizationPdfReportData({
-    orgId,
-    rangeFrom,
-    rangeTo,
+  const range = resolveReportRange({
+    period: req.query.period || "monthly",
+    fromInput: req.query.from,
+    toInput: req.query.to,
   })
 
-  // Transform rows for better Excel display (optional, but good for readability)
-  const excelRows = reportData.rows.map(row => ({
-    "No.": row.entryNo,
-    "Date": row.date,
-    "Member ID": row.userId,
-    "Member Name": row.userName,
-    "Contact": row.contact,
-    "Email": row.email,
-    "Punch In": row.punchIn,
-    "Punch Out": row.punchOut,
-    "Total Duration": row.totalDuration,
-    "Present Duration": row.presentDuration,
-    "Is Absent": row.absent
-  }))
+  const [organization, reportData] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: organizationSubscriptionSelect,
+    }),
+    buildOrganizationPdfReportData({
+      orgId,
+      rangeFrom: range.from,
+      rangeTo: range.to,
+    }),
+  ])
 
-  const worksheet = xlsx.utils.json_to_sheet(excelRows)
-  const workbook = xlsx.utils.book_new()
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report")
+  assertReportDownloadAccess({ organization, res })
 
-  const excelBuffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" })
+  const excelBuffer = buildAttendanceExcelBuffer({
+    organization,
+    periodLabel: range.periodLabel,
+    rangeFrom: range.from,
+    rangeTo: range.to,
+    summary: reportData.summary,
+    rows: reportData.rows,
+  })
 
-  const periodLabel = req.query.period
-    ? String(req.query.period).trim().toLowerCase()
-    : preset.periodLabel.toLowerCase()
-  const safePeriod = String(periodLabel || "report").replace(/[^a-z0-9_-]+/gi, "-")
-  const filename = `attendance-report-${safePeriod}-${rangeFrom}-to-${rangeTo}.xlsx`
+  const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-")
+  const filename = `attendance-report-${safePeriod}-${range.from}-to-${range.to}.xlsx`
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
   res.setHeader("Content-Disposition", `attachment filename=\"${filename}\"`)

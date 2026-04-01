@@ -141,7 +141,7 @@ exports.getOrgTeams = asyncHandler(async (req, res) => {
       deletedAt: null,
     },
     select: teamListSelect,
-    orderBy: [{ createdAt: "desc" }],
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
 
@@ -202,12 +202,10 @@ exports.getOrgTeamMembers = asyncHandler(async (req, res) => {
         },
       },
     },
-    orderBy: [{ createdAt: "desc" }],
   });
 
-  res.status(200).json({
-    success: true,
-    items: members.map((entry) => ({
+  const items = members
+    .map((entry) => ({
       teamMemberId: entry.id,
       userId: entry.userId,
       name: entry.user?.name || "",
@@ -215,7 +213,17 @@ exports.getOrgTeamMembers = asyncHandler(async (req, res) => {
       role: entry.user?.role || "",
       isActive: Boolean(entry.user?.isActive),
       addedAt: entry.createdAt,
-    })),
+    }))
+    .sort((left, right) => {
+      const leftName = String(left.name || "").trim().toLowerCase();
+      const rightName = String(right.name || "").trim().toLowerCase();
+      if (leftName !== rightName) return leftName.localeCompare(rightName);
+      return Number(left.userId || 0) - Number(right.userId || 0);
+    });
+
+  res.status(200).json({
+    success: true,
+    items,
   });
 });
 

@@ -30,6 +30,10 @@ const normalFieldClassName =
   "border-slate-200 hover:border-slate-300 dark:border-white/80";
 const errorFieldClassName =
   "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
+const shouldReportUnexpectedAuthError = (error) => {
+  const status = error?.status ?? error?.originalStatus;
+  return status === "FETCH_ERROR" || status === "PARSING_ERROR" || !status || Number(status) >= 500;
+};
 
 export default function SuperAdminLoginPage() {
   const dispatch = useDispatch();
@@ -85,7 +89,9 @@ export default function SuperAdminLoginPage() {
         "/super-admin/dashboard";
       router.replace(nextPath);
     } catch (err) {
-      console.error("Super Admin Login failed:", getErrorMessage(err, "Unable to sign in"));
+      if (shouldReportUnexpectedAuthError(err)) {
+        console.error("Super Admin Login failed:", getErrorMessage(err, "Unable to sign in"));
+      }
     }
   };
 
