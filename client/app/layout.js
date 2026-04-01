@@ -1,20 +1,10 @@
+import "@fontsource-variable/manrope";
+import "@fontsource-variable/space-grotesk";
 import "./globals.css";
-import { Manrope, Space_Grotesk } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { StoreProvider } from "@/components/StoreProvider";
 import AttyWidget from "@/components/AttyWidget";
-const bodyFont = Manrope({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
-
-const displayFont = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
 
 export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
@@ -59,9 +49,7 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
-      <body
-        className={`${bodyFont.variable} ${displayFont.variable} min-h-screen bg-base-100 text-base-content antialiased transition-colors duration-300`}
-      >
+      <body className="min-h-screen bg-base-100 text-base-content antialiased transition-colors duration-300">
         <ThemeProvider>
           <StoreProvider>
             <Navbar />
