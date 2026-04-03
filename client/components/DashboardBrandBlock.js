@@ -15,7 +15,7 @@ export default function DashboardBrandBlock() {
     >
       <div className="flex flex-col items-center text-center">
         <div key={pathname} className="brand-logo-reveal relative mx-auto flex h-16 w-16 items-center justify-center md:h-20 md:w-20">
-          <div className="brand-logo-orbit absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(92,209,229,0.34),rgba(30,112,209,0.04)_68%)] blur-xl" />
+          <div className="brand-logo-orbit page-shell-orb-tertiary absolute inset-0 rounded-full blur-xl" />
           <div className="brand-logo-spotlight relative h-full w-full">
             <Image
               src="/logo1-clean.webp"

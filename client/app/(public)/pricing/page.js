@@ -31,24 +31,6 @@ import {
 import { ROLES } from "@/utils/roles";
 
 function getAccentPalette(color) {
-  if (color === "indigo") {
-    return {
-      icon: "bg-slate-100 text-slate-950 dark:bg-indigo-500/15 dark:text-indigo-200",
-      chipActive: "bg-indigo-600 text-white dark:bg-indigo-400 dark:text-slate-950",
-      check: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-200",
-      hoverShadow: "hover:shadow-indigo-500/20 dark:hover:shadow-indigo-950/25",
-    };
-  }
-
-  if (color === "amber") {
-    return {
-      icon: "bg-slate-100 text-slate-950 dark:bg-amber-500/15 dark:text-amber-200",
-      chipActive: "bg-amber-500 text-slate-950 dark:bg-amber-300 dark:text-slate-950",
-      check: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-200",
-      hoverShadow: "hover:shadow-amber-400/25 dark:hover:shadow-amber-950/20",
-    };
-  }
-
   return {
     icon: "bg-slate-100 text-slate-950 dark:bg-blue-500/15 dark:text-blue-200",
     chipActive: "bg-blue-600 text-white dark:bg-blue-400 dark:text-slate-950",
@@ -186,7 +168,7 @@ export default function PricingPage() {
           options: [],
           features: Array.isArray(plan.features) ? plan.features : [],
           icon: tierName.includes("1") ? Zap : tierName.includes("2") ? Star : Crown,
-          color: tierName.includes("1") ? "blue" : tierName.includes("2") ? "indigo" : "amber",
+          color: "blue",
           popular: tierName.includes("2"),
         };
       }
@@ -361,7 +343,7 @@ export default function PricingPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-white to-blue-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+      <div className="page-shell flex min-h-screen items-center justify-center">
         <div className="text-center">
           <Loader2 size={48} className="mx-auto mb-4 animate-spin text-blue-600 dark:text-blue-300" />
           <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
@@ -374,7 +356,7 @@ export default function PricingPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-white to-blue-50 px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+      <div className="page-shell flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md rounded-3xl border border-red-200 bg-red-50 p-8 text-center dark:border-rose-500/20 dark:bg-rose-500/10">
           <p className="mb-4 font-black text-red-600 dark:text-rose-200">Error loading plans</p>
           <p className="text-sm text-red-500 dark:text-rose-300">
@@ -392,11 +374,11 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-100 via-white to-blue-50 px-4 pb-24 pt-32 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+    <div className="page-shell relative min-h-screen overflow-hidden px-4 pb-24 pt-32 transition-colors duration-500">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-8%] top-24 h-72 w-72 rounded-full bg-indigo-400/14 blur-[110px] dark:bg-blue-500/12" />
-        <div className="absolute right-[-8%] top-32 h-72 w-72 rounded-full bg-blue-500/18 blur-[120px] dark:bg-indigo-500/18" />
-        <div className="absolute bottom-16 left-1/3 h-72 w-72 rounded-full bg-indigo-500/12 blur-[120px] dark:bg-cyan-500/10" />
+        <div className="page-shell-orb-primary absolute left-[-8%] top-24 h-72 w-72 rounded-full blur-[110px]" />
+        <div className="page-shell-orb-secondary absolute right-[-8%] top-32 h-72 w-72 rounded-full blur-[120px]" />
+        <div className="page-shell-orb-tertiary absolute bottom-16 left-1/3 h-72 w-72 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">

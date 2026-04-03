@@ -16,24 +16,24 @@ const accentMap = {
     border: "hover:border-blue-100 dark:hover:border-blue-500/20",
   },
   indigo: {
-    icon: "text-indigo-600 dark:text-indigo-300",
-    chip: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-200",
-    border: "hover:border-indigo-100 dark:hover:border-indigo-500/20",
+    icon: "text-blue-600 dark:text-blue-300",
+    chip: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-200",
+    border: "hover:border-blue-100 dark:hover:border-blue-500/20",
   },
   amber: {
-    icon: "text-amber-600 dark:text-amber-300",
-    chip: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-200",
-    border: "hover:border-amber-100 dark:hover:border-amber-500/20",
+    icon: "text-blue-600 dark:text-blue-300",
+    chip: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-200",
+    border: "hover:border-blue-100 dark:hover:border-blue-500/20",
   },
 };
 
 export default function AboutPage() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-100 via-white to-blue-50 px-4 pb-24 pt-32 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+    <div className="page-shell relative min-h-screen overflow-hidden px-4 pb-24 pt-32 transition-colors duration-500">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-8%] top-24 h-72 w-72 rounded-full bg-indigo-400/14 blur-[110px] dark:bg-blue-500/12" />
-        <div className="absolute right-[-8%] top-32 h-72 w-72 rounded-full bg-blue-500/18 blur-[120px] dark:bg-indigo-500/18" />
-        <div className="absolute bottom-16 left-1/3 h-72 w-72 rounded-full bg-indigo-500/12 blur-[120px] dark:bg-cyan-500/10" />
+        <div className="page-shell-orb-primary absolute left-[-8%] top-24 h-72 w-72 rounded-full blur-[110px]" />
+        <div className="page-shell-orb-secondary absolute right-[-8%] top-32 h-72 w-72 rounded-full blur-[120px]" />
+        <div className="page-shell-orb-tertiary absolute bottom-16 left-1/3 h-72 w-72 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">

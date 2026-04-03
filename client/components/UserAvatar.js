@@ -16,7 +16,7 @@ export default function UserAvatar({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/80 bg-gradient-to-br from-sky-500 via-blue-600 to-slate-900 text-white shadow-[0_20px_48px_rgba(30,112,209,0.28)]",
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-[rgb(var(--brand-line)/0.84)] bg-gradient-to-br from-blue-600 to-slate-900 text-white shadow-[0_18px_42px_rgba(37,99,235,0.22)]",
         !src ? "font-black" : "",
         className,
         !src ? fallbackClassName : ""

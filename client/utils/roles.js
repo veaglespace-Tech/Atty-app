@@ -259,52 +259,24 @@ export const formatRoleLabel = (role) => {
   return ROLE_LABELS[normalizedRole] || humanizeIdentifier(role) || ROLE_LABELS[ROLES.MEMBER];
 };
 
-const DASHBOARD_HEADER_BADGE_THEME =
-  "border-violet-200 bg-violet-50 text-slate-950 dark:border-violet-300/35 dark:bg-gradient-to-r dark:from-violet-500/90 dark:via-fuchsia-500/80 dark:to-indigo-500/90 dark:text-white dark:shadow-[0_12px_28px_rgba(124,58,237,0.24)]";
+const STANDARD_ROLE_THEME = {
+  sidebar:
+    "border border-blue-200/70 bg-white/88 text-blue-700 shadow-[0_16px_36px_rgba(37,99,235,0.12)] dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200",
+  header:
+    "border-blue-200/80 bg-white/88 text-blue-700 shadow-[0_12px_28px_rgba(37,99,235,0.10)] dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200",
+  accent:
+    "bg-gradient-to-br from-blue-600 to-slate-900 text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] dark:from-blue-500 dark:to-slate-900 dark:text-white",
+};
 
 export const getRoleBadgeTheme = (role) => {
   switch (normalizeRole(role)) {
     case ROLES.SUPER_ADMIN:
-      return {
-        sidebar:
-          "border border-blue-400/20 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.30)] dark:border-blue-400/20 dark:from-blue-500 dark:via-indigo-500 dark:to-cyan-400 dark:text-white",
-        header: DASHBOARD_HEADER_BADGE_THEME,
-        accent:
-          "bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-[0_18px_42px_rgba(59,130,246,0.22)] dark:from-blue-500 dark:to-cyan-400 dark:text-white",
-      };
     case ROLES.ORG_ADMIN:
-      return {
-        sidebar:
-          "border border-blue-400/20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.28)] dark:border-blue-400/20 dark:bg-blue-400 dark:text-slate-950",
-        header: DASHBOARD_HEADER_BADGE_THEME,
-        accent:
-          "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(59,130,246,0.22)] dark:from-blue-500 dark:to-indigo-400 dark:text-white",
-      };
     case ROLES.SUB_ADMIN:
-      return {
-        sidebar:
-          "border border-violet-400/20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.28)] dark:border-violet-400/20 dark:from-violet-500 dark:to-indigo-500 dark:text-white",
-        header: DASHBOARD_HEADER_BADGE_THEME,
-        accent:
-          "bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-[0_18px_42px_rgba(124,58,237,0.22)] dark:from-violet-500 dark:to-indigo-400 dark:text-white",
-      };
     case ROLES.TEAM_LEADER:
-      return {
-        sidebar:
-          "border border-emerald-400/20 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.26)] dark:border-emerald-400/20 dark:from-emerald-500 dark:to-teal-400 dark:text-white",
-        header: DASHBOARD_HEADER_BADGE_THEME,
-        accent:
-          "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.22)] dark:from-emerald-500 dark:to-teal-400 dark:text-white",
-      };
     case ROLES.MEMBER:
     default:
-      return {
-        sidebar:
-          "border border-amber-400/20 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.28)] dark:border-amber-400/20 dark:from-amber-500 dark:to-orange-400 dark:text-white",
-        header: DASHBOARD_HEADER_BADGE_THEME,
-        accent:
-          "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-[0_18px_42px_rgba(245,158,11,0.22)] dark:from-amber-500 dark:to-orange-400 dark:text-white",
-      };
+      return STANDARD_ROLE_THEME;
   }
 };
 

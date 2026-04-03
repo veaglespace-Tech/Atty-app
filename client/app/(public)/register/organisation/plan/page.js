@@ -29,7 +29,7 @@ export default function Plans() {
           users: plan.memberLimit || plan.maxUsers || "N/A",
           features: plan.features || [],
           icon: tierName.includes("1") ? <Zap size={24} /> : tierName.includes("2") ? <Star size={24} /> : <Crown size={24} />,
-          color: tierName.includes("1") ? "blue" : tierName.includes("2") ? "indigo" : "amber",
+          color: "blue",
           popular: tierName.includes("2"),
         };
       }
@@ -101,7 +101,7 @@ export default function Plans() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 py-24 px-4 overflow-hidden">
+    <div className="page-shell min-h-screen overflow-hidden px-4 py-24">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <span className="inline-block py-2 px-6 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-200 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-blue-100 dark:border-blue-500/20">
@@ -145,10 +145,7 @@ export default function Plans() {
                   }`}
               >
                 <div className={`bg-white dark:bg-slate-950/90 rounded-[2.8rem] p-10 h-full flex flex-col border border-slate-100 dark:border-white/10 shadow-2xl transition-all ${tier.popular ? "shadow-blue-100/50 border-blue-50 dark:shadow-blue-950/20 dark:border-blue-500/20" : "shadow-slate-200/40 dark:shadow-black/30"}`}>
-                  <div className={`brand-hover-white-media w-16 h-16 rounded-[1.5rem] mb-10 flex items-center justify-center transform group-hover:rotate-6 transition-transform shadow-lg ${tier.color === "blue" ? "bg-blue-600 dark:bg-blue-400 text-white dark:text-slate-950" :
-                    tier.color === "indigo" ? "bg-indigo-600 dark:bg-indigo-400 text-white dark:text-slate-950" :
-                      "bg-amber-500 dark:bg-amber-400 text-white dark:text-slate-950"
-                    }`}>
+                  <div className="brand-hover-white-media mb-10 flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-blue-600 text-white shadow-lg transition-transform group-hover:rotate-6 dark:bg-blue-400 dark:text-slate-950">
                     {tier.icon}
                   </div>
 

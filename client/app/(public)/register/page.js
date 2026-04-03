@@ -3,17 +3,17 @@ import { ArrowRight, Building2, UserCircle2 } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
 
 const pageShell =
-  "relative min-h-screen overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 pb-12 pt-32 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900";
+  "page-shell relative min-h-screen overflow-hidden px-4 pb-12 pt-32 transition-colors duration-500";
 const cardClassName =
-  "relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[2.5rem] border border-white/70 bg-white/80 p-8 shadow-[0_34px_100px_rgba(59,130,246,0.16),0_16px_40px_rgba(15,23,42,0.08)] backdrop-blur-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_40px_112px_rgba(37,99,235,0.18),0_20px_46px_rgba(15,23,42,0.10)] dark:border-slate-700/80 dark:bg-slate-950/78 dark:shadow-[0_35px_100px_rgba(2,6,23,0.55)] md:rounded-[3rem] md:p-12";
+  "surface-card relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_34px_88px_rgba(37,99,235,0.14),0_18px_42px_rgba(15,23,42,0.10)] md:rounded-[3rem] md:p-12";
 
 export default function RegisterPage() {
   return (
     <div className={pageShell}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-6%] top-24 h-80 w-80 rounded-full bg-indigo-400/14 blur-[120px] dark:bg-blue-500/12" />
-        <div className="absolute right-[-8%] top-36 h-72 w-72 rounded-full bg-blue-500/18 blur-[120px] dark:bg-indigo-500/16" />
-        <div className="absolute bottom-10 left-1/3 h-72 w-72 rounded-full bg-indigo-500/10 blur-[120px] dark:bg-cyan-500/10" />
+        <div className="page-shell-orb-primary absolute left-[-6%] top-24 h-80 w-80 rounded-full blur-[120px]" />
+        <div className="page-shell-orb-secondary absolute right-[-8%] top-36 h-72 w-72 rounded-full blur-[120px]" />
+        <div className="page-shell-orb-tertiary absolute bottom-10 left-1/3 h-72 w-72 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-5xl">
@@ -61,7 +61,7 @@ export default function RegisterPage() {
 function RegistrationCard({ icon: Icon, title, desc, badge, href }) {
   return (
     <Link href={href} className={`${cardClassName} group block hover:scale-[1.02]`}>
-      <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 dark:from-blue-400 dark:via-indigo-300 dark:to-cyan-300" />
+      <div className="surface-accent-bar absolute inset-x-0 top-0 h-1.5" />
 
       <div className="mb-8 flex items-start justify-between gap-4">
         <div className="brand-hover-white-media flex h-20 w-20 items-center justify-center rounded-[1.8rem] bg-blue-50 text-blue-600 transition-all duration-500 group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-500/15 dark:text-blue-200 dark:group-hover:bg-blue-500 md:h-24 md:w-24">

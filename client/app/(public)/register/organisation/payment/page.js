@@ -226,7 +226,7 @@ export default function PaymentPage() {
           planCode: selectedPlan.code,
         },
         theme: {
-          color: "#4f46e5",
+          color: "#2563eb",
         },
         modal: {
           ondismiss: () => {
@@ -281,30 +281,30 @@ export default function PaymentPage() {
 
   // Theme object to centralize color choices based on Dark Mode
   const theme = {
-    bg: "bg-[#f8fafc] dark:bg-[#0B101E]",
-    card: "bg-white/80 dark:bg-[#111827]/80 border-white dark:border-white/10 shadow-[0_36px_104px_rgba(99,102,241,0.16),0_18px_44px_rgba(15,23,42,0.10)] dark:shadow-[0_36px_104px_rgba(2,6,23,0.62)]",
+    bg: "page-shell",
+    card: "surface-card border-[rgb(var(--brand-line)/0.82)]",
     textMain: "text-slate-900 dark:text-white",
-    textSub: "text-slate-500 dark:text-slate-400",
-    badgeBg: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-300",
-    iconBoxBg: "bg-white dark:bg-slate-800/40 border-slate-100 dark:border-slate-700/50 shadow-sm dark:shadow-inner dark:shadow-white/5",
-    planBox: "bg-slate-50/50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 group-hover:border-indigo-100 dark:group-hover:border-indigo-500/30",
+    textSub: "text-slate-600 dark:text-slate-300",
+    badgeBg: "bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-300",
+    iconBoxBg: "bg-white dark:bg-slate-900/75 border-slate-200 dark:border-slate-700/60 shadow-sm",
+    planBox: "bg-slate-50/70 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700/60 hover:bg-white dark:hover:bg-slate-900/80 group-hover:border-blue-100 dark:group-hover:border-blue-500/30",
     featureText: "text-slate-600 dark:text-slate-300",
     checkBg: "bg-emerald-100 dark:bg-emerald-500/10",
     checkIcon: "text-emerald-600 dark:text-emerald-400",
-    securityBox: "bg-indigo-50/80 dark:bg-indigo-500/10 border-indigo-100/50 dark:border-indigo-500/20",
-    securityIcon: "text-indigo-600 dark:text-indigo-400",
-    securityText: "text-indigo-900 dark:text-indigo-200",
+    securityBox: "bg-blue-50/80 dark:bg-blue-500/10 border-blue-100/50 dark:border-blue-500/20",
+    securityIcon: "text-blue-600 dark:text-blue-300",
+    securityText: "text-blue-900 dark:text-blue-100",
     buttonBase:
-      "border border-indigo-400/25 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 text-white shadow-[0_24px_54px_rgba(99,102,241,0.36)] hover:-translate-y-0.5 hover:shadow-[0_30px_68px_rgba(99,102,241,0.44)] active:translate-y-0 active:scale-[0.995]",
-    blob1: "bg-indigo-500/20 dark:bg-indigo-600/15 mix-blend-multiply dark:mix-blend-screen",
-    blob2: "bg-blue-500/20 dark:bg-violet-600/15 mix-blend-multiply dark:mix-blend-screen",
+      "border border-blue-500/20 bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_24px_54px_rgba(37,99,235,0.28)] hover:-translate-y-0.5 hover:shadow-[0_30px_68px_rgba(37,99,235,0.36)] active:translate-y-0 active:scale-[0.995]",
+    blob1: "bg-blue-500/18 dark:bg-blue-600/16 mix-blend-multiply dark:mix-blend-screen",
+    blob2: "bg-sky-400/18 dark:bg-blue-500/14 mix-blend-multiply dark:mix-blend-screen",
     blob3: "bg-emerald-500/10 dark:bg-emerald-600/10 mix-blend-multiply dark:mix-blend-screen",
     divider: "bg-slate-200/60 dark:bg-slate-700/50",
     statusBadge: "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-900 dark:text-amber-300",
   };
 
   return (
-    <div className={`relative mt-20 min-h-[calc(100vh-5rem)] overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-700 ${theme.bg}`}>
+    <div className={`relative mt-20 min-h-[calc(100vh-5rem)] overflow-hidden font-sans selection:bg-blue-500/20 transition-colors duration-700 ${theme.bg}`}>
       {/* Global CSS for Animations */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes blob {
@@ -332,7 +332,7 @@ export default function PaymentPage() {
             </SectionEyebrow>
             <h1 className={`text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight mb-4 transition-colors duration-500 ${theme.textMain}`}>
               Secure & Complete <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 dark:from-indigo-400 to-blue-500 dark:to-purple-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 dark:from-blue-300 to-slate-900 dark:to-blue-200">
                 Your Registration
               </span>
             </h1>
@@ -345,7 +345,7 @@ export default function PaymentPage() {
             {PAYMENT_FEATURES.map((feature) => (
                <div key={feature.title} className="flex items-start gap-4 group">
                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${theme.iconBoxBg} group-hover:scale-110`}>
-                   <feature.icon className="text-indigo-600 dark:text-indigo-400" size={24} />
+                   <feature.icon className="text-blue-600 dark:text-blue-300" size={24} />
                  </div>
                  <div>
                    <h4 className={`text-base font-bold transition-colors duration-500 ${theme.textMain}`}>{feature.title}</h4>
@@ -360,7 +360,7 @@ export default function PaymentPage() {
         <div className="flex justify-center perspective-[1000px] lg:col-span-7">
           <div className={`card w-full max-w-lg backdrop-blur-2xl rounded-[2.5rem] border overflow-hidden relative group transition-all duration-700 ${theme.card}`}>
             {/* Top decorative gradient line */}
-            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r transition-all duration-700 from-indigo-500 dark:from-purple-500 via-blue-500 dark:via-indigo-500 to-emerald-500 dark:to-emerald-400" />
+            <div className="surface-accent-bar absolute inset-x-0 top-0 h-1.5 transition-all duration-700" />
 
             <div className="card-body p-6 sm:p-8 lg:p-9">
               {successState ? (
@@ -384,7 +384,7 @@ export default function PaymentPage() {
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-white/60 bg-white/85 p-4 text-left shadow-[0_16px_38px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
-                      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+                      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
                         <CreditCard size={18} />
                       </div>
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
@@ -434,7 +434,7 @@ export default function PaymentPage() {
                     <button
                       type="button"
                       onClick={() => router.push("/login")}
-                      className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-black text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-indigo-500 dark:text-white dark:hover:bg-indigo-400"
+                      className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-black text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-400"
                     >
                       Go to Login
                       <ChevronRight size={18} />
@@ -442,7 +442,7 @@ export default function PaymentPage() {
                     <button
                       type="button"
                       onClick={() => router.push("/")}
-                      className="inline-flex h-14 flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-black text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-500/30 dark:hover:text-indigo-300"
+                      className="inline-flex h-14 flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-black text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:text-blue-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:text-blue-300"
                     >
                       Back to Home
                     </button>
@@ -451,7 +451,7 @@ export default function PaymentPage() {
               ) : (
                 <>
                   <div className="mb-6 text-center lg:hidden">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-6 transition-colors duration-500 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl mb-6 transition-colors duration-500 bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300">
                       <ShieldCheck size={32} />
                     </div>
                     <h2 className={`text-3xl font-extrabold mb-2 transition-colors duration-500 ${theme.textMain}`}>Final Step</h2>
@@ -461,11 +461,11 @@ export default function PaymentPage() {
                   {/* Selected Plan Details */}
                   <div className={`relative mb-6 rounded-3xl border p-5 transition-all duration-500 ${theme.planBox}`}>
                     <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
-                      <CreditCard size={80} className="text-indigo-600 dark:text-white -rotate-12" />
+                      <CreditCard size={80} className="text-blue-600 dark:text-white -rotate-12" />
                     </div>
 
                     <div className="relative z-10">
-                      <p className="text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5 text-indigo-500 dark:text-indigo-400">
+                      <p className="text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5 text-blue-500 dark:text-blue-300">
                          Your Plan Summary
                       </p>
                       <div className="flex items-end justify-between mb-4">

@@ -18,6 +18,13 @@ import {
 import PasswordInput from "@/components/PasswordInput";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import OrganizationLookupField from "@/components/OrganizationLookupField";
+import {
+  authCardClassName,
+  authFieldClassName,
+  authFieldErrorClassName,
+  authFieldNormalClassName,
+  authPageShellClassName,
+} from "@/components/auth/AuthPageShell";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useUserSignInMutation } from "@/services/api/authApi";
 import { setSession } from "@/store/slices/authSlice";
@@ -46,16 +53,6 @@ const loginSchema = z
     }
   });
 
-const pageShellClassName =
-  "relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 pb-12 pt-32 transition-colors duration-500 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900";
-const cardClassName =
-  "overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_38px_110px_rgba(59,130,246,0.18),0_18px_44px_rgba(15,23,42,0.10)] backdrop-blur-2xl transition-colors duration-500 dark:border-slate-700/80 dark:bg-slate-950/78 dark:shadow-[0_35px_100px_rgba(2,6,23,0.55)] md:rounded-[2.4rem]";
-const fieldClassName =
-  "w-full rounded-[1.6rem] border-2 bg-white px-4 py-4 text-slate-900 shadow-[0_18px_46px_rgba(59,130,246,0.12),0_10px_28px_rgba(15,23,42,0.07)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:-translate-y-0.5 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 dark:border-white/75 dark:bg-white dark:text-slate-950 dark:placeholder:text-slate-500 dark:shadow-[0_18px_45px_rgba(2,6,23,0.35)] dark:focus:border-blue-500 dark:focus:ring-blue-500/20";
-const normalFieldClassName =
-  "border-slate-200 hover:border-slate-300 dark:border-white/80";
-const errorFieldClassName =
-  "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
 const publicRoleOptions = LOGIN_ROLE_OPTIONS.filter(
   (roleOption) => roleOption.value !== ROLES.SUPER_ADMIN
 );
@@ -144,16 +141,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={pageShellClassName}>
+    <div className={authPageShellClassName}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-6%] top-24 h-80 w-80 rounded-full bg-indigo-400/14 blur-[120px] dark:bg-blue-500/12" />
-        <div className="absolute right-[-8%] top-36 h-72 w-72 rounded-full bg-blue-500/18 blur-[120px] dark:bg-indigo-500/16" />
-        <div className="absolute bottom-10 left-1/3 h-72 w-72 rounded-full bg-indigo-500/10 blur-[120px] dark:bg-cyan-500/10" />
+        <div className="page-shell-orb-primary absolute left-[-6%] top-24 h-80 w-80 rounded-full blur-[120px]" />
+        <div className="page-shell-orb-secondary absolute right-[-8%] top-36 h-72 w-72 rounded-full blur-[120px]" />
+        <div className="page-shell-orb-tertiary absolute bottom-10 left-1/3 h-72 w-72 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-xl">
-        <div className={cardClassName}>
-          <div className="h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 dark:from-blue-400 dark:via-indigo-300 dark:to-cyan-300" />
+        <div className={authCardClassName}>
+          <div className="surface-accent-bar h-1.5" />
 
           <div className="p-7 sm:p-8 md:p-12">
             <div className="mb-10 text-center">
@@ -188,7 +185,7 @@ export default function LoginPage() {
                     <ChevronDown size={18} />
                   </span>
                   <select
-                    className={`${fieldClassName} appearance-none !pl-12 pr-12 ${errors.loginAs ? errorFieldClassName : normalFieldClassName}`}
+                    className={`${authFieldClassName} appearance-none !pl-12 pr-12 ${errors.loginAs ? authFieldErrorClassName : authFieldNormalClassName}`}
                     {...register("loginAs")}
                   >
                     <option value="" disabled>
@@ -249,9 +246,9 @@ export default function LoginPage() {
                     }
                   }}
                   labelClassName="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-                  inputClassName={fieldClassName}
-                  normalFieldClassName={normalFieldClassName}
-                  errorFieldClassName={errorFieldClassName}
+                  inputClassName={authFieldClassName}
+                  normalFieldClassName={authFieldNormalClassName}
+                  errorFieldClassName={authFieldErrorClassName}
                 />
                 <input type="hidden" {...register("organizationId")} />
                 <input type="hidden" {...register("organizationCode")} />
@@ -269,7 +266,7 @@ export default function LoginPage() {
                   <input
                     type="email"
                     placeholder="name@company.com"
-                    className={`${fieldClassName} !pl-12 ${errors.email ? errorFieldClassName : normalFieldClassName}`}
+                    className={`${authFieldClassName} !pl-12 ${errors.email ? authFieldErrorClassName : authFieldNormalClassName}`}
                     {...register("email")}
                   />
                 </div>
@@ -295,7 +292,7 @@ export default function LoginPage() {
                 <PasswordInput
                   icon={Lock}
                   placeholder="Enter your password"
-                  className={`${fieldClassName} !pl-12 ${errors.password ? errorFieldClassName : normalFieldClassName}`}
+                  className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
                   {...register("password")}
                 />
                 {errors.password ? (

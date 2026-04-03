@@ -11,13 +11,13 @@ export const FEATURE_CARDS = [
     icon: ShieldCheck,
     title: "Secure Organization Access",
     desc: "Each organization gets its own protected workspace with role-based access and safe data handling.",
-    accent: "text-emerald-600 dark:text-emerald-300",
+    accent: "text-blue-600 dark:text-blue-300",
   },
   {
     icon: BarChart3,
     title: "Clear Attendance Reports",
     desc: "See present, absent, and late records in reports that managers can understand at a glance.",
-    accent: "text-indigo-600 dark:text-indigo-300",
+    accent: "text-blue-600 dark:text-blue-300",
   },
 ];
 
