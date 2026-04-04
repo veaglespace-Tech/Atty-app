@@ -2,11 +2,9 @@ const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
-const {
-  getDefaultPermissionsForRole,
-} = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
+const { createOrganizationMembership } = require("../services/organization-member.service");
 const {
   truncateText,
 } = require("../services/common.service");
@@ -100,12 +98,17 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
       mobile: normalizedAdminPhone.e164,
       mobileCountryCode: normalizedAdminPhone.countryCode,
       password: hashedPassword,
-      role: adminRole,
-      permissions: getDefaultPermissionsForRole(adminRole),
       orgId: organization.id,
       status: "APPROVED",
       isActive: true,
     },
+  });
+
+  await createOrganizationMembership(prisma, {
+    userId: adminUser.id,
+    orgId: organization.id,
+    role: adminRole,
+    isActive: true,
   });
 
   await prisma.organization.update({
@@ -122,7 +125,7 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
         id: adminUser.id,
         name: adminUser.name,
         email: adminUser.email,
-        role: adminUser.role,
+        role: adminRole,
       },
     },
   });

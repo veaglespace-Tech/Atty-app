@@ -21,7 +21,7 @@ const rawBaseQuery = fetchBaseQuery({
 const redirectForExpiredSubscription = (api) => {
   if (typeof window === "undefined") return;
 
-  const role = normalizeRole(api.getState?.()?.auth?.user?.role);
+  const role = normalizeRole(api.getState?.()?.auth?.user?.currentRole);
   const currentPath = window.location.pathname;
 
   if (role === ROLES.ORG_ADMIN) {

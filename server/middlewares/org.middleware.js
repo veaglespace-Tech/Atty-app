@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
-const { normalizeRole } = require("../constants/rbac");
+const { resolveUserRole } = require("../utils/membership");
 
 exports.checkOrgStatus = asyncHandler(async (req, res, next) => {
   if (!req.user) {
@@ -8,7 +8,7 @@ exports.checkOrgStatus = asyncHandler(async (req, res, next) => {
     throw new Error("User context missing");
   }
 
-  const role = normalizeRole(req.user.role);
+  const role = resolveUserRole(req.user);
 
   if (role === "SUPER_ADMIN") {
     const organizationId = req.user.organizationId || req.user.organization;

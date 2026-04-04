@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
-const { normalizeRole } = require("../constants/rbac");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
+const { resolveUserRole } = require("../utils/membership");
 
 const isProtectionBypassed = () =>
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
@@ -11,7 +11,7 @@ const checkActiveSubscription = asyncHandler(async (req, res, next) => {
     return next();
   }
 
-  const role = normalizeRole(req.user?.role);
+  const role = resolveUserRole(req.user);
   if (role === "SUPER_ADMIN") {
     return next();
   }

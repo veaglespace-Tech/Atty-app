@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { resolveUserRole } = require("../utils/membership");
 
 /**
  * Archive a user (admin or member)
@@ -17,6 +18,9 @@ const archiveUser = async ({ userId, orgId, reason = "", archivedById = null, me
         ...(orgId ? { orgId: Number(orgId) } : {}),
         deletedAt: null,
       },
+      include: {
+        memberships: true,
+      },
     });
 
     if (!user) {
@@ -34,8 +38,7 @@ const archiveUser = async ({ userId, orgId, reason = "", archivedById = null, me
         mobile: user.mobile,
         mobileCountryCode: user.mobileCountryCode,
         password: user.password,
-        role: user.role,
-        permissions: user.permissions,
+        role: resolveUserRole(user, orgId || user.orgId),
         status: user.status,
         isActive: user.isActive,
         lastLoginAt: user.lastLoginAt,
@@ -126,7 +129,12 @@ const archiveOrganization = async ({ orgId, reason = "", archivedById = null }) 
     const org = await prisma.organization.findUnique({
       where: { id: Number(orgId) },
       include: {
-        users: { where: { deletedAt: null } }
+        users: {
+          where: { deletedAt: null },
+          include: {
+            memberships: true,
+          },
+        },
       }
     });
 
@@ -175,8 +183,7 @@ const archiveOrganization = async ({ orgId, reason = "", archivedById = null }) 
             mobile: user.mobile,
             mobileCountryCode: user.mobileCountryCode,
             password: user.password,
-            role: user.role,
-            permissions: user.permissions,
+            role: resolveUserRole(user, org.id),
             status: user.status,
             isActive: false,
             lastLoginAt: user.lastLoginAt,

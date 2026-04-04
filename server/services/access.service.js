@@ -1,20 +1,25 @@
 const { normalizeRole } = require("../constants/rbac");
 const {
   hasPermission,
-  normalizePermissionList,
   resolveUserPermissions,
 } = require("../constants/permissions");
+const { resolveUserRole } = require("../utils/membership");
 
-const assertPermission = (res, user, permissionKey) => {
-  if (!hasPermission(user, permissionKey)) {
+const assertPermission = (res, user, permissionKey, orgId = null) => {
+  if (!hasPermission(user, permissionKey, orgId)) {
     res.status(403);
     throw new Error("Missing required permission");
   }
 };
 
-const assertRoleScope = (res, actor, targetRole) => {
-  const actorRole = normalizeRole(actor?.role);
+const assertRoleScope = (res, actor, targetRole, orgId = null) => {
+  const actorRole = resolveUserRole(actor, orgId);
   const normalizedTargetRole = normalizeRole(targetRole);
+
+  if (!actorRole) {
+    res.status(403);
+    throw new Error("Membership is required for this action");
+  }
 
   if (actorRole === "SUPER_ADMIN" || actorRole === "ORG_ADMIN") {
     return;
@@ -40,21 +45,15 @@ const assertRoleScope = (res, actor, targetRole) => {
   throw new Error("Role is not allowed for this action");
 };
 
-const sanitizePermissionsByAssigner = (actor, explicitPermissions, fallbackRolePermissions) => {
-  const actorRole = normalizeRole(actor?.role);
-  const normalizedExplicit = normalizePermissionList(explicitPermissions);
+const sanitizePermissionsByAssigner = (actor, fallbackRolePermissions, orgId = null) => {
+  const actorRole = resolveUserRole(actor, orgId);
   if (actorRole === "SUPER_ADMIN" || actorRole === "ORG_ADMIN") {
-    return normalizedExplicit.length > 0
-      ? normalizedExplicit
-      : [...fallbackRolePermissions];
+    return [...fallbackRolePermissions];
   }
 
   if (actorRole === "SUB_ADMIN") {
-    const actorPermissions = new Set(resolveUserPermissions(actor));
-    const bounded = normalizedExplicit.filter((permission) =>
-      actorPermissions.has(permission)
-    );
-    return bounded.length > 0 ? bounded : [...fallbackRolePermissions].filter((permission) => actorPermissions.has(permission));
+    const actorPermissions = new Set(resolveUserPermissions(actor, orgId));
+    return [...fallbackRolePermissions].filter((permission) => actorPermissions.has(permission));
   }
 
   return [...fallbackRolePermissions];

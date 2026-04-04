@@ -88,6 +88,22 @@ const ddlStatements = [
       CONSTRAINT \`posts_authorId_fkey\` FOREIGN KEY (\`authorId\`) REFERENCES \`User\`(\`id\`) ON DELETE RESTRICT ON UPDATE CASCADE
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
   `,
+  `
+    CREATE TABLE IF NOT EXISTS \`organizationmember\` (
+      \`id\` INTEGER NOT NULL AUTO_INCREMENT,
+      \`userId\` INTEGER NOT NULL,
+      \`orgId\` INTEGER NOT NULL,
+      \`role\` VARCHAR(191) NOT NULL DEFAULT 'MEMBER',
+      \`isActive\` BOOLEAN NOT NULL DEFAULT true,
+      \`joinedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      UNIQUE INDEX \`organizationmember_userId_orgId_key\`(\`userId\`, \`orgId\`),
+      INDEX \`organizationmember_orgId_role_idx\`(\`orgId\`, \`role\`),
+      INDEX \`organizationmember_userId_idx\`(\`userId\`),
+      PRIMARY KEY (\`id\`),
+      CONSTRAINT \`organizationmember_userId_fkey\` FOREIGN KEY (\`userId\`) REFERENCES \`User\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT \`organizationmember_orgId_fkey\` FOREIGN KEY (\`orgId\`) REFERENCES \`Organization\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+  `,
 ];
 
 const copyArchiveOrgSql = `
@@ -135,6 +151,30 @@ const copyArchiveUserSql = `
   WHERE target.\`id\` IS NULL
 `;
 
+const backfillOrganizationMemberSql = `
+  INSERT INTO \`organizationmember\` (
+    \`userId\`, \`orgId\`, \`role\`, \`isActive\`, \`joinedAt\`
+  )
+  SELECT
+    u.\`id\`,
+    u.\`orgId\`,
+    CASE
+      WHEN u.\`role\` IS NULL OR TRIM(u.\`role\`) = '' THEN 'MEMBER'
+      WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'SUPERADMIN' THEN 'SUPER_ADMIN'
+      WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'ORGADMIN' THEN 'ORG_ADMIN'
+      WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'SUBADMIN' THEN 'SUB_ADMIN'
+      ELSE UPPER(REPLACE(u.\`role\`, '-', '_'))
+    END,
+    COALESCE(u.\`isActive\`, true),
+    COALESCE(u.\`createdAt\`, CURRENT_TIMESTAMP(3))
+  FROM \`User\` u
+  LEFT JOIN \`organizationmember\` om
+    ON om.\`userId\` = u.\`id\` AND om.\`orgId\` = u.\`orgId\`
+  WHERE u.\`orgId\` IS NOT NULL
+    AND u.\`deletedAt\` IS NULL
+    AND om.\`id\` IS NULL
+`;
+
 const teamMemberOverviewStatements = [
   "DROP VIEW IF EXISTS `team_member_overview`",
   `
@@ -164,10 +204,27 @@ const tableExists = async (tableName) => {
   return rows.length > 0;
 };
 
+const columnExists = async (tableName, columnName) => {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '${tableName}' AND column_name = '${columnName}'`,
+  );
+  return rows.length > 0;
+};
+
+const ensureColumn = async (tableName, columnName, definitionSql) => {
+  if (await columnExists(tableName, columnName)) return;
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definitionSql}`,
+  );
+};
+
 const syncMissingSchema = async () => {
   for (const statement of ddlStatements) {
     await prisma.$executeRawUnsafe(statement);
   }
+
+  await ensureColumn("User", "resetTokenHash", "VARCHAR(191) NULL");
+  await ensureColumn("User", "resetTokenExpiry", "DATETIME(3) NULL");
 
   if (await tableExists("archieve_org")) {
     await prisma.$executeRawUnsafe(copyArchiveOrgSql);
@@ -175,6 +232,10 @@ const syncMissingSchema = async () => {
 
   if (await tableExists("archieve_user")) {
     await prisma.$executeRawUnsafe(copyArchiveUserSql);
+  }
+
+  if (await tableExists("organizationmember")) {
+    await prisma.$executeRawUnsafe(backfillOrganizationMemberSql);
   }
 
   for (const statement of teamMemberOverviewStatements) {

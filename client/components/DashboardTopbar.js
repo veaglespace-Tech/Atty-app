@@ -15,8 +15,9 @@ export default function DashboardTopbar() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [userSignOut] = useUserSignOutMutation();
-  const roleLabel = formatRoleLabel(user?.role);
-  const roleTheme = getRoleBadgeTheme(user?.role);
+  const currentRole = user?.currentRole;
+  const roleLabel = formatRoleLabel(currentRole);
+  const roleTheme = getRoleBadgeTheme(currentRole);
   const displayName = user?.name || "User";
   const identityLabel = user?.organizationCode || user?.email || "Workspace";
 

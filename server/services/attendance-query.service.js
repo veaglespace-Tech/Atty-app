@@ -1,5 +1,6 @@
 const { todayKey, toDateKey, toSummaryItem } = require("./common.service");
 const { resolveAttendanceLateMinutes } = require("./attendance-time.service");
+const { resolveUserRole } = require("../utils/membership");
 
 const mapAttendanceRecord = (record = {}) => {
   const user = record.user || {};
@@ -24,7 +25,7 @@ const mapAttendanceRecord = (record = {}) => {
     date: record.date,
     memberId: record.userId,
     member: user.name || "Unknown",
-    role: user.role || "MEMBER",
+    role: resolveUserRole(user, record.orgId) || "MEMBER",
     status: record.status || "PRESENT",
     punchInAt: record.punchInAt,
     punchOutAt: record.punchOutAt,

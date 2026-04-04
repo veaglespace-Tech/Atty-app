@@ -3,6 +3,7 @@ const {
   ROLE_ROUTE_PREFIX,
   normalizeRole,
 } = require("../constants/rbac");
+const { resolveAccessibleRoles, resolveUserRole } = require("../utils/membership");
 
 const isProtectionBypassed = () =>
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
@@ -16,7 +17,7 @@ const enforceRoleRouteAccess = asyncHandler(async (req, res, next) => {
     return next();
   }
 
-  const role = normalizeRole(req.user?.role);
+  const role = resolveUserRole(req.user);
   const path = sanitizePath(req);
   const allowedPrefix = ROLE_ROUTE_PREFIX[role];
 
@@ -41,9 +42,9 @@ function allowRoles(...roles) {
       return next();
     }
 
-    const role = normalizeRole(req.user?.role);
+    const accessibleRoles = resolveAccessibleRoles(req.user);
 
-    if (!normalizedAllowedRoles.includes(role)) {
+    if (!accessibleRoles.some((role) => normalizedAllowedRoles.includes(role))) {
       res.status(403);
       throw new Error("You do not have permission to access this resource");
     }

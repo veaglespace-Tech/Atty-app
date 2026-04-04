@@ -1,11 +1,11 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
-const { normalizeRole } = require("../constants/rbac");
+const { resolveUserRole } = require("../utils/membership");
 
 exports.getStats = asyncHandler(async (req, res) => {
   const orgId = Number(req.user.organizationId || req.user.organization);
   const userId = Number(req.user.id);
-  const role = normalizeRole(req.user.role);
+  const role = resolveUserRole(req.user, orgId);
 
   if (role === "ORG_ADMIN" || role === "SUB_ADMIN") {
     const [orgData, totalMembers, totalTLs, presentToday] = await Promise.all([
@@ -27,14 +27,24 @@ exports.getStats = asyncHandler(async (req, res) => {
       }),
       prisma.user.count({
         where: {
-          orgId,
+          memberships: {
+            some: {
+              orgId,
+              isActive: true,
+            },
+          },
           deletedAt: null,
         },
       }),
       prisma.user.count({
         where: {
-          orgId,
-          role: "TEAM_LEADER",
+          memberships: {
+            some: {
+              orgId,
+              role: "TEAM_LEADER",
+              isActive: true,
+            },
+          },
           deletedAt: null,
         },
       }),

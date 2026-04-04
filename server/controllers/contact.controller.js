@@ -137,9 +137,14 @@ exports.submitContactInquiry = asyncHandler(async (req, res) => {
 
   const superAdminUsers = await prisma.user.findMany({
     where: {
-      role: "SUPER_ADMIN",
       deletedAt: null,
       isActive: true,
+      memberships: {
+        some: {
+          role: "SUPER_ADMIN",
+          isActive: true,
+        },
+      },
     },
     select: {
       email: true,

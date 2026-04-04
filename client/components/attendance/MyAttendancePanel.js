@@ -79,6 +79,7 @@ export default function MyAttendancePanel({
   onAttendanceChange,
 }) {
   const user = useSelector((state) => state.auth.user);
+  const currentRole = user?.currentRole;
   const [actionLoading, setActionLoading] = useState("");
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [error, setError] = useState("");
@@ -182,7 +183,7 @@ export default function MyAttendancePanel({
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="mobile-compact-title text-2xl font-black text-slate-900">{title}</h2>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                {formatRoleLabel(user?.role)}
+                {formatRoleLabel(currentRole)}
               </span>
             </div>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">{description}</p>

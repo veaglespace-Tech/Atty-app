@@ -1,4 +1,5 @@
 const { normalizeRole } = require("./rbac");
+const { resolveUserRole } = require("../utils/membership");
 
 const PERMISSION_KEYS = Object.freeze({
   TEAM_VIEW: "TEAM_VIEW",
@@ -71,29 +72,28 @@ const getAssignablePermissionsByRole = (role) => {
   return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
 };
 
-const resolveUserPermissions = (user) => {
+const resolveUserPermissions = (user, orgId = null) => {
   if (!user) return [];
 
   const normalizedRole =
-    typeof user === "string" ? normalizeRole(user) : normalizeRole(user.role);
+    typeof user === "string" ? normalizeRole(user) : resolveUserRole(user, orgId);
+
+  if (!normalizedRole) {
+    return [];
+  }
 
   if (normalizedRole === "SUPER_ADMIN" || normalizedRole === "ORG_ADMIN") {
     return [...ALL_PERMISSIONS];
   }
 
-  const explicitPermissions = normalizePermissionList(user.permissions);
-  if (explicitPermissions.length > 0) {
-    return explicitPermissions;
-  }
-
   return getDefaultPermissionsForRole(normalizedRole);
 };
 
-const hasPermission = (user, permission) => {
+const hasPermission = (user, permission, orgId = null) => {
   const normalizedPermission = normalizePermission(permission);
   if (!normalizedPermission) return false;
 
-  const resolvedPermissions = resolveUserPermissions(user);
+  const resolvedPermissions = resolveUserPermissions(user, orgId);
   return resolvedPermissions.includes(normalizedPermission);
 };
 

@@ -1,14 +1,11 @@
 const { normalizeRole } = require("../constants/rbac");
 const { resolveUserPermissions } = require("../constants/permissions");
-const { parsePermissions } = require("../utils/identity");
+const { resolveUserRole } = require("../utils/membership");
 const { toSummaryItem } = require("./common.service");
 
-const mapUserForManagement = (user) => {
-  const explicitPermissions = parsePermissions(user.permissions);
-  const resolvedPermissions = resolveUserPermissions({
-    role: user.role,
-    permissions: explicitPermissions,
-  });
+const mapUserForManagement = (user, orgId = null) => {
+  const resolvedRole = resolveUserRole(user, orgId);
+  const resolvedPermissions = resolveUserPermissions(user, orgId);
 
   return {
     id: user.id,
@@ -18,12 +15,13 @@ const mapUserForManagement = (user) => {
     mobile: user.mobile,
     mobileCountryCode: user.mobileCountryCode || null,
     profileImageUrl: user.profileImageUrl || null,
-    role: normalizeRole(user.role),
+    role: normalizeRole(resolvedRole),
     permissions: resolvedPermissions,
     approvalStatus: user.status,
     active: Boolean(user.isActive),
     joinedAt: user.createdAt,
     createdAt: user.createdAt,
+    memberships: Array.isArray(user.memberships) ? user.memberships : [],
   };
 };
 

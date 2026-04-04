@@ -29,7 +29,9 @@ export default function Navbar() {
   const [userSignOut] = useUserSignOutMutation();
   const isAuthReady = hydrated;
   const isLoggedIn = Boolean(isAuthReady && token && user);
-  const dashboardHref = resolveDashboardPath(user?.role, user?.dashboardPath) || "/member/dashboard";
+  const currentRole = user?.currentRole;
+  const dashboardHref =
+    resolveDashboardPath(currentRole, user?.dashboardPath) || "/member/dashboard";
   const prefetchedRoutes = useMemo(
     () => [...NAV_LINKS.map((link) => link.href), "/login", "/register", dashboardHref],
     [dashboardHref]
@@ -141,7 +143,7 @@ export default function Navbar() {
                     <UserCircle2 size={18} className="text-slate-500 dark:text-slate-300" />
                     <div className="text-right leading-tight">
                       <p className="text-[11px] font-bold text-slate-800 dark:text-white">{user?.name || "User"}</p>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">{formatRoleLabel(user?.role)}</p>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">{formatRoleLabel(currentRole)}</p>
                     </div>
                   </div>
                   <Link
@@ -228,7 +230,7 @@ export default function Navbar() {
                         {user?.name || "User"}
                       </p>
                       <p className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                        {formatRoleLabel(user?.role)}
+                        {formatRoleLabel(currentRole)}
                       </p>
                     </div>
                     <Link

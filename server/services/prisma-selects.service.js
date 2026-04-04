@@ -1,3 +1,10 @@
+const membershipSelect = {
+  orgId: true,
+  role: true,
+  isActive: true,
+  joinedAt: true,
+};
+
 const userManagementSelect = {
   id: true,
   name: true,
@@ -5,17 +12,20 @@ const userManagementSelect = {
   mobile: true,
   mobileCountryCode: true,
   profileImageUrl: true,
-  role: true,
-  permissions: true,
   status: true,
   isActive: true,
   createdAt: true,
+  memberships: {
+    select: membershipSelect,
+  },
 };
 
 const attendanceUserSelect = {
   id: true,
   name: true,
-  role: true,
+  memberships: {
+    select: membershipSelect,
+  },
 };
 
 const attendanceTeamSelect = {
@@ -59,7 +69,9 @@ const attendanceRecordSelect = {
 const teamLeaderSelect = {
   id: true,
   name: true,
-  role: true,
+  memberships: {
+    select: membershipSelect,
+  },
 };
 
 const teamListSelect = {
@@ -133,7 +145,9 @@ const organizationSubscriptionSelect = {
 const reportUserSelect = {
   id: true,
   name: true,
-  role: true,
+  memberships: {
+    select: membershipSelect,
+  },
 };
 
 const reportPdfUserSelect = {
@@ -153,4 +167,5 @@ module.exports = {
   organizationSubscriptionSelect,
   reportUserSelect,
   reportPdfUserSelect,
+  membershipSelect,
 };

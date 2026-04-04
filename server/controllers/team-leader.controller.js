@@ -1,7 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
-const { PERMISSION_KEYS, hasPermission, resolveUserPermissions } = require("../constants/permissions");
+const { PERMISSION_KEYS, hasPermission } = require("../constants/permissions");
+const { resolveUserRole } = require("../utils/membership");
 const {
   ensureOrganizationId,
   parseId,
@@ -99,8 +100,8 @@ const getAccessibleTeamIds = async ({ orgId, userId, role }) => {
   return teams.map((team) => Number(team.id));
 };
 
-const assertTeamMutationAccess = ({ req, res, team }) => {
-  const role = normalizeRole(req.user.role);
+const assertTeamMutationAccess = ({ req, res, team, orgId }) => {
+  const role = resolveUserRole(req.user, orgId);
   if (role === "ORG_ADMIN" || role === "SUB_ADMIN") return;
   if (Number(team.leaderId) === Number(req.user.id)) return;
   if (Number(team.createdById) === Number(req.user.id)) return;
@@ -109,7 +110,7 @@ const assertTeamMutationAccess = ({ req, res, team }) => {
   throw new Error("You can only modify teams assigned to you");
 };
 
-const getTeamPatchPermissionState = (req) => {
+const getTeamPatchPermissionState = (req, orgId) => {
   const body = req.body || {};
   const hasMemberIds = Object.prototype.hasOwnProperty.call(body, "memberIds");
   const hasLeaderId = Object.prototype.hasOwnProperty.call(body, "leaderId");
@@ -119,8 +120,8 @@ const getTeamPatchPermissionState = (req) => {
     body?.isActive !== undefined;
   const hasAttendanceFields =
     body?.attendanceRadius !== undefined || Boolean(normalizeCoordinatesInput(body));
-  const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE);
-  const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE);
+  const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE, orgId);
+  const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE, orgId);
 
   return {
     canUpdateTeam,
@@ -147,17 +148,31 @@ const validateTeamAssignmentInputs = async ({
     const leader = await prisma.user.findFirst({
       where: {
         id: leaderId,
-        orgId,
         deletedAt: null,
+        memberships: {
+          some: {
+            orgId,
+            isActive: true,
+          },
+        },
       },
-      select: { id: true, role: true },
+      select: {
+        id: true,
+        memberships: {
+          select: {
+            orgId: true,
+            role: true,
+            isActive: true,
+          },
+        },
+      },
     });
     if (!leader) {
       res.status(404);
       throw new Error("Leader not found in organization");
     }
     if (Number(leader.id) !== Number(req.user.id)) {
-      assertRoleScope(res, req.user, leader.role);
+      assertRoleScope(res, req.user, resolveUserRole(leader, orgId), orgId);
     }
   }
 
@@ -165,19 +180,32 @@ const validateTeamAssignmentInputs = async ({
     const users = await prisma.user.findMany({
       where: {
         id: { in: memberIds },
-        orgId,
         deletedAt: null,
+        memberships: {
+          some: {
+            orgId,
+            isActive: true,
+          },
+        },
       },
       select: {
         id: true,
-        role: true,
+        memberships: {
+          select: {
+            orgId: true,
+            role: true,
+            isActive: true,
+          },
+        },
       },
     });
     if (users.length !== memberIds.length) {
       res.status(400);
       throw new Error("Some members are not valid organization users");
     }
-    users.forEach((user) => assertRoleScope(res, req.user, user.role));
+    users.forEach((user) =>
+      assertRoleScope(res, req.user, resolveUserRole(user, orgId), orgId)
+    );
   }
 };
 
@@ -185,16 +213,17 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const userId = Number(req.user.id);
   const today = todayKey();
+  const currentRole = resolveUserRole(req.user, orgId);
   const accessibleTeams = await getAccessibleTeams({
     orgId,
     userId,
-    role: req.user.role,
+    role: currentRole,
   });
   const accessibleTeamIds = accessibleTeams.map((team) => team.id);
 
   const modules = MODULES.map((module) => ({
     ...module,
-    enabled: hasPermission(req.user, module.permission),
+    enabled: hasPermission(req.user, module.permission, orgId),
   }));
 
   if (accessibleTeamIds.length === 0) {
@@ -285,12 +314,12 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
   const limit = parseLimit(req.query.limit, 300, 2000);
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
     userId: Number(req.user.id),
-    role: req.user.role,
+    role: resolveUserRole(req.user, orgId),
   });
 
   if (accessibleTeamIds.length === 0) {
@@ -329,16 +358,18 @@ exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
   const limit = parseLimit(req.query.limit, 500, 2000);
 
   const users = await prisma.user.findMany({
     where: {
-      orgId,
-      deletedAt: null,
-      role: {
-        not: "SUPER_ADMIN",
+      memberships: {
+        some: {
+          orgId,
+          isActive: true,
+        },
       },
+      deletedAt: null,
       isActive: true,
     },
     select: userManagementSelect,
@@ -346,7 +377,9 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
     take: limit,
   });
 
-  const items = users.map(mapUserForManagement);
+  const items = users
+    .map((user) => mapUserForManagement(user, orgId))
+    .filter((user) => user.role !== "SUPER_ADMIN");
   res.status(200).json({
     success: true,
     items,
@@ -363,10 +396,10 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
 
 exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_CREATE);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_CREATE, orgId);
   await assertWithinPlanTeamLimit({ orgId, res });
 
-  const canAssignMembers = hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS);
+  const canAssignMembers = hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId);
   const name = truncateText(req.body?.name, 120);
   if (!name) {
     res.status(400);
@@ -402,7 +435,8 @@ exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
       ? null
       : parseId(req.body?.leaderId);
   const leaderId =
-    requestedLeaderId || (normalizeRole(req.user.role) === "TEAM_LEADER" ? Number(req.user.id) : null);
+    requestedLeaderId ||
+    (resolveUserRole(req.user, orgId) === "TEAM_LEADER" ? Number(req.user.id) : null);
 
   await validateTeamAssignmentInputs({
     req,
@@ -492,9 +526,9 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
     throw new Error("Team not found");
   }
 
-  assertTeamMutationAccess({ req, res, team });
+  assertTeamMutationAccess({ req, res, team, orgId });
 
-  const patchPermissionState = getTeamPatchPermissionState(req);
+  const patchPermissionState = getTeamPatchPermissionState(req, orgId);
   if (!patchPermissionState.canUpdateTeam && !patchPermissionState.canPatchAttendanceOnly) {
     res.status(403);
     throw new Error("Missing required permission");
@@ -538,7 +572,10 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
       ? null
       : parseId(req.body?.leaderId);
 
-  if ((hasMemberIds || hasLeaderId) && !hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS)) {
+  if (
+    (hasMemberIds || hasLeaderId) &&
+    !hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId)
+  ) {
     res.status(403);
     throw new Error("Missing required permission");
   }
@@ -610,7 +647,7 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
 
 exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_DELETE);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_DELETE, orgId);
   const teamId = parseId(req.params.teamId);
   if (!teamId) {
     res.status(400);
@@ -634,7 +671,7 @@ exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
     throw new Error("Team not found");
   }
 
-  assertTeamMutationAccess({ req, res, team });
+  assertTeamMutationAccess({ req, res, team, orgId });
 
   await prisma.$transaction(async (tx) => {
     await softDeleteTeamRecord({
@@ -651,13 +688,13 @@ exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW, orgId);
   const limit = parseLimit(req.query.limit, 500, 2500);
 
   const accessibleTeams = await getAccessibleTeams({
     orgId,
     userId: Number(req.user.id),
-    role: req.user.role,
+    role: resolveUserRole(req.user, orgId),
   });
   const accessibleTeamIds = accessibleTeams.map((team) => team.id);
 
@@ -704,7 +741,7 @@ exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW);
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId);
 
   const to = todayKey();
   const fromDate = new Date();
@@ -714,7 +751,7 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
     userId: Number(req.user.id),
-    role: req.user.role,
+    role: resolveUserRole(req.user, orgId),
   });
 
   if (accessibleTeamIds.length === 0) {

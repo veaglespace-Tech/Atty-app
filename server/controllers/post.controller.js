@@ -1,11 +1,18 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
+const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 
 const POST_INCLUDE = {
   author: {
     select: {
       name: true,
-      role: true,
+      memberships: {
+        select: {
+          orgId: true,
+          role: true,
+          isActive: true,
+        },
+      },
     },
   },
 };
@@ -68,11 +75,22 @@ const preparePollMetadata = (metadata = {}, existingMetadata = {}) => {
 };
 
 const serializePost = (post, currentUserId) => {
+  const authorRole = post?.author ? resolveUserRole(post.author, post.orgId) : null;
+  const serializedPost = authorRole
+    ? {
+        ...post,
+        author: {
+          ...post.author,
+          role: authorRole,
+        },
+      }
+    : post;
+
   if (!post || post.type !== "POLL") {
-    return post;
+    return serializedPost;
   }
 
-  const safeMetadata = toSafeObject(post.metadata);
+  const safeMetadata = toSafeObject(serializedPost.metadata);
   const options = normalizePollOptions(safeMetadata.options);
   const votes = normalizePollVotes(safeMetadata.votes, options.length);
   const totalVotes = Object.keys(votes).length;
@@ -82,7 +100,7 @@ const serializePost = (post, currentUserId) => {
   }, {});
 
   return {
-    ...post,
+    ...serializedPost,
     metadata: {
       ...safeMetadata,
       options,
@@ -115,7 +133,7 @@ const serializePost = (post, currentUserId) => {
 // @access  Org Admin
 exports.createPost = asyncHandler(async (req, res) => {
   const { title, content, type, metadata } = req.body;
-  const orgId = req.user.orgId;
+  const orgId = resolveOrganizationId(req.user);
   const normalizedType = type || "NOTIFICATION";
 
   if (!title || !content) {
@@ -159,7 +177,7 @@ exports.createPost = asyncHandler(async (req, res) => {
 // @route   GET /api/posts
 // @access  Org Member
 exports.getOrgPosts = asyncHandler(async (req, res) => {
-  const orgId = req.user.orgId;
+  const orgId = resolveOrganizationId(req.user);
   const { type, limit = 20, offset = 0 } = req.query;
 
   const where = {
@@ -202,7 +220,7 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
 exports.updatePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { title, content, type, metadata, isActive } = req.body;
-  const orgId = req.user.orgId;
+  const orgId = resolveOrganizationId(req.user);
 
   const existing = await prisma.post.findUnique({
     where: { id: Number(id) },
@@ -257,7 +275,7 @@ exports.updatePost = asyncHandler(async (req, res) => {
 // @access  Org Member
 exports.voteOnPostPoll = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const orgId = req.user.orgId;
+  const orgId = resolveOrganizationId(req.user);
   const optionIndex = Number(req.body?.optionIndex);
 
   if (!Number.isInteger(optionIndex) || optionIndex < 0) {
@@ -327,7 +345,7 @@ exports.voteOnPostPoll = asyncHandler(async (req, res) => {
 // @access  Org Admin
 exports.deletePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const orgId = req.user.orgId;
+  const orgId = resolveOrganizationId(req.user);
 
   const existing = await prisma.post.findUnique({
     where: { id: Number(id) },

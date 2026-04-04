@@ -144,8 +144,9 @@ export default function WorkspaceSettingsPage() {
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImageError, setProfileImageError] = useState("");
   const profileImageInputRef = useRef(null);
-  const roleLabel = formatRoleLabel(user?.role);
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+  const currentRole = user?.currentRole;
+  const roleLabel = formatRoleLabel(currentRole);
+  const isSuperAdmin = currentRole === ROLES.SUPER_ADMIN;
   const permissionsCount = resolveUserPermissions(user).length;
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || null;
   const workspaceCity = user?.city || user?.organization?.city || null;

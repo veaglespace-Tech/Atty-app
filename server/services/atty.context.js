@@ -1,5 +1,6 @@
 const prisma = require("../lib/prisma");
 const { resolveUserPermissions } = require("../constants/permissions");
+const { resolveUserRole, resolveOrganizationId } = require("../utils/membership");
 
 const buildAttyContext = async (user) => {
   try {
@@ -13,6 +14,7 @@ const buildAttyContext = async (user) => {
             },
           },
         },
+        memberships: true,
         teamsLed: {
           select: { id: true, name: true },
         },
@@ -30,18 +32,20 @@ const buildAttyContext = async (user) => {
     const sub = org?.activeSubscription || null;
     const plan = sub?.plan || null;
     const subStatus = org?.subscriptionStatus || "NONE";
+    const orgId = resolveOrganizationId(dbUser);
+    const userRole = resolveUserRole(dbUser, orgId) || "MEMBER";
 
     const teams =
-      dbUser.role === "TEAM_LEADER"
+      userRole === "TEAM_LEADER"
         ? dbUser.teamsLed.map((t) => t.name)
         : dbUser.teamMemberships.map((tm) => tm.team.name);
 
-    const permissions = resolveUserPermissions(dbUser);
+    const permissions = resolveUserPermissions(dbUser, orgId);
 
     return {
       userId: dbUser.id,
       userName: dbUser.name,
-      userRole: dbUser.role,
+      userRole,
       orgId: org?.id || null,
       orgName: org?.name || null,
       orgCode: org?.organizationCode || null,
@@ -63,8 +67,8 @@ const buildAttyContext = async (user) => {
 const buildFallback = (user) => ({
   userId: user?.id || null,
   userName: user?.name || "User",
-  userRole: user?.role || "MEMBER",
-  orgId: user?.organizationId || null,
+  userRole: resolveUserRole(user, resolveOrganizationId(user)) || "MEMBER",
+  orgId: resolveOrganizationId(user),
   orgName: null,
   orgCode: null,
   subscriptionStatus: "UNKNOWN",
@@ -74,7 +78,7 @@ const buildFallback = (user) => ({
   maxUsers: null,
   maxTeams: null,
   teams: [],
-  permissions: [],
+  permissions: resolveUserPermissions(user, resolveOrganizationId(user)),
 });
 
 module.exports = { buildAttyContext };

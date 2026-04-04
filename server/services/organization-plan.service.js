@@ -54,7 +54,11 @@ const assertWithinPlanUserLimit = async ({ orgId, res, additionalUsers = 1 }) =>
   if (maxUsers > 0) {
     const currentUsers = await prisma.user.count({
       where: {
-        orgId: Number(orgId),
+        memberships: {
+          some: {
+            orgId: Number(orgId),
+          },
+        },
         deletedAt: null,
       },
     });

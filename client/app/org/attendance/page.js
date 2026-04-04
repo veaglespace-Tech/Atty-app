@@ -71,6 +71,7 @@ const detectLocation = () =>
 
 export default function OrgAttendancePage() {
   const authUser = useSelector((state) => state.auth.user);
+  const currentRole = authUser?.currentRole;
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [settings, setSettings] = useState({
@@ -120,7 +121,7 @@ export default function OrgAttendancePage() {
   );
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
-  const showSelfAttendance = normalizeRole(authUser?.role) === ROLES.SUB_ADMIN;
+  const showSelfAttendance = normalizeRole(currentRole) === ROLES.SUB_ADMIN;
   const {
     page,
     pageSize,

@@ -29,7 +29,7 @@ export default function EmployeesPage() {
   const [searchValue, setSearchValue] = useState("");
   const { data, isLoading, isFetching } = useGetOrgUsersQuery(300, { skip: !user });
   const loading = isLoading || isFetching;
-  const userRole = user?.role || ROLES.MEMBER;
+  const userRole = user?.currentRole || ROLES.MEMBER;
 
   const staff = useMemo(() => {
     const users = Array.isArray(data?.items) ? data.items : [];

@@ -4,10 +4,10 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
-const { getDefaultPermissionsForRole } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
 const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
+const { createOrganizationMembership } = require("../services/organization-member.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
 const { truncateText, formatDate } = require("../services/common.service");
@@ -979,12 +979,17 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
           mobile: adminPhone.e164,
           mobileCountryCode: adminPhone.countryCode,
           password: hashedPassword,
-          role: adminRole,
-          permissions: getDefaultPermissionsForRole(adminRole),
           orgId: newOrg.id,
           status: "APPROVED",
           isActive: true,
         },
+      });
+
+      await createOrganizationMembership(tx, {
+        userId: newUser.id,
+        orgId: newOrg.id,
+        role: adminRole,
+        isActive: true,
       });
 
       await tx.subscription.updateMany({

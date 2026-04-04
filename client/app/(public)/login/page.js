@@ -65,6 +65,7 @@ export default function LoginPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { token, user, hydrated, redirectPath } = useAuthSession();
+  const currentRole = user?.currentRole;
   const [userSignIn, { error: apiError }] = useUserSignInMutation();
   const [selectedOrganization, setSelectedOrganization] = React.useState(null);
 
@@ -111,9 +112,10 @@ export default function LoginPage() {
   React.useEffect(() => {
     if (!hydrated || !token) return;
     const nextPath =
-      resolveDashboardPath(user?.role, user?.dashboardPath || redirectPath) || "/member/dashboard";
+      resolveDashboardPath(currentRole, user?.dashboardPath || redirectPath) ||
+      "/member/dashboard";
     router.replace(nextPath);
-  }, [hydrated, redirectPath, router, token, user?.dashboardPath, user?.role]);
+  }, [currentRole, hydrated, redirectPath, router, token, user?.dashboardPath]);
 
   const onSubmit = async (values) => {
     try {
@@ -130,8 +132,10 @@ export default function LoginPage() {
       dispatch(setSession(result));
 
       const nextPath =
-        resolveDashboardPath(result.user?.role, result.redirectPath || result.user?.dashboardPath) ||
-        "/member/dashboard";
+        resolveDashboardPath(
+          result.user?.currentRole,
+          result.redirectPath || result.user?.dashboardPath
+        ) || "/member/dashboard";
       router.replace(nextPath);
     } catch (err) {
       if (shouldReportUnexpectedAuthError(err)) {

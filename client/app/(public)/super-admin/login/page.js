@@ -40,6 +40,7 @@ export default function SuperAdminLoginPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { token, user, hydrated, redirectPath } = useAuthSession();
+  const currentRole = user?.currentRole;
   const [adminSignin, { error: apiError }] = useAdminSigninMutation();
 
   const {
@@ -65,13 +66,13 @@ export default function SuperAdminLoginPage() {
 
   React.useEffect(() => {
     if (!hydrated || !token) return;
-    if (user?.role === ROLES.SUPER_ADMIN) {
+    if (currentRole === ROLES.SUPER_ADMIN) {
       const nextPath =
-        resolveDashboardPath(user?.role, user?.dashboardPath || redirectPath) ||
+        resolveDashboardPath(currentRole, user?.dashboardPath || redirectPath) ||
         "/super-admin/dashboard";
       router.replace(nextPath);
     }
-  }, [hydrated, redirectPath, router, token, user?.dashboardPath, user?.role]);
+  }, [currentRole, hydrated, redirectPath, router, token, user?.dashboardPath]);
 
   const onSubmit = async (values) => {
     try {
@@ -86,8 +87,10 @@ export default function SuperAdminLoginPage() {
       dispatch(setSession(result));
 
       const nextPath =
-        resolveDashboardPath(result.user?.role, result.redirectPath || result.user?.dashboardPath) ||
-        "/super-admin/dashboard";
+        resolveDashboardPath(
+          result.user?.currentRole,
+          result.redirectPath || result.user?.dashboardPath
+        ) || "/super-admin/dashboard";
       router.replace(nextPath);
     } catch (err) {
       if (shouldReportUnexpectedAuthError(err)) {

@@ -1,6 +1,7 @@
 const prisma = require("../lib/prisma");
 const { toSummaryItem } = require("./common.service");
 const { reportUserSelect } = require("./prisma-selects.service");
+const { resolveUserRole } = require("../utils/membership");
 
 const compareReportEntries = (left, right) => {
   const leftName = String(left?.member || "").trim().toLowerCase();
@@ -98,14 +99,14 @@ const buildAttendanceReport = async ({
 
   for (const row of groupedRows) {
     const userId = Number(row.userId);
-    const user = userMap.get(userId);
-    const current = reportMap.get(userId) || {
-      id: userId,
-      member: user?.name || "Unknown",
-      role: user?.role || "MEMBER",
-      presentDays: 0,
-      halfDays: 0,
-      absentDays: 0,
+      const user = userMap.get(userId);
+      const current = reportMap.get(userId) || {
+        id: userId,
+        member: user?.name || "Unknown",
+        role: resolveUserRole(user, orgId) || "MEMBER",
+        presentDays: 0,
+        halfDays: 0,
+        absentDays: 0,
       workedMinutes: 0,
     };
 

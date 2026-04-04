@@ -3,9 +3,13 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole, getDashboardPathByRole } = require("../constants/rbac");
-const { resolveUserPermissions } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { normalizeUser } = require("../utils/identity");
+const {
+  resolveOrganizationId,
+  resolveUserRole,
+} = require("../utils/membership");
+const { createOrganizationMembership } = require("../services/organization-member.service");
 const { truncateText } = require("../services/common.service");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
 const { deleteProfileImage, uploadProfileImage } = require("../services/profile-image.service");
@@ -93,13 +97,7 @@ const validatePasswordResetToken = async (token) => {
 
   const user = await prisma.user.findUnique({
     where: { id: decoded.userId },
-    include: {
-      organization: {
-        include: {
-          plan: true,
-        },
-      },
-    },
+    include: authUserInclude,
   });
 
   if (!user || user.deletedAt || user.isActive === false) {
@@ -125,63 +123,46 @@ const findPasswordResetUser = async ({
   organizationCode,
 }) => {
   const normalizedEmail = normalizeEmail(email);
-  const requestedRole = normalizeRole(loginAs);
-  const requestedOrganizationId = parseOrganizationId(organizationId);
-  const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
 
   if (!normalizedEmail) return null;
 
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    include: {
-      organization: {
-        include: {
-          plan: true,
-        },
-      },
-    },
+    include: authUserInclude,
   });
 
   if (!user) return null;
-
-  const normalizedUserRole = normalizeRole(user.role);
-  if (normalizedUserRole !== requestedRole) {
-    return null;
-  }
 
   if (user.deletedAt || user.isActive === false) {
     return null;
   }
 
-  if (normalizedUserRole !== "SUPER_ADMIN") {
-    const org = user.organization;
-    if (!org || org.deletedAt) {
-      return null;
-    }
+  try {
+    const { membership, organization, role } = resolveAuthMembership({
+      user,
+      loginAs,
+      organizationId,
+      organizationCode,
+    });
 
-    if (!requestedOrganizationId && !normalizedOrganizationCode) {
-      return null;
-    }
-
-    if (requestedOrganizationId && Number(org.id) !== requestedOrganizationId) {
-      return null;
-    }
-
-    if (
-      normalizedOrganizationCode &&
-      String(org.organizationCode || "").trim().toUpperCase() !== normalizedOrganizationCode
-    ) {
-      return null;
-    }
+    return {
+      ...user,
+      orgId: organization?.id || user.orgId || null,
+      organization: organization || null,
+      memberships: user.memberships,
+      currentMembership: membership || null,
+      currentRole: role,
+    };
+  } catch (_) {
+    return null;
   }
-
-  return user;
 };
 
 const sendPasswordResetEmail = async ({ user, token }) => {
   const resetUrl = `${getClientBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
-  const roleLabel = formatRoleLabel(user.role);
-  const loginPath = getLoginPathByRole(user.role);
+  const resolvedRole = resolveUserRole(user, resolveOrganizationId(user)) || "MEMBER";
+  const roleLabel = formatRoleLabel(resolvedRole);
+  const loginPath = getLoginPathByRole(resolvedRole);
   const loginUrl = `${getClientBaseUrl()}${loginPath}`;
   const organizationSummary =
     user.organization && !user.organization.deletedAt
@@ -438,6 +419,116 @@ const resolveRequestedOrganization = async ({
   return null;
 };
 
+const authUserInclude = {
+  organization: {
+    include: {
+      plan: true,
+    },
+  },
+  memberships: {
+    include: {
+      organization: {
+        include: {
+          plan: true,
+        },
+      },
+    },
+  },
+};
+
+const findSuperAdminMembership = (user) =>
+  (Array.isArray(user?.memberships) ? user.memberships : []).find(
+    (membership) =>
+      normalizeRole(membership?.role) === "SUPER_ADMIN" && membership?.isActive !== false
+  ) || null;
+
+const findOrganizationMembership = ({
+  user,
+  organizationId,
+  organizationCode,
+  organizationName,
+}) =>
+  (Array.isArray(user?.memberships) ? user.memberships : []).find((membership) => {
+    const org = membership?.organization;
+    if (!org || org.deletedAt) return false;
+    if (membership?.isActive === false) return false;
+    if (organizationId && Number(org.id) !== Number(organizationId)) return false;
+    if (
+      organizationCode &&
+      String(org.organizationCode || "").trim().toUpperCase() !== String(organizationCode)
+    ) {
+      return false;
+    }
+    if (organizationName && !organizationMatchesQuery(org, organizationName)) return false;
+    return true;
+  }) || null;
+
+const resolveAuthMembership = ({
+  user,
+  loginAs,
+  organizationId,
+  organizationCode,
+  organizationName,
+}) => {
+  const requestedRole = loginAs ? normalizeRole(loginAs) : null;
+  const normalizedOrganizationId = parseOrganizationId(organizationId);
+  const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
+  const normalizedOrganizationName = String(organizationName || "").trim();
+  const superAdminMembership = findSuperAdminMembership(user);
+
+  if (
+    requestedRole === "SUPER_ADMIN" ||
+    (!normalizedOrganizationId &&
+      !normalizedOrganizationCode &&
+      !normalizedOrganizationName &&
+      superAdminMembership)
+  ) {
+    if (!superAdminMembership) {
+      const error = new Error("Selected role (SUPER_ADMIN) does not match this account");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    return {
+      membership: superAdminMembership,
+      organization: superAdminMembership.organization || null,
+      role: "SUPER_ADMIN",
+    };
+  }
+
+  if (!normalizedOrganizationId && !normalizedOrganizationCode && !normalizedOrganizationName) {
+    const error = new Error("Organization selection is required for this role");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const membership = findOrganizationMembership({
+    user,
+    organizationId: normalizedOrganizationId,
+    organizationCode: normalizedOrganizationCode,
+    organizationName: normalizedOrganizationName,
+  });
+
+  if (!membership) {
+    const error = new Error("Selected organization does not match this user");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const membershipRole = normalizeRole(membership.role);
+  if (requestedRole && requestedRole !== membershipRole) {
+    const error = new Error(`Selected role (${requestedRole}) does not match this account`);
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return {
+    membership,
+    organization: membership.organization || null,
+    role: membershipRole,
+  };
+};
+
 const serializeSessionUser = (user, organization = null) => {
   if (!user) return null;
 
@@ -452,7 +543,19 @@ const serializeSessionUser = (user, organization = null) => {
     mobile: normalized.mobile,
     mobileCountryCode: normalized.mobileCountryCode || null,
     profileImageUrl: normalized.profileImageUrl || null,
-    role: normalized.role,
+    memberships: normalized.memberships.map((membership) => ({
+      orgId: membership.orgId,
+      role: membership.role,
+      isActive: membership.isActive !== false,
+    })),
+    currentMembership: normalized.currentMembership
+      ? {
+          orgId: normalized.currentMembership.orgId,
+          role: normalized.currentMembership.role,
+          isActive: normalized.currentMembership.isActive !== false,
+        }
+      : null,
+    currentRole: normalized.currentRole || null,
     permissions: normalized.permissions,
     status: normalized.status,
     isActive: normalized.isActive !== false,
@@ -479,7 +582,7 @@ const serializeSessionUser = (user, organization = null) => {
             : null,
         }
       : null,
-    dashboardPath: getDashboardPathByRole(normalized.role),
+    dashboardPath: getDashboardPathByRole(normalized.currentRole),
   };
 };
 
@@ -529,7 +632,11 @@ exports.register = asyncHandler(async (req, res) => {
     if (maxUsers > 0) {
       const userCount = await prisma.user.count({
         where: {
-          orgId: targetOrg.id,
+          memberships: {
+            some: {
+              orgId: targetOrg.id,
+            },
+          },
           deletedAt: null,
         },
       });
@@ -554,18 +661,27 @@ exports.register = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const normalizedRole = normalizeRole(userData.role || "MEMBER");
 
-    const user = await prisma.user.create({
-      data: {
-        name: String(userData.name).trim(),
-        email: normalizedEmail,
-        mobile: normalizedPhone.e164,
-        mobileCountryCode: normalizedPhone.countryCode,
-        password: hashedPassword,
-        role: normalizedRole,
-        permissions: resolveUserPermissions(normalizedRole),
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name: String(userData.name).trim(),
+          email: normalizedEmail,
+          mobile: normalizedPhone.e164,
+          mobileCountryCode: normalizedPhone.countryCode,
+          password: hashedPassword,
+          orgId: targetOrg.id,
+          status: "PENDING",
+        },
+      });
+
+      await createOrganizationMembership(tx, {
+        userId: createdUser.id,
         orgId: targetOrg.id,
-        status: "PENDING",
-      },
+        role: normalizedRole,
+        isActive: true,
+      });
+
+      return createdUser;
     });
 
     return res.status(201).json({
@@ -606,34 +722,41 @@ exports.register = asyncHandler(async (req, res) => {
 
   const normalizedRole = normalizeRole(role || "MEMBER");
   const resolvedOrganizationId = organizationId || organization || null;
-  if (normalizedRole !== "SUPER_ADMIN" && !resolvedOrganizationId) {
+  if (!resolvedOrganizationId) {
     res.status(400);
-    throw new Error("organizationId is required for non-super-admin users");
+    throw new Error("organizationId is required for membership-based registration");
   }
 
   let normalizedPhone = null;
 
-  if (normalizedRole !== "SUPER_ADMIN") {
-    normalizedPhone = normalizePhoneNumber({
-      phone: mobile,
-      countryCode: mobileCountryCode || countryCode,
-      requireCountryCode: true,
-    });
-  }
+  normalizedPhone = normalizePhoneNumber({
+    phone: mobile,
+    countryCode: mobileCountryCode || countryCode,
+    requireCountryCode: true,
+  });
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      name: String(name).trim(),
-      email: normalizedEmail,
-      mobile: normalizedPhone?.e164 || String(mobile || "").trim(),
-      mobileCountryCode: normalizedPhone?.countryCode || null,
-      password: hashedPassword,
+  const user = await prisma.$transaction(async (tx) => {
+    const createdUser = await tx.user.create({
+      data: {
+        name: String(name).trim(),
+        email: normalizedEmail,
+        mobile: normalizedPhone.e164,
+        mobileCountryCode: normalizedPhone.countryCode,
+        password: hashedPassword,
+        orgId: Number(resolvedOrganizationId),
+        status: normalizedRole === "SUPER_ADMIN" ? "APPROVED" : "PENDING",
+      },
+    });
+
+    await createOrganizationMembership(tx, {
+      userId: createdUser.id,
+      orgId: Number(resolvedOrganizationId),
       role: normalizedRole,
-      permissions: resolveUserPermissions(normalizedRole),
-      orgId: normalizedRole === "SUPER_ADMIN" ? null : Number(resolvedOrganizationId),
-      status: normalizedRole === "SUPER_ADMIN" ? "APPROVED" : "PENDING",
-    },
+      isActive: true,
+    });
+
+    return createdUser;
   });
 
   res.status(201).json({
@@ -643,7 +766,6 @@ exports.register = asyncHandler(async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
     },
   });
 });
@@ -655,13 +777,7 @@ exports.login = asyncHandler(async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    include: {
-      organization: {
-        include: {
-          plan: true,
-        },
-      },
-    },
+    include: authUserInclude,
   });
 
   if (!user) {
@@ -685,15 +801,6 @@ exports.login = asyncHandler(async (req, res) => {
     throw new Error("Invalid credentials");
   }
 
-  const normalizedRole = normalizeRole(user.role);
-  const resolvedPermissions = resolveUserPermissions(user);
-  let org = user.organization || null;
-  const requestedRole = loginAs ? normalizeRole(loginAs) : null;
-  const effectiveRole = requestedRole || normalizedRole;
-  const requestedOrganizationId = parseOrganizationId(organizationId);
-  const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
-  const normalizedOrganizationName = String(organizationName || "").trim();
-
   if (user.deletedAt) {
     res.status(403);
     throw new Error("Your account has been removed. Please contact your administrator.");
@@ -714,36 +821,24 @@ exports.login = asyncHandler(async (req, res) => {
     throw new Error("Your registration request was rejected. Contact your administrator.");
   }
 
-  if (requestedRole && requestedRole !== normalizedRole) {
-    res.status(401);
-    throw new Error(`Selected role (${requestedRole}) does not match this account`);
+  let authContext;
+  try {
+    authContext = resolveAuthMembership({
+      user,
+      loginAs,
+      organizationId,
+      organizationCode,
+      organizationName,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 401);
+    throw new Error(error.message || "Unable to resolve organization membership");
   }
 
-  if (
-    effectiveRole !== "SUPER_ADMIN" &&
-    !requestedOrganizationId &&
-    !normalizedOrganizationCode &&
-    !normalizedOrganizationName
-  ) {
-    res.status(400);
-    throw new Error("Organization selection is required for this role");
-  }
+  const currentRole = authContext.role;
+  let org = authContext.organization || null;
 
-  if (effectiveRole !== "SUPER_ADMIN") {
-    const organizationMismatch =
-      !org ||
-      (requestedOrganizationId && Number(org.id) !== requestedOrganizationId) ||
-      (normalizedOrganizationCode &&
-        String(org.organizationCode || "").trim().toUpperCase() !== normalizedOrganizationCode) ||
-      (normalizedOrganizationName && !organizationMatchesQuery(org, normalizedOrganizationName));
-
-    if (organizationMismatch) {
-      res.status(401);
-      throw new Error("Selected organization does not match this user");
-    }
-  }
-
-  if (normalizedRole !== "SUPER_ADMIN") {
+  if (currentRole !== "SUPER_ADMIN") {
     if (!org) {
       res.status(404);
       throw new Error("Organization not found for this user");
@@ -769,26 +864,38 @@ exports.login = asyncHandler(async (req, res) => {
     org = syncedOrganization || org;
 
     if (!activeSubscription) {
-      if (normalizedRole !== "ORG_ADMIN") {
+      if (currentRole !== "ORG_ADMIN") {
         res.status(402);
         throw new Error("Organization subscription expired. Please contact your admin to renew.");
       }
     }
   }
 
-  await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() },
+    data: {
+      lastLoginAt: new Date(),
+      ...(currentRole !== "SUPER_ADMIN" && org?.id ? { orgId: org.id } : {}),
+    },
+    include: authUserInclude,
   });
 
-  const token = jwt.sign({ id: user.id, role: normalizedRole }, process.env.JWT_KEY, {
+  const sessionUser =
+    currentRole === "SUPER_ADMIN"
+      ? {
+          ...updatedUser,
+          orgId: null,
+        }
+      : updatedUser;
+
+  const token = jwt.sign({ id: user.id }, process.env.JWT_KEY, {
     expiresIn: "7d",
   });
 
   const redirectPath =
-    normalizedRole === "ORG_ADMIN" && org?.subscriptionStatus === "EXPIRED"
+    currentRole === "ORG_ADMIN" && org?.subscriptionStatus === "EXPIRED"
       ? "/org/subscription"
-      : getDashboardPathByRole(normalizedRole);
+      : getDashboardPathByRole(currentRole);
 
   res.cookie("token", token, {
     httpOnly: true,
@@ -801,14 +908,7 @@ exports.login = asyncHandler(async (req, res) => {
     success: true,
     message: "Login successful",
     token,
-    user: serializeSessionUser(
-      {
-        ...user,
-        role: normalizedRole,
-        permissions: resolvedPermissions,
-      },
-      org
-    ),
+    user: serializeSessionUser(sessionUser, org),
     redirectPath,
   });
 });
@@ -882,8 +982,8 @@ exports.validateResetPasswordToken = asyncHandler(async (req, res) => {
     success: true,
     message: "Reset link verified.",
     emailHint: maskEmailAddress(user.email),
-    role: normalizeRole(user.role),
-    loginPath: getLoginPathByRole(user.role),
+    role: resolveUserRole(user, resolveOrganizationId(user)) || "MEMBER",
+    loginPath: getLoginPathByRole(resolveUserRole(user, resolveOrganizationId(user)) || "MEMBER"),
   });
 });
 
@@ -908,7 +1008,7 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Password reset successful. Please sign in with your new password.",
-    loginPath: getLoginPathByRole(user.role),
+    loginPath: getLoginPathByRole(resolveUserRole(user, resolveOrganizationId(user)) || "MEMBER"),
   });
 });
 
@@ -922,13 +1022,7 @@ exports.updateMe = asyncHandler(async (req, res) => {
 
   const existingUser = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      organization: {
-        include: {
-          plan: true,
-        },
-      },
-    },
+    include: authUserInclude,
   });
 
   if (!existingUser) {
@@ -994,11 +1088,11 @@ exports.updateMe = asyncHandler(async (req, res) => {
     }
 
     try {
+      const currentRole = resolveUserRole(existingUser, resolveOrganizationId(existingUser));
       const normalizedPhone = normalizePhoneNumber({
         phone: mobileValue,
         countryCode: nextMobileCountryCode,
-        requireCountryCode:
-          normalizeRole(existingUser.role) !== "SUPER_ADMIN" && !mobileValue.startsWith("+"),
+        requireCountryCode: currentRole !== "SUPER_ADMIN" && !mobileValue.startsWith("+"),
       });
 
       payload.mobile = normalizedPhone.e164;
@@ -1048,13 +1142,7 @@ exports.updateMe = asyncHandler(async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: payload,
-      include: {
-        organization: {
-          include: {
-            plan: true,
-          },
-        },
-      },
+      include: authUserInclude,
     });
     didPersistUploadedProfileImage = Boolean(uploadedProfileImage?.publicId);
 
@@ -1087,13 +1175,7 @@ exports.updateMe = asyncHandler(async (req, res) => {
 exports.getMe = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: Number(req.user.id) },
-    include: {
-      organization: {
-        include: {
-          plan: true,
-        },
-      },
-    },
+    include: authUserInclude,
   });
 
   if (!user) {

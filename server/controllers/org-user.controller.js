@@ -5,9 +5,9 @@ const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
 const {
   PERMISSION_KEYS,
-  getDefaultPermissionsForRole,
 } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
+const { resolveMembership, resolveUserRole } = require("../utils/membership");
 const {
   ensureOrganizationId,
   parseBoolean,
@@ -19,13 +19,13 @@ const {
 const {
   assertPermission,
   assertRoleScope,
-  sanitizePermissionsByAssigner,
 } = require("../services/access.service");
 const { mapUserForManagement, buildUserSummary } = require("../services/user-query.service");
 const {
   userManagementSelect,
 } = require("../services/prisma-selects.service");
 const { archiveUser, restoreUserFromArchive } = require("../services/archive.service");
+const { createOrganizationMembership } = require("../services/organization-member.service");
 const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
 
 const USER_STATUS = new Set(["APPROVED", "PENDING", "REJECTED"]);
@@ -37,7 +37,11 @@ const ensureOrgTargetUser = async ({ req, res, targetUserId, allowSelf = false }
   const user = await prisma.user.findFirst({
     where: {
       id: Number(targetUserId),
-      orgId,
+      memberships: {
+        some: {
+          orgId,
+        },
+      },
       deletedAt: null,
     },
     select: userManagementSelect,
@@ -53,8 +57,16 @@ const ensureOrgTargetUser = async ({ req, res, targetUserId, allowSelf = false }
     throw new Error("You cannot perform this action on your own account");
   }
 
-  assertRoleScope(res, req.user, user.role);
-  return { orgId, user };
+  const membership = resolveMembership(user, orgId);
+  const targetRole = resolveUserRole(user, orgId);
+
+  if (!membership || !targetRole) {
+    res.status(404);
+    throw new Error("User membership not found in this organization");
+  }
+
+  assertRoleScope(res, req.user, targetRole, orgId);
+  return { orgId, user, membership, targetRole };
 };
 
 exports.getOrgUsers = asyncHandler(async (req, res) => {
@@ -63,18 +75,21 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
 
   const users = await prisma.user.findMany({
     where: {
-      orgId,
-      deletedAt: null,
-      role: {
-        not: "SUPER_ADMIN",
+      memberships: {
+        some: {
+          orgId,
+        },
       },
+      deletedAt: null,
     },
     select: userManagementSelect,
     orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
 
-  const items = users.map(mapUserForManagement);
+  const items = users
+    .map((user) => mapUserForManagement(user, orgId))
+    .filter((user) => user.role !== "SUPER_ADMIN");
 
   res.status(200).json({
     success: true,
@@ -88,7 +103,8 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
 });
 
 exports.getOrgUserById = asyncHandler(async (req, res) => {
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW);
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
   const { user } = await ensureOrgTargetUser({
     req,
     res,
@@ -98,19 +114,21 @@ exports.getOrgUserById = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    item: mapUserForManagement(user),
+    item: mapUserForManagement(user, orgId),
   });
 });
 
 exports.patchOrgUser = asyncHandler(async (req, res) => {
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE);
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE, orgId);
   const { user } = await ensureOrgTargetUser({
     req,
     res,
     targetUserId: req.params.userId,
   });
 
-  const payload = {};
+  const userPayload = {};
+  const membershipPayload = {};
 
   if (typeof req.body?.name === "string") {
     const name = truncateText(req.body.name, 120);
@@ -118,7 +136,7 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("name cannot be empty");
     }
-    payload.name = name;
+    userPayload.name = name;
   }
 
   if (req.body?.mobile !== undefined) {
@@ -133,30 +151,20 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error(phoneError.message || "Invalid mobile number");
     }
-    payload.mobile = normalizedPhone.e164;
-    payload.mobileCountryCode = normalizedPhone.countryCode;
+    userPayload.mobile = normalizedPhone.e164;
+    userPayload.mobileCountryCode = normalizedPhone.countryCode;
   }
 
   const hasRole = Object.prototype.hasOwnProperty.call(req.body || {}, "role");
-  const hasPermissions = Object.prototype.hasOwnProperty.call(req.body || {}, "permissions");
-
-  const nextRole = hasRole ? normalizeRole(req.body?.role || user.role) : normalizeRole(user.role);
+  const currentRole = resolveUserRole(user, orgId) || "MEMBER";
+  const nextRole = hasRole ? normalizeRole(req.body?.role || currentRole) : currentRole;
   if (hasRole) {
     if (nextRole === "SUPER_ADMIN") {
       res.status(400);
       throw new Error("SUPER_ADMIN role is not allowed in organization scope");
     }
-    assertRoleScope(res, req.user, nextRole);
-    payload.role = nextRole;
-  }
-
-  if (hasPermissions || hasRole) {
-    const defaultPermissions = getDefaultPermissionsForRole(nextRole);
-    payload.permissions = sanitizePermissionsByAssigner(
-      req.user,
-      hasPermissions ? req.body?.permissions : undefined,
-      defaultPermissions
-    );
+    assertRoleScope(res, req.user, nextRole, orgId);
+    membershipPayload.role = nextRole;
   }
 
   if (req.body?.status !== undefined) {
@@ -165,9 +173,10 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("Invalid status");
     }
-    payload.status = status;
+    userPayload.status = status;
     if (status === "REJECTED") {
-      payload.isActive = false;
+      userPayload.isActive = false;
+      membershipPayload.isActive = false;
     }
   }
 
@@ -177,27 +186,48 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("isActive must be boolean");
     }
-    payload.isActive = isActive;
+    membershipPayload.isActive = isActive;
   }
 
-  if (Object.keys(payload).length === 0) {
+  if (Object.keys(userPayload).length === 0 && Object.keys(membershipPayload).length === 0) {
     res.status(400);
     throw new Error("No valid fields provided for update");
   }
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: payload,
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(userPayload).length > 0) {
+      await tx.user.update({
+        where: { id: user.id },
+        data: userPayload,
+      });
+    }
+
+    if (Object.keys(membershipPayload).length > 0) {
+      await tx.organizationMember.update({
+        where: {
+          userId_orgId: {
+            userId: user.id,
+            orgId,
+          },
+        },
+        data: membershipPayload,
+      });
+    }
   });
 
-  if (payload.status === "REJECTED") {
+  const updated = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: userManagementSelect,
+  });
+
+  if (userPayload.status === "REJECTED") {
     await archiveUser({
       userId: user.id,
-      orgId: user.orgId,
+      orgId,
       reason: "Status updated to REJECTED via profile edit",
       archivedById: Number(req.user.id),
     });
-  } else if (payload.status === "APPROVED" && user.status === "REJECTED") {
+  } else if (userPayload.status === "APPROVED" && user.status === "REJECTED") {
     await restoreUserFromArchive({
       userId: user.id,
     });
@@ -206,13 +236,13 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "User updated successfully",
-    item: mapUserForManagement(updated),
+    item: mapUserForManagement(updated, orgId),
   });
 });
 
 exports.createOrgUser = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE);
+  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE, orgId);
   await assertWithinPlanUserLimit({ orgId, res });
 
   const name = truncateText(req.body?.name, 120);
@@ -230,7 +260,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
     throw new Error("Invalid status");
   }
 
-  assertRoleScope(res, req.user, role);
+  assertRoleScope(res, req.user, role, orgId);
 
   if (role === "SUPER_ADMIN") {
     res.status(400);
@@ -249,55 +279,95 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
     throw new Error(error.message || "Invalid mobile number");
   }
 
-  const userExists = await prisma.user.findUnique({
+  const existingUser = await prisma.user.findUnique({
     where: { email },
-    select: { id: true },
-  });
-
-  if (userExists) {
-    res.status(409);
-    throw new Error("User with this email already exists");
-  }
-
-  const plainPassword = req.body?.password ? String(req.body.password) : randomPassword();
-  if (plainPassword.length < 8) {
-    res.status(400);
-    throw new Error("Password must be at least 8 characters");
-  }
-  const hashedPassword = await bcrypt.hash(plainPassword, 10);
-  const defaultPermissions = getDefaultPermissionsForRole(role);
-  const permissions = sanitizePermissionsByAssigner(
-    req.user,
-    req.body?.permissions,
-    defaultPermissions
-  );
-
-  const user = await prisma.user.create({
-    data: {
-      orgId,
-      name,
-      email,
-      mobile: normalizedPhone.e164,
-      mobileCountryCode: normalizedPhone.countryCode,
-      password: hashedPassword,
-      role,
-      permissions,
-      status,
-      isActive: true,
-      createdById: Number(req.user.id),
+    include: {
+      memberships: true,
     },
   });
 
+  let tempPassword;
+  let user;
+
+  if (existingUser) {
+    const duplicateMembership = resolveMembership(existingUser, orgId);
+    if (duplicateMembership) {
+      res.status(409);
+      throw new Error("User is already a member of this organization");
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await createOrganizationMembership(tx, {
+        userId: existingUser.id,
+        orgId,
+        role,
+        isActive: status !== "REJECTED",
+      });
+
+      await tx.user.update({
+        where: { id: existingUser.id },
+        data: {
+          orgId: existingUser.orgId || orgId,
+          status,
+          isActive: status === "REJECTED" ? false : existingUser.isActive !== false,
+        },
+      });
+    });
+
+    user = await prisma.user.findUnique({
+      where: { id: existingUser.id },
+      select: userManagementSelect,
+    });
+  } else {
+    const plainPassword = req.body?.password ? String(req.body.password) : randomPassword();
+    if (plainPassword.length < 8) {
+      res.status(400);
+      throw new Error("Password must be at least 8 characters");
+    }
+
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    tempPassword = req.body?.password ? undefined : plainPassword;
+
+    user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          orgId,
+          name,
+          email,
+          mobile: normalizedPhone.e164,
+          mobileCountryCode: normalizedPhone.countryCode,
+          password: hashedPassword,
+          status,
+          isActive: status !== "REJECTED",
+          createdById: Number(req.user.id),
+        },
+      });
+
+      await createOrganizationMembership(tx, {
+        userId: createdUser.id,
+        orgId,
+        role,
+        isActive: status !== "REJECTED",
+      });
+
+      return tx.user.findUnique({
+        where: { id: createdUser.id },
+        select: userManagementSelect,
+      });
+    });
+  }
+
   res.status(201).json({
     success: true,
-    message: "User created successfully",
-    tempPassword: req.body?.password ? undefined : plainPassword,
-    item: mapUserForManagement(user),
+    message: existingUser ? "User added to organization successfully" : "User created successfully",
+    tempPassword,
+    item: mapUserForManagement(user, orgId),
   });
 });
 
 exports.updateOrgUserStatus = asyncHandler(async (req, res) => {
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_STATUS_UPDATE);
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.USERS_STATUS_UPDATE, orgId);
   const status = normalizeStatus(req.body?.status || "");
   if (!USER_STATUS.has(status)) {
     res.status(400);
@@ -310,18 +380,37 @@ exports.updateOrgUserStatus = asyncHandler(async (req, res) => {
     targetUserId: req.params.userId,
   });
 
-  const updated = await prisma.user.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        status,
+        ...(status === "REJECTED" ? { isActive: false } : {}),
+      },
+    });
+
+    await tx.organizationMember.update({
+      where: {
+        userId_orgId: {
+          userId: user.id,
+          orgId,
+        },
+      },
+      data: {
+        isActive: status !== "REJECTED",
+      },
+    });
+  });
+
+  const updated = await prisma.user.findUnique({
     where: { id: user.id },
-    data: {
-      status,
-      ...(status === "REJECTED" ? { isActive: false } : {}),
-    },
+    select: userManagementSelect,
   });
 
   if (status === "REJECTED") {
     await archiveUser({
       userId: user.id,
-      orgId: user.orgId,
+      orgId,
       reason: "Status updated to REJECTED by admin",
       archivedById: Number(req.user.id),
     });
@@ -335,12 +424,13 @@ exports.updateOrgUserStatus = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "User status updated",
-    item: mapUserForManagement(updated),
+    item: mapUserForManagement(updated, orgId),
   });
 });
 
 exports.toggleOrgUserActive = asyncHandler(async (req, res) => {
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_ACTIVE_TOGGLE);
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.USERS_ACTIVE_TOGGLE, orgId);
   const isActive = parseBoolean(req.body?.isActive, null);
   if (isActive === null) {
     res.status(400);
@@ -353,23 +443,34 @@ exports.toggleOrgUserActive = asyncHandler(async (req, res) => {
     targetUserId: req.params.userId,
   });
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
+  await prisma.organizationMember.update({
+    where: {
+      userId_orgId: {
+        userId: user.id,
+        orgId,
+      },
+    },
     data: {
       isActive,
     },
   });
 
+  const updated = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: userManagementSelect,
+  });
+
   res.status(200).json({
     success: true,
     message: "User access updated",
-    item: mapUserForManagement(updated),
+    item: mapUserForManagement(updated, orgId),
   });
 });
 
 exports.deleteOrgUser = asyncHandler(async (req, res) => {
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_DELETE);
-  const { orgId, user } = await ensureOrgTargetUser({
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.USERS_DELETE, orgId);
+  const { user } = await ensureOrgTargetUser({
     req,
     res,
     targetUserId: req.params.userId,
@@ -418,7 +519,11 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
 
   const pendingUsers = await prisma.user.findMany({
     where: {
-      orgId,
+      memberships: {
+        some: {
+          orgId,
+        },
+      },
       status: "PENDING",
       deletedAt: null,
     },
@@ -428,8 +533,14 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
       id: true,
       name: true,
       email: true,
-      role: true,
       createdAt: true,
+      memberships: {
+        select: {
+          orgId: true,
+          role: true,
+          isActive: true,
+        },
+      },
     },
   });
 
@@ -437,7 +548,7 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     id: String(user.id),
     title: `New registration request: ${user.name}`,
     message: `${user.name} (${user.email}) requested access as ${normalizeRole(
-      user.role
+      resolveUserRole(user, orgId)
     )}`,
     createdAt: user.createdAt,
     action: {

@@ -1,54 +1,63 @@
-const { normalizeRole } = require("../constants/rbac");
-const { resolveUserPermissions, normalizePermissionList } = require("../constants/permissions");
-
-const parsePermissions = (value) => {
-  if (!value) return [];
-
-  if (Array.isArray(value)) {
-    return normalizePermissionList(value);
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        return normalizePermissionList(parsed);
-      }
-    } catch (error) {
-      return normalizePermissionList(
-        value
-          .split(",")
-          .map((entry) => entry.trim())
-          .filter(Boolean)
-      );
-    }
-  }
-
-  return [];
-};
+const { resolveUserPermissions } = require("../constants/permissions");
+const {
+  normalizeMemberships,
+  resolveMembership,
+  resolveOrganizationId,
+  resolveUserRole,
+} = require("./membership");
 
 const normalizeUser = (user, organization = null) => {
   if (!user) return null;
 
-  const normalizedRole = normalizeRole(user.role);
-  const explicitPermissions = parsePermissions(user.permissions);
-  const resolvedPermissions = resolveUserPermissions({
-    role: normalizedRole,
-    permissions: explicitPermissions,
-  });
-
-  const organizationId = user.orgId || user.organizationId || user.organization || null;
+  const normalizedMemberships = normalizeMemberships(user.memberships);
+  const resolvedOrganization = organization || user.organization || null;
+  const organizationId = resolveOrganizationId(
+    {
+      ...user,
+      organization: resolvedOrganization,
+      memberships: normalizedMemberships,
+    },
+    resolvedOrganization?.id
+  );
+  const currentMembership = resolveMembership(
+    {
+      ...user,
+      organization: resolvedOrganization,
+      organizationId,
+      memberships: normalizedMemberships,
+    },
+    organizationId
+  );
+  const currentRole = resolveUserRole(
+    {
+      ...user,
+      organization: resolvedOrganization,
+      organizationId,
+      memberships: normalizedMemberships,
+    },
+    organizationId
+  );
+  const resolvedPermissions = resolveUserPermissions(
+    {
+      ...user,
+      organization: resolvedOrganization,
+      organizationId,
+      memberships: normalizedMemberships,
+    },
+    organizationId
+  );
 
   return {
     ...user,
-    role: normalizedRole,
+    memberships: normalizedMemberships,
+    currentMembership,
+    currentRole,
     permissions: resolvedPermissions,
     organizationId,
-    organization: organization || organizationId,
+    organization: resolvedOrganization || organizationId,
   };
 };
 
 module.exports = {
-  parsePermissions,
   normalizeUser,
 };

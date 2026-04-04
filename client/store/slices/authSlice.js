@@ -1,27 +1,71 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { normalizeRole, resolveDashboardPath, resolveUserPermissions } from "@/utils/roles";
+import {
+  getMembershipForOrg,
+  getUserOrganizationId,
+  getUserRoleForOrg,
+  normalizeMembership,
+  normalizeMemberships,
+  resolveDashboardPath,
+  resolveUserPermissions,
+} from "@/utils/roles";
 
 const normalizeSessionUser = (user) => {
   if (!user || typeof user !== "object") return null;
 
-  const normalizedRole = normalizeRole(user.role);
   const organization =
     user.organization && typeof user.organization === "object" ? user.organization : null;
-  const organizationId =
-    user.organizationId || organization?.id || user.organization || null;
+  const memberships = normalizeMemberships(user.memberships);
+  const organizationId = getUserOrganizationId(
+    {
+      ...user,
+      organization,
+      memberships,
+    },
+    organization?.id
+  );
+  const currentMembership =
+    getMembershipForOrg(
+      {
+        ...user,
+        organization,
+        memberships,
+      },
+      organizationId
+    ) || normalizeMembership(user.currentMembership);
+  const currentRole =
+    getUserRoleForOrg(
+      {
+        ...user,
+        organization,
+        organizationId,
+        memberships,
+        currentMembership,
+      },
+      organizationId
+    ) || null;
+  const permissions = resolveUserPermissions(
+    {
+      ...user,
+      organization,
+      organizationId,
+      memberships,
+      currentMembership,
+      currentRole,
+    },
+    organizationId
+  );
 
   return {
     ...user,
-    role: normalizedRole,
-    permissions: resolveUserPermissions({
-      role: normalizedRole,
-      permissions: user.permissions,
-    }),
+    memberships,
+    currentMembership,
+    currentRole,
+    permissions,
     organization,
     organizationId,
     organizationCode: user.organizationCode || organization?.organizationCode || null,
     city: user.city || organization?.city || null,
-    dashboardPath: resolveDashboardPath(normalizedRole, user.dashboardPath),
+    dashboardPath: resolveDashboardPath(currentRole, user.dashboardPath),
   };
 };
 
@@ -83,7 +127,10 @@ const readPersistedSession = () => {
   const token = localStorage.getItem("token");
   const user = parseStoredUser();
   const redirectPath = user
-    ? resolveDashboardPath(user.role, localStorage.getItem("redirectPath") || user.dashboardPath)
+    ? resolveDashboardPath(
+        user.currentRole,
+        localStorage.getItem("redirectPath") || user.dashboardPath
+      )
     : null;
 
   return {
@@ -128,7 +175,7 @@ const authSlice = createSlice({
       const nextToken = action.payload?.token || null;
       const nextRedirectPath = nextUser
         ? resolveDashboardPath(
-            nextUser.role,
+            nextUser.currentRole,
             action.payload?.redirectPath || action.payload?.user?.dashboardPath
           )
         : null;
@@ -146,7 +193,7 @@ const authSlice = createSlice({
     setCurrentUser: (state, action) => {
       const nextUser = normalizeSessionUser(action.payload);
       const nextRedirectPath = nextUser
-        ? resolveDashboardPath(nextUser.role, state.redirectPath || nextUser.dashboardPath)
+        ? resolveDashboardPath(nextUser.currentRole, state.redirectPath || nextUser.dashboardPath)
         : null;
 
       state.user = nextUser;

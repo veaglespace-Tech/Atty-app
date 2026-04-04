@@ -59,7 +59,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const user = useSelector((state) => state.auth.user);
-  const userRole = user?.role || ROLES.MEMBER;
+  const userRole = user?.currentRole || ROLES.MEMBER;
   const filteredItems = useMemo(
     () => MENU_ITEMS.filter((item) => item.roles.includes(userRole)),
     [userRole]

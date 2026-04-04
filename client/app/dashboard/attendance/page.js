@@ -25,6 +25,7 @@ const SUMMARY_CARDS = [
 
 export default function AttendancePage() {
   const { user } = useSelector((state) => state.auth);
+  const currentRole = user?.currentRole;
   const [searchValue, setSearchValue] = useState("");
   const { data: attendanceData, isLoading: attendanceLoading, isFetching: attendanceFetching } =
     useGetAttendanceQuery("", { skip: !user });
@@ -81,7 +82,7 @@ export default function AttendancePage() {
 
             <div className="mt-5 flex flex-wrap gap-3">
               <span className="brand-chip">
-                {formatRoleLabel(user?.role)}
+                {formatRoleLabel(currentRole)}
               </span>
               <span className="brand-chip mobile-hide-chip">
                 {totalRecords} Records Today

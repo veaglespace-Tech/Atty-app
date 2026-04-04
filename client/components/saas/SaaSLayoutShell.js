@@ -70,9 +70,10 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const [mobileNavPath, setMobileNavPath] = useState(null);
   const [userSignOut] = useUserSignOutMutation();
   const loginPath = sectionRoot === "/super-admin" ? "/super-admin/login" : "/login";
+  const currentRole = user?.currentRole;
   const dashboardPath = useMemo(
-    () => resolveDashboardPath(user?.role, user?.dashboardPath),
-    [user?.dashboardPath, user?.role]
+    () => resolveDashboardPath(currentRole, user?.dashboardPath),
+    [currentRole, user?.dashboardPath]
   );
 
   const expectedRoot = useMemo(() => {
@@ -95,8 +96,8 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     [visibleNavItems]
   );
 
-  const roleLabel = formatRoleLabel(user?.role);
-  const roleBadgeTheme = getRoleBadgeTheme(user?.role);
+  const roleLabel = formatRoleLabel(currentRole);
+  const roleBadgeTheme = getRoleBadgeTheme(currentRole);
   const settingsHref = sectionRoot ? `${sectionRoot}/settings` : "/settings";
   const settingsActive = pathname === settingsHref;
   const mobileNavOpen = mobileNavPath === pathname;
@@ -141,7 +142,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
     dispatch(logout());
     setMobileNavPath(null);
-    router.replace(user?.role === ROLES.SUPER_ADMIN ? "/super-admin/login" : "/login");
+    router.replace(currentRole === ROLES.SUPER_ADMIN ? "/super-admin/login" : "/login");
   };
 
   if (!hydrated || !token) return null;

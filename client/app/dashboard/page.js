@@ -34,7 +34,7 @@ const ROLE_LINKS = {
 
 export default function Dashboard() {
   const { user } = useSelector((state) => state.auth);
-  const userRole = user?.role || ROLES.MEMBER;
+  const userRole = user?.currentRole || ROLES.MEMBER;
 
   const { data: statsData, isLoading: statsLoading, isFetching: statsFetching } =
     useGetDashboardStatsQuery(undefined, { skip: !user });

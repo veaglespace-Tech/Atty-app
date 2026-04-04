@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const geolib = require("geolib");
 const prisma = require("../lib/prisma");
-const { normalizeRole } = require("../constants/rbac");
+const { resolveUserRole } = require("../utils/membership");
 const { resolveLocationPayload } = require("../services/location.service");
 const {
   ensureOrganizationId,
@@ -483,7 +483,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const { date } = req.query;
   const today = date || new Date().toISOString().split("T")[0];
-  const role = normalizeRole(req.user.role);
+  const role = resolveUserRole(req.user, orgId);
 
   const filter = {
     orgId,
@@ -503,15 +503,21 @@ exports.getAttendance = asyncHandler(async (req, res) => {
       lateMinutes: true,
       punchInAt: true,
       punchOutAt: true,
-        punchInLatitude: true,
-        punchInLongitude: true,
-        punchInLocationMeta: true,
-        punchInSelfieUrl: true,
-        punchOutSelfieUrl: true,
-        user: {
-          select: {
-            name: true,
-          role: true,
+      punchInLatitude: true,
+      punchInLongitude: true,
+      punchInLocationMeta: true,
+      punchInSelfieUrl: true,
+      punchOutSelfieUrl: true,
+      user: {
+        select: {
+          name: true,
+          memberships: {
+            select: {
+              orgId: true,
+              role: true,
+              isActive: true,
+            },
+          },
         },
       },
     },
@@ -532,7 +538,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
     return {
       _id: record.id,
       userName: record.user?.name || "Unknown",
-      userRole: record.user?.role || "MEMBER",
+      userRole: resolveUserRole(record.user, orgId) || "MEMBER",
       status: record.status === "PRESENT" ? "Present" : record.status === "HALF_DAY" ? "Half Day" : "Absent",
       checkIn: record.punchInAt ? new Date(record.punchInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
       checkOut: record.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
@@ -566,9 +572,10 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
     }),
     prisma.user.count({
       where: {
-        orgId,
-        role: {
-          not: "SUPER_ADMIN",
+        memberships: {
+          some: {
+            orgId,
+          },
         },
         deletedAt: null,
       },

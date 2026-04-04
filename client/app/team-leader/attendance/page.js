@@ -86,6 +86,7 @@ const getCoordinates = async () => {
 
 export default function TeamLeaderAttendancePage() {
   const authUser = useSelector((state) => state.auth.user);
+  const currentRole = authUser?.currentRole;
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     ...DEFAULT_FILTERS,
@@ -152,7 +153,7 @@ export default function TeamLeaderAttendancePage() {
   const loading = isLoading || isFetching;
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
-  const showSelfAttendance = normalizeRole(authUser?.role) === ROLES.TEAM_LEADER;
+  const showSelfAttendance = normalizeRole(currentRole) === ROLES.TEAM_LEADER;
   const canManageAttendanceSettings = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
 
   const geoPermissionMessage = useMemo(() => {

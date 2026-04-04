@@ -187,6 +187,102 @@ export const normalizePermissionList = (permissions = []) => {
   return [...new Set(permissions.map(normalizePermission).filter(Boolean))];
 };
 
+export const parseOrganizationId = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.floor(parsed);
+};
+
+export const normalizeMembership = (membership) => {
+  if (!membership || typeof membership !== "object") return null;
+
+  const orgId = parseOrganizationId(membership.orgId);
+  if (!orgId) return null;
+
+  return {
+    ...membership,
+    orgId,
+    role: normalizeRole(membership.role),
+    isActive: membership.isActive !== false,
+  };
+};
+
+export const normalizeMemberships = (memberships = []) =>
+  (Array.isArray(memberships) ? memberships : [])
+    .map(normalizeMembership)
+    .filter(Boolean);
+
+export const getUserOrganizationId = (user, fallback = null) => {
+  const directOrganization =
+    user?.organization && typeof user.organization === "object"
+      ? user.organization.id
+      : user?.organization;
+
+  return (
+    parseOrganizationId(user?.organizationId) ||
+    parseOrganizationId(user?.orgId) ||
+    parseOrganizationId(user?.currentMembership?.orgId) ||
+    parseOrganizationId(directOrganization) ||
+    parseOrganizationId(fallback)
+  );
+};
+
+export const getMembershipForOrg = (user, orgId = null) => {
+  const memberships = normalizeMemberships(user?.memberships);
+  const targetOrgId = getUserOrganizationId(user, orgId);
+  const currentMembership = normalizeMembership(user?.currentMembership);
+
+  if (!targetOrgId) {
+    return currentMembership;
+  }
+
+  return (
+    memberships.find((membership) => membership.orgId === targetOrgId) ||
+    (currentMembership?.orgId === targetOrgId ? currentMembership : null)
+  );
+};
+
+export const getAccessibleRoles = (user, orgId = null) => {
+  if (!user) return [];
+  if (typeof user === "string") return [normalizeRole(user)];
+
+  const currentMembership = normalizeMembership(user?.currentMembership);
+  const targetOrgId = getUserOrganizationId(user, orgId);
+
+  if (targetOrgId) {
+    const membership = getMembershipForOrg(user, targetOrgId);
+    if (!membership || membership.isActive === false) return [];
+    return [membership.role];
+  }
+
+  if (currentMembership?.isActive !== false && currentMembership?.role) {
+    return [currentMembership.role];
+  }
+
+  const memberships = normalizeMemberships(user?.memberships);
+  const activeRoles = memberships
+    .filter((membership) => membership.isActive !== false)
+    .map((membership) => membership.role);
+
+  if (activeRoles.length > 0) {
+    return activeRoles;
+  }
+
+  return user?.currentRole ? [normalizeRole(user.currentRole)] : [];
+};
+
+export const getUserRoleForOrg = (user, orgId = null) => {
+  if (!user) return null;
+  if (typeof user === "string") return normalizeRole(user);
+
+  const roles = getAccessibleRoles(user, orgId);
+  if (roles.includes(ROLES.SUPER_ADMIN)) {
+    return ROLES.SUPER_ADMIN;
+  }
+
+  return roles[0] || null;
+};
+
 export const getDefaultPermissionsForRole = (role) => {
   const normalizedRole = normalizeRole(role);
   return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || [])];
@@ -197,20 +293,23 @@ export const getAssignablePermissionsByRole = (role) => {
   return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
 };
 
-export const resolveUserPermissions = (userOrRole, explicitPermissions) => {
+export const resolveUserPermissions = (userOrRole, orgIdOrPermissions) => {
+  const explicitPermissions = Array.isArray(orgIdOrPermissions) ? orgIdOrPermissions : undefined;
+  const explicitOrgId = explicitPermissions ? null : orgIdOrPermissions;
+
   if (!userOrRole && !explicitPermissions) return [];
 
-  const role = typeof userOrRole === "string"
-    ? normalizeRole(userOrRole)
-    : normalizeRole(userOrRole?.role);
+  const role =
+    typeof userOrRole === "string"
+      ? normalizeRole(userOrRole)
+      : getUserRoleForOrg(userOrRole, explicitOrgId);
 
   if (role === ROLES.SUPER_ADMIN || role === ROLES.ORG_ADMIN) {
     return [...ALL_PERMISSIONS];
   }
 
-  const sourcePermissions = explicitPermissions !== undefined
-    ? explicitPermissions
-    : userOrRole?.permissions;
+  const sourcePermissions =
+    explicitPermissions !== undefined ? explicitPermissions : userOrRole?.permissions;
 
   const normalizedPermissions = normalizePermissionList(sourcePermissions);
   if (normalizedPermissions.length > 0) {

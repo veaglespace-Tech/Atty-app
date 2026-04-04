@@ -1,5 +1,7 @@
 const { normalizeRole } = require("../constants/rbac");
 
+const { resolveOrganizationId: resolveMembershipOrganizationId } = require("../utils/membership");
+
 const parsePositiveInt = (value, fallback = 0) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
@@ -47,12 +49,7 @@ const normalizeStatus = (value, fallback = "") =>
     .trim()
     .toUpperCase();
 
-const resolveOrganizationId = (user) => {
-  const rawId = user?.organizationId || user?.organization || user?.orgId || null;
-  const parsed = Number(rawId);
-  if (!Number.isFinite(parsed) || parsed <= 0) return null;
-  return Math.floor(parsed);
-};
+const resolveOrganizationId = (user) => resolveMembershipOrganizationId(user);
 
 const ensureOrganizationId = (req, res) => {
   const organizationId = resolveOrganizationId(req.user);

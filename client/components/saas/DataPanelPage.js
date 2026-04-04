@@ -1031,6 +1031,7 @@ export default function DataPanelPage({
   hiddenRecordColumns = [],
 }) {
   const user = useSelector((state) => state.auth.user);
+  const currentRole = user?.currentRole;
   const [error, setError] = useState("");
   const {
     data,
@@ -1113,7 +1114,7 @@ export default function DataPanelPage({
         </div>
 
         <div className="relative mt-6 flex flex-wrap items-center gap-2">
-          {isDashboardEndpoint && user.role === "TEAM_LEADER" ? (
+          {isDashboardEndpoint && currentRole === "TEAM_LEADER" ? (
             <TeamLeaderLiveLocationButton
               teamId={payload.meta?.teamId}
               disabled={loading}

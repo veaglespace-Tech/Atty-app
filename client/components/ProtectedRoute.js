@@ -8,8 +8,9 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, token, loading, redirectPath, hydrated } = useAuthSession();
   const router = useRouter();
   const pathname = usePathname();
+  const currentRole = user?.currentRole;
   const fallbackPath =
-    resolveDashboardPath(user?.role, user?.dashboardPath || redirectPath) || "/member/dashboard";
+    resolveDashboardPath(currentRole, user?.dashboardPath || redirectPath) || "/member/dashboard";
   const shouldRedirectLegacyDashboard =
     Boolean(token && pathname?.startsWith("/dashboard") && !fallbackPath.startsWith("/dashboard"));
 
@@ -20,7 +21,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
       if (pathname !== "/login") {
         router.replace("/login");
       }
-    } else if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    } else if (allowedRoles && !allowedRoles.includes(currentRole)) {
       if (pathname !== fallbackPath) {
         router.replace(fallbackPath);
       }
@@ -36,7 +37,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     router,
     shouldRedirectLegacyDashboard,
     token,
-    user?.role,
+    currentRole,
   ]);
 
   if (
@@ -44,7 +45,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     loading ||
     !token ||
     shouldRedirectLegacyDashboard ||
-    (allowedRoles && !allowedRoles.includes(user?.role))
+    (allowedRoles && !allowedRoles.includes(currentRole))
   ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">

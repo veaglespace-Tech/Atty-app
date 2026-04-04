@@ -57,7 +57,7 @@ const EXPORT_NOTES = [
 
 export default function ReportsPage() {
   const { user } = useSelector((state) => state.auth);
-  const userRole = user?.role || ROLES.MEMBER;
+  const userRole = user?.currentRole || ROLES.MEMBER;
   const roleLabel = formatRoleLabel(userRole);
   const roleSummary = getRoleSummary(userRole);
 

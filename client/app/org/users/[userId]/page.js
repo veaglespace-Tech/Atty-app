@@ -67,7 +67,7 @@ export default function OrgUserDetailPage() {
   const [patchUserMutation] = usePatchOrgUserMutation();
 
   const user = userData?.item || null;
-  const actorRole = normalizeRole(authUser?.role);
+  const actorRole = normalizeRole(authUser?.currentRole);
   const assignablePermissions = useMemo(
     () => getAssignablePermissionsByRole(actorRole),
     [actorRole]

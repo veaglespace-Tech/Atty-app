@@ -19,6 +19,28 @@ const xlsx = require("xlsx");
 
 const SUBSCRIPTION_STATUS = new Set(["TRIAL", "ACTIVE", "EXPIRED", "PAYMENT_PENDING"]);
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const NON_SUPER_ADMIN_USER_WHERE = {
+  deletedAt: null,
+  memberships: {
+    none: {
+      role: "SUPER_ADMIN",
+      isActive: true,
+    },
+  },
+};
+const ORGANIZATION_MEMBER_COUNT_SELECT = {
+  members: {
+    where: {
+      isActive: true,
+      user: NON_SUPER_ADMIN_USER_WHERE,
+    },
+  },
+  teams: {
+    where: {
+      deletedAt: null,
+    },
+  },
+};
 
 const toMonthKey = (value) => {
   const date = new Date(value);
@@ -266,22 +288,12 @@ const buildSuperAdminDashboardPayload = async (limit = 12) => {
         },
       }),
       prisma.user.count({
-        where: {
-          deletedAt: null,
-          role: {
-            not: "SUPER_ADMIN",
-          },
-        },
+        where: NON_SUPER_ADMIN_USER_WHERE,
       }),
       prisma.payment.aggregate({
         where: {
           status: "SUCCESS",
-          user: {
-            deletedAt: null,
-            role: {
-              not: "SUPER_ADMIN",
-            },
-          },
+          user: NON_SUPER_ADMIN_USER_WHERE,
         },
         _sum: {
           amount: true,
@@ -302,18 +314,7 @@ const buildSuperAdminDashboardPayload = async (limit = 12) => {
             },
           },
           _count: {
-            select: {
-              users: {
-                where: {
-                  deletedAt: null,
-                },
-              },
-              teams: {
-                where: {
-                  deletedAt: null,
-                },
-              },
-            },
+            select: ORGANIZATION_MEMBER_COUNT_SELECT,
           },
         },
         orderBy: [{ createdAt: "desc" }],
@@ -327,7 +328,7 @@ const buildSuperAdminDashboardPayload = async (limit = 12) => {
     code: org.organizationCode,
     planName: org.plan?.name || "TRIAL",
     subscriptionStatus: org.subscriptionStatus,
-    users: Number(org._count?.users || 0),
+    users: Number(org._count?.members || 0),
     teams: Number(org._count?.teams || 0),
     blocked: Boolean(org.isBlocked),
     active: Boolean(org.isActive),
@@ -373,18 +374,7 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
           },
         },
         _count: {
-          select: {
-            users: {
-              where: {
-                deletedAt: null,
-              },
-            },
-            teams: {
-              where: {
-                deletedAt: null,
-              },
-            },
-          },
+          select: ORGANIZATION_MEMBER_COUNT_SELECT,
         },
       },
       orderBy: [{ createdAt: "desc" }],
@@ -394,12 +384,7 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
       by: ["orgId"],
       where: {
         status: "SUCCESS",
-        user: {
-          deletedAt: null,
-          role: {
-            not: "SUPER_ADMIN",
-          },
-        },
+        user: NON_SUPER_ADMIN_USER_WHERE,
       },
       _count: {
         _all: true,
@@ -443,7 +428,7 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
       adminEmail: org.orgAdmin?.email || "",
       adminPhone: org.orgAdmin?.mobile || "",
       adminPhoneCountryCode: org.orgAdmin?.mobileCountryCode || "",
-      users: Number(org._count?.users || 0),
+      users: Number(org._count?.members || 0),
       teams: Number(org._count?.teams || 0),
       planName: org.plan?.name || "TRIAL",
       planCode: org.plan?.code || "",
@@ -489,12 +474,7 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
         organization: {
           deletedAt: null,
         },
-        user: {
-          deletedAt: null,
-          role: {
-            not: "SUPER_ADMIN",
-          },
-        },
+        user: NON_SUPER_ADMIN_USER_WHERE,
       },
       include: {
         organization: {
@@ -520,12 +500,7 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
         organization: {
           deletedAt: null,
         },
-        user: {
-          deletedAt: null,
-          role: {
-            not: "SUPER_ADMIN",
-          },
-        },
+        user: NON_SUPER_ADMIN_USER_WHERE,
       },
       _sum: {
         amount: true,
@@ -1156,18 +1131,7 @@ exports.updateOrganizationAccess = asyncHandler(async (req, res) => {
         },
       },
       _count: {
-        select: {
-          users: {
-            where: {
-              deletedAt: null,
-            },
-          },
-          teams: {
-            where: {
-              deletedAt: null,
-            },
-          },
-        },
+        select: ORGANIZATION_MEMBER_COUNT_SELECT,
       },
     },
   });
@@ -1195,7 +1159,7 @@ exports.updateOrganizationAccess = asyncHandler(async (req, res) => {
       email: updated.email || "",
       phone: updated.phone || "",
       phoneCountryCode: updated.phoneCountryCode || "",
-      users: Number(updated._count?.users || 0),
+      users: Number(updated._count?.members || 0),
       teams: Number(updated._count?.teams || 0),
       planName: updated.plan?.name || "TRIAL",
       subscriptionStatus: updated.subscriptionStatus,
@@ -1278,12 +1242,7 @@ exports.getSuperAdminPlans = asyncHandler(async (req, res) => {
       by: ["planCode"],
       where: {
         status: "SUCCESS",
-        user: {
-          deletedAt: null,
-          role: {
-            not: "SUPER_ADMIN",
-          },
-        },
+        user: NON_SUPER_ADMIN_USER_WHERE,
       },
       _sum: {
         amount: true,
@@ -1906,7 +1865,7 @@ exports.getSuperAdminAnalytics = asyncHandler(async (req, res) => {
         createdAt: {
           gte: new Date(`${oldestMonth}T00:00:00.000Z`),
         },
-        deletedAt: null,
+        ...NON_SUPER_ADMIN_USER_WHERE,
       },
       select: {
         createdAt: true,
