@@ -436,32 +436,117 @@ const authUserInclude = {
   },
 };
 
+const authUserWriteInclude = {
+  organization: {
+    include: {
+      plan: true,
+    },
+  },
+};
+
+const mergeSessionUserState = ({ previousUser, nextUser, organization = null }) => {
+  const resolvedOrganization =
+    organization ||
+    (nextUser?.organization && typeof nextUser.organization === "object"
+      ? nextUser.organization
+      : null) ||
+    (previousUser?.organization && typeof previousUser.organization === "object"
+      ? previousUser.organization
+      : null) ||
+    null;
+
+  return {
+    ...(previousUser && typeof previousUser === "object" ? previousUser : {}),
+    ...(nextUser && typeof nextUser === "object" ? nextUser : {}),
+    organization: resolvedOrganization,
+    memberships: Array.isArray(nextUser?.memberships)
+      ? nextUser.memberships
+      : Array.isArray(previousUser?.memberships)
+        ? previousUser.memberships
+        : [],
+  };
+};
+
+const buildLegacyAuthMembership = (user) => {
+  const normalizedRole = normalizeRole(user?.role);
+  if (!normalizedRole) return null;
+
+  if (normalizedRole === "SUPER_ADMIN") {
+    return {
+      orgId: null,
+      role: "SUPER_ADMIN",
+      isActive: user?.isActive !== false,
+      organization: null,
+    };
+  }
+
+  const organization =
+    user?.organization && typeof user.organization === "object" ? user.organization : null;
+  const resolvedOrgId = parseOrganizationId(organization?.id || user?.orgId || user?.organizationId);
+
+  if (!organization || !resolvedOrgId) {
+    return null;
+  }
+
+  return {
+    orgId: resolvedOrgId,
+    role: normalizedRole,
+    isActive: user?.isActive !== false,
+    organization,
+  };
+};
+
 const findSuperAdminMembership = (user) =>
   (Array.isArray(user?.memberships) ? user.memberships : []).find(
     (membership) =>
       normalizeRole(membership?.role) === "SUPER_ADMIN" && membership?.isActive !== false
-  ) || null;
+  ) ||
+  (buildLegacyAuthMembership(user)?.role === "SUPER_ADMIN" ? buildLegacyAuthMembership(user) : null);
 
 const findOrganizationMembership = ({
   user,
   organizationId,
   organizationCode,
   organizationName,
-}) =>
-  (Array.isArray(user?.memberships) ? user.memberships : []).find((membership) => {
-    const org = membership?.organization;
-    if (!org || org.deletedAt) return false;
-    if (membership?.isActive === false) return false;
-    if (organizationId && Number(org.id) !== Number(organizationId)) return false;
-    if (
-      organizationCode &&
-      String(org.organizationCode || "").trim().toUpperCase() !== String(organizationCode)
-    ) {
-      return false;
-    }
-    if (organizationName && !organizationMatchesQuery(org, organizationName)) return false;
-    return true;
-  }) || null;
+}) => {
+  const matchingMembership =
+    (Array.isArray(user?.memberships) ? user.memberships : []).find((membership) => {
+      const org = membership?.organization;
+      if (!org || org.deletedAt) return false;
+      if (membership?.isActive === false) return false;
+      if (organizationId && Number(org.id) !== Number(organizationId)) return false;
+      if (
+        organizationCode &&
+        String(org.organizationCode || "").trim().toUpperCase() !== String(organizationCode)
+      ) {
+        return false;
+      }
+      if (organizationName && !organizationMatchesQuery(org, organizationName)) return false;
+      return true;
+    }) || null;
+
+  if (matchingMembership) {
+    return matchingMembership;
+  }
+
+  const legacyMembership = buildLegacyAuthMembership(user);
+  const org = legacyMembership?.organization;
+
+  if (!legacyMembership || !org || legacyMembership.isActive === false || org.deletedAt) {
+    return null;
+  }
+
+  if (organizationId && Number(org.id) !== Number(organizationId)) return null;
+  if (
+    organizationCode &&
+    String(org.organizationCode || "").trim().toUpperCase() !== String(organizationCode)
+  ) {
+    return null;
+  }
+  if (organizationName && !organizationMatchesQuery(org, organizationName)) return null;
+
+  return legacyMembership;
+};
 
 const resolveAuthMembership = ({
   user,
@@ -877,16 +962,23 @@ exports.login = asyncHandler(async (req, res) => {
       lastLoginAt: new Date(),
       ...(currentRole !== "SUPER_ADMIN" && org?.id ? { orgId: org.id } : {}),
     },
-    include: authUserInclude,
+    include: authUserWriteInclude,
+  });
+
+  const hydratedUser = mergeSessionUserState({
+    previousUser: user,
+    nextUser: updatedUser,
+    organization: currentRole === "SUPER_ADMIN" ? null : org || updatedUser.organization || null,
   });
 
   const sessionUser =
     currentRole === "SUPER_ADMIN"
       ? {
-          ...updatedUser,
+          ...hydratedUser,
           orgId: null,
+          organization: null,
         }
-      : updatedUser;
+      : hydratedUser;
 
   const token = jwt.sign({ id: user.id }, process.env.JWT_KEY, {
     expiresIn: "7d",
@@ -1142,7 +1234,7 @@ exports.updateMe = asyncHandler(async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: payload,
-      include: authUserInclude,
+      include: authUserWriteInclude,
     });
     didPersistUploadedProfileImage = Boolean(uploadedProfileImage?.publicId);
 
@@ -1161,7 +1253,14 @@ exports.updateMe = asyncHandler(async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user: serializeSessionUser(updatedUser, updatedUser.organization || null),
+      user: serializeSessionUser(
+        mergeSessionUserState({
+          previousUser: existingUser,
+          nextUser: updatedUser,
+          organization: updatedUser.organization || existingUser.organization || null,
+        }),
+        updatedUser.organization || existingUser.organization || null
+      ),
     });
   } catch (error) {
     if (uploadedProfileImage?.publicId && !didPersistUploadedProfileImage) {

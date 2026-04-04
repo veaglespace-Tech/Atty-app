@@ -25,6 +25,27 @@ const normalizeMemberships = (memberships = []) =>
     .map(normalizeMembership)
     .filter(Boolean);
 
+const buildLegacyMembership = (user, orgId = null) => {
+  if (!user || typeof user !== "object") return null;
+
+  const targetOrgId =
+    parseOrganizationId(orgId) ||
+    parseOrganizationId(user?.organization?.id) ||
+    parseOrganizationId(user?.orgId) ||
+    parseOrganizationId(user?.organizationId);
+  const role = normalizeRole(user?.role);
+
+  if (!targetOrgId || !role || role === "SUPER_ADMIN") {
+    return null;
+  }
+
+  return {
+    orgId: targetOrgId,
+    role,
+    isActive: user.isActive !== false,
+  };
+};
+
 const resolveOrganizationId = (user, fallback = null) => {
   const directOrganization =
     user?.organization && typeof user.organization === "object"
@@ -43,7 +64,10 @@ const resolveMembership = (user, orgId = null) => {
   const memberships = normalizeMemberships(user?.memberships);
   const targetOrgId = resolveOrganizationId(user, orgId);
   if (!targetOrgId) return null;
-  return memberships.find((membership) => membership.orgId === targetOrgId) || null;
+  return (
+    memberships.find((membership) => membership.orgId === targetOrgId) ||
+    buildLegacyMembership(user, targetOrgId)
+  );
 };
 
 const resolveAccessibleRoles = (user, orgId = null) => {
@@ -52,13 +76,32 @@ const resolveAccessibleRoles = (user, orgId = null) => {
 
   if (targetOrgId) {
     const membership = memberships.find((entry) => entry.orgId === targetOrgId);
-    if (!membership || membership.isActive === false) return [];
-    return [membership.role];
+    if (membership && membership.isActive !== false) {
+      return [membership.role];
+    }
+
+    const legacyMembership = buildLegacyMembership(user, targetOrgId);
+    if (legacyMembership && legacyMembership.isActive !== false) {
+      return [legacyMembership.role];
+    }
+
+    return [];
   }
 
-  return memberships
+  const activeMembershipRoles = memberships
     .filter((membership) => membership.isActive !== false)
     .map((membership) => membership.role);
+
+  if (activeMembershipRoles.length > 0) {
+    return activeMembershipRoles;
+  }
+
+  const directRole = normalizeRole(user?.role);
+  if (directRole && user?.isActive !== false) {
+    return [directRole];
+  }
+
+  return [];
 };
 
 const resolveUserRole = (user, orgId = null) => {

@@ -17,12 +17,13 @@ import {
   usePatchOrgUserMutation,
 } from "@/services/api/orgApi";
 import {
-  ORG_MANAGED_ROLE_OPTIONS,
   PERMISSION_GROUPS,
   PERMISSIONS,
   formatPermissionLabel,
   formatRoleLabel,
   getAssignablePermissionsByRole,
+  getDefaultPermissionsForRole,
+  getManagedRoleOptions,
   hasPermission,
   normalizeRole,
 } from "@/utils/roles";
@@ -68,6 +69,10 @@ export default function OrgUserDetailPage() {
 
   const user = userData?.item || null;
   const actorRole = normalizeRole(authUser?.currentRole);
+  const manageableRoleOptions = useMemo(
+    () => getManagedRoleOptions(actorRole),
+    [actorRole]
+  );
   const assignablePermissions = useMemo(
     () => getAssignablePermissionsByRole(actorRole),
     [actorRole]
@@ -183,6 +188,15 @@ export default function OrgUserDetailPage() {
       permissions: prev.permissions.includes(permission)
         ? prev.permissions.filter((item) => item !== permission)
         : [...prev.permissions, permission],
+    }));
+  };
+
+  const onRoleChange = (event) => {
+    const nextRole = normalizeRole(event.target.value);
+    setForm((prev) => ({
+      ...prev,
+      role: nextRole,
+      permissions: getDefaultPermissionsForRole(nextRole),
     }));
   };
 
@@ -306,11 +320,11 @@ export default function OrgUserDetailPage() {
               <label className="text-xs font-black uppercase tracking-wide text-slate-500">Role</label>
               <select
                 value={form.role}
-                onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+                onChange={onRoleChange}
                 disabled={!canEditUser}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
               >
-                {ORG_MANAGED_ROLE_OPTIONS.map((roleOption) => (
+                {manageableRoleOptions.map((roleOption) => (
                   <option key={roleOption.value} value={roleOption.value}>
                     {roleOption.label}
                   </option>

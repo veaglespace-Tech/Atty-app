@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import { ChevronDown, ChevronUp, Loader2, Plus, RefreshCcw, Search, UserPlus, X } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
@@ -20,6 +21,7 @@ import {
   formatRoleLabel,
   getAssignablePermissionsByRole,
   getDefaultPermissionsForRole,
+  getManagedRoleOptions,
   normalizeRole,
 } from "@/utils/roles";
 import {
@@ -45,6 +47,7 @@ const summaryMapFromArray = (summary) => {
 
 export default function OrgUsersPage() {
   const router = useRouter();
+  const authUser = useSelector((state) => state.auth.user);
   const [submitting, setSubmitting] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [error, setError] = useState("");
@@ -72,12 +75,20 @@ export default function OrgUsersPage() {
   } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
 
   const [createUserMutation] = useCreateOrgUserMutation();
+  const manageableRoleOptions = useMemo(
+    () => getManagedRoleOptions(authUser?.currentRole),
+    [authUser?.currentRole]
+  );
 
   const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
   const summary = useMemo(() => (Array.isArray(usersData?.summary) ? usersData.summary : []), [usersData]);
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
+  const actorRole = normalizeRole(authUser?.currentRole);
 
-  const assignablePermissions = useMemo(() => getAssignablePermissionsByRole(ROLES.ORG_ADMIN), []);
+  const assignablePermissions = useMemo(
+    () => getAssignablePermissionsByRole(actorRole),
+    [actorRole]
+  );
   const permissionGroups = useMemo(
     () =>
       PERMISSION_GROUPS.map((group) => ({
@@ -315,7 +326,7 @@ export default function OrgUsersPage() {
             onChange={onInputChange}
             className={fieldClassName}
           >
-            {ORG_MANAGED_ROLE_OPTIONS.map((roleOption) => (
+            {manageableRoleOptions.map((roleOption) => (
               <option key={roleOption.value} value={roleOption.value}>
                 {roleOption.label}
               </option>

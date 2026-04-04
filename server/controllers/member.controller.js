@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const {
   ensureOrganizationId,
+  minutesToHoursValue,
   parseLimit,
   toSummaryItem,
   todayKey,
@@ -123,9 +124,7 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
   const presentCount = Number(statusCountMap.PRESENT || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
-  const workedHours = Number(
-    (Number(monthlyAggregate?._sum?.totalMinutesWorked || 0) / 60).toFixed(2)
-  );
+  const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
   const items = recentRecords.map((record) => {
     const item = mapAttendanceRecord(record);
 
@@ -146,7 +145,7 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
       toSummaryItem("Today Status", todayRecord?.status || "NO_RECORD"),
       toSummaryItem("Present This Month", presentCount + halfDayCount),
       toSummaryItem("Absent This Month", absentCount),
-      toSummaryItem("Worked Hours This Month", workedHours),
+      toSummaryItem("Worked Hrs This Month", workedHours),
     ],
     items,
     meta: {

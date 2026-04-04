@@ -15,6 +15,7 @@ import {
   useDownloadOrgReportPdfMutation,
   useGetOrgReportsQuery,
 } from "@/services/api/orgApi"
+import { formatHoursValue } from "@/utils/time"
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
@@ -404,7 +405,10 @@ export default function OrgReportsPage() {
         <MetricCard label="Members" value={visibleSummaryMap.get("Members") || 0} />
         <MetricCard label="Present" value={visibleSummaryMap.get("Present Days") || 0} />
         <MetricCard label="Absent" value={visibleSummaryMap.get("Absent Days") || 0} />
-        <MetricCard label="Hours" value={visibleSummaryMap.get("Worked Hours") || 0} />
+        <MetricCard
+          label="Worked Hrs"
+          value={formatHoursValue(visibleSummaryMap.get("Worked Hrs") || 0)}
+        />
       </div>
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
@@ -446,7 +450,7 @@ export default function OrgReportsPage() {
                     <ReportMetric label="Present" value={item.presentDays} />
                     <ReportMetric label="Half Day" value={item.halfDays} />
                     <ReportMetric label="Absent" value={item.absentDays} />
-                    <ReportMetric label="Hours" value={item.workedHours} />
+                    <ReportMetric label="Worked Hrs" value={formatHoursValue(item.workedHours)} />
                   </div>
                 </article>
               ))}
@@ -472,7 +476,7 @@ export default function OrgReportsPage() {
                       Absent
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                      Hours
+                      Worked Hrs
                     </th>
                   </tr>
                 </thead>
@@ -484,7 +488,7 @@ export default function OrgReportsPage() {
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.absentDays}</td>
-                      <td className="px-3 py-2 text-center text-slate-700">{item.workedHours}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{formatHoursValue(item.workedHours)}</td>
                     </tr>
                   ))}
                 </tbody>

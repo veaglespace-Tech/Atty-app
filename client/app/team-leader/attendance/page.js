@@ -14,6 +14,7 @@ import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { hasPermission, normalizeRole, PERMISSIONS, ROLES } from "@/utils/roles";
+import { formatHoursValue } from "@/utils/time";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -37,6 +38,11 @@ const formatDateTime = (value) => {
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleString();
 };
+
+const formatWorkedHours = (record) =>
+  formatHoursValue(record?.workedHours ?? record?.workedMinutes, {
+    fromMinutes: record?.workedHours == null,
+  });
 
 const formatCoordinates = (coordinates) => {
   if (!Array.isArray(coordinates) || coordinates.length !== 2) return "-";
@@ -755,7 +761,7 @@ export default function TeamLeaderAttendancePage() {
                     <TeamAttendanceDetail label="Punch In" value={formatDateTime(record.punchInAt)} />
                     <TeamAttendanceDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
                     <TeamAttendanceDetail label="Location" value={formatLocation(record)} />
-                    <TeamAttendanceDetail label="Worked (min)" value={record.workedMinutes || 0} />
+                    <TeamAttendanceDetail label="Worked Hrs" value={formatWorkedHours(record)} />
                     <TeamAttendanceDetail label="Geo Valid" value={formatGeoStatus(record)} />
                     <TeamAttendanceDetail
                       label="Selfie Proof"
@@ -782,7 +788,7 @@ export default function TeamLeaderAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked (min)</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
@@ -797,7 +803,7 @@ export default function TeamLeaderAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatLocation(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.workedMinutes || 0}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatGeoStatus(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks

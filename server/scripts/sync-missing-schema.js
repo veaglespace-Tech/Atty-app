@@ -163,6 +163,7 @@ const backfillOrganizationMemberSql = `
       WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'SUPERADMIN' THEN 'SUPER_ADMIN'
       WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'ORGADMIN' THEN 'ORG_ADMIN'
       WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'SUBADMIN' THEN 'SUB_ADMIN'
+      WHEN UPPER(REPLACE(u.\`role\`, '-', '_')) = 'ADMIN' THEN 'ORG_ADMIN'
       ELSE UPPER(REPLACE(u.\`role\`, '-', '_'))
     END,
     COALESCE(u.\`isActive\`, true),
@@ -225,6 +226,12 @@ const syncMissingSchema = async () => {
 
   await ensureColumn("User", "resetTokenHash", "VARCHAR(191) NULL");
   await ensureColumn("User", "resetTokenExpiry", "DATETIME(3) NULL");
+  await ensureColumn("User", "profileImageUrl", "VARCHAR(191) NULL");
+  await ensureColumn("User", "profileImagePublicId", "VARCHAR(191) NULL");
+  await ensureColumn("Attendance", "punchInSelfieUrl", "VARCHAR(191) NULL");
+  await ensureColumn("Attendance", "punchInSelfiePublicId", "VARCHAR(191) NULL");
+  await ensureColumn("Attendance", "punchOutSelfieUrl", "VARCHAR(191) NULL");
+  await ensureColumn("Attendance", "punchOutSelfiePublicId", "VARCHAR(191) NULL");
 
   if (await tableExists("archieve_org")) {
     await prisma.$executeRawUnsafe(copyArchiveOrgSql);

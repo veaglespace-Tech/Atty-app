@@ -5,6 +5,7 @@ const { resolveUserRole } = require("../utils/membership");
 const { resolveLocationPayload } = require("../services/location.service");
 const {
   ensureOrganizationId,
+  minutesToHoursValue,
   parseLimit,
   toSummaryItem,
   todayKey,
@@ -188,16 +189,14 @@ const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
   const presentCount = Number(statusCountMap.PRESENT || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
-  const workedHours = Number(
-    (Number(monthlyAggregate?._sum?.totalMinutesWorked || 0) / 60).toFixed(2)
-  );
+  const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
 
   return {
     summary: [
       toSummaryItem("Today Status", todayRecord?.status || "NO_RECORD"),
       toSummaryItem("Present This Month", presentCount + halfDayCount),
       toSummaryItem("Absent This Month", absentCount),
-      toSummaryItem("Worked Hours This Month", workedHours),
+      toSummaryItem("Worked Hrs This Month", workedHours),
     ],
     items: recentRecords.map(mapAttendanceRecord),
     meta: {

@@ -5,6 +5,8 @@ const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
 const {
   PERMISSION_KEYS,
+  getDefaultPermissionsForRole,
+  normalizePermissionList,
 } = require("../constants/permissions");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { resolveMembership, resolveUserRole } = require("../utils/membership");
@@ -19,6 +21,7 @@ const {
 const {
   assertPermission,
   assertRoleScope,
+  sanitizePermissionsByAssigner,
 } = require("../services/access.service");
 const { mapUserForManagement, buildUserSummary } = require("../services/user-query.service");
 const {
@@ -158,6 +161,7 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
   const hasRole = Object.prototype.hasOwnProperty.call(req.body || {}, "role");
   const currentRole = resolveUserRole(user, orgId) || "MEMBER";
   const nextRole = hasRole ? normalizeRole(req.body?.role || currentRole) : currentRole;
+  const roleChanged = hasRole && nextRole !== currentRole;
   if (hasRole) {
     if (nextRole === "SUPER_ADMIN") {
       res.status(400);
@@ -187,6 +191,24 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       throw new Error("isActive must be boolean");
     }
     membershipPayload.isActive = isActive;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(req.body || {}, "permissions")) {
+    if (!Array.isArray(req.body.permissions)) {
+      res.status(400);
+      throw new Error("permissions must be an array");
+    }
+    userPayload.permissions = sanitizePermissionsByAssigner(
+      req.user,
+      normalizePermissionList(req.body.permissions),
+      orgId
+    );
+  } else if (roleChanged) {
+    userPayload.permissions = sanitizePermissionsByAssigner(
+      req.user,
+      getDefaultPermissionsForRole(nextRole),
+      orgId
+    );
   }
 
   if (Object.keys(userPayload).length === 0 && Object.keys(membershipPayload).length === 0) {
@@ -249,6 +271,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const role = normalizeRole(req.body?.role || "MEMBER");
   const status = normalizeStatus(req.body?.status || "APPROVED");
+  const hasPermissions = Object.prototype.hasOwnProperty.call(req.body || {}, "permissions");
 
   if (!name || !email || !req.body?.mobile) {
     res.status(400);
@@ -278,6 +301,15 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error(error.message || "Invalid mobile number");
   }
+
+  if (hasPermissions && !Array.isArray(req.body.permissions)) {
+    res.status(400);
+    throw new Error("permissions must be an array");
+  }
+
+  const normalizedPermissions = hasPermissions
+    ? sanitizePermissionsByAssigner(req.user, normalizePermissionList(req.body.permissions), orgId)
+    : sanitizePermissionsByAssigner(req.user, getDefaultPermissionsForRole(role), orgId);
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -310,6 +342,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
           orgId: existingUser.orgId || orgId,
           status,
           isActive: status === "REJECTED" ? false : existingUser.isActive !== false,
+          permissions: normalizedPermissions,
         },
       });
     });
@@ -339,6 +372,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
           password: hashedPassword,
           status,
           isActive: status !== "REJECTED",
+          permissions: normalizedPermissions,
           createdById: Number(req.user.id),
         },
       });

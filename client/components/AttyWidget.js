@@ -8,6 +8,7 @@ import {
   useAskAttyMutation,
   useSubmitAttySupportMutation,
 } from "@/services/api/attyApi";
+import { formatRoleLabel } from "@/utils/roles";
 
 const QUICK_QUESTIONS = [
   "How do I punch in?",
@@ -129,34 +130,50 @@ function BotAvatar({ avatarBorder }) {
   );
 }
 
+function getEmptySupportForm() {
+  return {
+    name: "",
+    email: "",
+    role: "",
+    roleLabel: "",
+    subject: "",
+    message: "",
+  };
+}
+
+function resolveStoredUserRole(stored = {}) {
+  if (!stored || typeof stored !== "object") return "";
+
+  if (stored.currentRole) return String(stored.currentRole).trim();
+  if (stored.currentMembership?.role) return String(stored.currentMembership.role).trim();
+  if (stored.role) return String(stored.role).trim();
+
+  const activeMembership = Array.isArray(stored.memberships)
+    ? stored.memberships.find((membership) => membership?.isActive !== false && membership?.role)
+    : null;
+
+  return activeMembership?.role ? String(activeMembership.role).trim() : "";
+}
+
 function getInitialSupportForm() {
   if (typeof window === "undefined") {
-    return {
-      name: "",
-      email: "",
-      role: "",
-      subject: "",
-      message: "",
-    };
+    return getEmptySupportForm();
   }
 
   try {
     const stored = JSON.parse(window.localStorage.getItem("user") || "{}");
+    const role = resolveStoredUserRole(stored);
+
     return {
       name: stored.name || "",
       email: stored.email || "",
-      role: stored.role || "",
+      role,
+      roleLabel: role ? formatRoleLabel(role) : "",
       subject: "",
       message: "",
     };
   } catch (_) {
-    return {
-      name: "",
-      email: "",
-      role: "",
-      subject: "",
-      message: "",
-    };
+    return getEmptySupportForm();
   }
 }
 
@@ -241,7 +258,7 @@ function SupportForm({ onSubmit, loading, theme }) {
           </label>
           <input
             type="text"
-            value={form.role}
+            value={form.roleLabel}
             readOnly
             className={`w-full cursor-not-allowed rounded-xl px-2.5 py-2 text-xs focus:outline-none ${theme.supportReadonly}`}
           />

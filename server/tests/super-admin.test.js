@@ -231,6 +231,73 @@ describe("GET /api/super-admin/payments/pdf", () => {
   });
 });
 
+describe("GET /api/super-admin/payments", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("does not exclude organization payments based on the payer's current super admin membership", async () => {
+    prisma.payment.findMany.mockResolvedValue([
+      {
+        id: 7,
+        planName: "Pro Annual",
+        planCode: "PRO",
+        amount: 2400,
+        currency: "INR",
+        status: "SUCCESS",
+        gateway: "RAZORPAY",
+        razorpayOrderId: "order_123",
+        razorpayPaymentId: "pay_123",
+        subscriptionId: 19,
+        createdAt: new Date("2026-03-21T08:00:00.000Z"),
+        organization: {
+          name: "Acme Workspace",
+          organizationCode: "ACME01",
+        },
+        user: {
+          name: "Alice Admin",
+          email: "alice@acme.test",
+        },
+      },
+    ]);
+
+    prisma.payment.aggregate.mockResolvedValue({
+      _sum: { amount: 2400 },
+      _count: { _all: 1 },
+    });
+
+    const response = await request(app).get("/api/super-admin/payments").query({ limit: 20 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.items).toHaveLength(1);
+    expect(response.body.items[0]).toMatchObject({
+      organization: "Acme Workspace",
+      organizationCode: "ACME01",
+      amount: 2400,
+      status: "SUCCESS",
+    });
+    expect(prisma.payment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organization: {
+            deletedAt: null,
+          },
+        },
+      })
+    );
+    expect(prisma.payment.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: "SUCCESS",
+          organization: {
+            deletedAt: null,
+          },
+        },
+      })
+    );
+  });
+});
+
 const { resolveManagedSubscriptionWindow } = require("../services/subscription.service");
 
 describe("resolveManagedSubscriptionWindow", () => {

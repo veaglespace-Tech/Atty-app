@@ -28,6 +28,11 @@ const NON_SUPER_ADMIN_USER_WHERE = {
     },
   },
 };
+const VISIBLE_PAYMENT_WHERE = {
+  organization: {
+    deletedAt: null,
+  },
+};
 const ORGANIZATION_MEMBER_COUNT_SELECT = {
   members: {
     where: {
@@ -293,7 +298,7 @@ const buildSuperAdminDashboardPayload = async (limit = 12) => {
       prisma.payment.aggregate({
         where: {
           status: "SUCCESS",
-          user: NON_SUPER_ADMIN_USER_WHERE,
+          ...VISIBLE_PAYMENT_WHERE,
         },
         _sum: {
           amount: true,
@@ -384,7 +389,7 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
       by: ["orgId"],
       where: {
         status: "SUCCESS",
-        user: NON_SUPER_ADMIN_USER_WHERE,
+        ...VISIBLE_PAYMENT_WHERE,
       },
       _count: {
         _all: true,
@@ -471,10 +476,7 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
   const [payments, aggregate] = await Promise.all([
     prisma.payment.findMany({
       where: {
-        organization: {
-          deletedAt: null,
-        },
-        user: NON_SUPER_ADMIN_USER_WHERE,
+        ...VISIBLE_PAYMENT_WHERE,
       },
       include: {
         organization: {
@@ -497,10 +499,7 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
     prisma.payment.aggregate({
       where: {
         status: "SUCCESS",
-        organization: {
-          deletedAt: null,
-        },
-        user: NON_SUPER_ADMIN_USER_WHERE,
+        ...VISIBLE_PAYMENT_WHERE,
       },
       _sum: {
         amount: true,
@@ -1242,7 +1241,7 @@ exports.getSuperAdminPlans = asyncHandler(async (req, res) => {
       by: ["planCode"],
       where: {
         status: "SUCCESS",
-        user: NON_SUPER_ADMIN_USER_WHERE,
+        ...VISIBLE_PAYMENT_WHERE,
       },
       _sum: {
         amount: true,

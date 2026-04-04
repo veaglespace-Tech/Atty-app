@@ -1,6 +1,13 @@
 const asyncHandler = require("express-async-handler")
 const prisma = require("../lib/prisma")
-const { ensureOrganizationId, parseLimit, toDateKey, toSummaryItem, todayKey } = require("../services/common.service")
+const {
+  ensureOrganizationId,
+  formatHoursValue,
+  parseLimit,
+  toDateKey,
+  toSummaryItem,
+  todayKey,
+} = require("../services/common.service")
 const { mapAttendanceRecord } = require("../services/attendance-query.service")
 const { buildAttendanceReport } = require("../services/report-query.service")
 const {
@@ -10,7 +17,7 @@ const {
   reportPdfUserSelect,
 } = require("../services/prisma-selects.service")
 const { isFreePlan } = require("../services/organization-plan.service")
-const { buildAttendanceDetailedPdf, minutesToDuration } = require("../utils/pdf-report")
+const { buildAttendanceDetailedPdf } = require("../utils/pdf-report")
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service")
 const xlsx = require("xlsx")
 
@@ -156,8 +163,8 @@ const buildAttendanceExcelBuffer = ({
     { key: "email", label: "Email", width: 132 },
     { key: "punchIn", label: "Punch In", width: 70 },
     { key: "punchOut", label: "Punch Out", width: 70 },
-    { key: "totalDuration", label: "Total Duration", width: 88 },
-    { key: "presentDuration", label: "Present Duration", width: 96 },
+    { key: "totalHours", label: "Worked Hrs", width: 88 },
+    { key: "presentHours", label: "Present Hrs", width: 96 },
     { key: "absent", label: "Is Absent", width: 64 },
   ]
 
@@ -165,7 +172,7 @@ const buildAttendanceExcelBuffer = ({
     `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
     `Period: ${String(periodLabel || "Report").toUpperCase()} | Range: ${rangeFrom} to ${rangeTo}`,
     `Records: ${Number(summary?.totalRecords || 0)} | Present Entries: ${Number(summary?.presentEntries || 0)} | Absent Entries: ${Number(summary?.absentEntries || 0)}`,
-    `Worked Time: ${minutesToDuration(summary?.totalWorkedMinutes || 0)} | Present Time: ${minutesToDuration(summary?.totalPresentMinutes || 0)}`,
+    `Worked Hrs: ${formatHoursValue(summary?.totalWorkedMinutes || 0, { fromMinutes: true })} | Present Hrs: ${formatHoursValue(summary?.totalPresentMinutes || 0, { fromMinutes: true })}`,
   ]
 
   const sheetData = [
@@ -283,8 +290,8 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
       date: record.date || "-",
       punchIn: toPdfTime(record.punchInAt),
       punchOut: toPdfTime(record.punchOutAt),
-      totalDuration: minutesToDuration(totalMinutesWorked),
-      presentDuration: minutesToDuration(presentMinutes),
+      totalHours: formatHoursValue(totalMinutesWorked, { fromMinutes: true }),
+      presentHours: formatHoursValue(presentMinutes, { fromMinutes: true }),
       absent: isAbsent ? "YES" : "NO",
     }
   })

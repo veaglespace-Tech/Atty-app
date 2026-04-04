@@ -13,7 +13,7 @@ export default function Page() {
         { key: "presentDays", label: "Present", align: "center" },
         { key: "halfDays", label: "Half Day", align: "center" },
         { key: "absentDays", label: "Absent", align: "center" },
-        { key: "workedHours", label: "Hours", align: "center" },
+        { key: "workedHours", label: "Worked Hrs", align: "center" },
       ]}
     />
   );

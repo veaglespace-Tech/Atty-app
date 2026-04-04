@@ -9,6 +9,42 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONTACT_SUBJECT_MAX = 120;
 const CONTACT_MESSAGE_MAX = 500;
 
+let ensureContactInquiriesTablePromise = null;
+
+const contactInquiriesTableSql = `
+  CREATE TABLE IF NOT EXISTS \`contact_inquiries\` (
+    \`id\` INTEGER NOT NULL AUTO_INCREMENT,
+    \`name\` VARCHAR(191) NOT NULL,
+    \`email\` VARCHAR(191) NOT NULL,
+    \`subject\` VARCHAR(191) NOT NULL,
+    \`message\` TEXT NOT NULL,
+    \`status\` VARCHAR(191) NOT NULL DEFAULT 'NEW',
+    \`adminNotificationSentAt\` DATETIME(3) NULL,
+    \`adminNotificationError\` VARCHAR(191) NULL,
+    \`requesterNotificationSentAt\` DATETIME(3) NULL,
+    \`requesterNotificationError\` VARCHAR(191) NULL,
+    \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    INDEX \`contact_inquiries_status_idx\` (\`status\`),
+    INDEX \`contact_inquiries_createdAt_idx\` (\`createdAt\`),
+    INDEX \`contact_inquiries_email_createdAt_idx\` (\`email\`, \`createdAt\`),
+    PRIMARY KEY (\`id\`)
+  ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+`;
+
+const ensureContactInquiriesTable = async () => {
+  if (!ensureContactInquiriesTablePromise) {
+    ensureContactInquiriesTablePromise = prisma.$executeRawUnsafe(contactInquiriesTableSql);
+  }
+
+  try {
+    await ensureContactInquiriesTablePromise;
+  } catch (error) {
+    ensureContactInquiriesTablePromise = null;
+    throw error;
+  }
+};
+
 const normalizeSingleLineText = (value) =>
   String(value ?? "")
     .trim()
@@ -116,6 +152,150 @@ const toContactInquiryItem = (inquiry) => ({
   createdAt: inquiry.createdAt,
 });
 
+const getContactInquiryDelegate = () => {
+  const delegate = prisma.contactInquiry;
+  if (!delegate || typeof delegate !== "object") return null;
+  return delegate;
+};
+
+const createContactInquiry = async (payload) => {
+  const delegate = getContactInquiryDelegate();
+  if (delegate && typeof delegate.create === "function") {
+    return delegate.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        subject: payload.subject,
+        message: payload.message,
+      },
+    });
+  }
+
+  await ensureContactInquiriesTable();
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`
+      INSERT INTO contact_inquiries (
+        name,
+        email,
+        subject,
+        message,
+        status,
+        createdAt,
+        updatedAt
+      )
+      VALUES (
+        ${payload.name},
+        ${payload.email},
+        ${payload.subject},
+        ${payload.message},
+        ${"NEW"},
+        NOW(3),
+        NOW(3)
+      )
+    `;
+
+    const rows = await tx.$queryRaw`
+      SELECT
+        id,
+        name,
+        email,
+        subject,
+        message,
+        status,
+        adminNotificationSentAt,
+        adminNotificationError,
+        requesterNotificationSentAt,
+        requesterNotificationError,
+        createdAt,
+        updatedAt
+      FROM contact_inquiries
+      WHERE id = LAST_INSERT_ID()
+      LIMIT 1
+    `;
+
+    return Array.isArray(rows) ? rows[0] || null : null;
+  });
+};
+
+const updateContactInquiry = async (id, data) => {
+  const delegate = getContactInquiryDelegate();
+  if (delegate && typeof delegate.update === "function") {
+    return delegate.update({
+      where: { id: Number(id) },
+      data,
+    });
+  }
+
+  await ensureContactInquiriesTable();
+
+  await prisma.$executeRaw`
+    UPDATE contact_inquiries
+    SET
+      adminNotificationSentAt = ${data.adminNotificationSentAt ?? null},
+      adminNotificationError = ${data.adminNotificationError ?? null},
+      requesterNotificationSentAt = ${data.requesterNotificationSentAt ?? null},
+      requesterNotificationError = ${data.requesterNotificationError ?? null},
+      updatedAt = NOW(3)
+    WHERE id = ${Number(id)}
+  `;
+};
+
+const findContactInquiries = async (limit) => {
+  const delegate = getContactInquiryDelegate();
+  if (delegate && typeof delegate.findMany === "function") {
+    return delegate.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      take: limit,
+    });
+  }
+
+  await ensureContactInquiriesTable();
+
+  return prisma.$queryRawUnsafe(`
+    SELECT
+      id,
+      name,
+      email,
+      subject,
+      message,
+      status,
+      adminNotificationSentAt,
+      adminNotificationError,
+      requesterNotificationSentAt,
+      requesterNotificationError,
+      createdAt,
+      updatedAt
+    FROM contact_inquiries
+    ORDER BY createdAt DESC
+    LIMIT ${Number(limit)}
+  `);
+};
+
+const findSuperAdminEmailRows = async () => {
+  const userDelegate = prisma.user;
+  if (userDelegate && typeof userDelegate.findMany === "function") {
+    return userDelegate.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        OR: [{ role: "SUPER_ADMIN" }, { role: "SUPERADMIN" }],
+      },
+      select: {
+        email: true,
+      },
+    });
+  }
+
+  return prisma.$queryRawUnsafe(`
+    SELECT DISTINCT u.email
+    FROM user u
+    WHERE u.deletedAt IS NULL
+      AND u.isActive = 1
+      AND UPPER(REPLACE(COALESCE(u.role, ''), '-', '_')) IN ('SUPER_ADMIN', 'SUPERADMIN')
+  `);
+};
+
 exports.submitContactInquiry = asyncHandler(async (req, res) => {
   let payload;
 
@@ -126,30 +306,9 @@ exports.submitContactInquiry = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  const inquiry = await prisma.contactInquiry.create({
-    data: {
-      name: payload.name,
-      email: payload.email,
-      subject: payload.subject,
-      message: payload.message,
-    },
-  });
+  const inquiry = await createContactInquiry(payload);
 
-  const superAdminUsers = await prisma.user.findMany({
-    where: {
-      deletedAt: null,
-      isActive: true,
-      memberships: {
-        some: {
-          role: "SUPER_ADMIN",
-          isActive: true,
-        },
-      },
-    },
-    select: {
-      email: true,
-    },
-  });
+  const superAdminUsers = await findSuperAdminEmailRows();
 
   const notificationRecipients = [
     ...new Set(
@@ -167,22 +326,17 @@ exports.submitContactInquiry = asyncHandler(async (req, res) => {
     superAdminEmails: notificationRecipients,
   });
 
-  await prisma.contactInquiry.update({
-    where: {
-      id: inquiry.id,
-    },
-    data: {
-      adminNotificationSentAt: notificationResult.adminNotification.sent ? new Date() : null,
-      adminNotificationError: notificationResult.adminNotification.error
-        ? truncateText(notificationResult.adminNotification.error)
-        : null,
-      requesterNotificationSentAt: notificationResult.requesterNotification.sent
-        ? new Date()
-        : null,
-      requesterNotificationError: notificationResult.requesterNotification.error
-        ? truncateText(notificationResult.requesterNotification.error)
-        : null,
-    },
+  await updateContactInquiry(inquiry.id, {
+    adminNotificationSentAt: notificationResult.adminNotification.sent ? new Date() : null,
+    adminNotificationError: notificationResult.adminNotification.error
+      ? truncateText(notificationResult.adminNotification.error)
+      : null,
+    requesterNotificationSentAt: notificationResult.requesterNotification.sent
+      ? new Date()
+      : null,
+    requesterNotificationError: notificationResult.requesterNotification.error
+      ? truncateText(notificationResult.requesterNotification.error)
+      : null,
   });
 
   const warnings = [
@@ -209,10 +363,7 @@ exports.submitContactInquiry = asyncHandler(async (req, res) => {
 
 exports.getSuperAdminContactInquiries = asyncHandler(async (req, res) => {
   const limit = parseLimit(req.query.limit, 250, 1000);
-  const inquiries = await prisma.contactInquiry.findMany({
-    orderBy: [{ createdAt: "desc" }],
-    take: limit,
-  });
+  const inquiries = await findContactInquiries(limit);
 
   const items = inquiries.map(toContactInquiryItem);
 

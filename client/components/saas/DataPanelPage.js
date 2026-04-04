@@ -13,7 +13,9 @@ import {
 import { useSelector } from "react-redux";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
+import { formatHoursValue } from "@/utils/time";
 
 const RECORD_THEMES = [
   {
@@ -81,7 +83,8 @@ const DISPLAY_LABEL_OVERRIDES = {
   planname: "Plan",
   plancode: "Plan Code",
   presentdays: "Present",
-  presentduration: "Present Time",
+  presentduration: "Present Hrs",
+  presenthours: "Present Hrs",
   presententries: "Present",
   presenttoday: "Present Today",
   punchinat: "Check-In",
@@ -100,12 +103,16 @@ const DISPLAY_LABEL_OVERRIDES = {
   totalrecords: "Records",
   totalteams: "Teams",
   totalusers: "Users",
-  totalduration: "Work Time",
+  totalduration: "Worked Hrs",
+  totalhours: "Worked Hrs",
   useremail: "Email",
   userid: "User ID",
   username: "Member",
-  workedhours: "Hours",
-  workedminutes: "Worked Min",
+  workedhours: "Worked Hrs",
+  workedhrs: "Worked Hrs",
+  workedhoursthismonth: "Worked Hrs This Month",
+  workedhrsthismonth: "Worked Hrs This Month",
+  workedminutes: "Worked Hrs",
 };
 
 const COLUMN_PRESETS = {
@@ -140,8 +147,15 @@ const COLUMN_PRESETS = {
   useremail: { minWidth: 220, wrap: "nowrap" },
   userid: { align: "center", minWidth: 88, wrap: "nowrap" },
   username: { minWidth: 152 },
-  workedhours: { align: "center", minWidth: 96, wrap: "nowrap" },
-  workedminutes: { align: "center", minWidth: 104, wrap: "nowrap" },
+  presenthours: { type: "hours", align: "center", minWidth: 104, wrap: "nowrap" },
+  presentduration: { type: "hours", align: "center", minWidth: 104, wrap: "nowrap" },
+  totalhours: { type: "hours", align: "center", minWidth: 104, wrap: "nowrap" },
+  totalduration: { type: "hours", align: "center", minWidth: 104, wrap: "nowrap" },
+  workedhours: { type: "hours", align: "center", minWidth: 96, wrap: "nowrap" },
+  workedhrs: { type: "hours", align: "center", minWidth: 96, wrap: "nowrap" },
+  workedhoursthismonth: { type: "hours", align: "center", minWidth: 132, wrap: "nowrap" },
+  workedhrsthismonth: { type: "hours", align: "center", minWidth: 132, wrap: "nowrap" },
+  workedminutes: { type: "hours", fromMinutes: true, align: "center", minWidth: 104, wrap: "nowrap" },
 };
 
 const ENUM_LIKE_KEYS = new Set([
@@ -194,6 +208,11 @@ const CENTER_ALIGNED_KEYS = new Set([
   "subscriptionstatus",
   "teamid",
   "userid",
+  "presenthours",
+  "totalhours",
+  "workedhrs",
+  "workedhoursthismonth",
+  "workedhrsthismonth",
   "workedhours",
   "workedminutes",
 ]);
@@ -394,6 +413,9 @@ const formatValue = (value, keyHint = "") => {
   if (value === null || value === undefined || value === "") return "-";
 
   const preset = getColumnPreset(keyHint);
+  if (preset?.type === "hours") {
+    return formatHoursValue(value, { fromMinutes: Boolean(preset?.fromMinutes) });
+  }
   if (preset?.type === "date") return formatDateOnlyValue(value);
   if (preset?.type === "datetime") return formatDateTimeValue(value);
   if (preset?.type === "coordinates") return formatCoordinatesValue(value);
@@ -532,6 +554,10 @@ const formatCompactTableValue = (value, column = {}) => {
 
   if (column.type === "currency") {
     return formatCurrencyValue(value, column.currency || "INR");
+  }
+
+  if (column.type === "hours") {
+    return formatHoursValue(value, { fromMinutes: Boolean(column.fromMinutes) });
   }
 
   if (column.type === "date") return formatDateOnlyValue(value);
@@ -1031,14 +1057,16 @@ export default function DataPanelPage({
   hiddenRecordColumns = [],
 }) {
   const user = useSelector((state) => state.auth.user);
+  const { token, hydrated } = useAuthSession();
   const currentRole = user?.currentRole;
   const [error, setError] = useState("");
+  const shouldSkipEndpointQuery = !endpoint || !hydrated || !token;
   const {
     data,
     isLoading: endpointLoading,
     isFetching: endpointFetching,
     refetch,
-  } = useGetUtilityEndpointQuery(endpoint, { skip: !endpoint });
+  } = useGetUtilityEndpointQuery(endpoint, { skip: shouldSkipEndpointQuery });
   const firstName = String(user?.name || "").trim().split(/\s+/)[0] || "User";
   const payload = data || {};
   const loading = endpointLoading || endpointFetching;

@@ -52,6 +52,7 @@ export const ORG_MANAGED_ROLE_OPTIONS = Object.freeze([
   { value: ROLES.MEMBER, label: ROLE_LABELS[ROLES.MEMBER] },
   { value: ROLES.TEAM_LEADER, label: ROLE_LABELS[ROLES.TEAM_LEADER] },
   { value: ROLES.SUB_ADMIN, label: ROLE_LABELS[ROLES.SUB_ADMIN] },
+  { value: ROLES.ORG_ADMIN, label: ROLE_LABELS[ROLES.ORG_ADMIN] },
 ]);
 
 export const PERMISSIONS = Object.freeze({
@@ -293,6 +294,20 @@ export const getAssignablePermissionsByRole = (role) => {
   return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
 };
 
+export const getManagedRoleOptions = (actorRole) => {
+  const normalizedActorRole = normalizeRole(actorRole);
+
+  if (normalizedActorRole === ROLES.ORG_ADMIN || normalizedActorRole === ROLES.SUPER_ADMIN) {
+    return [...ORG_MANAGED_ROLE_OPTIONS];
+  }
+
+  if (normalizedActorRole === ROLES.SUB_ADMIN) {
+    return ORG_MANAGED_ROLE_OPTIONS.filter((option) => option.value === ROLES.MEMBER);
+  }
+
+  return ORG_MANAGED_ROLE_OPTIONS.filter((option) => option.value === ROLES.MEMBER);
+};
+
 export const resolveUserPermissions = (userOrRole, orgIdOrPermissions) => {
   const explicitPermissions = Array.isArray(orgIdOrPermissions) ? orgIdOrPermissions : undefined;
   const explicitOrgId = explicitPermissions ? null : orgIdOrPermissions;
@@ -310,9 +325,11 @@ export const resolveUserPermissions = (userOrRole, orgIdOrPermissions) => {
 
   const sourcePermissions =
     explicitPermissions !== undefined ? explicitPermissions : userOrRole?.permissions;
-
+  const hasStoredPermissions =
+    explicitPermissions !== undefined || Array.isArray(userOrRole?.permissions);
   const normalizedPermissions = normalizePermissionList(sourcePermissions);
-  if (normalizedPermissions.length > 0) {
+
+  if (hasStoredPermissions) {
     return normalizedPermissions;
   }
 

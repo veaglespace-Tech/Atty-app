@@ -1,4 +1,5 @@
 const PDFDocument = require("pdfkit");
+const { formatHoursValue } = require("../services/common.service");
 
 const COLORS = {
   ink: "#0F172A",
@@ -23,8 +24,8 @@ const TABLE_COLUMNS = [
   { key: "date", label: "Date", width: 70, align: "center" },
   { key: "punchIn", label: "In", width: 50, align: "center" },
   { key: "punchOut", label: "Out", width: 50, align: "center" },
-  { key: "totalDuration", label: "Work Time", width: 72, align: "center" },
-  { key: "presentDuration", label: "Present", width: 68, align: "center" },
+  { key: "totalHours", label: "Worked Hrs", width: 72, align: "center" },
+  { key: "presentHours", label: "Present Hrs", width: 68, align: "center" },
   { key: "absent", label: "Absent", width: 54, align: "center" },
 ];
 
@@ -37,27 +38,23 @@ const PDF_LABEL_OVERRIDES = {
   createdat: "Created",
   includedrecords: "Records",
   organizationcode: "Org Code",
-  presentduration: "Present",
+  presentduration: "Present Hrs",
+  presenthours: "Present Hrs",
   successfultransactions: "Success",
   subscriptionstatus: "Subscription",
-  totalduration: "Work Time",
+  totalduration: "Worked Hrs",
+  totalhours: "Worked Hrs",
   useremail: "Email",
   userid: "ID",
   username: "Member",
-  workedhours: "Hours",
-  workedminutes: "Work Min",
+  workedhours: "Worked Hrs",
+  workedminutes: "Worked Hrs",
 };
 
 const toPdfLabel = (value, fallback = "") =>
   PDF_LABEL_OVERRIDES[normalizeKey(value)] || normalizeText(value) || fallback;
 
-const minutesToDuration = (minutes) => {
-  const total = Number(minutes || 0);
-  if (!Number.isFinite(total) || total <= 0) return "00:00";
-  const hours = Math.floor(total / 60);
-  const mins = Math.floor(total % 60);
-  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
-};
+const formatHoursFromMinutes = (minutes) => formatHoursValue(minutes, { fromMinutes: true });
 
 const clipTextToWidth = (doc, value, width) => {
   const text = normalizeText(value) || "-";
@@ -109,8 +106,8 @@ const drawSummaryCards = (doc, summary, startY) => {
     { label: "Total Records", value: Number(summary.totalRecords || 0) },
     { label: "Present Entries", value: Number(summary.presentEntries || 0) },
     { label: "Absent Entries", value: Number(summary.absentEntries || 0) },
-    { label: "Total Duration", value: minutesToDuration(summary.totalWorkedMinutes || 0) },
-    { label: "Present Duration", value: minutesToDuration(summary.totalPresentMinutes || 0) },
+    { label: "Worked Hrs", value: formatHoursFromMinutes(summary.totalWorkedMinutes || 0) },
+    { label: "Present Hrs", value: formatHoursFromMinutes(summary.totalPresentMinutes || 0) },
   ];
 
   cards.forEach((card, index) => {
@@ -499,5 +496,5 @@ const buildGenericTablePdf = ({
 module.exports = {
   buildAttendanceDetailedPdf,
   buildGenericTablePdf,
-  minutesToDuration,
+  formatHoursFromMinutes,
 };

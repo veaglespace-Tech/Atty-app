@@ -7,118 +7,203 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  SUPERADMIN
-  ADMIN
-  SUBADMIN
-  TEAM_LEADER
-  MEMBER
+model ArchiveOrg {
+  id                 Int       @id @default(autoincrement())
+  orgId              Int?
+  name               String?
+  organizationCode   String?
+  email              String?
+  phone              String?
+  phoneCountryCode   String?
+  address            String?
+  city               String?
+  state              String?
+  country            String?
+  latitude           Float?
+  longitude          Float?
+  attendanceRadius   Int?
+  subscriptionStatus String?
+  subscriptionExpiry DateTime?
+  planId             Int?
+  subscriptionId     Int?
+  isActive           Boolean?
+  isBlocked          Boolean?
+  deletedAt          DateTime?
+  archivedById       Int?
+  archiveReason      String    @default("")
+  archivedAt         DateTime  @default(now())
+  originalCreatedAt  DateTime?
+  originalUpdatedAt  DateTime?
+  metadata           Json?
+
+  @@index([archivedAt])
+  @@index([email])
+  @@index([orgId])
+  @@index([organizationCode])
+  @@map("archive_org")
 }
 
-enum UserStatus {
-  APPROVED
-  PENDING
-  REJECTED
+model ArchiveUser {
+  id                Int       @id @default(autoincrement())
+  userId            Int?
+  orgId             Int?
+  name              String?
+  email             String?
+  mobile            String?
+  mobileCountryCode String?
+  password          String?
+  role              String?
+  permissions       Json?
+  status            String?
+  isActive          Boolean?
+  lastLoginAt       DateTime?
+  createdById       Int?
+  deletedAt         DateTime?
+  archivedById      Int?
+  archiveReason     String    @default("")
+  archivedAt        DateTime  @default(now())
+  originalCreatedAt DateTime?
+  originalUpdatedAt DateTime?
+  metadata          Json?
+
+  @@index([archivedAt])
+  @@index([email])
+  @@index([orgId, role])
+  @@index([userId])
+  @@map("archive_user")
 }
 
-enum SubscriptionStatus {
-  TRIAL
-  ACTIVE
-  EXPIRED
-  CANCELLED
+model Attendance {
+  id                    Int       @id @default(autoincrement())
+  orgId                 Int
+  userId                Int
+  date                  String
+  punchInAt             DateTime?
+  punchInLatitude       Float?
+  punchInLongitude      Float?
+  punchOutAt            DateTime?
+  punchOutLatitude      Float?
+  punchOutLongitude     Float?
+  punchInDistanceMeters Float?
+  punchOutDistanceMeters Float?
+  isPunchInValid        Boolean   @default(false)
+  isPunchOutValid       Boolean   @default(false)
+  totalMinutesWorked    Int       @default(0)
+  lateMinutes           Int       @default(0)
+  status                String    @default("PRESENT")
+  notes                 String    @default("")
+  markedById            Int?
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  teamId                Int?
+  punchInLocationMeta   Json?
+  punchOutLocationMeta  Json?
+  punchInSelfieUrl      String?
+  punchInSelfiePublicId String?
+  punchOutSelfieUrl     String?
+  punchOutSelfiePublicId String?
+
+  organization Organization @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
+  user         User         @relation("AttendanceUser", fields: [userId], references: [id], map: "Attendance_userId_fkey")
+  markedBy     User?        @relation("AttendanceMarkedBy", fields: [markedById], references: [id], map: "Attendance_markedById_fkey")
+  team         Team?        @relation(fields: [teamId], references: [id], map: "Attendance_teamId_fkey")
+
+  @@unique([orgId, userId, date], map: "Attendance_orgId_userId_date_key")
+  @@index([markedById], map: "Attendance_markedById_fkey")
+  @@index([orgId, date], map: "Attendance_orgId_date_idx")
+  @@index([orgId, status, date], map: "Attendance_orgId_status_date_idx")
+  @@index([orgId, teamId, date], map: "Attendance_orgId_teamId_date_idx")
+  @@index([teamId], map: "Attendance_teamId_fkey")
+  @@index([userId, date], map: "Attendance_userId_date_idx")
+  @@map("attendance")
 }
 
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  HALF_DAY
+model ContactInquiry {
+  id                          Int       @id @default(autoincrement())
+  name                        String
+  email                       String
+  subject                     String
+  message                     String    @db.Text
+  status                      String    @default("NEW")
+  adminNotificationSentAt     DateTime?
+  adminNotificationError      String?
+  requesterNotificationSentAt DateTime?
+  requesterNotificationError  String?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([email, createdAt])
+  @@index([status])
+  @@map("contact_inquiries")
 }
 
-enum PaymentStatus {
-  CREATED
-  SUCCESS
-  FAILED
-}
+model FreeTrialClaim {
+  id         Int      @id @default(autoincrement())
+  orgEmail   String   @unique
+  adminEmail String   @unique
+  adminPhone String   @unique
+  planCode   String
+  startDate  DateTime
+  endDate    DateTime
+  claimedAt  DateTime @default(now())
+  orgName    String?
+  adminName  String?
 
-enum TicketStatus {
-  PENDING
-  RESOLVED
-  CLOSED
-}
-
-enum PostType {
-  ARTICLE
-  POLL
-  NOTIFICATION
-  TOURNAMENT_CARD
+  @@index([claimedAt])
+  @@index([endDate])
+  @@map("free_trial_claim")
 }
 
 model Organization {
   id                 Int       @id @default(autoincrement())
   name               String
-  organizationCode   String    @unique
-  email              String    @unique
+  organizationCode   String    @unique(map: "Organization_organizationCode_key")
+  email              String    @unique(map: "Organization_email_key")
   phone              String
+  phoneCountryCode   String?
+  address            String?
+  city               String?
+  state              String?
   country            String    @default("India")
   latitude           Float
   longitude          Float
   attendanceRadius   Int       @default(25)
-  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  subscriptionStatus String    @default("TRIAL")
   subscriptionExpiry DateTime?
   planId             Int?
-  orgAdminId         Int?      @unique
-  subscriptionId     Int?      @unique
+  orgAdminId         Int?      @unique(map: "Organization_orgAdminId_key")
+  subscriptionId     Int?      @unique(map: "Organization_subscriptionId_key")
   isActive           Boolean   @default(true)
   isBlocked          Boolean   @default(false)
   deletedAt          DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  plan               Plan?         @relation(fields: [planId], references: [id])
-  orgAdmin           User?         @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id])
-  activeSubscription Subscription? @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id])
+  plan               Plan?         @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
+  orgAdmin           User?         @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
+  activeSubscription Subscription? @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id], map: "Organization_subscriptionId_fkey")
 
-  users              User[]
-  members            OrganizationMember[]
-  teams              Team[]
-  attendances        Attendance[]
-  subscriptions      Subscription[] @relation("OrganizationSubscriptions")
-  payments           Payment[]
-  posts              Post[]
+  users        User[]               @relation("OrganizationUsers")
+  members      OrganizationMember[]
+  teams        Team[]
+  attendances  Attendance[]
+  subscriptions Subscription[]      @relation("OrganizationSubscriptions")
+  payments     Payment[]
+  posts        Post[]
 
-  @@index([subscriptionStatus, subscriptionExpiry])
-  @@index([isActive, isBlocked, deletedAt])
-}
-
-model User {
-  id        Int      @id @default(autoincrement())
-  orgId     Int?
-  name      String
-  email     String   @unique
-  mobile    String
-  password  String
-  status    UserStatus @default(APPROVED)
-  isActive  Boolean    @default(true)
-  resetTokenHash   String?
-  resetTokenExpiry DateTime?
-  lastLoginAt DateTime?
-  createdById Int?
-  deletedAt   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization? @relation(fields: [orgId], references: [id])
-  memberships OrganizationMember[]
-  attendances Attendance[] @relation("AttendanceUser")
-
-  @@index([orgId, status])
+  @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
+  @@index([planId], map: "Organization_planId_idx")
+  @@index([subscriptionStatus, subscriptionExpiry], map: "Organization_subscriptionStatus_subscriptionExpiry_idx")
+  @@map("organization")
 }
 
 model OrganizationMember {
   id        Int      @id @default(autoincrement())
   userId    Int
   orgId     Int
-  role      UserRole @default(MEMBER)
+  role      String   @default("MEMBER")
   isActive  Boolean  @default(true)
   joinedAt  DateTime @default(now())
 
@@ -127,27 +212,170 @@ model OrganizationMember {
 
   @@unique([userId, orgId])
   @@index([orgId, role])
+  @@index([userId])
+  @@map("organizationmember")
 }
 
-model Team {
-  id          Int    @id @default(autoincrement())
-  orgId       Int
-  name        String
-  leaderId    Int?
-  createdById Int
-  isActive    Boolean  @default(true)
-  deletedAt   DateTime?
+model Payment {
+  id                Int      @id @default(autoincrement())
+  orgId             Int
+  userId            Int
+  subscriptionId    Int
+  planName          String
+  planCode          String
+  amount            Float
+  currency          String   @default("INR")
+  gateway           String   @default("RAZORPAY")
+  razorpayOrderId   String
+  razorpayPaymentId String?
+  razorpaySignature String?
+  status            String   @default("CREATED")
+  failureReason     String   @default("")
+  rawResponse       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], map: "Payment_orgId_fkey")
+  user         User         @relation(fields: [userId], references: [id], map: "Payment_userId_fkey")
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], map: "Payment_subscriptionId_fkey")
+
+  @@index([orgId, createdAt], map: "Payment_orgId_createdAt_idx")
+  @@index([orgId], map: "Payment_orgId_idx")
+  @@index([planCode, status, createdAt], map: "Payment_planCode_status_createdAt_idx")
+  @@index([razorpayOrderId], map: "Payment_razorpayOrderId_idx")
+  @@index([status], map: "Payment_status_idx")
+  @@index([subscriptionId], map: "Payment_subscriptionId_idx")
+  @@index([userId], map: "Payment_userId_fkey")
+  @@map("payment")
+}
+
+model Plan {
+  id             Int      @id @default(autoincrement())
+  name           String
+  code           String   @unique(map: "Plan_code_key")
+  description    String   @default("")
+  price          Float
+  currency       String   @default("INR")
+  durationInDays Int
+  features       Json
+  maxUsers       Int      @default(0)
+  maxTeams       Int      @default(0)
+  maxLocations   Int      @default(0)
+  isActive       Boolean  @default(true)
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  memberLimit    Int      @default(0)
+
+  organizations Organization[]
+  subscriptions Subscription[]
+
+  @@map("plan")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  orgId     Int
+  authorId  Int
+  title     String
+  content   String   @db.Text
+  type      String   @default("NOTIFICATION")
+  metadata  Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id], map: "posts_orgId_fkey")
+  author       User         @relation("PostAuthor", fields: [authorId], references: [id], map: "posts_authorId_fkey")
+
+  @@index([authorId], map: "posts_authorId_idx")
+  @@index([orgId, isActive], map: "posts_orgId_isActive_idx")
+  @@index([type], map: "posts_type_idx")
+  @@map("posts")
+}
+
+model Subscription {
+  id                Int      @id @default(autoincrement())
+  orgId             Int
+  planId            Int?
+  planName          String
+  planCode          String
+  amount            Float
+  currency          String   @default("INR")
+  status            String   @default("ACTIVE")
+  startDate         DateTime @default(now())
+  endDate           DateTime?
+  paymentGateway    String   @default("RAZORPAY")
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  createdById       Int
+  notes             String   @default("")
+  activeKey         String?  @unique(map: "Subscription_activeKey_key")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization         Organization  @relation("OrganizationSubscriptions", fields: [orgId], references: [id], map: "Subscription_orgId_fkey")
+  activeForOrganization Organization? @relation("OrganizationActiveSubscription")
+  plan                 Plan?         @relation(fields: [planId], references: [id], map: "Subscription_planId_fkey")
+  createdBy            User          @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], map: "Subscription_createdById_fkey")
+  payments             Payment[]
+
+  @@index([createdById], map: "Subscription_createdById_idx")
+  @@index([orgId, createdAt], map: "Subscription_orgId_createdAt_idx")
+  @@index([orgId, status, endDate], map: "Subscription_orgId_status_endDate_idx")
+  @@index([planCode, status], map: "Subscription_planCode_status_idx")
+  @@index([planId], map: "Subscription_planId_fkey")
+  @@index([razorpayOrderId], map: "Subscription_razorpayOrderId_idx")
+  @@index([status, createdAt], map: "Subscription_status_createdAt_idx")
+  @@map("subscription")
+}
+
+model SupportTicket {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  role      String   @default("MEMBER")
+  subject   String   @default("Support Query")
+  message   String   @db.Text
+  status    String   @default("OPEN")
+  orgId     Int?
+  userId    Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  organization Organization @relation(fields: [orgId], references: [id])
-  leader       User?        @relation("TeamLeader", fields: [leaderId], references: [id])
-  createdBy    User         @relation("TeamCreatedBy", fields: [createdById], references: [id])
+  @@index([orgId], map: "support_tickets_orgId_idx")
+  @@index([status], map: "support_tickets_status_idx")
+  @@map("support_tickets")
+}
 
+model Team {
+  id               Int      @id @default(autoincrement())
+  orgId            Int
+  name             String
+  description      String   @default("")
+  latitude         Float?
+  longitude        Float?
+  attendanceRadius Int      @default(25)
+  leaderId         Int?
+  createdById      Int
+  isActive         Boolean  @default(true)
+  deletedAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], map: "Team_orgId_fkey")
+  leader       User?        @relation("TeamLeader", fields: [leaderId], references: [id], map: "Team_leaderId_fkey")
+  createdBy    User         @relation("TeamCreatedBy", fields: [createdById], references: [id], map: "Team_createdById_fkey")
   members      TeamMember[]
   attendances  Attendance[]
 
-  @@unique([orgId, name])
+  @@unique([orgId, name], map: "Team_orgId_name_key")
+  @@index([createdById], map: "Team_createdById_idx")
+  @@index([leaderId], map: "Team_leaderId_idx")
+  @@index([orgId, deletedAt], map: "Team_orgId_deletedAt_idx")
+  @@map("team")
 }
 
 model TeamMember {
@@ -156,95 +384,87 @@ model TeamMember {
   userId    Int
   createdAt DateTime @default(now())
 
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "TeamMember_teamId_fkey")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, map: "TeamMember_userId_fkey")
 
-  @@unique([teamId, userId])
+  @@unique([teamId, userId], map: "TeamMember_teamId_userId_key")
+  @@index([userId], map: "TeamMember_userId_idx")
+  @@map("teammember")
 }
 
-model Attendance {
-  id        Int      @id @default(autoincrement())
-  orgId     Int
-  userId    Int
-  date      DateTime
-  punchInAt  DateTime?
-  punchOutAt DateTime?
-  totalMinutesWorked Int @default(0)
-  status AttendanceStatus @default(PRESENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id                   Int      @id @default(autoincrement())
+  orgId                Int?
+  name                 String
+  email                String   @unique(map: "User_email_key")
+  mobile               String
+  password             String
+  role                 String   @default("MEMBER")
+  status               String   @default("APPROVED")
+  isActive             Boolean  @default(true)
+  mobileCountryCode    String?
+  permissions          Json?
+  resetTokenHash       String?
+  resetTokenExpiry     DateTime?
+  profileImageUrl      String?
+  profileImagePublicId String?
+  lastLoginAt          DateTime?
+  createdById          Int?
+  deletedAt            DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  organization Organization @relation(fields: [orgId], references: [id])
-  user         User         @relation("AttendanceUser", fields: [userId], references: [id])
+  organization                Organization?        @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
+  memberships                 OrganizationMember[]
+  attendances                 Attendance[]         @relation("AttendanceUser")
+  markedAttendances           Attendance[]         @relation("AttendanceMarkedBy")
+  payments                    Payment[]
+  subscriptions               Subscription[]       @relation("SubscriptionCreatedBy")
+  posts                       Post[]               @relation("PostAuthor")
+  teamMemberships             TeamMember[]
+  teamsLed                    Team[]               @relation("TeamLeader")
+  createdTeams                Team[]               @relation("TeamCreatedBy")
+  primaryAdminForOrganization Organization?        @relation("OrganizationPrimaryAdmin")
+  createdUsers                User[]               @relation("UserCreatedBy")
+  createdBy                   User?                @relation("UserCreatedBy", fields: [createdById], references: [id], map: "User_createdById_fkey")
 
-  @@unique([orgId, userId, date])
+  @@index([createdById], map: "User_createdById_idx")
+  @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
+  @@index([orgId, role], map: "User_orgId_role_idx")
+  @@index([orgId, status], map: "User_orgId_status_idx")
+  @@map("user")
 }
 
-model Plan {
-  id             Int      @id @default(autoincrement())
-  name           String
-  code           String   @unique
-  price          Decimal  @db.Decimal(10,2)
-  durationInDays Int
-  isActive       Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model VerificationSession {
+  id                   Int      @id @default(autoincrement())
+  purpose              String   @default("MEMBER_REGISTRATION")
+  email                String
+  phoneE164            String
+  countryCode          String?
+  nationalNumber       String
+  status               String   @default("CONTACT_PENDING")
+  contactOtpHash       String?
+  contactOtpExpiresAt  DateTime
+  contactOtpAttempts   Int      @default(0)
+  contactOtpLastSentAt DateTime?
+  contactVerifiedAt    DateTime?
+  emailOtpHash         String?
+  emailOtpExpiresAt    DateTime?
+  emailOtpAttempts     Int      @default(0)
+  emailOtpLastSentAt   DateTime?
+  emailVerifiedAt      DateTime?
+  consumedAt           DateTime?
+  expiresAt            DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  organizations Organization[]
+  @@index([consumedAt], map: "VerificationSession_consumedAt_idx")
+  @@index([email], map: "VerificationSession_email_idx")
+  @@index([expiresAt], map: "VerificationSession_expiresAt_idx")
+  @@index([phoneE164], map: "VerificationSession_phoneE164_idx")
+  @@index([purpose], map: "VerificationSession_purpose_idx")
+  @@index([status, expiresAt], map: "VerificationSession_status_expiresAt_idx")
+  @@index([status], map: "VerificationSession_status_idx")
+  @@index([email, phoneE164, purpose, createdAt], map: "verification_lookup_idx")
+  @@map("verificationsession")
 }
-
-model Subscription {
-  id        Int      @id @default(autoincrement())
-  orgId     Int
-  planId    Int
-  amount    Decimal  @db.Decimal(10,2)
-  status    SubscriptionStatus @default(ACTIVE)
-  startDate DateTime @default(now())
-  endDate   DateTime?
-  createdById Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation("OrganizationSubscriptions", fields: [orgId], references: [id])
-  plan         Plan         @relation(fields: [planId], references: [id])
-}
-
-model Payment {
-  id             Int      @id @default(autoincrement())
-  orgId          Int
-  userId         Int
-  subscriptionId Int
-  amount         Decimal  @db.Decimal(10,2)
-  status         PaymentStatus @default(CREATED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [orgId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
-}
-
-model Post {
-  id       Int      @id @default(autoincrement())
-  orgId    Int
-  authorId Int
-  title    String
-  content  String @db.Text
-  type     PostType @default(NOTIFICATION)
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [orgId], references: [id])
-  author       User         @relation(fields: [authorId], references: [id])
-}
-
-model SupportTicket {
-  id      Int @id @default(autoincrement())
-  name    String
-  email   String
-  status  TicketStatus @default(PENDING)
-  message String @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-} 

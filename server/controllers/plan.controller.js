@@ -11,7 +11,75 @@ const toFeatureList = (value) => {
     return value.map((feature) => String(feature).trim()).filter(Boolean);
   }
 
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return [];
+
+    try {
+      const parsedValue = JSON.parse(trimmedValue);
+      if (Array.isArray(parsedValue)) {
+        return parsedValue.map((feature) => String(feature).trim()).filter(Boolean);
+      }
+    } catch (_) {
+      return trimmedValue
+        .split(",")
+        .map((feature) => feature.trim())
+        .filter(Boolean);
+    }
+  }
+
   return [];
+};
+
+const PLAN_SELECT_COLUMNS = `
+  id,
+  name,
+  code,
+  description,
+  price,
+  currency,
+  durationInDays,
+  features,
+  memberLimit,
+  maxUsers,
+  maxTeams,
+  maxLocations,
+  isActive,
+  isDefault,
+  createdAt,
+  updatedAt
+`;
+
+const normalizePlanRecord = (plan = {}) => ({
+  ...plan,
+  price: Number(plan.price || 0),
+  durationInDays: Number(plan.durationInDays || 0),
+  memberLimit: Number(plan.memberLimit || plan.maxUsers || 0),
+  maxUsers: Number(plan.maxUsers || plan.memberLimit || 0),
+  maxTeams: Number(plan.maxTeams || 0),
+  maxLocations: Number(plan.maxLocations || 0),
+  isActive: plan.isActive === true || Number(plan.isActive || 0) === 1,
+  isDefault: plan.isDefault === true || Number(plan.isDefault || 0) === 1,
+  features: toFeatureList(plan.features),
+});
+
+const fetchPlanRows = async ({ whereClause = "", orderClause = "" } = {}) => {
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT ${PLAN_SELECT_COLUMNS}
+    FROM \`plan\`
+    ${whereClause}
+    ${orderClause}
+  `);
+
+  return rows.map(normalizePlanRecord);
+};
+
+const fetchPlanById = async (planId) => {
+  const [plan] = await fetchPlanRows({
+    whereClause: `WHERE \`id\` = ${Number(planId)} LIMIT 1`,
+  });
+
+  return plan || null;
 };
 
 const mapPlanForResponse = (plan) => {
@@ -38,9 +106,9 @@ const mapPlanForResponse = (plan) => {
 // @route   GET /api/plans
 // @access  Public
 exports.getPlans = asyncHandler(async (req, res) => {
-  const plans = await prisma.plan.findMany({
-    where: { isActive: true },
-    orderBy: { id: "asc" },
+  const plans = await fetchPlanRows({
+    whereClause: "WHERE `isActive` = 1",
+    orderClause: "ORDER BY `id` ASC",
   });
 
   res.status(200).json({
@@ -54,7 +122,7 @@ exports.getPlans = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 exports.getPlanById = asyncHandler(async (req, res) => {
   const planId = Number(req.params.id);
-  const plan = await prisma.plan.findUnique({ where: { id: planId } });
+  const plan = await fetchPlanById(planId);
 
   if (!plan || isLegacyPaidMonthlyPlan(plan)) {
     res.status(404);

@@ -1,5 +1,5 @@
 const prisma = require("../lib/prisma");
-const { toSummaryItem } = require("./common.service");
+const { minutesToHoursValue, toSummaryItem } = require("./common.service");
 const { reportUserSelect } = require("./prisma-selects.service");
 const { resolveUserRole } = require("../utils/membership");
 
@@ -34,7 +34,7 @@ const toReportSummary = (items = []) => {
     toSummaryItem("Members", items.length),
     toSummaryItem("Present Days", totals.presentDays),
     toSummaryItem("Absent Days", totals.absentDays),
-    toSummaryItem("Worked Hours", Number((totals.workedMinutes / 60).toFixed(2))),
+    toSummaryItem("Worked Hrs", minutesToHoursValue(totals.workedMinutes)),
   ];
 };
 
@@ -124,7 +124,7 @@ const buildAttendanceReport = async ({
 
   const items = [...reportMap.values()].map((entry) => ({
     ...entry,
-    workedHours: Number((entry.workedMinutes / 60).toFixed(2)),
+    workedHours: minutesToHoursValue(entry.workedMinutes),
   }));
 
   if (sortByWorkedMinutes) {

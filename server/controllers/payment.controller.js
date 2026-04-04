@@ -8,6 +8,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
 const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
 const { createOrganizationMembership } = require("../services/organization-member.service");
+const { archiveFailedRegistration } = require("../services/archive.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
 const { truncateText, formatDate } = require("../services/common.service");

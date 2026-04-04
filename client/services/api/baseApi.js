@@ -7,7 +7,14 @@ export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhos
 const rawBaseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,
     credentials: "include",
-    prepareHeaders: (headers) => {
+    prepareHeaders: (headers, { getState }) => {
+      const stateToken = getState?.()?.auth?.token;
+
+      if (stateToken) {
+        headers.set("authorization", `Bearer ${stateToken}`);
+        return headers;
+      }
+
       if (typeof window !== "undefined") {
         const token = localStorage.getItem("token");
         if (token) {

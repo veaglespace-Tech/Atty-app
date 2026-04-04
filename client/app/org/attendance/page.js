@@ -16,6 +16,7 @@ import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { normalizeRole, ROLES } from "@/utils/roles";
+import { formatHoursValue } from "@/utils/time";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -27,6 +28,11 @@ const formatDate = (value) => {
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleString();
 };
+
+const formatWorkedHours = (record) =>
+  formatHoursValue(record?.workedHours ?? record?.workedMinutes, {
+    fromMinutes: record?.workedHours == null,
+  });
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -491,7 +497,7 @@ export default function OrgAttendancePage() {
                     <AttendanceDetail label="Role" value={record.role} />
                     <AttendanceDetail label="Punch In" value={formatDate(record.punchInAt)} />
                     <AttendanceDetail label="Punch Out" value={formatDate(record.punchOutAt)} />
-                    <AttendanceDetail label="Worked (min)" value={record.workedMinutes || 0} />
+                    <AttendanceDetail label="Worked Hrs" value={formatWorkedHours(record)} />
                     <AttendanceDetail
                       label="Selfie Proof"
                       value={
@@ -516,7 +522,7 @@ export default function OrgAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked (min)</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
@@ -529,7 +535,7 @@ export default function OrgAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{record.status}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDate(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDate(record.punchOutAt)}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.workedMinutes || 0}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks
                           punchInSelfieUrl={record.punchInSelfieUrl}

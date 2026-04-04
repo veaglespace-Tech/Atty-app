@@ -11,6 +11,7 @@ const userManagementSelect = {
   email: true,
   mobile: true,
   mobileCountryCode: true,
+  permissions: true,
   profileImageUrl: true,
   status: true,
   isActive: true,

@@ -20,6 +20,7 @@ import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCa
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatRoleLabel } from "@/utils/roles";
+import { formatHoursValue } from "@/utils/time";
 
 const todayKey = () => new Date().toISOString().split("T")[0];
 
@@ -40,10 +41,10 @@ const formatDateTime = (value) => {
   return date.toLocaleString();
 };
 
-const formatHours = (minutes) => {
-  const total = Number(minutes || 0);
-  return (total / 60).toFixed(2);
-};
+const formatWorkedHours = (record) =>
+  formatHoursValue(record?.workedHours ?? record?.workedMinutes, {
+    fromMinutes: record?.workedHours == null,
+  });
 
 const formatCoordinates = (coordinates) => {
   if (!Array.isArray(coordinates) || coordinates.length !== 2) {
@@ -272,8 +273,8 @@ export default function MyAttendancePanel({
           icon={<XCircle size={16} />}
         />
         <MetricCard
-          label="Worked Hours"
-          value={summaryMap.get("Worked Hours This Month") || 0}
+          label="Worked Hrs"
+          value={formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}
           icon={<Timer size={16} />}
         />
       </div>
@@ -310,7 +311,7 @@ export default function MyAttendancePanel({
                     <HistoryDetail label="Punch In" value={formatDateTime(record.punchInAt)} />
                     <HistoryDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
                     <HistoryDetail label="Location" value={formatPunchLocation(record)} />
-                    <HistoryDetail label="Worked Hours" value={formatHours(record.workedMinutes)} />
+                    <HistoryDetail label="Worked Hrs" value={formatWorkedHours(record)} />
                     <HistoryDetail
                       label="Selfie Proof"
                       value={
@@ -334,7 +335,7 @@ export default function MyAttendancePanel({
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hours</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
@@ -347,7 +348,7 @@ export default function MyAttendancePanel({
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatHours(record.workedMinutes)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
                       </td>

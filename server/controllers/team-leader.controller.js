@@ -761,7 +761,7 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
         toSummaryItem("Members", 0),
         toSummaryItem("Present Days", 0),
         toSummaryItem("Absent Days", 0),
-        toSummaryItem("Worked Hours", 0),
+        toSummaryItem("Worked Hrs", 0),
       ],
       items: [],
       meta: {

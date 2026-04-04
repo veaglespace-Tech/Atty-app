@@ -72,11 +72,14 @@ const getAssignablePermissionsByRole = (role) => {
   return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
 };
 
-const resolveUserPermissions = (user, orgId = null) => {
-  if (!user) return [];
+const resolveUserPermissions = (userOrRole, orgIdOrPermissions = null) => {
+  const explicitPermissions = Array.isArray(orgIdOrPermissions) ? orgIdOrPermissions : undefined;
+  const explicitOrgId = explicitPermissions ? null : orgIdOrPermissions;
+
+  if (!userOrRole && !explicitPermissions) return [];
 
   const normalizedRole =
-    typeof user === "string" ? normalizeRole(user) : resolveUserRole(user, orgId);
+    typeof userOrRole === "string" ? normalizeRole(userOrRole) : resolveUserRole(userOrRole, explicitOrgId);
 
   if (!normalizedRole) {
     return [];
@@ -84,6 +87,16 @@ const resolveUserPermissions = (user, orgId = null) => {
 
   if (normalizedRole === "SUPER_ADMIN" || normalizedRole === "ORG_ADMIN") {
     return [...ALL_PERMISSIONS];
+  }
+
+  const hasStoredPermissions =
+    explicitPermissions !== undefined || Array.isArray(userOrRole?.permissions);
+  const sourcePermissions =
+    explicitPermissions !== undefined ? explicitPermissions : userOrRole?.permissions;
+  const normalizedPermissions = normalizePermissionList(sourcePermissions);
+
+  if (hasStoredPermissions) {
+    return normalizedPermissions;
   }
 
   return getDefaultPermissionsForRole(normalizedRole);
