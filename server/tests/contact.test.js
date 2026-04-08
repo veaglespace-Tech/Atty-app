@@ -71,6 +71,16 @@ describe("POST /api/contact", () => {
         message: "Please help me schedule a product demo.",
       },
     });
+    expect(prisma.user.findMany).toHaveBeenCalledWith({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        role: "SUPER_ADMIN",
+      },
+      select: {
+        email: true,
+      },
+    });
     expect(sendContactInquiryNotifications).toHaveBeenCalledWith({
       inquiryId: 41,
       name: "John Doe",

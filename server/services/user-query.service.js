@@ -1,11 +1,61 @@
 const { normalizeRole } = require("../constants/rbac");
-const { resolveUserPermissions } = require("../constants/permissions");
+const {
+  ALL_PERMISSIONS,
+  PERMISSION_KEYS,
+  ROLE_DEFAULT_PERMISSIONS,
+  resolveUserPermissions,
+} = require("../constants/permissions");
 const { resolveUserRole } = require("../utils/membership");
 const { toSummaryItem } = require("./common.service");
+
+const inferManagedUserRole = (user, resolvedRole, resolvedPermissions = []) => {
+  const normalizedResolvedRole = normalizeRole(resolvedRole);
+  if (normalizedResolvedRole !== "MEMBER") {
+    return normalizedResolvedRole;
+  }
+
+  const normalizedStoredRole = normalizeRole(user?.role);
+  if (normalizedStoredRole !== "MEMBER") {
+    return normalizedStoredRole;
+  }
+
+  const permissionSet = new Set(resolvedPermissions);
+  const hasAllPermissions = ALL_PERMISSIONS.every((permission) => permissionSet.has(permission));
+  if (hasAllPermissions) {
+    return "ORG_ADMIN";
+  }
+
+  const hasAdminControls =
+    permissionSet.has(PERMISSION_KEYS.USERS_CREATE) ||
+    permissionSet.has(PERMISSION_KEYS.USERS_STATUS_UPDATE) ||
+    permissionSet.has(PERMISSION_KEYS.USERS_ACTIVE_TOGGLE) ||
+    permissionSet.has(PERMISSION_KEYS.USERS_DELETE) ||
+    permissionSet.has(PERMISSION_KEYS.SUBSCRIPTION_VIEW) ||
+    permissionSet.has(PERMISSION_KEYS.TEAM_CREATE) ||
+    permissionSet.has(PERMISSION_KEYS.TEAM_UPDATE) ||
+    permissionSet.has(PERMISSION_KEYS.TEAM_DELETE) ||
+    permissionSet.has(PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS);
+
+  if (hasAdminControls) {
+    return "SUB_ADMIN";
+  }
+
+  const teamLeaderDefaults = ROLE_DEFAULT_PERMISSIONS.TEAM_LEADER || [];
+  const matchesTeamLeaderRole =
+    teamLeaderDefaults.length > 0 &&
+    teamLeaderDefaults.every((permission) => permissionSet.has(permission));
+
+  if (matchesTeamLeaderRole) {
+    return "TEAM_LEADER";
+  }
+
+  return "MEMBER";
+};
 
 const mapUserForManagement = (user, orgId = null) => {
   const resolvedRole = resolveUserRole(user, orgId);
   const resolvedPermissions = resolveUserPermissions(user, orgId);
+  const displayRole = inferManagedUserRole(user, resolvedRole, resolvedPermissions);
 
   return {
     id: user.id,
@@ -15,7 +65,7 @@ const mapUserForManagement = (user, orgId = null) => {
     mobile: user.mobile,
     mobileCountryCode: user.mobileCountryCode || null,
     profileImageUrl: user.profileImageUrl || null,
-    role: normalizeRole(resolvedRole),
+    role: normalizeRole(displayRole),
     permissions: resolvedPermissions,
     approvalStatus: user.status,
     active: Boolean(user.isActive),
@@ -39,6 +89,7 @@ const buildUserSummary = (users = []) => {
 };
 
 module.exports = {
+  inferManagedUserRole,
   mapUserForManagement,
   buildUserSummary,
 };

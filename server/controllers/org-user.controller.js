@@ -168,6 +168,7 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       throw new Error("SUPER_ADMIN role is not allowed in organization scope");
     }
     assertRoleScope(res, req.user, nextRole, orgId);
+    userPayload.role = nextRole;
     membershipPayload.role = nextRole;
   }
 
@@ -340,6 +341,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
         where: { id: existingUser.id },
         data: {
           orgId: existingUser.orgId || orgId,
+          role,
           status,
           isActive: status === "REJECTED" ? false : existingUser.isActive !== false,
           permissions: normalizedPermissions,
@@ -370,6 +372,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
           mobile: normalizedPhone.e164,
           mobileCountryCode: normalizedPhone.countryCode,
           password: hashedPassword,
+          role,
           status,
           isActive: status !== "REJECTED",
           permissions: normalizedPermissions,

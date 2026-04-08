@@ -7,9 +7,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  SUB_ADMIN
+  TEAM_LEADER
+  MEMBER
+}
+
+enum UserStatus {
+  APPROVED
+  PENDING
+  REJECTED
+  BLOCKED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CREATED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PostType {
+  NOTIFICATION
+  NEWS
+  POLL
+}
+
+enum SupportTicketStatus {
+  OPEN
+  CLOSED
+  IN_PROGRESS
+}
+
+enum VerificationStatus {
+  CONTACT_PENDING
+  EMAIL_PENDING
+  VERIFIED
+  CONSUMED
+  EXPIRED
+}
+
 model ArchiveOrg {
   id                 Int       @id @default(autoincrement())
   orgId              Int?
+  planId             Int?
+  subscriptionId     Int?
+
   name               String?
   organizationCode   String?
   email              String?
@@ -22,19 +80,19 @@ model ArchiveOrg {
   latitude           Float?
   longitude          Float?
   attendanceRadius   Int?
-  subscriptionStatus String?
+
+  subscriptionStatus SubscriptionStatus?
   subscriptionExpiry DateTime?
-  planId             Int?
-  subscriptionId     Int?
   isActive           Boolean?
   isBlocked          Boolean?
-  deletedAt          DateTime?
-  archivedById       Int?
   archiveReason      String    @default("")
+  metadata           Json?
+
+  archivedById       Int?
   archivedAt         DateTime  @default(now())
   originalCreatedAt  DateTime?
   originalUpdatedAt  DateTime?
-  metadata           Json?
+  deletedAt          DateTime?
 
   @@index([archivedAt])
   @@index([email])
@@ -47,24 +105,27 @@ model ArchiveUser {
   id                Int       @id @default(autoincrement())
   userId            Int?
   orgId             Int?
+
   name              String?
   email             String?
   mobile            String?
   mobileCountryCode String?
   password          String?
-  role              String?
+  role              UserRole?
   permissions       Json?
-  status            String?
+
+  status            UserStatus?
   isActive          Boolean?
   lastLoginAt       DateTime?
-  createdById       Int?
-  deletedAt         DateTime?
-  archivedById      Int?
   archiveReason     String    @default("")
+  metadata          Json?
+
+  createdById       Int?
+  archivedById      Int?
   archivedAt        DateTime  @default(now())
   originalCreatedAt DateTime?
   originalUpdatedAt DateTime?
-  metadata          Json?
+  deletedAt         DateTime?
 
   @@index([archivedAt])
   @@index([email])
@@ -77,32 +138,35 @@ model Attendance {
   id                    Int       @id @default(autoincrement())
   orgId                 Int
   userId                Int
+  teamId                Int?
+  markedById            Int?
+
   date                  String
   punchInAt             DateTime?
+  punchOutAt            DateTime?
   punchInLatitude       Float?
   punchInLongitude      Float?
-  punchOutAt            DateTime?
   punchOutLatitude      Float?
   punchOutLongitude     Float?
   punchInDistanceMeters Float?
   punchOutDistanceMeters Float?
   isPunchInValid        Boolean   @default(false)
   isPunchOutValid       Boolean   @default(false)
-  totalMinutesWorked    Int       @default(0)
-  lateMinutes           Int       @default(0)
-  status                String    @default("PRESENT")
-  notes                 String    @default("")
-  markedById            Int?
-  deletedAt             DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  teamId                Int?
+
+  totalMinutesWorked    Int                @default(0)
+  lateMinutes           Int                @default(0)
+  status                AttendanceStatus   @default(PRESENT)
+  notes                 String             @default("")
   punchInLocationMeta   Json?
   punchOutLocationMeta  Json?
   punchInSelfieUrl      String?
   punchInSelfiePublicId String?
   punchOutSelfieUrl     String?
   punchOutSelfiePublicId String?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
 
   organization Organization @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
   user         User         @relation("AttendanceUser", fields: [userId], references: [id], map: "Attendance_userId_fkey")
@@ -126,30 +190,33 @@ model ContactInquiry {
   subject                     String
   message                     String    @db.Text
   status                      String    @default("NEW")
+
   adminNotificationSentAt     DateTime?
   adminNotificationError      String?
   requesterNotificationSentAt DateTime?
   requesterNotificationError  String?
+
   createdAt                   DateTime  @default(now())
   updatedAt                   DateTime  @updatedAt
 
   @@index([createdAt])
   @@index([email, createdAt])
   @@index([status])
-  @@map("contact_inquiries")
+  @@map("contact_inquiry")
 }
 
 model FreeTrialClaim {
   id         Int      @id @default(autoincrement())
+  orgName    String?
   orgEmail   String   @unique
+  adminName  String?
   adminEmail String   @unique
   adminPhone String   @unique
+
   planCode   String
   startDate  DateTime
   endDate    DateTime
   claimedAt  DateTime @default(now())
-  orgName    String?
-  adminName  String?
 
   @@index([claimedAt])
   @@index([endDate])
@@ -158,6 +225,10 @@ model FreeTrialClaim {
 
 model Organization {
   id                 Int       @id @default(autoincrement())
+  orgAdminId         Int?      @unique(map: "Organization_orgAdminId_key")
+  planId             Int?
+  subscriptionId     Int?      @unique(map: "Organization_subscriptionId_key")
+
   name               String
   organizationCode   String    @unique(map: "Organization_organizationCode_key")
   email              String    @unique(map: "Organization_email_key")
@@ -167,19 +238,19 @@ model Organization {
   city               String?
   state              String?
   country            String    @default("India")
+
   latitude           Float
   longitude          Float
-  attendanceRadius   Int       @default(25)
-  subscriptionStatus String    @default("TRIAL")
+  attendanceRadius   Int                @default(25)
+
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
   subscriptionExpiry DateTime?
-  planId             Int?
-  orgAdminId         Int?      @unique(map: "Organization_orgAdminId_key")
-  subscriptionId     Int?      @unique(map: "Organization_subscriptionId_key")
   isActive           Boolean   @default(true)
   isBlocked          Boolean   @default(false)
-  deletedAt          DateTime?
+
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
 
   plan               Plan?         @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
   orgAdmin           User?         @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
@@ -203,7 +274,8 @@ model OrganizationMember {
   id        Int      @id @default(autoincrement())
   userId    Int
   orgId     Int
-  role      String   @default("MEMBER")
+
+  role      UserRole @default(MEMBER)
   isActive  Boolean  @default(true)
   joinedAt  DateTime @default(now())
 
@@ -221,6 +293,7 @@ model Payment {
   orgId             Int
   userId            Int
   subscriptionId    Int
+
   planName          String
   planCode          String
   amount            Float
@@ -229,9 +302,11 @@ model Payment {
   razorpayOrderId   String
   razorpayPaymentId String?
   razorpaySignature String?
-  status            String   @default("CREATED")
-  failureReason     String   @default("")
+
+  status            PaymentStatus @default(CREATED)
+  failureReason     String        @default("")
   rawResponse       Json?
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -257,15 +332,17 @@ model Plan {
   price          Float
   currency       String   @default("INR")
   durationInDays Int
+
   features       Json
   maxUsers       Int      @default(0)
   maxTeams       Int      @default(0)
   maxLocations   Int      @default(0)
+  memberLimit    Int      @default(0)
+
   isActive       Boolean  @default(true)
   isDefault      Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  memberLimit    Int      @default(0)
 
   organizations Organization[]
   subscriptions Subscription[]
@@ -277,10 +354,12 @@ model Post {
   id        Int      @id @default(autoincrement())
   orgId     Int
   authorId  Int
+
   title     String
   content   String   @db.Text
-  type      String   @default("NOTIFICATION")
+  type      PostType @default(NOTIFICATION)
   metadata  Json?
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -292,27 +371,31 @@ model Post {
   @@index([authorId], map: "posts_authorId_idx")
   @@index([orgId, isActive], map: "posts_orgId_isActive_idx")
   @@index([type], map: "posts_type_idx")
-  @@map("posts")
+  @@map("post")
 }
 
 model Subscription {
   id                Int      @id @default(autoincrement())
   orgId             Int
   planId            Int?
+  createdById       Int
+
   planName          String
   planCode          String
   amount            Float
   currency          String   @default("INR")
-  status            String   @default("ACTIVE")
+
+  status            SubscriptionStatus @default(ACTIVE)
   startDate         DateTime @default(now())
   endDate           DateTime?
+  activeKey         String?  @unique(map: "Subscription_activeKey_key")
+
   paymentGateway    String   @default("RAZORPAY")
   razorpayOrderId   String?
   razorpayPaymentId String?
   razorpaySignature String?
-  createdById       Int
   notes             String   @default("")
-  activeKey         String?  @unique(map: "Subscription_activeKey_key")
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -334,36 +417,40 @@ model Subscription {
 
 model SupportTicket {
   id        Int      @id @default(autoincrement())
-  name      String
-  email     String
-  role      String   @default("MEMBER")
-  subject   String   @default("Support Query")
-  message   String   @db.Text
-  status    String   @default("OPEN")
   orgId     Int?
   userId    Int?
+
+  name      String
+  email     String
+  role      UserRole @default(MEMBER)
+  subject   String   @default("Support Query")
+  message   String   @db.Text
+  status    SupportTicketStatus @default(OPEN)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([orgId], map: "support_tickets_orgId_idx")
   @@index([status], map: "support_tickets_status_idx")
-  @@map("support_tickets")
+  @@map("support_ticket")
 }
 
 model Team {
   id               Int      @id @default(autoincrement())
   orgId            Int
+  leaderId         Int?
+  createdById      Int
+
   name             String
   description      String   @default("")
   latitude         Float?
   longitude        Float?
   attendanceRadius Int      @default(25)
-  leaderId         Int?
-  createdById      Int
+
   isActive         Boolean  @default(true)
-  deletedAt        DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
 
   organization Organization @relation(fields: [orgId], references: [id], map: "Team_orgId_fkey")
   leader       User?        @relation("TeamLeader", fields: [leaderId], references: [id], map: "Team_leaderId_fkey")
@@ -382,6 +469,7 @@ model TeamMember {
   id        Int      @id @default(autoincrement())
   teamId    Int
   userId    Int
+
   createdAt DateTime @default(now())
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade, map: "TeamMember_teamId_fkey")
@@ -395,24 +483,27 @@ model TeamMember {
 model User {
   id                   Int      @id @default(autoincrement())
   orgId                Int?
+  createdById          Int?
+
   name                 String
   email                String   @unique(map: "User_email_key")
   mobile               String
-  password             String
-  role                 String   @default("MEMBER")
-  status               String   @default("APPROVED")
-  isActive             Boolean  @default(true)
   mobileCountryCode    String?
+  password             String
+  role                 UserRole   @default(MEMBER)
   permissions          Json?
   resetTokenHash       String?
   resetTokenExpiry     DateTime?
+
+  status               UserStatus @default(APPROVED)
+  isActive             Boolean    @default(true)
+  lastLoginAt          DateTime?
   profileImageUrl      String?
   profileImagePublicId String?
-  lastLoginAt          DateTime?
-  createdById          Int?
-  deletedAt            DateTime?
+
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  deletedAt            DateTime?
 
   organization                Organization?        @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   memberships                 OrganizationMember[]
@@ -438,11 +529,13 @@ model User {
 model VerificationSession {
   id                   Int      @id @default(autoincrement())
   purpose              String   @default("MEMBER_REGISTRATION")
+
   email                String
   phoneE164            String
   countryCode          String?
   nationalNumber       String
-  status               String   @default("CONTACT_PENDING")
+
+  status               VerificationStatus @default(CONTACT_PENDING)
   contactOtpHash       String?
   contactOtpExpiresAt  DateTime
   contactOtpAttempts   Int      @default(0)
@@ -455,6 +548,7 @@ model VerificationSession {
   emailVerifiedAt      DateTime?
   consumedAt           DateTime?
   expiresAt            DateTime
+
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

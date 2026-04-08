@@ -6,6 +6,14 @@ const parseOrganizationId = (value) => {
   return Math.floor(parsed);
 };
 
+const ROLE_PRIORITY = Object.freeze({
+  MEMBER: 1,
+  TEAM_LEADER: 2,
+  SUB_ADMIN: 3,
+  ORG_ADMIN: 4,
+  SUPER_ADMIN: 5,
+});
+
 const normalizeMembership = (membership) => {
   if (!membership || typeof membership !== "object") return null;
 
@@ -46,6 +54,27 @@ const buildLegacyMembership = (user, orgId = null) => {
   };
 };
 
+const mergePreferredMembershipRole = (membership, legacyMembership) => {
+  if (!membership) return legacyMembership || null;
+  if (!legacyMembership) return membership;
+  if (membership.orgId !== legacyMembership.orgId) return membership;
+  if (membership.isActive === false) return membership;
+
+  const membershipRole = normalizeRole(membership.role);
+  const legacyRole = normalizeRole(legacyMembership.role);
+  const membershipPriority = ROLE_PRIORITY[membershipRole] || 0;
+  const legacyPriority = ROLE_PRIORITY[legacyRole] || 0;
+
+  if (legacyPriority <= membershipPriority) {
+    return membership;
+  }
+
+  return {
+    ...membership,
+    role: legacyRole,
+  };
+};
+
 const resolveOrganizationId = (user, fallback = null) => {
   const directOrganization =
     user?.organization && typeof user.organization === "object"
@@ -64,10 +93,9 @@ const resolveMembership = (user, orgId = null) => {
   const memberships = normalizeMemberships(user?.memberships);
   const targetOrgId = resolveOrganizationId(user, orgId);
   if (!targetOrgId) return null;
-  return (
-    memberships.find((membership) => membership.orgId === targetOrgId) ||
-    buildLegacyMembership(user, targetOrgId)
-  );
+  const membership = memberships.find((entry) => entry.orgId === targetOrgId) || null;
+  const legacyMembership = buildLegacyMembership(user, targetOrgId);
+  return mergePreferredMembershipRole(membership, legacyMembership);
 };
 
 const resolveAccessibleRoles = (user, orgId = null) => {
@@ -75,14 +103,12 @@ const resolveAccessibleRoles = (user, orgId = null) => {
   const targetOrgId = resolveOrganizationId(user, orgId);
 
   if (targetOrgId) {
-    const membership = memberships.find((entry) => entry.orgId === targetOrgId);
-    if (membership && membership.isActive !== false) {
-      return [membership.role];
-    }
-
+    const membership = memberships.find((entry) => entry.orgId === targetOrgId) || null;
     const legacyMembership = buildLegacyMembership(user, targetOrgId);
-    if (legacyMembership && legacyMembership.isActive !== false) {
-      return [legacyMembership.role];
+    const resolvedMembership = mergePreferredMembershipRole(membership, legacyMembership);
+
+    if (resolvedMembership && resolvedMembership.isActive !== false) {
+      return [resolvedMembership.role];
     }
 
     return [];

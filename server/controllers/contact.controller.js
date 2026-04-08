@@ -279,7 +279,7 @@ const findSuperAdminEmailRows = async () => {
       where: {
         deletedAt: null,
         isActive: true,
-        OR: [{ role: "SUPER_ADMIN" }, { role: "SUPERADMIN" }],
+        role: "SUPER_ADMIN",
       },
       select: {
         email: true,

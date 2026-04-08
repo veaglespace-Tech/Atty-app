@@ -1,5 +1,3 @@
-import "@fontsource-variable/manrope";
-import "@fontsource-variable/space-grotesk";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";

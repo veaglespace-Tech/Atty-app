@@ -754,6 +754,7 @@ exports.register = asyncHandler(async (req, res) => {
           mobile: normalizedPhone.e164,
           mobileCountryCode: normalizedPhone.countryCode,
           password: hashedPassword,
+          role: normalizedRole,
           orgId: targetOrg.id,
           status: "PENDING",
         },
@@ -807,7 +808,9 @@ exports.register = asyncHandler(async (req, res) => {
 
   const normalizedRole = normalizeRole(role || "MEMBER");
   const resolvedOrganizationId = organizationId || organization || null;
-  if (!resolvedOrganizationId) {
+  const isSuperAdminRegistration = normalizedRole === "SUPER_ADMIN";
+
+  if (!resolvedOrganizationId && !isSuperAdminRegistration) {
     res.status(400);
     throw new Error("organizationId is required for membership-based registration");
   }
@@ -829,17 +832,20 @@ exports.register = asyncHandler(async (req, res) => {
         mobile: normalizedPhone.e164,
         mobileCountryCode: normalizedPhone.countryCode,
         password: hashedPassword,
-        orgId: Number(resolvedOrganizationId),
-        status: normalizedRole === "SUPER_ADMIN" ? "APPROVED" : "PENDING",
+        role: normalizedRole,
+        orgId: resolvedOrganizationId ? Number(resolvedOrganizationId) : null,
+        status: isSuperAdminRegistration ? "APPROVED" : "PENDING",
       },
     });
 
-    await createOrganizationMembership(tx, {
-      userId: createdUser.id,
-      orgId: Number(resolvedOrganizationId),
-      role: normalizedRole,
-      isActive: true,
-    });
+    if (resolvedOrganizationId) {
+      await createOrganizationMembership(tx, {
+        userId: createdUser.id,
+        orgId: Number(resolvedOrganizationId),
+        role: normalizedRole,
+        isActive: true,
+      });
+    }
 
     return createdUser;
   });

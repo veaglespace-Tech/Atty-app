@@ -5,8 +5,8 @@
   - A unique constraint covering the columns `[orgAdminId]` on the table `Organization` will be added. If there are existing duplicate values, this will fail.
 
 */
--- AlterTable
-ALTER TABLE `organization` ADD COLUMN `orgAdminId` INTEGER NULL;
+-- Drops unnecessary alter since it's already added in previous migration
+-- ALTER TABLE `organization` ADD COLUMN `orgAdminId` INTEGER NULL;
 
 -- DropTable
 DROP TABLE `verificationsession`;
@@ -79,26 +79,6 @@ CREATE TABLE `archieve_user` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
-CREATE TABLE `free_trial_claim` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `orgEmail` VARCHAR(191) NOT NULL,
-    `adminEmail` VARCHAR(191) NOT NULL,
-    `adminPhone` VARCHAR(191) NOT NULL,
-    `planCode` VARCHAR(191) NOT NULL,
-    `startDate` DATETIME(3) NOT NULL,
-    `endDate` DATETIME(3) NOT NULL,
-    `claimedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `orgName` VARCHAR(191) NULL,
-    `adminName` VARCHAR(191) NULL,
-
-    UNIQUE INDEX `free_trial_claim_orgEmail_key`(`orgEmail`),
-    UNIQUE INDEX `free_trial_claim_adminEmail_key`(`adminEmail`),
-    UNIQUE INDEX `free_trial_claim_adminPhone_key`(`adminPhone`),
-    INDEX `free_trial_claim_claimedAt_idx`(`claimedAt`),
-    INDEX `free_trial_claim_endDate_idx`(`endDate`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `posts` (
@@ -120,14 +100,10 @@ CREATE TABLE `posts` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateIndex
-CREATE UNIQUE INDEX `Organization_orgAdminId_key` ON `Organization`(`orgAdminId`);
+-- CREATE UNIQUE INDEX `Organization_orgAdminId_key` ON `Organization`(`orgAdminId`);
+-- CREATE INDEX `Organization_orgAdminId_idx` ON `Organization`(`orgAdminId`);
 
--- CreateIndex
-CREATE INDEX `Organization_orgAdminId_idx` ON `Organization`(`orgAdminId`);
-
--- AddForeignKey
-ALTER TABLE `Organization` ADD CONSTRAINT `Organization_orgAdminId_fkey` FOREIGN KEY (`orgAdminId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+-- ALTER TABLE `Organization` ADD CONSTRAINT `Organization_orgAdminId_fkey` FOREIGN KEY (`orgAdminId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `posts` ADD CONSTRAINT `posts_orgId_fkey` FOREIGN KEY (`orgId`) REFERENCES `Organization`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -98,6 +98,7 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
       mobile: normalizedAdminPhone.e164,
       mobileCountryCode: normalizedAdminPhone.countryCode,
       password: hashedPassword,
+      role: adminRole,
       orgId: organization.id,
       status: "APPROVED",
       isActive: true,

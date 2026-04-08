@@ -3,7 +3,12 @@ const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
 const { normalizeUser } = require("../utils/identity");
-const { resolveOrganizationId, resolveMembership, normalizeMemberships } = require("../utils/membership");
+const {
+  resolveOrganizationId,
+  resolveMembership,
+  normalizeMemberships,
+  resolveUserRole,
+} = require("../utils/membership");
 
 const isProtectionBypassed = () =>
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
@@ -111,7 +116,10 @@ const verifyToken = asyncHandler(async (req, res, next) => {
         res.status(403);
         throw new Error("Your organization membership is inactive");
       }
-    } else if (normalizeMemberships(normalizedUser.memberships).length === 0) {
+    } else if (
+      normalizeMemberships(normalizedUser.memberships).length === 0 &&
+      resolveUserRole(normalizedUser) !== "SUPER_ADMIN"
+    ) {
       res.status(403);
       throw new Error("No active organization membership found");
     }

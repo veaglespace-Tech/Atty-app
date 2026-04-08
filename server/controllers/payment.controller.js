@@ -980,6 +980,7 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
           mobile: adminPhone.e164,
           mobileCountryCode: adminPhone.countryCode,
           password: hashedPassword,
+          role: adminRole,
           orgId: newOrg.id,
           status: "APPROVED",
           isActive: true,
