@@ -33,12 +33,15 @@ const envAllowedOrigins = [process.env.CLIENT_URL, process.env.CLIENT_ORIGINS]
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-
 const allowedOrigins = new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+
+  "https://atty.veaglespace.com",   // 🔥 ADD THIS
+  "http://atty.veaglespace.com",    // (optional backup)
+
   ...envAllowedOrigins,
 ]);
 

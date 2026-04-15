@@ -2,7 +2,7 @@ import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout } from "@/store/slices/authSlice";
 import { normalizeRole, ROLES } from "@/utils/roles";
 
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
 
 const rawBaseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,

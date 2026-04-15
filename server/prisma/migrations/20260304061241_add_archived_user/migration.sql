@@ -1,3 +1,0 @@
--- Historical placeholder migration.
--- This migration name already exists in the database migration table for
--- older environments, so we keep a no-op file locally to preserve history.
