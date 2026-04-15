@@ -95,7 +95,7 @@ export default function Navbar() {
                 </div>
               </div>
               <span className="truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl 2xl:text-2xl">
-                Veagle <span className="brand-wordmark hidden sm:inline">Attendee</span>
+                Veagle <span className="brand-wordmark">Attendee</span>
               </span>
             </Link>
 

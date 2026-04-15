@@ -39,8 +39,8 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 
-  "https://atty.veaglespace.com",   // 🔥 ADD THIS
-  "http://atty.veaglespace.com",    // (optional backup)
+  "https://atty.veaglespace.com",   
+  "http://atty.veaglespace.com",   
 
   ...envAllowedOrigins,
 ]);
