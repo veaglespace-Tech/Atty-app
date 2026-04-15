@@ -5,8 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Bell,
   Building2,
+  Check,
+  Copy,
   ImageUp,
   Globe,
+  Link2,
   Loader2,
   LockKeyhole,
   Mail,
@@ -28,9 +31,20 @@ import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
 import { useForgotPasswordMutation, useUpdateMeMutation } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
-import { formatRoleLabel, resolveUserPermissions, ROLES } from "@/utils/roles";
+import {
+  formatRoleLabel,
+  getUserOrganizationId,
+  hasPermission,
+  PERMISSIONS,
+  resolveUserPermissions,
+  ROLES,
+} from "@/utils/roles";
 import { getLocalPhoneNumber } from "@/utils/phone";
 import { cn } from "@/lib/utils";
+import {
+  useGetOrgAttendanceSettingsQuery,
+  useUpdateOrgAttendanceSettingsMutation,
+} from "@/services/api/orgApi";
 import {
   PERSON_NAME_REGEX,
   PHONE_DIGIT_MAX,
@@ -133,6 +147,129 @@ function PreferenceCard({ icon: Icon, title, value, children }) {
   );
 }
 
+function LocationSettings() {
+  const { data: settingsData, isLoading: loadingSettings } = useGetOrgAttendanceSettingsQuery();
+  const [updateSettings, { isLoading: isUpdating }] = useUpdateOrgAttendanceSettingsMutation();
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
+
+  const persistedSettings = settingsData?.settings;
+  const persistedLocation = Array.isArray(persistedSettings?.location)
+    ? persistedSettings.location
+    : [];
+  const defaultRadius = Number(persistedSettings?.attendanceRadius) || 25;
+  const defaultLongitude = Number(persistedLocation[0]) || 0;
+  const defaultLatitude = Number(persistedLocation[1]) || 0;
+
+  const [draftRadius, setDraftRadius] = useState(null);
+  const [draftLatitude, setDraftLatitude] = useState(null);
+  const [draftLongitude, setDraftLongitude] = useState(null);
+
+  const radius = draftRadius ?? defaultRadius;
+  const latitude = draftLatitude ?? defaultLatitude;
+  const longitude = draftLongitude ?? defaultLongitude;
+
+  const handleSave = async () => {
+    setFeedback({ type: "", message: "" });
+    try {
+      await updateSettings({
+        attendanceRadius: radius,
+        coordinates: [longitude, latitude],
+      }).unwrap();
+      setFeedback({ type: "success", message: "Location settings updated successfully." });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error?.data?.message || "Failed to update location settings.",
+      });
+    }
+  };
+
+  if (loadingSettings) {
+    return (
+      <div className="flex h-32 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="light-glow-card-static rounded-[1.75rem] p-6 text-left">
+      <div className="flex items-center gap-3">
+        <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
+          <MapPin size={18} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">
+            Workspace Geofencing
+          </h3>
+          <p className="brand-copy-sm mt-1">Configure the organization&apos;s physical boundaries.</p>
+        </div>
+      </div>
+
+      {feedback.message ? (
+        <p
+          className={cn(
+            "mt-4 rounded-2xl border px-4 py-3 text-sm font-medium",
+            feedback.type === "error"
+              ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+          )}
+        >
+          {feedback.message}
+        </p>
+      ) : null}
+
+      <div className="mt-6 space-y-5">
+        <div>
+          <label className="brand-kicker mb-1.5 ml-1 block">Attendance Radius (meters)</label>
+          <input
+            type="number"
+            value={radius}
+            onChange={(e) => setDraftRadius(Number(e.target.value))}
+            className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+            min="5"
+            max="1000"
+          />
+          <p className="mt-2 text-xs font-medium text-slate-500">Range: 5 to 1000 meters.</p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="brand-kicker mb-1.5 ml-1 block">Latitude</label>
+            <input
+              type="number"
+              step="any"
+              value={latitude}
+              onChange={(e) => setDraftLatitude(Number(e.target.value))}
+              className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+            />
+          </div>
+          <div>
+            <label className="brand-kicker mb-1.5 ml-1 block">Longitude</label>
+            <input
+              type="number"
+              step="any"
+              value={longitude}
+              onChange={(e) => setDraftLongitude(Number(e.target.value))}
+              className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isUpdating}
+          className="brand-btn brand-btn-primary brand-btn-md w-full justify-center"
+        >
+          {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          Update Geofencing Settings
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function WorkspaceSettingsPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -145,11 +282,14 @@ export default function WorkspaceSettingsPage() {
   const [profileImageError, setProfileImageError] = useState("");
   const profileImageInputRef = useRef(null);
   const currentRole = user?.currentRole;
-  const roleLabel = formatRoleLabel(currentRole);
-  const isSuperAdmin = currentRole === ROLES.SUPER_ADMIN;
+  const effectiveRole = currentRole || user?.role || ROLES.MEMBER;
+  const roleLabel = formatRoleLabel(effectiveRole);
+  const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN;
   const permissionsCount = resolveUserPermissions(user).length;
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || null;
+  const referralCode = user?.organization?.referralCode || null;
   const workspaceCity = user?.city || user?.organization?.city || null;
+  const [copiedReferral, setCopiedReferral] = useState(false);
 
   const {
     control,
@@ -192,9 +332,12 @@ export default function WorkspaceSettingsPage() {
         label: isSuperAdmin ? "Access Scope" : "Organization Code",
         value: isSuperAdmin ? "Platform-wide" : formatValue(workspaceCode),
       },
+      ...(!isSuperAdmin && referralCode
+        ? [{ icon: Link2, label: "My Referral Code", value: referralCode }]
+        : []),
       { icon: Users, label: "Permissions", value: `${permissionsCount} Enabled` },
     ],
-    [isSuperAdmin, permissionsCount, previewEmail, previewMobile, previewName, roleLabel, workspaceCode]
+    [isSuperAdmin, permissionsCount, previewEmail, previewMobile, previewName, referralCode, roleLabel, workspaceCode]
   );
 
   const resetForm = () => {
@@ -305,9 +448,9 @@ export default function WorkspaceSettingsPage() {
   const sendResetPasswordLink = async () => {
     setPasswordResetFeedback({ type: "", message: "" });
 
-    const organizationId = user?.organizationId || user?.organization?.id || null;
+    const organizationId = getUserOrganizationId(user);
     const organizationCode = user?.organizationCode || user?.organization?.organizationCode || "";
-    if (!user?.email || !user?.role) {
+    if (!user?.email || !effectiveRole) {
       setPasswordResetFeedback({
         type: "error",
         message: "Unable to prepare password reset request for this account.",
@@ -326,7 +469,7 @@ export default function WorkspaceSettingsPage() {
     try {
       const payload = {
         email: user.email,
-        loginAs: user.role,
+        loginAs: effectiveRole,
       };
 
       if (!isSuperAdmin) {
@@ -556,6 +699,32 @@ export default function WorkspaceSettingsPage() {
                   </p>
                 </div>
               </div>
+              {!isSuperAdmin && referralCode ? (
+                <div className="brand-panel-soft rounded-[1.25rem] p-4">
+                  <p className="brand-kicker">My Referral Code</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <p className="text-sm font-bold tracking-wider text-blue-600 dark:text-blue-400">
+                      {referralCode}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const joinLink = `${window.location.origin}/join/${referralCode}`;
+                        navigator.clipboard.writeText(joinLink);
+                        setCopiedReferral(true);
+                        setTimeout(() => setCopiedReferral(false), 2000);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+                    >
+                      {copiedReferral ? <Check size={12} /> : <Copy size={12} />}
+                      {copiedReferral ? "Copied!" : "Copy Link"}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Share this link so new members can request to join your organization.
+                  </p>
+                </div>
+              ) : null}
               <p className="brand-copy-sm text-xs">
                 Role and workspace scope are managed by the platform or organization admin.
               </p>
@@ -655,6 +824,8 @@ export default function WorkspaceSettingsPage() {
               </div>
             </div>
           </div>
+
+          {hasPermission(user, PERMISSIONS.LOCATION_SET) && <LocationSettings />}
         </div>
       </div>
     </section>

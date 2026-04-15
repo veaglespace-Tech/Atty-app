@@ -16,6 +16,7 @@ import {
   Menu,
   Settings,
   ShieldCheck,
+  UserPlus,
   Users,
   UsersRound,
   X,
@@ -48,6 +49,7 @@ function getNavIcon(label) {
   if (normalized.includes("attendance")) return CalendarDays;
   if (normalized.includes("report") || normalized.includes("analytic")) return BarChart3;
   if (normalized.includes("notification")) return Bell;
+  if (normalized.includes("request")) return UserPlus;
   if (normalized.includes("team")) return UsersRound;
   if (normalized.includes("user") || normalized.includes("employee")) return Users;
   if (
@@ -149,7 +151,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
   return (
     <div className="dashboard-theme flex min-h-screen bg-background transition-colors duration-300 dark:text-slate-100">
-      <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(30,112,209,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 md:flex">
+      <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(30,112,209,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 lg:flex">
         <div className="light-glow-card-static rounded-[2rem] p-5">
           <DashboardBrandBlock />
         </div>
@@ -194,7 +196,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/88 px-4 py-4 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 md:px-6">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/88 px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
@@ -202,7 +204,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                 onClick={() =>
                   setMobileNavPath((currentPath) => (currentPath === pathname ? null : pathname))
                 }
-                className="brand-btn brand-btn-secondary brand-btn-sm rounded-2xl px-3 py-2 md:hidden"
+                className="brand-btn brand-btn-secondary brand-btn-sm rounded-2xl px-3 py-2 lg:hidden"
                 aria-label={mobileNavOpen ? "Close section menu" : "Open section menu"}
               >
                 {mobileNavOpen ? <X size={16} /> : <Menu size={16} />}
@@ -214,7 +216,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="brand-panel-soft relative hidden min-w-[260px] rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] md:block">
+              <div className="brand-panel-soft relative hidden min-w-[260px] rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] lg:block">
                 <div
                   className={cn(
                     "absolute right-3 top-3 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
@@ -255,7 +257,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         </header>
 
         {mobileNavOpen ? (
-          <div className="border-b border-slate-200/80 bg-white/92 px-4 py-4 shadow-[0_12px_32px_rgba(30,112,209,0.10)] dark:border-slate-800 dark:bg-slate-950 md:hidden">
+          <div className="border-b border-slate-200/80 bg-white/92 px-3 py-3 shadow-[0_12px_32px_rgba(30,112,209,0.10)] dark:border-slate-800 dark:bg-slate-950 sm:px-4 sm:py-4 lg:hidden">
             <div className="space-y-2">
               {resolvedNavItems.map((item) => {
                 const active = pathname === item.href;
@@ -297,7 +299,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
           </div>
         ) : null}
 
-        <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-[1540px]">{children}</div>
         </main>
       </div>

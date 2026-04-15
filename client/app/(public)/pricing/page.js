@@ -82,6 +82,8 @@ const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName
     hasActiveWindow &&
     String(activeSubscription?.planCode || "").trim().toUpperCase() ===
       String(selectedPlan.code || "").trim().toUpperCase();
+  const currentPlanPrice = Number(activeSubscription?.amount || 0);
+  const selectedPlanPrice = Number(selectedPlan?.price || 0);
 
   let mode = "RENEW";
   let upgradeCredit = 0;
@@ -89,8 +91,10 @@ const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName
   if (hasActiveWindow) {
     if (samePlan) {
       mode = "EXTEND";
+    } else if (selectedPlanPrice < currentPlanPrice) {
+      mode = "DOWNGRADE_SCHEDULED";
     } else {
-      mode = "UPGRADE";
+      mode = "UPGRADE_NOW";
       const totalMs =
         activeStartDate && !Number.isNaN(activeStartDate.getTime())
           ? Math.max(activeEndDate.getTime() - activeStartDate.getTime(), 24 * 60 * 60 * 1000)
@@ -108,11 +112,11 @@ const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName
   }
 
   const payableAmount =
-    mode === "EXTEND"
-      ? Number(selectedPlan.price || 0)
-      : Math.max(0, Number(Number(selectedPlan.price || 0) - upgradeCredit).toFixed(2));
+    mode === "UPGRADE_NOW"
+      ? Math.max(0, Number(Number(selectedPlan.price || 0) - upgradeCredit).toFixed(2))
+      : Number(selectedPlan.price || 0);
   const nextExpiry =
-    mode === "EXTEND" && hasActiveWindow
+    (mode === "EXTEND" || mode === "DOWNGRADE_SCHEDULED") && hasActiveWindow
       ? new Date(
           activeEndDate.getTime() + Number(selectedPlan.durationInDays || 30) * 24 * 60 * 60 * 1000
         )
@@ -128,12 +132,16 @@ const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName
   };
 };
 
-const getRenewalCtaLabel = ({ isCurrentPlan, subscriptionStatus }) => {
+const getRenewalCtaLabel = ({ isCurrentPlan, subscriptionStatus, mode }) => {
+  if (mode === "DOWNGRADE_SCHEDULED") {
+    return "Schedule Downgrade";
+  }
+
   if (isCurrentPlan) {
     return subscriptionStatus === "EXPIRED" ? "Renew Plan" : "Extend Plan";
   }
 
-  return "Upgrade Plan";
+  return mode === "UPGRADE_NOW" ? "Upgrade Now" : "Renew Plan";
 };
 
 export default function PricingPage() {
@@ -222,11 +230,16 @@ export default function PricingPage() {
       const orderResponse = await createRenewalOrder({
         planCode: selectedPlan.code,
       }).unwrap();
+      const intentId = Number(orderResponse?.intentId || 0);
+      if (!Number.isFinite(intentId) || intentId <= 0) {
+        throw new Error("Unable to create secure renewal session.");
+      }
 
       if (orderResponse?.freeRenewal) {
         setPaymentStatus("Applying plan credit...");
 
         const verifyResult = await verifyRenewalPayment({
+          intentId,
           planCode: selectedPlan.code,
         }).unwrap();
 
@@ -301,6 +314,7 @@ export default function PricingPage() {
 
             const verifyResult = await verifyRenewalPayment({
               ...response,
+              intentId,
               planCode: selectedPlan.code,
             }).unwrap();
 
@@ -527,6 +541,7 @@ export default function PricingPage() {
                 ? getRenewalCtaLabel({
                     isCurrentPlan,
                     subscriptionStatus,
+                    mode: renewalPreview?.mode,
                   })
                 : "Select Plan";
 

@@ -554,54 +554,52 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const limit = parseLimit(req.query.limit, 100, 500);
 
-  const pendingUsers = await prisma.user.findMany({
-    where: {
-      memberships: {
-        some: {
-          orgId,
-        },
-      },
-      status: "PENDING",
-      deletedAt: null,
-    },
-    orderBy: [{ createdAt: "desc" }],
-    take: limit,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      createdAt: true,
-      memberships: {
-        select: {
-          orgId: true,
-          role: true,
-          isActive: true,
-        },
-      },
-    },
-  });
+  const where = {
+    orgId,
+    isActive: true,
+    deletedAt: null,
+    type: "NOTIFICATION",
+  };
 
-  const items = pendingUsers.map((user) => ({
-    id: String(user.id),
-    title: `New registration request: ${user.name}`,
-    message: `${user.name} (${user.email}) requested access as ${normalizeRole(
-      resolveUserRole(user, orgId)
-    )}`,
-    createdAt: user.createdAt,
-    action: {
-      approveEndpoint: `/org/users/${user.id}/status`,
-    },
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }],
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        author: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    }),
+    prisma.post.count({ where }),
+  ]);
+
+  const items = posts.map((post) => ({
+    id: String(post.id),
+    title: post.title,
+    message: post.content,
+    createdAt: post.createdAt,
+    authorName: post.author?.name || "Admin",
+    source: "POST",
   }));
 
   res.status(200).json({
     success: true,
     summary: [
-      toSummaryItem("Pending Approval Requests", pendingUsers.length),
-      toSummaryItem("Unread Notifications", pendingUsers.length),
+      toSummaryItem("Total Notifications", total),
+      toSummaryItem("Unread Notifications", total),
     ],
     items,
     meta: {
       limit,
+      total,
     },
   });
 });

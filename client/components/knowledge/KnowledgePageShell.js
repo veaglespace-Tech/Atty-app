@@ -11,7 +11,7 @@ export default function KnowledgePageShell({
   children,
 }) {
   return (
-    <div className="page-shell relative min-h-screen overflow-hidden px-4 pb-24 pt-32 transition-colors duration-500">
+    <div className="page-shell relative min-h-screen overflow-hidden px-3 pb-16 pt-24 transition-colors duration-500 sm:px-4 sm:pb-24 sm:pt-32">
       <div className="pointer-events-none absolute inset-0">
         <div className="page-shell-orb-primary absolute left-[-8%] top-24 h-72 w-72 rounded-full blur-[110px]" />
         <div className="page-shell-orb-secondary absolute right-[-8%] top-32 h-72 w-72 rounded-full blur-[120px]" />
@@ -19,7 +19,7 @@ export default function KnowledgePageShell({
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-12">
+        <div className="mb-10 sm:mb-12">
           <Link
             href="/about"
             className="surface-pill mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-slate-600 transition-all hover:-translate-y-0.5 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-200"
@@ -28,22 +28,22 @@ export default function KnowledgePageShell({
             Back To Knowledge Center
           </Link>
 
-          <div className="surface-card rounded-[2.5rem] p-8 transition-colors duration-500 md:p-12">
+          <div className="surface-card rounded-[1.8rem] p-5 transition-colors duration-500 sm:rounded-[2.5rem] sm:p-8 md:p-12">
             <SectionEyebrow className="mb-6">
               {eyebrow}
             </SectionEyebrow>
 
             <div className="grid gap-8 lg:grid-cols-[1.5fr,0.8fr] lg:items-end">
               <div>
-                <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white md:text-6xl">
+                <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl md:text-6xl">
                   {title}
                 </h1>
-                <p className="mt-5 max-w-3xl text-lg font-medium leading-relaxed text-slate-600 dark:text-slate-300">
+                <p className="mt-4 max-w-3xl text-base font-medium leading-relaxed text-slate-600 dark:text-slate-300 sm:mt-5 sm:text-lg">
                   {description}
                 </p>
               </div>
 
-              <div className="surface-panel rounded-[2rem] p-6">
+              <div className="surface-panel rounded-[1.3rem] p-4 sm:rounded-[2rem] sm:p-6">
                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-blue-600 dark:text-blue-200">
                   Need Help Rolling This Out?
                 </p>

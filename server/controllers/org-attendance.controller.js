@@ -80,7 +80,7 @@ exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
 
 exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE);
+  assertPermission(res, req.user, PERMISSION_KEYS.LOCATION_SET);
 
   const attendanceRadius = Number(req.body?.attendanceRadius || 25);
   if (!Number.isFinite(attendanceRadius) || attendanceRadius < 5 || attendanceRadius > 1000) {

@@ -24,6 +24,11 @@ const {
   getOrgAttendanceSettings,
   updateOrgAttendanceSettings,
 } = require("../controllers/org-attendance.controller");
+const {
+  getOrgRegistrationRequests,
+  acceptRegistrationRequest,
+  rejectRegistrationRequest,
+} = require("../controllers/registration-request.controller");
 
 const {
   getOrgDashboard,
@@ -44,7 +49,7 @@ router.get("/subscription", allowRoles("ORG_ADMIN"), getOrgSubscription);
 
 router.use(
   checkActiveSubscription,
-  allowRoles("ORG_ADMIN", "SUB_ADMIN")
+  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER")
 );
 
 router.get("/dashboard", getOrgDashboard);
@@ -61,6 +66,10 @@ router.patch("/users/:userId", patchOrgUser);
 router.patch("/users/:userId/status", updateOrgUserStatus);
 router.patch("/users/:userId/active", toggleOrgUserActive);
 router.delete("/users/:userId", deleteOrgUser);
+
+router.get("/registration-requests", allowRoles("ORG_ADMIN", "SUB_ADMIN"), getOrgRegistrationRequests);
+router.patch("/registration-requests/:id/accept", allowRoles("ORG_ADMIN", "SUB_ADMIN"), acceptRegistrationRequest);
+router.patch("/registration-requests/:id/reject", allowRoles("ORG_ADMIN", "SUB_ADMIN"), rejectRegistrationRequest);
 
 router.get("/teams", getOrgTeams);
 router.get("/teams/:teamId", getOrgTeamById);

@@ -2,10 +2,10 @@ import { FEATURE_CARDS } from "./homeData";
 
 export default function HomeFeatureGrid() {
   return (
-    <section className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(240,247,255,0.8),rgba(255,255,255,0.95))] px-4 py-20 dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(5,18,44,0.64),rgba(8,24,57,0.52))] md:px-0 md:py-32">
-      <div className="container mx-auto">
-        <div className="mb-16 text-center md:mb-20">
-          <h2 className="mb-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white md:mb-6 md:text-5xl">
+    <section className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(240,247,255,0.8),rgba(255,255,255,0.95))] px-3 py-14 dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(5,18,44,0.64),rgba(8,24,57,0.52))] sm:px-4 sm:py-20 md:px-0 md:py-32">
+      <div className="site-container">
+        <div className="mb-12 text-center sm:mb-16 md:mb-20">
+          <h2 className="mb-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl md:mb-6 md:text-5xl">
             Why Veagle Attendee?
           </h2>
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 md:text-xs">

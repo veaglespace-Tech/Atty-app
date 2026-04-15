@@ -27,6 +27,7 @@ import { PostCard } from "./_components/PostCard";
 const POST_TYPES = [
   { value: "NOTIFICATION", label: "Notification", icon: Megaphone, color: "text-blue-600 bg-blue-50" },
   { value: "ARTICLE", label: "Article", icon: FileText, color: "text-emerald-600 bg-emerald-50" },
+  { value: "NEWS", label: "News", icon: Megaphone, color: "text-sky-600 bg-sky-50" },
   { value: "POLL", label: "Poll", icon: BarChart2, color: "text-amber-600 bg-amber-50" },
   { value: "TOURNAMENT_CARD", label: "Tournament Card", icon: Trophy, color: "text-rose-600 bg-rose-50" },
 ];

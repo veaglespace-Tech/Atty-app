@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -12,6 +12,25 @@ export const orgApi = createApi({
         method: "POST",
         body: payload,
       }),
+    }),
+    getOrgRegistrationRequests: builder.query({
+      query: () => "/org/registration-requests",
+      providesTags: ["RegistrationRequests"],
+    }),
+    acceptRegistrationRequest: builder.mutation({
+      query: (requestId) => ({
+        url: `/org/registration-requests/${requestId}/accept`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["RegistrationRequests", "OrgUsers", "OrgNotifications"],
+    }),
+    rejectRegistrationRequest: builder.mutation({
+      query: ({ requestId, note }) => ({
+        url: `/org/registration-requests/${requestId}/reject`,
+        method: "PATCH",
+        body: { note },
+      }),
+      invalidatesTags: ["RegistrationRequests"],
     }),
     getOrgDashboard: builder.query({
       query: () => "/org/dashboard",
@@ -166,4 +185,7 @@ export const {
   useGetOrgAttendanceQuery,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
+  useGetOrgRegistrationRequestsQuery,
+  useAcceptRegistrationRequestMutation,
+  useRejectRegistrationRequestMutation,
 } = orgApi;

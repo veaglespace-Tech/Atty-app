@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
+const { assertPermission } = require("../services/access.service");
+const { PERMISSION_KEYS } = require("../constants/permissions");
 
 const POST_INCLUDE = {
   author: {
@@ -134,6 +136,7 @@ const serializePost = (post, currentUserId) => {
 exports.createPost = asyncHandler(async (req, res) => {
   const { title, content, type, metadata } = req.body;
   const orgId = resolveOrganizationId(req.user);
+  assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
   const normalizedType = type || "NOTIFICATION";
 
   if (!title || !content) {
@@ -221,6 +224,7 @@ exports.updatePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { title, content, type, metadata, isActive } = req.body;
   const orgId = resolveOrganizationId(req.user);
+  assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
 
   const existing = await prisma.post.findUnique({
     where: { id: Number(id) },
@@ -346,6 +350,7 @@ exports.voteOnPostPoll = asyncHandler(async (req, res) => {
 exports.deletePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const orgId = resolveOrganizationId(req.user);
+  assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
 
   const existing = await prisma.post.findUnique({
     where: { id: Number(id) },

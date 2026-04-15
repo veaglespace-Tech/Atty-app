@@ -12,10 +12,19 @@ const {
   validateResetPasswordToken,
   resetPassword,
 } = require("../controllers/auth.controller");
+const {
+  validateReferralCode,
+  submitJoinRequest,
+} = require("../controllers/registration-request.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { validateBody } = require("../middlewares/validation.middleware");
 
 const numericIdSchema = z.union([z.coerce.number().int().positive(), z.string().trim().min(1)]);
+const normalizeIncomingRole = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
@@ -62,15 +71,36 @@ const registerSchema = z
     admin: z.unknown().optional(),
     plan: z.unknown().optional(),
     organizationCode: z.string().trim().optional(),
+    referralCode: z
+      .string()
+      .trim()
+      .optional()
+      .refine(
+        (value) => !value || /^REF-[A-Za-z0-9]{8}$/i.test(value),
+        "Referral code format should be REF-XXXXXXXX"
+      ),
     organizationId: numericIdSchema.optional(),
     organization: numericIdSchema.optional(),
     name: z.string().trim().min(1, "Name is required").max(120, "Name is too long").optional(),
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.string().trim().min(4, "Mobile number is too short").optional(),
     mobileCountryCode: z.string().trim().optional(),
+    emergencyContact: z.string().trim().min(4, "Emergency contact is too short").optional(),
+    currentAddress: z.string().trim().min(5, "Current address is too short").max(191).optional(),
+    permanentAddress: z.string().trim().min(5, "Permanent address is too short").max(191).optional(),
     countryCode: z.string().trim().optional(),
     password: z.string().min(1, "Password is required").optional(),
     role: z.string().trim().optional(),
+  })
+  .superRefine((value, ctx) => {
+    const normalizedRole = normalizeIncomingRole(value.role || "MEMBER");
+    if (normalizedRole === "MEMBER" && !String(value.referralCode || "").trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Referral code is required for member registration",
+        path: ["referralCode"],
+      });
+    }
   })
   .passthrough();
 
@@ -106,6 +136,8 @@ const updateMeSchema = z
   });
 
 router.get("/organizations/search", searchOrganizations);
+router.get("/join/:referralCode", validateReferralCode);
+router.post("/join/:referralCode", submitJoinRequest);
 router.post("/register", validateBody(registerSchema), register);
 router.post("/login", validateBody(loginSchema), login);
 router.post("/forgot-password", validateBody(forgotPasswordSchema), forgotPassword);

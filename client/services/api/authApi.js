@@ -78,6 +78,19 @@ export const authApi = createApi({
         method: "POST",
       }),
     }),
+    validateReferralCode: builder.query({
+      query: (referralCode) => ({
+        url: `/auth/join/${referralCode}`,
+        method: "GET",
+      }),
+    }),
+    joinOrganization: builder.mutation({
+      query: ({ referralCode, data }) => ({
+        url: `/auth/join/${referralCode}`,
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -93,4 +106,6 @@ export const {
   useUserSignOutMutation,
   useAdminSigninMutation,
   useAdminSignoutMutation,
+  useValidateReferralCodeQuery,
+  useJoinOrganizationMutation,
 } = authApi;

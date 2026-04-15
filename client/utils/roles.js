@@ -69,6 +69,8 @@ export const PERMISSIONS = Object.freeze({
   USERS_ACTIVE_TOGGLE: "USERS_ACTIVE_TOGGLE",
   USERS_DELETE: "USERS_DELETE",
   SUBSCRIPTION_VIEW: "SUBSCRIPTION_VIEW",
+  LOCATION_SET: "LOCATION_SET",
+  POST_CREATE: "POST_CREATE",
 });
 
 export const ALL_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
@@ -87,6 +89,8 @@ export const PERMISSION_LABELS = Object.freeze({
   [PERMISSIONS.USERS_ACTIVE_TOGGLE]: "Activate/Deactivate Users",
   [PERMISSIONS.USERS_DELETE]: "Delete Users",
   [PERMISSIONS.SUBSCRIPTION_VIEW]: "View Subscription",
+  [PERMISSIONS.LOCATION_SET]: "Set Workspace Location",
+  [PERMISSIONS.POST_CREATE]: "Create/Manage Posts",
 });
 
 export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
@@ -100,6 +104,8 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.USERS_CREATE,
     PERMISSIONS.USERS_STATUS_UPDATE,
     PERMISSIONS.USERS_ACTIVE_TOGGLE,
+    PERMISSIONS.LOCATION_SET,
+    PERMISSIONS.POST_CREATE,
   ]),
   [ROLES.TEAM_LEADER]: Object.freeze([
     PERMISSIONS.TEAM_VIEW,
@@ -148,6 +154,16 @@ export const PERMISSION_GROUPS = Object.freeze([
     key: "SUBSCRIPTION",
     label: "Subscription",
     items: [PERMISSIONS.SUBSCRIPTION_VIEW],
+  },
+  {
+    key: "CONFIGURATION",
+    label: "Configuration",
+    items: [PERMISSIONS.LOCATION_SET],
+  },
+  {
+    key: "COMMUNICATION",
+    label: "Communication",
+    items: [PERMISSIONS.POST_CREATE],
   },
 ]);
 

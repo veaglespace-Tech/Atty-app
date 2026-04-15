@@ -17,9 +17,9 @@ router.use(userProtected);
 router.get("/", getOrgPosts);
 router.post("/:id/vote", voteOnPostPoll);
 
-// Post management (Only for ORG_ADMIN role)
-router.post("/", allowRoles("ORG_ADMIN"), createPost);
-router.patch("/:id", allowRoles("ORG_ADMIN"), updatePost);
-router.delete("/:id", allowRoles("ORG_ADMIN"), deletePost);
+// Post management (Gated by permission in controller)
+router.post("/", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"), createPost);
+router.patch("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"), updatePost);
+router.delete("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"), deletePost);
 
 module.exports = router;

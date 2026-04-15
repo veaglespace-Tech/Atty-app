@@ -79,8 +79,8 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-[70] border-b border-slate-100 bg-white/80 shadow-[0_16px_48px_rgba(30,112,209,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-black/20">
-        <div className="mx-auto w-full max-w-[1440px] px-4 md:px-6">
-          <div className="flex h-20 items-center justify-between gap-3 min-[1180px]:gap-6">
+        <div className="site-container">
+          <div className="flex h-16 items-center justify-between gap-2.5 sm:h-20 sm:gap-3 min-[1180px]:gap-6">
             <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2.5 lg:gap-3">
               <div key={pathname} className="brand-logo-reveal relative flex h-10 w-10 shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-11 md:w-11 2xl:h-12 2xl:w-12">
                 <div className="brand-logo-orbit absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(92,209,229,0.28),rgba(30,112,209,0.04)_70%)] blur-lg" />
@@ -181,9 +181,9 @@ export default function Navbar() {
               aria-expanded={isOpen}
               aria-controls="mobile-site-menu"
               aria-label={isOpen ? "Close menu" : "Open menu"}
-              className="p-2 text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-200 min-[1180px]:hidden"
+              className="p-1.5 text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-200 min-[1180px]:hidden"
             >
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
+              {isOpen ? <X size={26} /> : <Menu size={26} />}
             </button>
           </div>
         </div>
@@ -199,7 +199,7 @@ export default function Navbar() {
           />
           <div
             id="mobile-site-menu"
-            className="fixed inset-x-0 bottom-0 top-20 z-[65] overflow-y-auto bg-white/95 px-4 pb-6 pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:bg-slate-950/95 dark:shadow-black/30 min-[1180px]:hidden"
+            className="fixed inset-x-0 bottom-0 top-16 z-[65] overflow-y-auto bg-white/95 px-4 pb-6 pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:bg-slate-950/95 dark:shadow-black/30 sm:top-20 min-[1180px]:hidden"
           >
             <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-6">
               <div className="space-y-4">

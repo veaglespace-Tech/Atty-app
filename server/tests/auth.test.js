@@ -140,6 +140,81 @@ describe("POST /api/auth/login", () => {
     expect(jwt.sign).toHaveBeenCalledTimes(1);
   });
 
+  it("logs in successfully without role or organization selection when only one workspace membership exists", async () => {
+    prisma.subscription.findFirst.mockResolvedValue({
+      id: 11,
+      orgId: 3,
+      planId: 2,
+      planName: "Pro",
+      planCode: "PRO_3M",
+      amount: 4500,
+      currency: "INR",
+      status: "ACTIVE",
+      endDate: new Date("2026-12-31T00:00:00.000Z"),
+    });
+    prisma.subscription.updateMany.mockResolvedValue({ count: 0 });
+    prisma.subscription.update.mockResolvedValue({ id: 11 });
+    prisma.organization.update.mockResolvedValue({
+      id: 3,
+      name: "Acme Workspace",
+      organizationCode: "ACME01",
+      city: "Mumbai",
+      state: "MH",
+      country: "India",
+      isBlocked: false,
+      isActive: true,
+      deletedAt: null,
+      subscriptionStatus: "ACTIVE",
+      subscriptionExpiry: new Date("2026-12-31T00:00:00.000Z"),
+      subscriptionId: 11,
+      planId: 2,
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      name: "Alice Admin",
+      email: "alice@example.com",
+      mobile: "+919999999999",
+      mobileCountryCode: "+91",
+      password: "hashed-password",
+      role: "ORG_ADMIN",
+      permissions: [],
+      status: "APPROVED",
+      isActive: true,
+      deletedAt: null,
+      organization: {
+        id: 3,
+        name: "Acme Workspace",
+        organizationCode: "ACME01",
+        city: "Mumbai",
+        state: "MH",
+        country: "India",
+        isBlocked: false,
+        isActive: true,
+        deletedAt: null,
+        subscriptionStatus: "ACTIVE",
+        plan: {
+          id: 2,
+          name: "Pro",
+          code: "PRO",
+          memberLimit: 100,
+          maxUsers: 100,
+        },
+      },
+      memberships: [],
+    });
+    bcrypt.compare.mockResolvedValue(true);
+    prisma.user.update.mockResolvedValue({ id: 7 });
+
+    const response = await request(app).post("/api/auth/login").send({
+      email: "alice@example.com",
+      password: "Secret123!",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.token).toBe("signed-jwt-token");
+    expect(response.body.user.email).toBe("alice@example.com");
+  });
+
   it("logs in successfully when the organization name is typed instead of selected", async () => {
     prisma.subscription.findFirst.mockResolvedValue({
       id: 11,
@@ -319,6 +394,92 @@ describe("POST /api/auth/register", () => {
         joinedAt: expect.any(Date),
       },
     });
+  });
+
+  it("allows member registration using referral code without organization search selection", async () => {
+    prisma.organization.findFirst.mockResolvedValue({
+      id: 9,
+      referralCode: "REF-ABCD1234",
+      isBlocked: false,
+      isActive: true,
+      deletedAt: null,
+      plan: {
+        memberLimit: 100,
+        maxUsers: 100,
+      },
+    });
+    prisma.user.count.mockResolvedValue(0);
+    prisma.user.findUnique.mockResolvedValue(null);
+    bcrypt.hash.mockResolvedValue("hashed-password");
+    prisma.user.create.mockResolvedValue({
+      id: 44,
+      name: "Referral Member",
+      email: "refmember@example.com",
+    });
+
+    const response = await request(app).post("/api/auth/register").send({
+      name: "Referral Member",
+      email: "refmember@example.com",
+      mobile: "7777777777",
+      mobileCountryCode: "+91",
+      emergencyContact: "6666666666",
+      currentAddress: "Baner Pune",
+      permanentAddress: "Satara Maharashtra",
+      password: "Secret123!",
+      role: "MEMBER",
+      referralCode: "ref-abcd1234",
+    });
+
+    expect(response.status).toBe(201);
+    expect(prisma.organization.findFirst).toHaveBeenCalledWith({
+      where: {
+        referralCode: "REF-ABCD1234",
+        deletedAt: null,
+      },
+      select: expect.any(Object),
+    });
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: "Referral Member",
+        email: "refmember@example.com",
+        orgId: 9,
+      }),
+    });
+  });
+
+  it("rejects member registration when referral code is missing", async () => {
+    const response = await request(app).post("/api/auth/register").send({
+      name: "No Referral Member",
+      email: "norefmember@example.com",
+      mobile: "7777777777",
+      mobileCountryCode: "+91",
+      emergencyContact: "6666666666",
+      currentAddress: "Baner Pune",
+      permanentAddress: "Satara Maharashtra",
+      password: "Secret123!",
+      role: "MEMBER",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toMatch(/referral code is required/i);
+  });
+
+  it("rejects member registration when referral code format is invalid", async () => {
+    const response = await request(app).post("/api/auth/register").send({
+      name: "Bad Referral",
+      email: "badref@example.com",
+      mobile: "7777777777",
+      mobileCountryCode: "+91",
+      emergencyContact: "6666666666",
+      currentAddress: "Baner Pune",
+      permanentAddress: "Satara Maharashtra",
+      password: "Secret123!",
+      role: "MEMBER",
+      referralCode: "INVALID-CODE",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toMatch(/referral code format/i);
   });
 });
 

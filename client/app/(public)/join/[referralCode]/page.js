@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   ArrowRight,
-  ChevronLeft,
-  Link2,
   Loader2,
   Lock,
   Mail,
@@ -17,11 +15,17 @@ import {
   ShieldCheck,
   User,
   UserCircle2,
+  Building2,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PasswordInput from "@/components/PasswordInput";
 import RegisterFlowShell from "@/components/register/RegisterFlowShell";
-import { useJoinOrganizationMutation } from "@/services/api/authApi";
+import { 
+  useJoinOrganizationMutation, 
+  useValidateReferralCodeQuery 
+} from "@/services/api/authApi";
 import {
   PERSON_NAME_REGEX,
   PHONE_DIGIT_MAX,
@@ -32,7 +36,7 @@ import {
   toDigitsOnly,
 } from "@/utils/formValidation";
 
-const userSchema = z
+const joinSchema = z
   .object({
     name: z
       .string()
@@ -93,11 +97,6 @@ const userSchema = z
       .trim()
       .min(5, "Permanent address is required")
       .max(191, "Permanent address is too long"),
-    referralCode: z
-      .string()
-      .trim()
-      .min(1, "Referral code is required")
-      .regex(/^REF-[A-Za-z0-9]{8}$/i, "Referral code format should be REF-XXXXXXXX"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords must match",
@@ -110,11 +109,19 @@ const normalFieldClassName = "border-slate-200 hover:border-slate-300 dark:borde
 const errorFieldClassName =
   "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
 
-export default function UserRegisterPage() {
+export default function JoinPage() {
+  const { referralCode } = useParams();
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [joinOrganization, { isLoading: isSubmittingUser }] = useJoinOrganizationMutation();
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const { 
+    data: orgData, 
+    isLoading: isOrgLoading, 
+    error: orgError 
+  } = useValidateReferralCodeQuery(referralCode);
+
+  const [joinOrganization, { isLoading: isJoining }] = useJoinOrganizationMutation();
 
   const {
     register,
@@ -123,7 +130,7 @@ export default function UserRegisterPage() {
     control,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(joinSchema),
     mode: "all",
     defaultValues: {
       name: "",
@@ -137,17 +144,15 @@ export default function UserRegisterPage() {
       emergencyContact: "",
       currentAddress: "",
       permanentAddress: "",
-      referralCode: "",
     },
   });
+
   const mobileCountryCode = useWatch({ control, name: "mobileCountryCode" });
   const mobile = useWatch({ control, name: "mobile" });
 
   const onSubmit = async (values) => {
     try {
       setSubmitError("");
-      setSubmitMessage("");
-
       const payload = {
         ...values,
         name: normalizeTextInput(values.name),
@@ -158,72 +163,99 @@ export default function UserRegisterPage() {
         currentAddress: normalizeTextInput(values.currentAddress),
         permanentAddress: normalizeTextInput(values.permanentAddress),
       };
-      const normalizedReferralCode = values.referralCode.trim().toUpperCase();
 
-      const response = await joinOrganization({
-        referralCode: normalizedReferralCode,
-        data: payload,
-      }).unwrap();
-      setSubmitMessage(response?.message || "Registration submitted successfully. Wait for admin approval.");
-
+      const response = await joinOrganization({ referralCode, data: payload }).unwrap();
+      setSuccessMessage(response?.message || "Registration request submitted. Wait for admin approval.");
+      
       setTimeout(() => {
         router.push("/login");
-      }, 1200);
+      }, 3000);
     } catch (error) {
-      setSubmitError(error.data?.message || error.message || "Registration failed");
+      setSubmitError(error.data?.message || "Registration failed. Try again.");
     }
   };
 
+  if (isOrgLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (orgError) {
+    return (
+      <RegisterFlowShell
+        badge="Invalid Link"
+        badgeIcon={AlertCircle}
+        title="Link Expired or Invalid"
+        description="The referral link you followed is no longer valid."
+      >
+        <div className="text-center">
+          <p className="mb-8 text-slate-500 dark:text-slate-400">
+            Please ask your organization administrator for a new join link.
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="w-full rounded-2xl bg-blue-600 py-4 font-bold text-white transition-all hover:bg-slate-900"
+          >
+            Go to Login
+          </button>
+        </div>
+      </RegisterFlowShell>
+    );
+  }
+
+  const organization = orgData?.organization;
+
+  if (successMessage) {
+    return (
+      <RegisterFlowShell
+        badge="Request Submitted"
+        badgeIcon={CheckCircle2}
+        title="Check Pending"
+        description={`Your request to join ${organization?.name} was submitted.`}
+      >
+        <div className="space-y-6 text-center">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-emerald-100 p-4 dark:bg-emerald-500/10">
+              <CheckCircle2 size={48} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+            {successMessage}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Redirecting you to login in a few seconds...
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="w-full rounded-2xl bg-slate-900 py-4 font-bold text-white transition-all hover:bg-blue-600"
+          >
+            Back to Login
+          </button>
+        </div>
+      </RegisterFlowShell>
+    );
+  }
+
   return (
     <RegisterFlowShell
-      badge="Member Registration"
-      badgeIcon={UserCircle2}
-      title="Join Your Team"
-      description="Register as a member in your organization"
-      beforeCard={
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="group flex items-center gap-2 text-sm font-bold text-slate-500 transition-all hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-300"
-        >
-          <ChevronLeft size={20} className="transition-transform group-hover:-translate-x-1" />
-          Back to Selection
-        </button>
-      }
+      badge="Join Organization"
+      badgeIcon={Building2}
+      title={organization?.name || "Join Our Team"}
+      description={`${organization?.city ? `${organization.city}, ` : ""}${organization?.country || ""}`}
     >
       {submitError ? (
-        <p className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
+          <AlertCircle size={18} />
           {submitError}
-        </p>
-      ) : null}
-
-      {submitMessage ? (
-        <p className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {submitMessage}
-        </p>
+        </div>
       ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
-          <Field
-            label="Referral Code"
-            icon={Link2}
-            placeholder="REF-XXXXXXXX"
-            error={errors.referralCode?.message}
-          >
-            <input
-              type="text"
-              {...register("referralCode")}
-              className={`${fieldClassName} !pl-12 ${errors.referralCode ? errorFieldClassName : normalFieldClassName}`}
-            />
-          </Field>
-
-          <Field
-            label="Full Name"
-            icon={User}
-            placeholder="John Doe"
-            error={errors.name?.message}
-          >
+          <Field label="Full Name" icon={User} placeholder="John Doe" error={errors.name?.message}>
             <input
               type="text"
               {...register("name")}
@@ -231,12 +263,7 @@ export default function UserRegisterPage() {
             />
           </Field>
 
-          <Field
-            label="Email Address"
-            icon={Mail}
-            placeholder="john@company.com"
-            error={errors.email?.message}
-          >
+          <Field label="Email Address" icon={Mail} placeholder="john@company.com" error={errors.email?.message}>
             <input
               type="email"
               {...register("email")}
@@ -250,31 +277,26 @@ export default function UserRegisterPage() {
             countryCode={mobileCountryCode}
             phone={mobile || ""}
             onCountryCodeChange={(event) =>
-              setValue("mobileCountryCode", event.target.value, {
-                shouldValidate: true,
-                shouldDirty: true,
-              })
+              setValue("mobileCountryCode", event.target.value, { shouldValidate: true })
             }
             onPhoneChange={(event) =>
-              setValue("mobile", event.target.value.replace(/[^\d]/g, ""), {
-                shouldValidate: true,
-                shouldDirty: true,
-              })
+              setValue("mobile", event.target.value.replace(/[^\d]/g, ""), { shouldValidate: true })
             }
             countryCodeError={errors.mobileCountryCode?.message}
             phoneError={errors.mobile?.message}
             containerClassName="space-y-1.5"
             labelClassName="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 dark:text-slate-300"
           />
-          <input type="hidden" {...register("mobileCountryCode")} />
-          <input type="hidden" {...register("mobile")} />
 
-          <Field
-            label="Password"
-            icon={Lock}
-            placeholder="Enter your password"
-            error={errors.password?.message}
-          >
+          <Field label="City" icon={MapPin} placeholder="e.g. Pune" error={errors.city?.message}>
+            <input
+              type="text"
+              {...register("city")}
+              className={`${fieldClassName} !pl-12 ${errors.city ? errorFieldClassName : normalFieldClassName}`}
+            />
+          </Field>
+
+          <Field label="Password" icon={Lock} placeholder="Create password" error={errors.password?.message}>
             <PasswordInput
               icon={null}
               {...register("password")}
@@ -282,12 +304,7 @@ export default function UserRegisterPage() {
             />
           </Field>
 
-          <Field
-            label="Confirm Password"
-            icon={ShieldCheck}
-            placeholder="Confirm your password"
-            error={errors.confirmPassword?.message}
-          >
+          <Field label="Confirm Password" icon={ShieldCheck} placeholder="Confirm password" error={errors.confirmPassword?.message}>
             <PasswordInput
               icon={null}
               {...register("confirmPassword")}
@@ -300,24 +317,10 @@ export default function UserRegisterPage() {
               {...register("gender")}
               className={`${fieldClassName} appearance-none ${errors.gender ? errorFieldClassName : normalFieldClassName}`}
             >
-              <option value="">Select Gender</option>
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
             </select>
-          </Field>
-
-          <Field
-            label="City"
-            icon={MapPin}
-            placeholder="Pune"
-            error={errors.city?.message}
-          >
-            <input
-              type="text"
-              {...register("city")}
-              className={`${fieldClassName} !pl-12 ${errors.city ? errorFieldClassName : normalFieldClassName}`}
-            />
           </Field>
 
           <Field
@@ -364,15 +367,11 @@ export default function UserRegisterPage() {
 
         <button
           type="submit"
-          disabled={isSubmittingUser}
-          className="mt-2 flex w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 font-black text-white shadow-[0_28px_70px_rgba(59,130,246,0.28)] transition-all duration-500 hover:-translate-y-1 hover:bg-slate-900 hover:shadow-[0_30px_76px_rgba(15,23,42,0.22)] active:scale-95 disabled:opacity-50 dark:bg-blue-400 dark:text-slate-950 dark:shadow-[0_24px_60px_rgba(37,99,235,0.24)] dark:hover:bg-blue-300"
+          disabled={isJoining}
+          className="mt-4 flex w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 font-black text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900 active:scale-95 disabled:opacity-50 dark:bg-blue-400 dark:text-slate-950"
         >
-          {isSubmittingUser ? (
-            <Loader2 size={20} className="animate-spin" />
-          ) : (
-            <ArrowRight size={20} />
-          )}
-          Complete Registration
+          {isJoining ? <Loader2 size={24} className="animate-spin" /> : <ArrowRight size={24} />}
+          Join Organization
         </button>
       </form>
     </RegisterFlowShell>
@@ -386,19 +385,15 @@ function Field({ label, icon: Icon, placeholder, error, children }) {
         {label}
       </label>
       <div className="group relative">
-        {Icon ? (
+        {Icon && (
           <Icon
             size={18}
             className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
           />
-        ) : null}
-        {React.cloneElement(children, {
-          placeholder,
-        })}
+        )}
+        {React.cloneElement(children, { placeholder })}
       </div>
-      {error ? (
-        <p className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">{error}</p>
-      ) : null}
+      {error && <p className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">{error}</p>}
     </div>
   );
 }

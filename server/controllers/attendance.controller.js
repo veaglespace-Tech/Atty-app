@@ -482,70 +482,73 @@ exports.getAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const { date } = req.query;
   const today = date || new Date().toISOString().split("T")[0];
-  const role = resolveUserRole(req.user, orgId);
+  const currentUserRole = resolveUserRole(req.user, orgId);
 
-  const filter = {
-    orgId,
-    date: today,
+  // 1. Fetch all members who should be present
+  const userFilter = {
+    memberships: { some: { orgId, isActive: true } },
+    status: "APPROVED",
+    isActive: true,
     deletedAt: null,
   };
 
-  if (role === "MEMBER") {
-    filter.userId = Number(req.user.id);
+  if (currentUserRole === "MEMBER") {
+    userFilter.id = Number(req.user.id);
   }
 
-  const attendanceList = await prisma.attendance.findMany({
-    where: filter,
+  const users = await prisma.user.findMany({
+    where: userFilter,
     select: {
       id: true,
-      status: true,
-      lateMinutes: true,
-      punchInAt: true,
-      punchOutAt: true,
-      punchInLatitude: true,
-      punchInLongitude: true,
-      punchInLocationMeta: true,
-      punchInSelfieUrl: true,
-      punchOutSelfieUrl: true,
-      user: {
-        select: {
-          name: true,
-          memberships: {
-            select: {
-              orgId: true,
-              role: true,
-              isActive: true,
-            },
-          },
-        },
+      name: true,
+      memberships: {
+        where: { orgId },
+        select: { role: true },
       },
     },
-    orderBy: {
-      punchInAt: "desc",
+    orderBy: { name: "asc" },
+  });
+
+  // 2. Fetch existing attendance records for the day
+  const attendanceRecords = await prisma.attendance.findMany({
+    where: {
+      orgId,
+      date: today,
+      deletedAt: null,
+      ...(currentUserRole === "MEMBER" ? { userId: Number(req.user.id) } : {}),
     },
   });
 
-  const formattedData = attendanceList.map((record) => {
-    const punchInMeta = record.punchInLocationMeta || null;
+  const attendanceMap = attendanceRecords.reduce((acc, record) => {
+    acc[record.userId] = record;
+    return acc;
+  }, {});
+
+  // 3. Merge and format
+  const formattedData = users.map((user) => {
+    const record = attendanceMap[user.id];
+    const punchInMeta = record?.punchInLocationMeta || null;
+
     const locationName =
       punchInMeta?.areaLabel ||
       punchInMeta?.displayText ||
-      (record.punchInLatitude != null && record.punchInLongitude != null
+      (record?.punchInLatitude != null && record?.punchInLongitude != null
         ? `Lat: ${record.punchInLatitude.toFixed(2)}, Lng: ${record.punchInLongitude.toFixed(2)}`
-        : "Office");
+        : record ? "Office" : "--");
 
     return {
-      _id: record.id,
-      userName: record.user?.name || "Unknown",
-      userRole: resolveUserRole(record.user, orgId) || "MEMBER",
-      status: record.status === "PRESENT" ? "Present" : record.status === "HALF_DAY" ? "Half Day" : "Absent",
-      checkIn: record.punchInAt ? new Date(record.punchInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
-      checkOut: record.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
-      lateMinutes: resolveAttendanceLateMinutes(record),
+      _id: record?.id || `absent-${user.id}-${today}`,
+      userId: user.id,
+      userName: user.name || "Unknown",
+      userRole: user.memberships[0]?.role || "MEMBER",
+      status: record ? (record.status === "PRESENT" ? "Present" : record.status === "HALF_DAY" ? "Half Day" : "Absent") : "Absent",
+      checkIn: record?.punchInAt ? new Date(record.punchInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
+      checkOut: record?.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
+      lateMinutes: record ? resolveAttendanceLateMinutes(record) : 0,
       locationName,
       locationMeta: punchInMeta,
-      punchInSelfieUrl: record.punchInSelfieUrl || null,
-      punchOutSelfieUrl: record.punchOutSelfieUrl || null,
+      punchInSelfieUrl: record?.punchInSelfieUrl || null,
+      punchOutSelfieUrl: record?.punchOutSelfieUrl || null,
     };
   });
 
@@ -556,7 +559,7 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const today = new Date().toISOString().split("T")[0];
 
-  const [todayAttendance, totalUsers] = await Promise.all([
+  const [todayAttendance, totalEligibleUsers] = await Promise.all([
     prisma.attendance.findMany({
       where: {
         orgId,
@@ -571,11 +574,9 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
     }),
     prisma.user.count({
       where: {
-        memberships: {
-          some: {
-            orgId,
-          },
-        },
+        memberships: { some: { orgId, isActive: true } },
+        status: "APPROVED",
+        isActive: true,
         deletedAt: null,
       },
     }),
@@ -589,7 +590,7 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
       resolveAttendanceLateMinutes(record) > 0
   ).length;
 
-  const absent = totalUsers - (present + halfDay);
+  const absent = totalEligibleUsers - (present + halfDay);
 
   res.status(200).json({
     present,

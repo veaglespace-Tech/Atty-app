@@ -35,6 +35,22 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum RenewalMode {
+  RENEW
+  EXTEND
+  UPGRADE_NOW
+  DOWNGRADE_SCHEDULED
+}
+
+enum RenewalIntentStatus {
+  CREATED
+  VERIFIED
+  APPLIED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
 enum PaymentStatus {
   CREATED
   SUCCESS
@@ -45,7 +61,9 @@ enum PaymentStatus {
 enum PostType {
   NOTIFICATION
   NEWS
+  ARTICLE
   POLL
+  TOURNAMENT_CARD
 }
 
 enum SupportTicketStatus {
@@ -59,6 +77,13 @@ enum VerificationStatus {
   EMAIL_PENDING
   VERIFIED
   CONSUMED
+  EXPIRED
+}
+
+enum RegistrationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
   EXPIRED
 }
 
@@ -231,6 +256,7 @@ model Organization {
 
   name               String
   organizationCode   String    @unique(map: "Organization_organizationCode_key")
+  referralCode       String    @unique(map: "Organization_referralCode_key")
   email              String    @unique(map: "Organization_email_key")
   phone              String
   phoneCountryCode   String?
@@ -263,6 +289,8 @@ model Organization {
   subscriptions Subscription[]      @relation("OrganizationSubscriptions")
   payments     Payment[]
   posts        Post[]
+  registrationRequests RegistrationRequest[]
+  renewalIntents SubscriptionRenewalIntent[]
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -346,6 +374,7 @@ model Plan {
 
   organizations Organization[]
   subscriptions Subscription[]
+  renewalIntents SubscriptionRenewalIntent[]
 
   @@map("plan")
 }
@@ -404,6 +433,8 @@ model Subscription {
   plan                 Plan?         @relation(fields: [planId], references: [id], map: "Subscription_planId_fkey")
   createdBy            User          @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], map: "Subscription_createdById_fkey")
   payments             Payment[]
+  renewalIntentsAsCurrent SubscriptionRenewalIntent[] @relation("RenewalIntentCurrentSubscription")
+  renewalIntentsAsApplied SubscriptionRenewalIntent[] @relation("RenewalIntentAppliedSubscription")
 
   @@index([createdById], map: "Subscription_createdById_idx")
   @@index([orgId, createdAt], map: "Subscription_orgId_createdAt_idx")
@@ -413,6 +444,85 @@ model Subscription {
   @@index([razorpayOrderId], map: "Subscription_razorpayOrderId_idx")
   @@index([status, createdAt], map: "Subscription_status_createdAt_idx")
   @@map("subscription")
+}
+
+model SubscriptionRenewalIntent {
+  id                    Int                @id @default(autoincrement())
+  orgId                 Int
+  userId                Int
+  planId                Int?
+  currentSubscriptionId Int?
+  appliedSubscriptionId Int?
+
+  planName              String
+  planCode              String
+  currentPlanName       String?
+  currentPlanCode       String?
+  mode                  RenewalMode
+  status                RenewalIntentStatus @default(CREATED)
+  payableAmount         Float
+  creditAmount          Float               @default(0)
+  currency              String              @default("INR")
+  remainingDays         Int                 @default(0)
+  expectedStartDate     DateTime
+  expectedEndDate       DateTime
+  gateway               String              @default("RAZORPAY")
+
+  razorpayOrderId       String?             @unique(map: "SubscriptionRenewalIntent_razorpayOrderId_key")
+  razorpayPaymentId     String?             @unique(map: "SubscriptionRenewalIntent_razorpayPaymentId_key")
+  razorpaySignature     String?
+  expiresAt             DateTime?
+  verifiedAt            DateTime?
+  appliedAt             DateTime?
+  metadata              Json?
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  organization          Organization        @relation(fields: [orgId], references: [id], map: "SubscriptionRenewalIntent_orgId_fkey")
+  user                  User                @relation(fields: [userId], references: [id], map: "SubscriptionRenewalIntent_userId_fkey")
+  plan                  Plan?               @relation(fields: [planId], references: [id], map: "SubscriptionRenewalIntent_planId_fkey")
+  currentSubscription   Subscription?       @relation("RenewalIntentCurrentSubscription", fields: [currentSubscriptionId], references: [id], map: "SubscriptionRenewalIntent_currentSubscriptionId_fkey")
+  appliedSubscription   Subscription?       @relation("RenewalIntentAppliedSubscription", fields: [appliedSubscriptionId], references: [id], map: "SubscriptionRenewalIntent_appliedSubscriptionId_fkey")
+
+  @@index([orgId, status, createdAt], map: "SubscriptionRenewalIntent_orgId_status_createdAt_idx")
+  @@index([orgId, mode, status], map: "SubscriptionRenewalIntent_orgId_mode_status_idx")
+  @@index([userId, createdAt], map: "SubscriptionRenewalIntent_userId_createdAt_idx")
+  @@index([expiresAt], map: "SubscriptionRenewalIntent_expiresAt_idx")
+  @@map("subscription_renewal_intent")
+}
+
+model RegistrationRequest {
+  id                Int       @id @default(autoincrement())
+  orgId             Int
+
+  name              String
+  email             String
+  mobile            String
+  mobileCountryCode String?
+  emergencyContact  String?
+  currentAddress    String?
+  permanentAddress  String?
+  password          String
+  gender            String?
+  city              String?
+
+  status            RegistrationRequestStatus @default(PENDING)
+  reviewedById      Int?
+  reviewedAt        DateTime?
+  reviewNote        String    @default("")
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  expiresAt         DateTime
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, email], map: "RegistrationRequest_orgId_email_key")
+  @@index([orgId, status], map: "RegistrationRequest_orgId_status_idx")
+  @@index([email], map: "RegistrationRequest_email_idx")
+  @@index([expiresAt], map: "RegistrationRequest_expiresAt_idx")
+  @@map("registration_request")
 }
 
 model SupportTicket {
@@ -489,6 +599,9 @@ model User {
   email                String   @unique(map: "User_email_key")
   mobile               String
   mobileCountryCode    String?
+  emergencyContact     String?
+  currentAddress       String?
+  permanentAddress     String?
   password             String
   role                 UserRole   @default(MEMBER)
   permissions          Json?
@@ -511,6 +624,7 @@ model User {
   markedAttendances           Attendance[]         @relation("AttendanceMarkedBy")
   payments                    Payment[]
   subscriptions               Subscription[]       @relation("SubscriptionCreatedBy")
+  renewalIntents              SubscriptionRenewalIntent[]
   posts                       Post[]               @relation("PostAuthor")
   teamMemberships             TeamMember[]
   teamsLed                    Team[]               @relation("TeamLeader")

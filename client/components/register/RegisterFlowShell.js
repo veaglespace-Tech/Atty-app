@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import SectionEyebrow from "@/components/SectionEyebrow";
 
 const pageShellClassName =
-  "page-shell relative min-h-screen overflow-hidden px-4 pb-16 pt-28 transition-colors duration-500";
+  "page-shell relative min-h-screen overflow-hidden px-3 pb-12 pt-24 transition-colors duration-500 sm:px-4 sm:pb-16 sm:pt-28";
 
 const cardShellClassName =
-  "surface-card-strong relative z-10 overflow-hidden rounded-[2rem] transition-colors duration-500 md:rounded-[2.4rem]";
+  "surface-card-strong relative z-10 overflow-hidden rounded-[1.6rem] transition-colors duration-500 sm:rounded-[2rem] md:rounded-[2.4rem]";
 
 export default function RegisterFlowShell({
   badge,
@@ -35,14 +35,14 @@ export default function RegisterFlowShell({
       </div>
 
       <div className={cn("relative z-10 mx-auto w-full", maxWidthClassName, containerClassName)}>
-        {beforeCard ? <div className="mb-8">{beforeCard}</div> : null}
+        {beforeCard ? <div className="mb-6 sm:mb-8">{beforeCard}</div> : null}
 
         <div className={cn(cardShellClassName, cardClassName)}>
           <div className="surface-accent-bar h-1.5" />
 
-          <div className={cn("p-8 md:p-12", contentClassName)}>
+          <div className={cn("p-5 sm:p-8 md:p-10 lg:p-12", contentClassName)}>
             {(badge || title || description) && (
-              <div className={cn("mb-10", alignClassName, headerClassName)}>
+              <div className={cn("mb-8 sm:mb-10", alignClassName, headerClassName)}>
                 {badge ? (
                   <SectionEyebrow className={cn("mb-5", badgeClassName)}>
                     {badge}
@@ -52,7 +52,7 @@ export default function RegisterFlowShell({
                 {title ? (
                   <h2
                     className={cn(
-                      "mb-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl",
+                      "mb-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl",
                       titleClassName
                     )}
                   >

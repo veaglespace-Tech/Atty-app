@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { StoreProvider } from "@/components/StoreProvider";
 import AttyWidget from "@/components/AttyWidget";
+import SessionSync from "@/components/SessionSync";
 
 export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
@@ -50,8 +51,9 @@ export default function RootLayout({ children }) {
       <body className="min-h-screen bg-base-100 text-base-content antialiased transition-colors duration-300">
         <ThemeProvider>
           <StoreProvider>
+            <SessionSync />
             <Navbar />
-            <main className="overflow-x-clip">{children}</main>
+            <main className="w-full overflow-x-clip">{children}</main>
             <AttyWidget />
           </StoreProvider>
         </ThemeProvider>

@@ -2,10 +2,10 @@ import SectionEyebrow from "@/components/SectionEyebrow";
 import { cn } from "@/lib/utils";
 
 export const authPageShellClassName =
-  "page-shell relative flex min-h-screen items-center justify-center overflow-hidden px-4 pb-12 pt-32 transition-colors duration-500";
+  "page-shell relative flex min-h-screen items-center justify-center overflow-hidden px-3 pb-10 pt-24 transition-colors duration-500 sm:px-4 sm:pb-12 sm:pt-28 md:pt-32";
 
 export const authCardClassName =
-  "surface-card overflow-hidden rounded-[2rem] transition-colors duration-500 md:rounded-[2.4rem]";
+  "surface-card overflow-hidden rounded-[1.6rem] transition-colors duration-500 sm:rounded-[2rem] md:rounded-[2.4rem]";
 
 export const authFieldClassName =
   "w-full rounded-[1.6rem] border-2 bg-white px-4 py-4 text-slate-900 shadow-[0_18px_46px_rgba(59,130,246,0.12),0_10px_28px_rgba(15,23,42,0.07)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:-translate-y-0.5 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 dark:border-white/75 dark:bg-white dark:text-slate-950 dark:placeholder:text-slate-500 dark:shadow-[0_18px_45px_rgba(2,6,23,0.35)] dark:focus:border-blue-500 dark:focus:ring-blue-500/20";
@@ -37,12 +37,12 @@ export default function AuthPageShell({
         <div className={cn(authCardClassName, cardClassName)}>
           <div className="surface-accent-bar h-1.5" />
 
-          <div className="p-7 sm:p-8 md:p-12">
+          <div className="p-5 sm:p-7 md:p-10 lg:p-12">
             {eyebrow || title || description ? (
-              <div className="mb-10 text-center">
+              <div className="mb-8 text-center sm:mb-10">
                 {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}
                 {title ? (
-                  <h2 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                  <h2 className="mb-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl">
                     {title}
                   </h2>
                 ) : null}

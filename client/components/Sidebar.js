@@ -13,11 +13,12 @@ import {
   Settings,
   Users,
   X,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DashboardBrandBlock from "@/components/DashboardBrandBlock";
 import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
-import { ROLES } from "@/utils/roles";
+import { hasPermission, PERMISSIONS, ROLES } from "@/utils/roles";
 
 const settingsHref = "/dashboard/settings";
 const MENU_ITEMS = [
@@ -46,6 +47,13 @@ const MENU_ITEMS = [
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER],
   },
   {
+    label: "Posts",
+    Icon: Newspaper,
+    href: "/dashboard/posts",
+    roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
+    permission: PERMISSIONS.POST_CREATE,
+  },
+  {
     label: "Billing",
     Icon: CreditCard,
     href: "/dashboard/billing",
@@ -61,8 +69,13 @@ export default function Sidebar() {
   const user = useSelector((state) => state.auth.user);
   const userRole = user?.currentRole || ROLES.MEMBER;
   const filteredItems = useMemo(
-    () => MENU_ITEMS.filter((item) => item.roles.includes(userRole)),
-    [userRole]
+    () =>
+      MENU_ITEMS.filter(
+        (item) =>
+          item.roles.includes(userRole) &&
+          (!item.permission || hasPermission(user, item.permission))
+      ),
+    [user, userRole]
   );
   const settingsActive = pathname === settingsHref;
   const prefetchedRoutes = useMemo(
@@ -94,7 +107,7 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-80 shrink-0 flex-col border-r border-slate-200 bg-white/92 px-5 py-5 shadow-2xl shadow-slate-200/50 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800 dark:bg-slate-950/92 dark:shadow-black/30 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white/92 px-4 py-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800 dark:bg-slate-950/92 dark:shadow-black/30 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >

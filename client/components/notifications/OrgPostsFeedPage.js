@@ -68,9 +68,9 @@ export default function OrgPostsFeedPage({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <Loader2 className="animate-spin text-slate-400" size={40} />
-        <p className="text-slate-500 dark:text-slate-400 font-bold animate-pulse">
+      <div className="flex min-h-[40vh] flex-col items-center justify-center space-y-3 px-4 py-14 sm:py-20">
+        <Loader2 className="animate-spin text-slate-400" size={36} />
+        <p className="text-center text-sm font-bold text-slate-500 animate-pulse sm:text-base dark:text-slate-400">
           Loading updates from your organization...
         </p>
       </div>
@@ -78,31 +78,31 @@ export default function OrgPostsFeedPage({
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <header className="rounded-3xl bg-slate-900 p-8 text-white shadow-xl overflow-hidden relative">
+    <div className="mx-auto w-full max-w-5xl space-y-5 pb-8 sm:space-y-6 sm:pb-10 lg:space-y-8 lg:pb-12">
+      <header className="relative overflow-hidden rounded-2xl bg-slate-900 p-5 text-white shadow-xl sm:rounded-3xl sm:p-7 lg:p-8">
         <div className="relative z-10">
-          <h1 className="text-3xl font-black tracking-tight">{title}</h1>
-          <p className="mt-2 text-slate-400 font-medium max-w-md">{description}</p>
+          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{title}</h1>
+          <p className="mt-2 max-w-2xl text-sm font-medium text-slate-300 sm:text-base">{description}</p>
         </div>
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-          <Megaphone size={120} />
+        <div className="pointer-events-none absolute -right-3 -top-3 opacity-10 sm:right-0 sm:top-0 sm:p-6">
+          <Megaphone size={88} className="sm:h-[120px] sm:w-[120px]" />
         </div>
       </header>
 
       {posts.length === 0 ? (
-        <div className="bg-white dark:bg-slate-950/75 rounded-3xl border border-slate-200 dark:border-slate-800 p-12 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-900 text-slate-300">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:rounded-3xl sm:p-12 dark:border-slate-800 dark:bg-slate-950/75">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 text-slate-300 sm:h-16 sm:w-16 dark:bg-slate-900">
             <Megaphone size={32} />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">No updates yet</h3>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
+          <h3 className="text-lg font-bold text-slate-900 sm:text-xl dark:text-white">No updates yet</h3>
+          <p className="mt-1 text-sm text-slate-500 sm:text-base dark:text-slate-400">
             Check back later for news and announcements.
           </p>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className="grid gap-4 sm:gap-5 lg:gap-6">
           {voteError ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:rounded-2xl dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
               {voteError}
             </div>
           ) : null}
@@ -114,28 +114,28 @@ export default function OrgPostsFeedPage({
             return (
               <div
                 key={post.id}
-                className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/75 p-6 shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md"
+                className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md sm:rounded-3xl sm:p-6 dark:border-slate-800 dark:bg-slate-950/75 dark:hover:border-slate-700"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-3 sm:gap-4">
                   <div className="flex-1">
                     <div className="mb-3 flex flex-wrap items-center gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${config.color}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest sm:px-3 ${config.color}`}
                       >
                         <Icon size={12} />
                         {config.label}
                       </span>
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 sm:text-xs dark:text-slate-500">
                         <Calendar size={12} />
                         {new Date(post.createdAt).toLocaleDateString()}
                       </span>
                     </div>
 
-                    <h2 className="text-xl font-black text-slate-900 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-300">
+                    <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
                       {post.title}
                     </h2>
 
-                    <div className="mt-4 whitespace-pre-wrap font-medium leading-relaxed text-slate-600 dark:text-slate-300">
+                    <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300">
                       {post.content}
                     </div>
 
@@ -149,8 +149,8 @@ export default function OrgPostsFeedPage({
                   </div>
                 </div>
 
-                <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500">
+                <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:mt-8 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 sm:text-sm dark:text-slate-500">
                     <User size={14} />
                     <span>Posted by {post.author?.name || "Admin"}</span>
                   </div>
@@ -159,7 +159,7 @@ export default function OrgPostsFeedPage({
                     type="button"
                     onClick={() => refetch()}
                     disabled={isFetching}
-                    className="text-xs font-black text-blue-600 dark:text-blue-300 hover:underline disabled:opacity-60"
+                    className="w-full rounded-lg border border-blue-200 px-3 py-2 text-xs font-black text-blue-700 transition hover:bg-blue-50 disabled:opacity-60 sm:w-auto sm:border-0 sm:px-0 sm:py-0 sm:text-sm sm:text-blue-600 sm:hover:bg-transparent sm:hover:underline dark:border-blue-500/30 dark:text-blue-300 dark:sm:border-0"
                   >
                     {isFetching ? "Refreshing..." : "Refresh Feed"}
                   </button>

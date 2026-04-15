@@ -6,6 +6,7 @@ const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
+const { generateUniqueReferralCode } = require("../utils/referral-code");
 const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
 const { createOrganizationMembership } = require("../services/organization-member.service");
 const { archiveFailedRegistration } = require("../services/archive.service");
@@ -37,6 +38,16 @@ const FALLBACK_PLANS = {
   },
 };
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const RENEWAL_INTENT_TTL_MS = 30 * 60 * 1000;
+
+const RENEWAL_MODES = Object.freeze({
+  RENEW: "RENEW",
+  EXTEND: "EXTEND",
+  UPGRADE_NOW: "UPGRADE_NOW",
+  DOWNGRADE_SCHEDULED: "DOWNGRADE_SCHEDULED",
+});
+
+const RENEWAL_INTENT_MUTABLE_STATUSES = new Set(["CREATED", "VERIFIED"]);
 
 const getClientBaseUrl = () => {
   const explicitBaseUrl = String(process.env.CLIENT_URL || process.env.APP_URL || "").trim();
@@ -206,6 +217,15 @@ const resolvePlanForCheckout = async (planCode) => {
 
 const roundMoney = (value) => Math.max(0, Number(Number(value || 0).toFixed(2)));
 
+const createInternalRenewalOrderId = ({ organizationId, mode = "RENEW" }) =>
+  `INTENT_${String(mode || "RENEW").toUpperCase()}_${Number(organizationId || 0)}_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
+
+const parseIntentId = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.floor(parsed);
+};
+
 const getRemainingMs = (endDate, now = new Date()) => {
   const end = new Date(endDate || 0);
   if (Number.isNaN(end.getTime()) || end <= now) return 0;
@@ -284,6 +304,9 @@ const resolveRenewalContext = async ({ organizationId, planCode }) => {
     where: {
       orgId: Number(organizationId),
       status: "ACTIVE",
+      startDate: {
+        lte: now,
+      },
       endDate: {
         gte: now,
       },
@@ -296,17 +319,36 @@ const resolveRenewalContext = async ({ organizationId, planCode }) => {
   const currentPlanCode = String(activeSubscription?.planCode || organization.plan?.code || "")
     .trim()
     .toUpperCase();
+  const currentPlanPrice = roundMoney(
+    Number(activeSubscription?.amount || organization.plan?.price || 0)
+  );
+  const selectedPlanPrice = roundMoney(Number(plan.price || 0));
   const hasActiveSubscription = Boolean(activeSubscription && remainingMs > 0);
   const samePlan = hasActiveSubscription && currentPlanCode === normalizedPlanCode;
-  const mode = hasActiveSubscription ? (samePlan ? "EXTEND" : "UPGRADE") : "RENEW";
-  const upgradeCredit = mode === "UPGRADE" ? calculateProratedCredit(activeSubscription, now) : 0;
-  const payableAmount =
-    mode === "EXTEND"
-      ? roundMoney(plan.price)
-      : roundMoney(Math.max(Number(plan.price || 0) - upgradeCredit, 0));
+  let mode = RENEWAL_MODES.RENEW;
+  if (hasActiveSubscription) {
+    if (samePlan) {
+      mode = RENEWAL_MODES.EXTEND;
+    } else if (selectedPlanPrice < currentPlanPrice) {
+      mode = RENEWAL_MODES.DOWNGRADE_SCHEDULED;
+    } else {
+      mode = RENEWAL_MODES.UPGRADE_NOW;
+    }
+  }
+
+  const upgradeCredit =
+    mode === RENEWAL_MODES.UPGRADE_NOW ? calculateProratedCredit(activeSubscription, now) : 0;
+  const payableAmount = roundMoney(
+    mode === RENEWAL_MODES.UPGRADE_NOW
+      ? Math.max(selectedPlanPrice - upgradeCredit, 0)
+      : selectedPlanPrice
+  );
   const durationInDays = Number(plan.durationInDays || 0) || 30;
   const effectiveStartDate =
-    mode === "EXTEND" && activeSubscription?.endDate ? new Date(activeSubscription.endDate) : now;
+    (mode === RENEWAL_MODES.EXTEND || mode === RENEWAL_MODES.DOWNGRADE_SCHEDULED) &&
+    activeSubscription?.endDate
+      ? new Date(activeSubscription.endDate)
+      : now;
   const expiryDate = new Date(effectiveStartDate.getTime() + durationInDays * DAY_IN_MS);
 
   return {
@@ -320,13 +362,120 @@ const resolveRenewalContext = async ({ organizationId, planCode }) => {
     upgradeCredit,
     payableAmount,
     remainingDays,
+    currentPlanPrice,
+    selectedPlanPrice,
+    hasActiveSubscription,
     currentPlanCode,
     currentExpiry: activeSubscription?.endDate || organization.subscriptionExpiry || null,
+    effectiveStartDate,
     durationInDays,
     now,
     expiryDate,
   };
 };
+
+const createRenewalIntent = async ({
+  organizationId,
+  userId,
+  renewalContext,
+  razorpayOrderId = null,
+}) => {
+  const now = new Date();
+  const fallbackOrderId = createInternalRenewalOrderId({
+    organizationId,
+    mode: renewalContext.mode,
+  });
+  const resolvedOrderId = String(razorpayOrderId || fallbackOrderId);
+
+  return prisma.subscriptionRenewalIntent.create({
+    data: {
+      orgId: Number(organizationId),
+      userId: Number(userId),
+      planId: renewalContext.dbPlan?.id || null,
+      currentSubscriptionId: renewalContext.activeSubscription?.id || null,
+      planName: renewalContext.plan.name,
+      planCode: renewalContext.normalizedPlanCode,
+      currentPlanName: renewalContext.activeSubscription?.planName || renewalContext.organization.plan?.name || null,
+      currentPlanCode: renewalContext.currentPlanCode || null,
+      mode: renewalContext.mode,
+      status: "CREATED",
+      payableAmount: roundMoney(renewalContext.payableAmount),
+      creditAmount: roundMoney(renewalContext.upgradeCredit),
+      currency: renewalContext.plan.currency || "INR",
+      remainingDays: Number(renewalContext.remainingDays || 0),
+      expectedStartDate: renewalContext.effectiveStartDate,
+      expectedEndDate: renewalContext.expiryDate,
+      gateway: renewalContext.payableAmount > 0 ? "RAZORPAY" : "PLAN_CREDIT",
+      razorpayOrderId: resolvedOrderId,
+      expiresAt:
+        renewalContext.payableAmount > 0
+          ? new Date(now.getTime() + RENEWAL_INTENT_TTL_MS)
+          : null,
+      metadata: {
+        source: "create-renewal-order",
+        renewal: {
+          mode: renewalContext.mode,
+          hasActiveSubscription: renewalContext.hasActiveSubscription,
+          currentExpiry: renewalContext.currentExpiry,
+        },
+      },
+    },
+  });
+};
+
+const buildRenewalApiPayload = ({
+  subscription,
+  organization,
+  intent,
+  mode,
+  payableAmount,
+  upgradeCredit,
+  remainingDays,
+  emailSent = false,
+  idempotent = false,
+}) => ({
+  success: true,
+  message:
+    mode === RENEWAL_MODES.UPGRADE_NOW
+      ? "Subscription upgraded successfully."
+      : mode === RENEWAL_MODES.EXTEND
+        ? "Subscription extended successfully."
+        : mode === RENEWAL_MODES.DOWNGRADE_SCHEDULED
+          ? "Downgrade scheduled successfully. It will apply after the current plan ends."
+          : "Subscription renewed successfully.",
+  emailSent,
+  idempotent,
+  redirectPath: "/org/dashboard",
+  subscription: subscription
+    ? {
+        id: subscription.id,
+        planName: subscription.planName,
+        planCode: subscription.planCode,
+        startDate: subscription.startDate,
+        endDate: subscription.endDate,
+        amount: subscription.amount,
+        currency: subscription.currency,
+        status: subscription.status,
+      }
+    : null,
+  renewal: {
+    mode,
+    payableAmount,
+    upgradeCredit,
+    remainingDays,
+    intentId: intent?.id || null,
+    intentStatus: intent?.status || null,
+  },
+  organization: organization
+    ? {
+        id: organization.id,
+        name: organization.name,
+        organizationCode: organization.organizationCode,
+        subscriptionStatus: organization.subscriptionStatus,
+        subscriptionExpiry: organization.subscriptionExpiry,
+      }
+    : null,
+});
 
 const sendRenewalConfirmationEmail = async ({
   organization,
@@ -338,7 +487,13 @@ const sendRenewalConfirmationEmail = async ({
   mode = "RENEW",
 }) => {
   const actionLabel =
-    mode === "UPGRADE" ? "upgraded" : mode === "EXTEND" ? "extended" : "renewed";
+    mode === RENEWAL_MODES.UPGRADE_NOW
+      ? "upgraded"
+      : mode === RENEWAL_MODES.EXTEND
+        ? "extended"
+        : mode === RENEWAL_MODES.DOWNGRADE_SCHEDULED
+          ? "scheduled for downgrade"
+          : "renewed";
   const loginUrl = `${getClientBaseUrl()}/login`;
   const emailMessage = `Hello ${user.name},
 
@@ -359,7 +514,7 @@ You can now continue using your workspace with full access.
 Best Regards,
 Veagle Attendee Team`;
   const emailHtml = buildEmailTemplate({
-    eyebrow: mode === "UPGRADE" ? "Plan Upgrade" : "Subscription Updated",
+    eyebrow: mode === RENEWAL_MODES.UPGRADE_NOW ? "Plan Upgrade" : "Subscription Updated",
     title: "Your workspace is active again",
     subtitle: `Plan changes for ${organization.name}`,
     greeting: `Hello ${user.name || "there"}`,
@@ -498,8 +653,9 @@ exports.createOrder = asyncHandler(async (req, res) => {
 exports.createRenewalOrder = asyncHandler(async (req, res) => {
   const { planCode } = req.body || {};
   const organizationId = Number(req.user?.organizationId || req.user?.organization);
+  const userId = Number(req.user?.id);
 
-  if (!organizationId) {
+  if (!organizationId || !userId) {
     res.status(403);
     throw new Error("Organization context missing");
   }
@@ -524,14 +680,36 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
   }
 
   try {
+    await prisma.subscriptionRenewalIntent.updateMany({
+      where: {
+        orgId: organizationId,
+        userId,
+        status: {
+          in: ["CREATED", "VERIFIED"],
+        },
+      },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
     const order =
       renewalContext.payableAmount > 0
         ? await createGatewayOrderForPlan(renewalContext.plan, renewalContext.payableAmount)
         : null;
+    const intent = await createRenewalIntent({
+      organizationId,
+      userId,
+      renewalContext,
+      razorpayOrderId: order?.id || null,
+    });
 
     res.status(200).json({
       success: true,
       freeRenewal: renewalContext.payableAmount <= 0,
+      intentId: intent.id,
+      intentStatus: intent.status,
+      intentExpiresAt: intent.expiresAt,
       order,
       plan: {
         code: renewalContext.plan.code,
@@ -547,6 +725,8 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
         remainingDays: renewalContext.remainingDays,
         currentExpiry: renewalContext.currentExpiry,
         nextExpiry: renewalContext.expiryDate,
+        currentPlanPrice: renewalContext.currentPlanPrice,
+        selectedPlanPrice: renewalContext.selectedPlanPrice,
       },
       currentSubscription: renewalContext.activeSubscription
         ? {
@@ -576,6 +756,7 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
 // @access  Private/Org Admin
 exports.verifyRenewal = asyncHandler(async (req, res) => {
   const {
+    intentId: rawIntentId,
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature,
@@ -584,19 +765,31 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
 
   const organizationId = Number(req.user?.organizationId || req.user?.organization);
   const userId = Number(req.user?.id);
+  const intentId = parseIntentId(rawIntentId);
 
   if (!organizationId || !userId) {
     res.status(403);
-    throw new Error("Organization context missing");
+    throw new Error("Organization context is missing");
   }
 
-  const [renewalContext, user] = await Promise.all([
-    resolveRenewalContext({
-      organizationId,
-      planCode,
-    }),
+  if (!intentId) {
+    res.status(400);
+    throw new Error("Renewal intent id is required");
+  }
+
+  const [user, intent] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
+    }),
+    prisma.subscriptionRenewalIntent.findFirst({
+      where: {
+        id: intentId,
+        orgId: organizationId,
+        userId,
+      },
+      include: {
+        organization: true,
+      },
     }),
   ]);
 
@@ -605,24 +798,98 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 
+  if (!intent) {
+    res.status(404);
+    throw new Error("Renewal intent not found");
+  }
+
   if (
-    renewalContext.organization.isBlocked ||
-    renewalContext.organization.isActive === false ||
-    renewalContext.organization.deletedAt
+    intent.organization.isBlocked ||
+    intent.organization.isActive === false ||
+    intent.organization.deletedAt
   ) {
     res.status(403);
     throw new Error("Organization access is blocked");
   }
 
-  if (renewalContext.freeTrialPlan) {
-    res.status(400);
-    throw new Error("Existing organizations cannot renew with a free trial plan.");
+  if (
+    planCode &&
+    String(planCode || "").trim().toUpperCase() !== String(intent.planCode || "").trim().toUpperCase()
+  ) {
+    res.status(409);
+    throw new Error("Plan mismatch for this renewal intent");
   }
 
-  if (renewalContext.payableAmount > 0) {
+  if (intent.status === "APPLIED") {
+    const [subscription, organization] = await Promise.all([
+      intent.appliedSubscriptionId
+        ? prisma.subscription.findUnique({ where: { id: intent.appliedSubscriptionId } })
+        : null,
+      prisma.organization.findUnique({ where: { id: organizationId } }),
+    ]);
+
+    return res.status(200).json(
+      buildRenewalApiPayload({
+        subscription,
+        organization: organization
+          ? {
+              ...organization,
+              name: organization.name || intent.organization.name,
+              organizationCode: organization.organizationCode || intent.organization.organizationCode,
+            }
+          : intent.organization,
+        intent,
+        mode: intent.mode,
+        payableAmount: Number(intent.payableAmount || 0),
+        upgradeCredit: Number(intent.creditAmount || 0),
+        remainingDays: Number(intent.remainingDays || 0),
+        emailSent: false,
+        idempotent: true,
+      })
+    );
+  }
+
+  if (!RENEWAL_INTENT_MUTABLE_STATUSES.has(intent.status)) {
+    res.status(409);
+    throw new Error(`Renewal intent is ${String(intent.status || "").toLowerCase()}. Create a new payment session.`);
+  }
+
+  const now = new Date();
+  if (intent.expiresAt && new Date(intent.expiresAt) < now) {
+    await prisma.subscriptionRenewalIntent.update({
+      where: { id: intent.id },
+      data: { status: "EXPIRED" },
+    });
+    res.status(410);
+    throw new Error("Renewal session expired. Please start again.");
+  }
+
+  const payableAmount = roundMoney(intent.payableAmount);
+  const expectedOrderId = String(intent.razorpayOrderId || "").trim();
+
+  if (payableAmount > 0) {
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       res.status(400);
       throw new Error("Payment details are required");
+    }
+
+    if (!expectedOrderId || expectedOrderId !== String(razorpay_order_id).trim()) {
+      res.status(409);
+      throw new Error("Payment order does not match the renewal session");
+    }
+
+    const duplicatePaymentIntent = await prisma.subscriptionRenewalIntent.findFirst({
+      where: {
+        razorpayPaymentId: String(razorpay_payment_id),
+        status: "APPLIED",
+        id: { not: intent.id },
+      },
+      select: { id: true },
+    });
+
+    if (duplicatePaymentIntent) {
+      res.status(409);
+      throw new Error("This payment has already been used for another renewal");
     }
 
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -644,19 +911,127 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    const txIntent = await tx.subscriptionRenewalIntent.findUnique({
+      where: { id: intent.id },
+    });
+
+    if (!txIntent) {
+      const error = new Error("Renewal intent not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (txIntent.status === "APPLIED") {
+      const appliedSubscription = txIntent.appliedSubscriptionId
+        ? await tx.subscription.findUnique({ where: { id: txIntent.appliedSubscriptionId } })
+        : null;
+      const appliedOrganization = await tx.organization.findUnique({ where: { id: organizationId } });
+      return {
+        subscription: appliedSubscription,
+        updatedOrganization: appliedOrganization,
+        intent: txIntent,
+        idempotent: true,
+      };
+    }
+
+    if (!RENEWAL_INTENT_MUTABLE_STATUSES.has(txIntent.status)) {
+      const error = new Error("Renewal intent cannot be applied in its current state");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const txNow = new Date();
     let subscription = null;
 
-    if (renewalContext.mode === "EXTEND" && renewalContext.activeSubscription) {
+    const expectedStartDate = new Date(txIntent.expectedStartDate);
+    const expectedEndDate = new Date(txIntent.expectedEndDate);
+    const renewalMode = String(txIntent.mode || RENEWAL_MODES.RENEW).toUpperCase();
+    const paymentOrderId = String(
+      razorpay_order_id ||
+        txIntent.razorpayOrderId ||
+        createInternalRenewalOrderId({ organizationId, mode: renewalMode })
+    );
+    const paymentGateway = payableAmount > 0 ? "RAZORPAY" : "PLAN_CREDIT";
+
+    if (payableAmount > 0) {
+      const duplicatePayment = await tx.payment.findFirst({
+        where: {
+          OR: [
+            { razorpayPaymentId: String(razorpay_payment_id) },
+            { razorpayOrderId: paymentOrderId, status: "SUCCESS" },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (duplicatePayment) {
+        const error = new Error("Payment already processed for renewal");
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+
+    if (renewalMode === RENEWAL_MODES.EXTEND) {
+      if (!txIntent.currentSubscriptionId) {
+        const error = new Error("Current subscription reference is missing for extension");
+        error.statusCode = 409;
+        throw error;
+      }
+
       subscription = await tx.subscription.update({
-        where: { id: renewalContext.activeSubscription.id },
+        where: { id: txIntent.currentSubscriptionId },
         data: {
-          endDate: renewalContext.expiryDate,
+          endDate: expectedEndDate,
           notes: `Extended by ${user.email}`,
-          razorpayOrderId: razorpay_order_id || renewalContext.activeSubscription.razorpayOrderId,
-          razorpayPaymentId:
-            razorpay_payment_id || renewalContext.activeSubscription.razorpayPaymentId,
-          razorpaySignature:
-            razorpay_signature || renewalContext.activeSubscription.razorpaySignature,
+          razorpayOrderId: paymentOrderId,
+          razorpayPaymentId: payableAmount > 0 ? String(razorpay_payment_id) : null,
+          razorpaySignature: payableAmount > 0 ? String(razorpay_signature) : null,
+          activeKey: `ORG_${organizationId}`,
+        },
+      });
+
+      await tx.organization.update({
+        where: { id: organizationId },
+        data: {
+          subscriptionStatus: "ACTIVE",
+          subscriptionExpiry: expectedEndDate,
+          subscriptionId: subscription.id,
+        },
+      });
+    } else if (renewalMode === RENEWAL_MODES.DOWNGRADE_SCHEDULED) {
+      await tx.subscription.updateMany({
+        where: {
+          orgId: organizationId,
+          status: "ACTIVE",
+          startDate: {
+            gt: txNow,
+          },
+          activeKey: null,
+        },
+        data: {
+          status: "CANCELLED",
+          activeKey: null,
+          notes: "Replaced by a newer scheduled downgrade.",
+        },
+      });
+
+      subscription = await tx.subscription.create({
+        data: {
+          orgId: organizationId,
+          planId: txIntent.planId || null,
+          planName: txIntent.planName,
+          planCode: txIntent.planCode,
+          amount: roundMoney(txIntent.payableAmount + txIntent.creditAmount),
+          currency: txIntent.currency || "INR",
+          status: "ACTIVE",
+          startDate: expectedStartDate,
+          endDate: expectedEndDate,
+          razorpayOrderId: paymentOrderId,
+          razorpayPaymentId: payableAmount > 0 ? String(razorpay_payment_id) : null,
+          razorpaySignature: payableAmount > 0 ? String(razorpay_signature) : null,
+          createdById: userId,
+          notes: `Scheduled downgrade by ${user.email}`,
+          activeKey: null,
         },
       });
     } else {
@@ -664,6 +1039,9 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
         where: {
           orgId: organizationId,
           status: "ACTIVE",
+          startDate: {
+            lte: txNow,
+          },
         },
         data: {
           status: "EXPIRED",
@@ -674,26 +1052,35 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
       subscription = await tx.subscription.create({
         data: {
           orgId: organizationId,
-          planId:
-            renewalContext.dbPlan
-              ? renewalContext.dbPlan.id
-              : renewalContext.organization.planId || null,
-          planName: renewalContext.plan.name,
-          planCode: renewalContext.normalizedPlanCode,
-          amount: Number(renewalContext.plan.price || 0),
-          currency: renewalContext.plan.currency || "INR",
+          planId: txIntent.planId || null,
+          planName: txIntent.planName,
+          planCode: txIntent.planCode,
+          amount: roundMoney(txIntent.payableAmount + txIntent.creditAmount),
+          currency: txIntent.currency || "INR",
           status: "ACTIVE",
-          startDate: renewalContext.now,
-          endDate: renewalContext.expiryDate,
-          razorpayOrderId: razorpay_order_id || null,
-          razorpayPaymentId: razorpay_payment_id || null,
-          razorpaySignature: razorpay_signature || null,
+          startDate: expectedStartDate,
+          endDate: expectedEndDate,
+          razorpayOrderId: paymentOrderId,
+          razorpayPaymentId: payableAmount > 0 ? String(razorpay_payment_id) : null,
+          razorpaySignature: payableAmount > 0 ? String(razorpay_signature) : null,
           createdById: userId,
           notes:
-            renewalContext.mode === "UPGRADE"
-              ? `Upgraded by ${user.email}. Credit applied: Rs. ${renewalContext.upgradeCredit}`
+            renewalMode === RENEWAL_MODES.UPGRADE_NOW
+              ? `Upgraded by ${user.email}. Credit applied: Rs. ${roundMoney(txIntent.creditAmount)}`
               : `Renewed by ${user.email}`,
           activeKey: `ORG_${organizationId}`,
+        },
+      });
+
+      await tx.organization.update({
+        where: {
+          id: organizationId,
+        },
+        data: {
+          planId: txIntent.planId || null,
+          subscriptionStatus: "ACTIVE",
+          subscriptionExpiry: expectedEndDate,
+          subscriptionId: subscription.id,
         },
       });
     }
@@ -703,91 +1090,84 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
         orgId: organizationId,
         userId,
         subscriptionId: subscription.id,
-        planName: renewalContext.plan.name,
-        planCode: renewalContext.normalizedPlanCode,
-        amount: Number(renewalContext.payableAmount || 0),
-        currency: renewalContext.plan.currency || "INR",
-        gateway: renewalContext.payableAmount > 0 ? "RAZORPAY" : "PLAN_CREDIT",
-        razorpayOrderId: razorpay_order_id || null,
-        razorpayPaymentId: razorpay_payment_id || null,
-        razorpaySignature: razorpay_signature || null,
+        planName: txIntent.planName,
+        planCode: txIntent.planCode,
+        amount: roundMoney(txIntent.payableAmount),
+        currency: txIntent.currency || "INR",
+        gateway: paymentGateway,
+        razorpayOrderId: paymentOrderId,
+        razorpayPaymentId: payableAmount > 0 ? String(razorpay_payment_id) : null,
+        razorpaySignature: payableAmount > 0 ? String(razorpay_signature) : null,
         status: "SUCCESS",
       },
     });
 
-    const updatedOrganization = await tx.organization.update({
-      where: {
-        id: organizationId,
-      },
+    const finalizedIntent = await tx.subscriptionRenewalIntent.update({
+      where: { id: txIntent.id },
       data: {
-        planId:
-          renewalContext.dbPlan
-            ? renewalContext.dbPlan.id
-            : renewalContext.organization.planId || null,
-        subscriptionStatus: "ACTIVE",
-        subscriptionExpiry: renewalContext.expiryDate,
-        subscriptionId: subscription.id,
+        status: "APPLIED",
+        verifiedAt: txNow,
+        appliedAt: txNow,
+        appliedSubscriptionId: subscription.id,
+        razorpayOrderId: paymentOrderId,
+        razorpayPaymentId: payableAmount > 0 ? String(razorpay_payment_id) : null,
+        razorpaySignature: payableAmount > 0 ? String(razorpay_signature) : null,
+        gateway: paymentGateway,
       },
+    });
+
+    const updatedOrganization = await tx.organization.findUnique({
+      where: { id: organizationId },
     });
 
     return {
       subscription,
       updatedOrganization,
+      intent: finalizedIntent,
+      idempotent: false,
     };
   });
 
   let emailSent = false;
-  try {
-    await sendRenewalConfirmationEmail({
-      organization: {
-        ...renewalContext.organization,
-        ...result.updatedOrganization,
-      },
-      user,
-      plan: renewalContext.plan,
-      expiryDate: renewalContext.expiryDate,
-      chargedAmount: renewalContext.payableAmount,
-      creditAmount: renewalContext.upgradeCredit,
-      mode: renewalContext.mode,
-    });
-    emailSent = true;
-  } catch (emailError) {
-    console.error("Failed to send renewal email:", emailError.message || emailError);
+  if (!result.idempotent) {
+    try {
+      await sendRenewalConfirmationEmail({
+        organization: {
+          ...intent.organization,
+          ...(result.updatedOrganization || {}),
+        },
+        user,
+        plan: {
+          name: intent.planName,
+          code: intent.planCode,
+        },
+        expiryDate: result.subscription?.endDate || intent.expectedEndDate,
+        chargedAmount: roundMoney(intent.payableAmount),
+        creditAmount: roundMoney(intent.creditAmount),
+        mode: intent.mode,
+      });
+      emailSent = true;
+    } catch (emailError) {
+      console.error("Failed to send renewal email:", emailError.message || emailError);
+    }
   }
 
-  res.status(200).json({
-    success: true,
-    message:
-      renewalContext.mode === "UPGRADE"
-        ? "Subscription upgraded successfully."
-        : renewalContext.mode === "EXTEND"
-          ? "Subscription extended successfully."
-          : "Subscription renewed successfully.",
-    emailSent,
-    redirectPath: "/org/dashboard",
-    subscription: {
-      id: result.subscription.id,
-      planName: result.subscription.planName,
-      planCode: result.subscription.planCode,
-      endDate: result.subscription.endDate,
-      amount: result.subscription.amount,
-      currency: result.subscription.currency,
-      status: result.subscription.status,
-    },
-    renewal: {
-      mode: renewalContext.mode,
-      payableAmount: renewalContext.payableAmount,
-      upgradeCredit: renewalContext.upgradeCredit,
-      remainingDays: renewalContext.remainingDays,
-    },
-    organization: {
-      id: result.updatedOrganization.id,
-      name: renewalContext.organization.name,
-      organizationCode: renewalContext.organization.organizationCode,
-      subscriptionStatus: result.updatedOrganization.subscriptionStatus,
-      subscriptionExpiry: result.updatedOrganization.subscriptionExpiry,
-    },
-  });
+  res.status(200).json(
+    buildRenewalApiPayload({
+      subscription: result.subscription,
+      organization: {
+        ...intent.organization,
+        ...(result.updatedOrganization || {}),
+      },
+      intent: result.intent,
+      mode: intent.mode,
+      payableAmount: roundMoney(intent.payableAmount),
+      upgradeCredit: roundMoney(intent.creditAmount),
+      remainingDays: Number(intent.remainingDays || 0),
+      emailSent,
+      idempotent: Boolean(result.idempotent),
+    })
+  );
 });
 
 // @desc    Verify Payment and Finalize Registration
@@ -950,10 +1330,12 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       const expiryDate = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
       const { longitude, latitude } = parseCoordinates(organization);
       const organizationCode = await generateUniqueOrgCode(tx);
+      const referralCode = await generateUniqueReferralCode(tx);
 
       const newOrg = await tx.organization.create({
         data: {
           organizationCode,
+          referralCode,
           name: truncateText(organization.name, 120) || "Organization",
           email: organizationEmail,
           phone: organizationPhone.e164,

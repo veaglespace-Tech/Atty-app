@@ -3,14 +3,14 @@ import { SPOTLIGHT_STATS, SPOTLIGHT_TAGS } from "./homeData";
 
 export default function HomeSpotlight() {
   return (
-    <section className="bg-white px-4 py-20 dark:bg-slate-950 md:px-0 md:py-32">
-      <div className="container mx-auto">
-        <div className="brand-spotlight relative flex flex-col items-center justify-between gap-12 overflow-hidden rounded-[2.5rem] p-8 transition-transform duration-500 hover:-translate-y-2 md:gap-16 md:rounded-[4rem] md:p-20 lg:flex-row lg:p-24">
+    <section className="bg-white px-3 py-14 dark:bg-slate-950 sm:px-4 sm:py-20 md:px-0 md:py-32">
+      <div className="site-container">
+        <div className="brand-spotlight relative flex flex-col items-center justify-between gap-10 overflow-hidden rounded-[2rem] p-5 transition-transform duration-500 hover:-translate-y-2 sm:gap-12 sm:rounded-[2.5rem] sm:p-8 md:gap-16 md:rounded-[4rem] md:p-20 lg:flex-row lg:p-24">
           <div className="brand-spotlight-orb-primary absolute right-0 top-0 h-96 w-96 rounded-full blur-[180px]" />
           <div className="brand-spotlight-orb-secondary absolute bottom-0 left-0 h-96 w-96 rounded-full blur-[180px]" />
 
           <div className="relative z-10 order-2 max-w-xl text-center lg:order-1 lg:text-left">
-            <h3 className="brand-spotlight-title mb-6 text-3xl font-black leading-tight md:mb-8 md:text-6xl">
+            <h3 className="brand-spotlight-title mb-5 text-2xl font-black leading-tight sm:mb-6 sm:text-3xl md:mb-8 md:text-6xl">
               Make attendance easier <br className="hidden md:block" /> for everyone.
             </h3>
             <div className="mb-10 flex flex-wrap justify-center gap-3 lg:justify-start">

@@ -250,6 +250,53 @@ const parseSearchLimit = (value, fallback = 8, max = 12) => {
   return Math.min(max, Math.max(1, Math.floor(parsed)));
 };
 
+const normalizeAddressField = ({
+  value,
+  fieldName,
+  required = false,
+  maxLength = 191,
+}) => {
+  const normalized = truncateText(value, maxLength);
+  if (!normalized) {
+    if (required) {
+      const error = new Error(`${fieldName} is required`);
+      error.statusCode = 400;
+      throw error;
+    }
+    return null;
+  }
+  return normalized;
+};
+
+const normalizeEmergencyContact = ({
+  emergencyContact,
+  countryCode,
+  required = false,
+}) => {
+  const rawEmergencyContact = String(emergencyContact || "").trim();
+  if (!rawEmergencyContact) {
+    if (required) {
+      const error = new Error("Emergency contact is required");
+      error.statusCode = 400;
+      throw error;
+    }
+    return null;
+  }
+
+  try {
+    const normalized = normalizePhoneNumber({
+      phone: rawEmergencyContact,
+      countryCode,
+      requireCountryCode: true,
+    });
+    return normalized.e164;
+  } catch (error) {
+    const phoneError = new Error(error.message || "Invalid emergency contact number");
+    phoneError.statusCode = 400;
+    throw phoneError;
+  }
+};
+
 const normalizeOrganizationText = (value) =>
   String(value || "")
     .trim()
@@ -392,9 +439,21 @@ const organizationSearchSelect = {
 const resolveRequestedOrganization = async ({
   organizationId,
   organizationCode,
+  referralCode,
 }) => {
   const requestedOrganizationId = parseOrganizationId(organizationId);
   const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
+  const normalizedReferralCode = String(referralCode || "").trim().toUpperCase();
+
+  if (normalizedReferralCode) {
+    return prisma.organization.findFirst({
+      where: {
+        referralCode: normalizedReferralCode,
+        deletedAt: null,
+      },
+      select: organizationLookupSelect,
+    });
+  }
 
   if (requestedOrganizationId) {
     return prisma.organization.findFirst({
@@ -548,6 +607,33 @@ const findOrganizationMembership = ({
   return legacyMembership;
 };
 
+const listActiveOrganizationMemberships = (user) => {
+  const activeMemberships = (Array.isArray(user?.memberships) ? user.memberships : []).filter(
+    (membership) => {
+      const org = membership?.organization;
+      if (!org || org.deletedAt) return false;
+      if (membership?.isActive === false) return false;
+      if (normalizeRole(membership?.role) === "SUPER_ADMIN") return false;
+      return true;
+    }
+  );
+
+  if (activeMemberships.length > 0) {
+    return activeMemberships;
+  }
+
+  const legacyMembership = buildLegacyAuthMembership(user);
+  const org = legacyMembership?.organization;
+  if (!legacyMembership || !org || legacyMembership.isActive === false || org.deletedAt) {
+    return [];
+  }
+  if (normalizeRole(legacyMembership.role) === "SUPER_ADMIN") {
+    return [];
+  }
+
+  return [legacyMembership];
+};
+
 const resolveAuthMembership = ({
   user,
   loginAs,
@@ -582,8 +668,36 @@ const resolveAuthMembership = ({
   }
 
   if (!normalizedOrganizationId && !normalizedOrganizationCode && !normalizedOrganizationName) {
-    const error = new Error("Organization selection is required for this role");
-    error.statusCode = 400;
+    const candidateMemberships = listActiveOrganizationMemberships(user);
+    const roleMatchedMemberships = requestedRole
+      ? candidateMemberships.filter(
+          (membership) => normalizeRole(membership?.role) === normalizeRole(requestedRole)
+        )
+      : candidateMemberships;
+
+    if (roleMatchedMemberships.length === 1) {
+      const membership = roleMatchedMemberships[0];
+      const membershipRole = normalizeRole(membership.role);
+
+      return {
+        membership,
+        organization: membership.organization || null,
+        role: membershipRole,
+      };
+    }
+
+    if (roleMatchedMemberships.length === 0) {
+      const error = requestedRole
+        ? new Error(`Selected role (${requestedRole}) does not match this account`)
+        : new Error("No active organization membership found for this account");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const error = new Error(
+      "Multiple organizations are linked to this account. Please contact your administrator."
+    );
+    error.statusCode = 409;
     throw error;
   }
 
@@ -627,6 +741,9 @@ const serializeSessionUser = (user, organization = null) => {
     email: normalized.email,
     mobile: normalized.mobile,
     mobileCountryCode: normalized.mobileCountryCode || null,
+    emergencyContact: normalized.emergencyContact || null,
+    currentAddress: normalized.currentAddress || null,
+    permanentAddress: normalized.permanentAddress || null,
     profileImageUrl: normalized.profileImageUrl || null,
     memberships: normalized.memberships.map((membership) => ({
       orgId: membership.orgId,
@@ -652,6 +769,7 @@ const serializeSessionUser = (user, organization = null) => {
           id: org.id,
           name: org.name,
           organizationCode: org.organizationCode,
+          referralCode: org.referralCode || null,
           city: org.city || null,
           state: org.state || null,
           country: org.country || null,
@@ -673,9 +791,11 @@ const serializeSessionUser = (user, organization = null) => {
 
 exports.register = asyncHandler(async (req, res) => {
   const input = req.validatedBody || req.body || {};
-  const { org, admin, plan, organizationCode, ...userData } = input;
+  const { org, admin, plan, organizationCode, referralCode, ...userData } = input;
   const requestedOrganizationId = parseOrganizationId(input?.organizationId);
   const normalizedOrganizationCode = String(organizationCode || "").trim().toUpperCase();
+  const normalizedReferralCode = String(referralCode || "").trim().toUpperCase();
+  const requestedRole = normalizeRole(userData.role || input.role || "MEMBER");
 
   // SCENARIO 1: ORGANISATION ONBOARDING
   // DISABLED: Organisations must now register via the Payment flow (/api/payment/verify-and-register)
@@ -684,8 +804,18 @@ exports.register = asyncHandler(async (req, res) => {
     throw new Error("Use /api/payment/verify-and-register for organization onboarding");
   }
 
-  // SCENARIO 2: MEMBER JOINING (organizationCode present)
-  if (requestedOrganizationId || normalizedOrganizationCode) {
+  if (requestedRole === "MEMBER" && !normalizedReferralCode) {
+    res.status(400);
+    throw new Error("Referral code is required for member registration");
+  }
+
+  if (requestedRole === "MEMBER" && (requestedOrganizationId || normalizedOrganizationCode)) {
+    res.status(400);
+    throw new Error("Organization selection is not supported for member registration. Use referral code.");
+  }
+
+  // SCENARIO 2: MEMBER JOINING (organization selection or referral code present)
+  if (requestedOrganizationId || normalizedOrganizationCode || normalizedReferralCode) {
     if (!userData.name || !userData.email || !userData.mobile || !userData.password) {
       res.status(400);
       throw new Error("Please provide name, email, mobile and password");
@@ -701,6 +831,7 @@ exports.register = asyncHandler(async (req, res) => {
     const targetOrg = await resolveRequestedOrganization({
       organizationId: requestedOrganizationId,
       organizationCode: normalizedOrganizationCode,
+      referralCode: normalizedReferralCode,
     });
 
     if (!targetOrg) {
@@ -743,8 +874,25 @@ exports.register = asyncHandler(async (req, res) => {
       throw new Error("User with this email already exists");
     }
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
     const normalizedRole = normalizeRole(userData.role || "MEMBER");
+    const requiresMemberDetails = normalizedRole === "MEMBER";
+    const normalizedEmergencyContact = normalizeEmergencyContact({
+      emergencyContact: userData.emergencyContact,
+      countryCode: userData.mobileCountryCode || userData.countryCode,
+      required: requiresMemberDetails,
+    });
+    const normalizedCurrentAddress = normalizeAddressField({
+      value: userData.currentAddress,
+      fieldName: "Current address",
+      required: requiresMemberDetails,
+    });
+    const normalizedPermanentAddress = normalizeAddressField({
+      value: userData.permanentAddress,
+      fieldName: "Permanent address",
+      required: requiresMemberDetails,
+    });
+
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     const user = await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
@@ -753,6 +901,11 @@ exports.register = asyncHandler(async (req, res) => {
           email: normalizedEmail,
           mobile: normalizedPhone.e164,
           mobileCountryCode: normalizedPhone.countryCode,
+          ...(normalizedEmergencyContact
+            ? { emergencyContact: normalizedEmergencyContact }
+            : {}),
+          ...(normalizedCurrentAddress ? { currentAddress: normalizedCurrentAddress } : {}),
+          ...(normalizedPermanentAddress ? { permanentAddress: normalizedPermanentAddress } : {}),
           password: hashedPassword,
           role: normalizedRole,
           orgId: targetOrg.id,
@@ -809,6 +962,7 @@ exports.register = asyncHandler(async (req, res) => {
   const normalizedRole = normalizeRole(role || "MEMBER");
   const resolvedOrganizationId = organizationId || organization || null;
   const isSuperAdminRegistration = normalizedRole === "SUPER_ADMIN";
+  const requiresMemberDetails = normalizedRole === "MEMBER";
 
   if (!resolvedOrganizationId && !isSuperAdminRegistration) {
     res.status(400);
@@ -822,6 +976,21 @@ exports.register = asyncHandler(async (req, res) => {
     countryCode: mobileCountryCode || countryCode,
     requireCountryCode: true,
   });
+  const normalizedEmergencyContact = normalizeEmergencyContact({
+    emergencyContact: input.emergencyContact,
+    countryCode: mobileCountryCode || countryCode,
+    required: requiresMemberDetails,
+  });
+  const normalizedCurrentAddress = normalizeAddressField({
+    value: input.currentAddress,
+    fieldName: "Current address",
+    required: requiresMemberDetails,
+  });
+  const normalizedPermanentAddress = normalizeAddressField({
+    value: input.permanentAddress,
+    fieldName: "Permanent address",
+    required: requiresMemberDetails,
+  });
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.$transaction(async (tx) => {
@@ -831,6 +1000,9 @@ exports.register = asyncHandler(async (req, res) => {
         email: normalizedEmail,
         mobile: normalizedPhone.e164,
         mobileCountryCode: normalizedPhone.countryCode,
+        ...(normalizedEmergencyContact ? { emergencyContact: normalizedEmergencyContact } : {}),
+        ...(normalizedCurrentAddress ? { currentAddress: normalizedCurrentAddress } : {}),
+        ...(normalizedPermanentAddress ? { permanentAddress: normalizedPermanentAddress } : {}),
         password: hashedPassword,
         role: normalizedRole,
         orgId: resolvedOrganizationId ? Number(resolvedOrganizationId) : null,

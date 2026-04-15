@@ -82,6 +82,9 @@ const findActiveSubscription = async ({ organizationId, now = new Date() }) => {
       orgId,
       status: "ACTIVE",
       OR: [{ activeKey }, { activeKey: null }],
+      startDate: {
+        lte: now,
+      },
       endDate: {
         gte: now,
       },
@@ -103,6 +106,9 @@ const expireOrganizationSubscriptions = async ({ organizationId, now = new Date(
       where: {
         orgId,
         status: "ACTIVE",
+        startDate: {
+          lte: now,
+        },
       },
       data: {
         status: "EXPIRED",
@@ -174,6 +180,9 @@ const syncOrganizationSubscriptionState = async ({ organizationId, organization 
         status: "ACTIVE",
         id: {
           not: activeSubscription.id,
+        },
+        startDate: {
+          lte: now,
         },
       },
       data: {
