@@ -25,9 +25,11 @@ jobs:
             echo "===== CURRENT BRANCH ====="
             git branch
 
-            echo "===== FORCE UPDATE CODE ====="
-            git fetch --all
+            echo "===== CLEAN + UPDATE CODE ====="
+            git fetch origin main
+            git checkout main
             git reset --hard origin/main
+            git pull origin main
 
             echo "===== VERIFY LATEST COMMIT ====="
             git log -1
@@ -36,20 +38,17 @@ jobs:
             cd /root/attendee/server
             npm install
 
-            echo "===== RESTART BACKEND ====="
-            pm2 delete attendee-server || true
-            pm2 start npm --name "attendee-server" -- start
+            echo "===== RELOAD BACKEND ====="
+            pm2 reload attendee-server || pm2 start npm --name "attendee-server" -- start
 
             echo "===== FRONTEND BUILD ====="
             cd /root/attendee/client
-
             rm -rf .next
             npm install
             npm run build
 
-            echo "===== RESTART FRONTEND ====="
-            pm2 delete attendee-client || true
-            pm2 start "npm run start" --name "attendee-client"
+            echo "===== RELOAD FRONTEND ====="
+            pm2 reload attendee-client || pm2 start npm --name "attendee-client" -- start
 
             echo "===== SAVE PM2 ====="
             pm2 save
