@@ -10,40 +10,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VPS via SSH
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            set -e
+            echo "===== CONNECTED TO VPS ====="
 
-            echo "===== CONNECTED ====="
-
+            echo "===== GO TO PROJECT ====="
             cd /root/attendee || exit
 
-            echo "===== UPDATE CODE ====="
+            echo "===== CURRENT BRANCH ====="
+            git branch
+
+            echo "===== CLEAN + UPDATE CODE ====="
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
             git pull origin main
 
-            echo "===== BACKEND (Node) ====="
-            cd server || exit
+            echo "===== VERIFY LATEST COMMIT ====="
+            git log -1
 
+            echo "===== BACKEND SETUP ====="
+            cd /root/attendee/server
             npm install
 
-            # ⚠️ जर index.js नसेल तर बदल (server.js / app.js)
-            pm2 restart attendee-backend || pm2 start index.js --name attendee-backend
+            echo "===== RELOAD BACKEND ====="
+            pm2 reload attendee-server || pm2 start npm --name "attendee-server" -- start
 
-            echo "===== FRONTEND ====="
-            cd ../client || exit
-
-            npm install
+            echo "===== FRONTEND BUILD ====="
+            cd /root/attendee/client
             rm -rf .next
+            npm install
             npm run build
 
-            pm2 delete attendee-frontend || true
-            pm2 start "npm run start -- -p 3002" --name attendee-frontend
+            echo "===== RELOAD FRONTEND ====="
+            pm2 reload attendee-client || pm2 start npm --name "attendee-client" -- start
 
+            echo "===== SAVE PM2 ====="
             pm2 save
 
-            echo "===== DONE ====="
+            echo "===== DEPLOYMENT DONE ====="
