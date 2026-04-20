@@ -8,6 +8,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { generateUniqueOrgCode } = require("../utils/org-code");
 const { generateUniqueReferralCode } = require("../utils/referral-code");
 const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
+const { CLIENT_BASE_URL } = require('../config');
 const { createOrganizationMembership } = require("../services/organization-member.service");
 const { archiveFailedRegistration } = require("../services/archive.service");
 const sendEmail = require("../utils/email");
@@ -64,7 +65,7 @@ const getClientBaseUrl = () => {
     return firstAllowedOrigin.replace(/\/+$/, "");
   }
 
-  return "http://localhost:3000";
+  return CLIENT_BASE_URL;
 };
 
 const getRazorpayCredentials = () => ({

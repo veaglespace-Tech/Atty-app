@@ -5,6 +5,7 @@ const prisma = require("../lib/prisma");
 const { normalizeRole, getDashboardPathByRole } = require("../constants/rbac");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { normalizeUser } = require("../utils/identity");
+const { CLIENT_BASE_URL } = require('../config');
 const {
   resolveOrganizationId,
   resolveUserRole,
@@ -36,7 +37,7 @@ const getClientBaseUrl = () => {
     return firstAllowedOrigin.replace(/\/+$/, "");
   }
 
-  return "http://localhost:3000";
+  return CLIENT_BASE_URL;
 };
 
 const getLoginPathByRole = (role) =>
