@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VPS
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -21,25 +21,28 @@ jobs:
 
             echo "===== CONNECTED ====="
 
-            cd /root/attendee
+            cd /root/attendee || exit
 
             echo "===== UPDATE CODE ====="
-            git fetch origin
-            git reset --hard origin/main
+            git pull origin main
 
-            echo "===== BACKEND ====="
-            cd server
-            mvn clean install -DskipTests
+            echo "===== BACKEND (Node) ====="
+            cd server || exit
 
-            pm2 restart attendee-server || true
+            npm install
+
+            # ⚠️ जर index.js नसेल तर बदल (server.js / app.js)
+            pm2 restart attendee-backend || pm2 start index.js --name attendee-backend
 
             echo "===== FRONTEND ====="
-            cd ../client
-            rm -rf .next
+            cd ../client || exit
+
             npm install
+            rm -rf .next
             npm run build
 
-            pm2 restart attendee-client || true
+            pm2 delete attendee-frontend || true
+            pm2 start "npm run start -- -p 3002" --name attendee-frontend
 
             pm2 save
 
