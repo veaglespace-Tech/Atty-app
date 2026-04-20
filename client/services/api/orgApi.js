@@ -68,6 +68,13 @@ export const orgApi = createApi({
       query: (userId) => `/org/users/${userId}`,
       providesTags: ["OrgUsers"],
     }),
+    downloadOrgUserProfilePdf: builder.mutation({
+      query: (userId) => ({
+        url: `/org/users/${userId}/profile-pdf`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
     createOrgUser: builder.mutation({
       query: (payload) => ({
         url: "/org/users",
@@ -171,6 +178,7 @@ export const {
   useGetOrgNotificationsQuery,
   useGetOrgUsersQuery,
   useGetOrgUserByIdQuery,
+  useDownloadOrgUserProfilePdfMutation,
   useCreateOrgUserMutation,
   usePatchOrgUserMutation,
   useUpdateOrgUserStatusMutation,

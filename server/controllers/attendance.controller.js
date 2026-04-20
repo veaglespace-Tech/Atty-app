@@ -483,6 +483,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
   const { date } = req.query;
   const today = date || new Date().toISOString().split("T")[0];
   const currentUserRole = resolveUserRole(req.user, orgId);
+  const limit = currentUserRole === "MEMBER" ? 1 : parseLimit(req.query.limit, 2000, 5000);
 
   // 1. Fetch all members who should be present
   const userFilter = {
@@ -507,17 +508,39 @@ exports.getAttendance = asyncHandler(async (req, res) => {
       },
     },
     orderBy: { name: "asc" },
+    take: limit,
   });
 
+  const userIds = users.map((user) => Number(user.id)).filter(Boolean);
+
   // 2. Fetch existing attendance records for the day
-  const attendanceRecords = await prisma.attendance.findMany({
-    where: {
-      orgId,
-      date: today,
-      deletedAt: null,
-      ...(currentUserRole === "MEMBER" ? { userId: Number(req.user.id) } : {}),
-    },
-  });
+  const attendanceRecords =
+    userIds.length > 0
+      ? await prisma.attendance.findMany({
+          where: {
+            orgId,
+            date: today,
+            deletedAt: null,
+            userId: {
+              in: userIds,
+            },
+          },
+          select: {
+            id: true,
+            userId: true,
+            status: true,
+            punchInAt: true,
+            punchOutAt: true,
+            lateMinutes: true,
+            punchInLatitude: true,
+            punchInLongitude: true,
+            punchInLocationMeta: true,
+            punchInSelfieUrl: true,
+            punchOutSelfieUrl: true,
+          },
+          take: limit,
+        })
+      : [];
 
   const attendanceMap = attendanceRecords.reduce((acc, record) => {
     acc[record.userId] = record;
@@ -559,17 +582,34 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const today = new Date().toISOString().split("T")[0];
 
-  const [todayAttendance, totalEligibleUsers] = await Promise.all([
-    prisma.attendance.findMany({
+  const [present, halfDay, late, totalEligibleUsers] = await Promise.all([
+    prisma.attendance.count({
+      where: {
+        orgId,
+        date: today,
+        status: "PRESENT",
+        deletedAt: null,
+      },
+    }),
+    prisma.attendance.count({
+      where: {
+        orgId,
+        date: today,
+        status: "HALF_DAY",
+        deletedAt: null,
+      },
+    }),
+    prisma.attendance.count({
       where: {
         orgId,
         date: today,
         deletedAt: null,
-      },
-      select: {
-        status: true,
-        lateMinutes: true,
-        punchInAt: true,
+        lateMinutes: {
+          gt: 0,
+        },
+        status: {
+          not: "ABSENT",
+        },
       },
     }),
     prisma.user.count({
@@ -581,14 +621,6 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
       },
     }),
   ]);
-
-  const present = todayAttendance.filter((record) => record.status === "PRESENT").length;
-  const halfDay = todayAttendance.filter((record) => record.status === "HALF_DAY").length;
-  const late = todayAttendance.filter(
-    (record) =>
-      String(record.status || "").toUpperCase() !== "ABSENT" &&
-      resolveAttendanceLateMinutes(record) > 0
-  ).length;
 
   const absent = totalEligibleUsers - (present + halfDay);
 

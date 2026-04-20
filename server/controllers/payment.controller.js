@@ -141,6 +141,30 @@ const ensureFreeTrialAvailable = async ({ orgEmail, adminEmail, adminPhone }) =>
   }
 };
 
+const assertOnboardingIdentityAvailable = async ({
+  adminEmail,
+  organizationEmail,
+}) => {
+  if (!adminEmail || !organizationEmail) return;
+
+  const [userExists, organizationExists] = await Promise.all([
+    prisma.user.findUnique({ where: { email: adminEmail } }),
+    prisma.organization.findUnique({ where: { email: organizationEmail } }),
+  ]);
+
+  if (userExists) {
+    const error = new Error("An account with this email already exists.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (organizationExists) {
+    const error = new Error("An organization with this email already exists.");
+    error.statusCode = 409;
+    throw error;
+  }
+};
+
 const classifyDbError = (dbError) => {
   if (!dbError || typeof dbError !== "object") return null;
 
@@ -579,12 +603,22 @@ exports.getPublicKey = asyncHandler(async (req, res) => {
 // @access  Public (for onboarding)
 exports.createOrder = asyncHandler(async (req, res) => {
   const { planCode, organization, admin } = req.body || {};
+  const orgEmail = normalizeEmail(organization?.email);
+  const adminEmail = normalizeEmail(admin?.email);
 
   const { dbPlan, plan, freeTrialPlan } = await resolvePlanForCheckout(planCode);
-  if (freeTrialPlan) {
-    const orgEmail = normalizeEmail(organization?.email);
-    const adminEmail = normalizeEmail(admin?.email);
 
+  try {
+    await assertOnboardingIdentityAvailable({
+      adminEmail,
+      organizationEmail: orgEmail,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 409);
+    throw new Error(error.message || "Duplicate account details found.");
+  }
+
+  if (freeTrialPlan) {
     if (!orgEmail || !adminEmail) {
       res.status(400);
       throw new Error("Organization and admin details are required for free trial.");

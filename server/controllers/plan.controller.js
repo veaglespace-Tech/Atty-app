@@ -5,6 +5,17 @@ const {
   isLegacyPaidMonthlyPlan,
   normalizePlanCode,
 } = require("../services/plan.service");
+const {
+  getCachedValue,
+  invalidateByPrefix,
+} = require("../services/runtime-cache.service");
+
+const PLANS_CACHE_TTL_MS = 60 * 1000;
+
+const shouldBypassRuntimeCache = (query = {}) => {
+  const raw = String(query?.noCache || "").trim().toLowerCase();
+  return raw === "1" || raw === "true";
+};
 
 const toFeatureList = (value) => {
   if (Array.isArray(value)) {
@@ -106,10 +117,17 @@ const mapPlanForResponse = (plan) => {
 // @route   GET /api/plans
 // @access  Public
 exports.getPlans = asyncHandler(async (req, res) => {
-  const plans = await fetchPlanRows({
-    whereClause: "WHERE `isActive` = 1",
-    orderClause: "ORDER BY `id` ASC",
-  });
+  const resolvePlans = () =>
+    fetchPlanRows({
+      whereClause: "WHERE `isActive` = 1",
+      orderClause: "ORDER BY `id` ASC",
+    });
+
+  const plans = shouldBypassRuntimeCache(req.query)
+    ? await resolvePlans()
+    : await getCachedValue("plans:active:v1", PLANS_CACHE_TTL_MS, resolvePlans);
+
+  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
 
   res.status(200).json({
     success: true,
@@ -122,12 +140,19 @@ exports.getPlans = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 exports.getPlanById = asyncHandler(async (req, res) => {
   const planId = Number(req.params.id);
-  const plan = await fetchPlanById(planId);
+  const cacheKey = `plans:id:${planId}`;
+  const resolvePlan = () => fetchPlanById(planId);
+
+  const plan = shouldBypassRuntimeCache(req.query)
+    ? await resolvePlan()
+    : await getCachedValue(cacheKey, PLANS_CACHE_TTL_MS, resolvePlan);
 
   if (!plan || isLegacyPaidMonthlyPlan(plan)) {
     res.status(404);
     throw new Error("Plan not found");
   }
+
+  res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
 
   res.status(200).json({
     success: true,
@@ -229,6 +254,8 @@ exports.createPlan = asyncHandler(async (req, res) => {
     },
   });
 
+  invalidateByPrefix("plans:");
+
   res.status(201).json({
     success: true,
     plan: mapPlanForResponse(plan),
@@ -250,6 +277,8 @@ exports.deletePlan = asyncHandler(async (req, res) => {
     where: { id: plan.id },
     data: { isActive: false },
   });
+
+  invalidateByPrefix("plans:");
 
   res.status(200).json({
     success: true,
@@ -300,6 +329,8 @@ exports.updatePlan = asyncHandler(async (req, res) => {
     where: { id: planId },
     data: updateData,
   });
+
+  invalidateByPrefix("plans:");
 
   res.status(200).json({
     success: true,

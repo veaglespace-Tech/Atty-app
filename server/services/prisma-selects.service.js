@@ -24,6 +24,41 @@ const userManagementSelect = {
   },
 };
 
+const userProfileSelect = {
+  ...userManagementSelect,
+  updatedAt: true,
+  lastLoginAt: true,
+  createdBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  teamMemberships: {
+    select: {
+      createdAt: true,
+      team: {
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          deletedAt: true,
+        },
+      },
+    },
+  },
+  teamsLed: {
+    select: {
+      id: true,
+      name: true,
+      isActive: true,
+      deletedAt: true,
+      createdAt: true,
+    },
+  },
+};
+
 const attendanceUserSelect = {
   id: true,
   name: true,
@@ -164,6 +199,7 @@ const reportPdfUserSelect = {
 
 module.exports = {
   userManagementSelect,
+  userProfileSelect,
   attendanceRecordSelect,
   teamListSelect,
   teamDetailSelect,

@@ -26,16 +26,35 @@ const {
 const { mapUserForManagement, buildUserSummary } = require("../services/user-query.service");
 const {
   userManagementSelect,
+  userProfileSelect,
 } = require("../services/prisma-selects.service");
 const { archiveUser, restoreUserFromArchive } = require("../services/archive.service");
 const { createOrganizationMembership } = require("../services/organization-member.service");
 const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
+const { buildUserHallTicketPdf } = require("../utils/user-profile-pdf");
 
 const USER_STATUS = new Set(["APPROVED", "PENDING", "REJECTED"]);
+const ORG_PROFILE_SELECT = {
+  id: true,
+  name: true,
+  organizationCode: true,
+  phone: true,
+  phoneCountryCode: true,
+  address: true,
+  city: true,
+  state: true,
+  country: true,
+};
 
 const randomPassword = () => crypto.randomBytes(6).toString("base64url");
 
-const ensureOrgTargetUser = async ({ req, res, targetUserId, allowSelf = false }) => {
+const ensureOrgTargetUser = async ({
+  req,
+  res,
+  targetUserId,
+  allowSelf = false,
+  select = userManagementSelect,
+}) => {
   const orgId = ensureOrganizationId(req, res);
   const user = await prisma.user.findFirst({
     where: {
@@ -47,7 +66,7 @@ const ensureOrgTargetUser = async ({ req, res, targetUserId, allowSelf = false }
       },
       deletedAt: null,
     },
-    select: userManagementSelect,
+    select,
   });
 
   if (!user) {
@@ -70,6 +89,109 @@ const ensureOrgTargetUser = async ({ req, res, targetUserId, allowSelf = false }
 
   assertRoleScope(res, req.user, targetRole, orgId);
   return { orgId, user, membership, targetRole };
+};
+
+const getUserAttendanceSummary = async ({ orgId, userId }) => {
+  const where = {
+    orgId,
+    userId: Number(userId),
+    deletedAt: null,
+  };
+
+  const [statusGroups, aggregates] = await Promise.all([
+    prisma.attendance.groupBy({
+      by: ["status"],
+      where,
+      _count: {
+        _all: true,
+      },
+    }),
+    prisma.attendance.aggregate({
+      where,
+      _count: {
+        _all: true,
+      },
+      _sum: {
+        totalMinutesWorked: true,
+      },
+    }),
+  ]);
+
+  const counts = statusGroups.reduce(
+    (accumulator, item) => ({
+      ...accumulator,
+      [String(item.status || "").toUpperCase()]: Number(item?._count?._all || 0),
+    }),
+    {}
+  );
+
+  return {
+    totalEntries: Number(aggregates?._count?._all || 0),
+    presentDays: Number(counts.PRESENT || 0),
+    halfDays: Number(counts.HALF_DAY || 0),
+    absentDays: Number(counts.ABSENT || 0),
+    totalWorkedMinutes: Number(aggregates?._sum?.totalMinutesWorked || 0),
+  };
+};
+
+const mapOrgUserDetail = ({ user, orgId, organization, attendanceSummary }) => {
+  const base = mapUserForManagement(user, orgId);
+  const membership = resolveMembership(user, orgId);
+
+  const teamNames = (Array.isArray(user.teamMemberships) ? user.teamMemberships : [])
+    .map((entry) => entry?.team)
+    .filter((team) => team && team.deletedAt === null && team.isActive !== false)
+    .map((team) => team.name)
+    .filter(Boolean);
+
+  const ledTeamNames = (Array.isArray(user.teamsLed) ? user.teamsLed : [])
+    .filter((team) => team && team.deletedAt === null && team.isActive !== false)
+    .map((team) => team.name)
+    .filter(Boolean);
+
+  return {
+    ...base,
+    organization: {
+      id: organization?.id || null,
+      name: organization?.name || null,
+      organizationCode: organization?.organizationCode || null,
+      phone: organization?.phone || null,
+      phoneCountryCode: organization?.phoneCountryCode || null,
+      address: organization?.address || null,
+      city: organization?.city || null,
+      state: organization?.state || null,
+      country: organization?.country || null,
+    },
+    membership: {
+      joinedAt: membership?.joinedAt || null,
+      role: membership?.role || base.role,
+      isActive: membership?.isActive !== false,
+    },
+    createdBy: user?.createdBy
+      ? {
+          id: user.createdBy.id,
+          name: user.createdBy.name,
+          email: user.createdBy.email,
+        }
+      : null,
+    teamNames,
+    ledTeamNames,
+    totalTeams: teamNames.length,
+    totalLedTeams: ledTeamNames.length,
+    updatedAt: user?.updatedAt || null,
+    lastLoginAt: user?.lastLoginAt || null,
+    attendanceSummary,
+  };
+};
+
+const toHallTicketFilename = ({ userName, userId }) => {
+  const safeName = String(userName || "user")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${safeName || "user"}-profile-${Number(userId || 0)}-hall-ticket.pdf`;
 };
 
 exports.getOrgUsers = asyncHandler(async (req, res) => {
@@ -113,12 +235,93 @@ exports.getOrgUserById = asyncHandler(async (req, res) => {
     res,
     targetUserId: req.params.userId,
     allowSelf: true,
+    select: userProfileSelect,
   });
+
+  const [organization, attendanceSummary] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: ORG_PROFILE_SELECT,
+    }),
+    getUserAttendanceSummary({
+      orgId,
+      userId: user.id,
+    }),
+  ]);
 
   res.status(200).json({
     success: true,
-    item: mapUserForManagement(user, orgId),
+    item: mapOrgUserDetail({
+      user,
+      orgId,
+      organization,
+      attendanceSummary,
+    }),
   });
+});
+
+exports.downloadOrgUserProfilePdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+
+  const { user } = await ensureOrgTargetUser({
+    req,
+    res,
+    targetUserId: req.params.userId,
+    allowSelf: true,
+    select: userProfileSelect,
+  });
+
+  const [organization, attendanceSummary] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: ORG_PROFILE_SELECT,
+    }),
+    getUserAttendanceSummary({
+      orgId,
+      userId: user.id,
+    }),
+  ]);
+
+  const detailedUser = mapOrgUserDetail({
+    user,
+    orgId,
+    organization,
+    attendanceSummary,
+  });
+
+  const pdfBuffer = await buildUserHallTicketPdf({
+    organization: detailedUser.organization,
+    user: {
+      id: detailedUser.id,
+      name: detailedUser.name,
+      role: detailedUser.role,
+      approvalStatus: detailedUser.approvalStatus,
+      active: detailedUser.active,
+      email: detailedUser.email,
+      mobile: detailedUser.mobile,
+      mobileCountryCode: detailedUser.mobileCountryCode,
+      emergencyContact: detailedUser.emergencyContact,
+      currentAddress: detailedUser.currentAddress,
+      permanentAddress: detailedUser.permanentAddress,
+      profileImageUrl: detailedUser.profileImageUrl,
+      joinedAt: detailedUser.membership?.joinedAt || detailedUser.joinedAt,
+      lastLoginAt: detailedUser.lastLoginAt,
+      teamNames: detailedUser.teamNames,
+      ledTeamNames: detailedUser.ledTeamNames,
+    },
+    attendanceSummary: detailedUser.attendanceSummary,
+    generatedByName: req.user?.name || req.user?.email || "Admin",
+  });
+
+  const filename = toHallTicketFilename({
+    userName: detailedUser.name,
+    userId: detailedUser.id,
+  });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+  res.status(200).send(pdfBuffer);
 });
 
 exports.patchOrgUser = asyncHandler(async (req, res) => {

@@ -4,6 +4,7 @@ const { onboardOrganization } = require("../controllers/org.controller");
 const {
   getOrgUsers,
   getOrgUserById,
+  downloadOrgUserProfilePdf,
   createOrgUser,
   patchOrgUser,
   updateOrgUserStatus,
@@ -61,6 +62,7 @@ router.get("/notifications", getOrgNotifications);
 
 router.get("/users", getOrgUsers);
 router.get("/users/:userId", getOrgUserById);
+router.get("/users/:userId/profile-pdf", downloadOrgUserProfilePdf);
 router.post("/users", createOrgUser);
 router.patch("/users/:userId", patchOrgUser);
 router.patch("/users/:userId/status", updateOrgUserStatus);

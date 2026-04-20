@@ -1,6 +1,7 @@
 import Sidebar from "@/components/Sidebar";
 import DashboardTopbar from "@/components/DashboardTopbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import DashboardFooter from "@/components/dashboard/DashboardFooter";
 
 export default function DashboardLayout({ children }) {
   return (
@@ -12,6 +13,7 @@ export default function DashboardLayout({ children }) {
             <DashboardTopbar />
             <div className="flex-1">{children}</div>
           </div>
+          <DashboardFooter />
         </main>
       </div>
     </ProtectedRoute>

@@ -15,10 +15,12 @@ const {
 } = require("../services/subscription.service");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
+const { getCachedValue } = require("../services/runtime-cache.service");
 const xlsx = require("xlsx");
 
 const SUBSCRIPTION_STATUS = new Set(["TRIAL", "ACTIVE", "EXPIRED", "PAYMENT_PENDING"]);
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const SUPER_ADMIN_ANALYTICS_CACHE_TTL_MS = 20 * 1000;
 const NON_SUPER_ADMIN_USER_WHERE = {
   deletedAt: null,
   memberships: {
@@ -47,12 +49,6 @@ const ORGANIZATION_MEMBER_COUNT_SELECT = {
   },
 };
 
-const toMonthKey = (value) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
-};
-
 const monthSequence = (count = 6) => {
   const result = [];
   const base = new Date();
@@ -62,6 +58,21 @@ const monthSequence = (count = 6) => {
     result.push(`${current.getUTCFullYear()}-${String(current.getUTCMonth() + 1).padStart(2, "0")}`);
   }
   return result;
+};
+
+const monthRangeFromKey = (monthKey) => {
+  const [yearValue, monthValue] = String(monthKey || "").split("-");
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+    return null;
+  }
+
+  const from = new Date(Date.UTC(year, month - 1, 1));
+  const to = new Date(Date.UTC(year, month, 1));
+
+  return { from, to };
 };
 
 const formatDateTime = (value) => {
@@ -1846,100 +1857,109 @@ exports.downloadSuperAdminPaymentsExcel = asyncHandler(async (req, res) => {
 
 exports.getSuperAdminAnalytics = asyncHandler(async (req, res) => {
   const months = monthSequence(6);
-  const oldestMonth = `${months[0]}-01`;
+  const shouldBypassCache = (() => {
+    const raw = String(req.query?.noCache || "").trim().toLowerCase();
+    return raw === "1" || raw === "true";
+  })();
 
-  const [organizations, users, payments] = await Promise.all([
-    prisma.organization.findMany({
-      where: {
-        createdAt: {
-          gte: new Date(`${oldestMonth}T00:00:00.000Z`),
-        },
-      },
-      select: {
-        createdAt: true,
-      },
-    }),
-    prisma.user.findMany({
-      where: {
-        createdAt: {
-          gte: new Date(`${oldestMonth}T00:00:00.000Z`),
-        },
-        ...NON_SUPER_ADMIN_USER_WHERE,
-      },
-      select: {
-        createdAt: true,
-      },
-    }),
-    prisma.payment.findMany({
-      where: {
-        createdAt: {
-          gte: new Date(`${oldestMonth}T00:00:00.000Z`),
-        },
-      },
-      select: {
-        createdAt: true,
-        amount: true,
-        status: true,
-      },
-    }),
-  ]);
+  const resolveAnalyticsPayload = async () => {
+    const items = await Promise.all(
+      months.map(async (month) => {
+        const range = monthRangeFromKey(month);
+        if (!range) {
+          return {
+            month,
+            organizations: 0,
+            users: 0,
+            payments: 0,
+            revenue: 0,
+          };
+        }
 
-  const metrics = new Map(
-    months.map((month) => [
-      month,
-      {
-        month,
-        organizations: 0,
-        users: 0,
-        payments: 0,
-        revenue: 0,
+        const [organizations, users, payments, revenueAggregate] = await Promise.all([
+          prisma.organization.count({
+            where: {
+              createdAt: {
+                gte: range.from,
+                lt: range.to,
+              },
+            },
+          }),
+          prisma.user.count({
+            where: {
+              createdAt: {
+                gte: range.from,
+                lt: range.to,
+              },
+              ...NON_SUPER_ADMIN_USER_WHERE,
+            },
+          }),
+          prisma.payment.count({
+            where: {
+              createdAt: {
+                gte: range.from,
+                lt: range.to,
+              },
+            },
+          }),
+          prisma.payment.aggregate({
+            where: {
+              createdAt: {
+                gte: range.from,
+                lt: range.to,
+              },
+              status: "SUCCESS",
+            },
+            _sum: {
+              amount: true,
+            },
+          }),
+        ]);
+
+        return {
+          month,
+          organizations,
+          users,
+          payments,
+          revenue: Number(revenueAggregate?._sum?.amount || 0),
+        };
+      })
+    );
+
+    return {
+      summary: [
+        toSummaryItem(
+          "Organizations",
+          items.reduce((sum, item) => sum + Number(item.organizations || 0), 0)
+        ),
+        toSummaryItem("Users", items.reduce((sum, item) => sum + Number(item.users || 0), 0)),
+        toSummaryItem(
+          "Payments",
+          items.reduce((sum, item) => sum + Number(item.payments || 0), 0)
+        ),
+        toSummaryItem(
+          "Revenue",
+          items.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
+        ),
+      ],
+      items,
+      meta: {
+        months,
       },
-    ])
-  );
+    };
+  };
 
-  organizations.forEach((entry) => {
-    const month = toMonthKey(entry.createdAt);
-    if (!month || !metrics.has(month)) return;
-    metrics.get(month).organizations += 1;
-  });
+  const payload = shouldBypassCache
+    ? await resolveAnalyticsPayload()
+    : await getCachedValue(
+        "super-admin:analytics:v2",
+        SUPER_ADMIN_ANALYTICS_CACHE_TTL_MS,
+        resolveAnalyticsPayload
+      );
 
-  users.forEach((entry) => {
-    const month = toMonthKey(entry.createdAt);
-    if (!month || !metrics.has(month)) return;
-    metrics.get(month).users += 1;
-  });
-
-  payments.forEach((entry) => {
-    const month = toMonthKey(entry.createdAt);
-    if (!month || !metrics.has(month)) return;
-    metrics.get(month).payments += 1;
-    if (entry.status === "SUCCESS") {
-      metrics.get(month).revenue += Number(entry.amount || 0);
-    }
-  });
-
-  const items = months.map((month) => metrics.get(month));
-
+  res.set("Cache-Control", "private, max-age=20, stale-while-revalidate=40");
   res.status(200).json({
     success: true,
-    summary: [
-      toSummaryItem(
-        "Organizations",
-        items.reduce((sum, item) => sum + Number(item.organizations || 0), 0)
-      ),
-      toSummaryItem("Users", items.reduce((sum, item) => sum + Number(item.users || 0), 0)),
-      toSummaryItem(
-        "Payments",
-        items.reduce((sum, item) => sum + Number(item.payments || 0), 0)
-      ),
-      toSummaryItem(
-        "Revenue",
-        items.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
-      ),
-    ],
-    items,
-    meta: {
-      months,
-    },
+    ...payload,
   });
 });

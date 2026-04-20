@@ -36,6 +36,7 @@ import {
   ROLES,
 } from "@/utils/roles";
 import DashboardBrandBlock from "@/components/DashboardBrandBlock";
+import DashboardFooter from "@/components/dashboard/DashboardFooter";
 
 function extractRootFromDashboardPath(dashboardPath) {
   if (!dashboardPath) return null;
@@ -302,6 +303,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-[1540px]">{children}</div>
         </main>
+        <DashboardFooter />
       </div>
     </div>
   );

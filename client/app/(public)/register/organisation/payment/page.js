@@ -77,11 +77,24 @@ const loadRazorpayScript = () =>
     document.body.appendChild(script);
   });
 
+const getApiErrorMessage = (error, fallback = "Unable to process request.") => {
+  const message =
+    error?.data?.message ||
+    error?.error ||
+    error?.message ||
+    error?.originalStatusText ||
+    "";
+
+  const normalizedMessage = String(message || "").trim();
+  return normalizedMessage || fallback;
+};
+
 export default function PaymentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentError, setPaymentError] = useState("");
   const [successState, setSuccessState] = useState(null);
   const [createPaymentOrder] = useCreatePaymentOrderMutation();
   const [verifyAndRegisterPayment] = useVerifyAndRegisterPaymentMutation();
@@ -162,6 +175,7 @@ export default function PaymentPage() {
     }
 
     setLoading(true);
+    setPaymentError("");
 
     try {
       const orderResponse = await createPaymentOrder({
@@ -257,24 +271,27 @@ export default function PaymentPage() {
               emailSent: verifyResult?.emailSent,
             });
           } catch (error) {
-            alert(error?.data?.message || error?.message || "Payment captured but registration failed.");
-            setPaymentStatus(error?.data?.message || error?.message || "Payment processing failed.");
+            const message = getApiErrorMessage(error, "Payment captured but registration failed.");
+            setPaymentStatus("");
+            setPaymentError(message);
             setLoading(false);
           }
         },
       });
 
       paymentObject.on("payment.failed", (response) => {
-        alert(response?.error?.description || "Payment failed. Please try again.");
-        setPaymentStatus(response?.error?.description || "Payment failed.");
+        const failureMessage = String(response?.error?.description || "").trim() || "Payment failed. Please try again.";
+        setPaymentStatus("");
+        setPaymentError(failureMessage);
         setLoading(false);
-        handleArchive(`Payment failed: ${response?.error?.description}`);
+        handleArchive(`Payment failed: ${failureMessage}`);
       });
 
       paymentObject.open();
     } catch (err) {
-      alert(err.message || "Unable to start payment.");
-      setPaymentStatus(err.message || "Unable to start payment.");
+      const message = getApiErrorMessage(err, "Unable to start payment.");
+      setPaymentStatus("");
+      setPaymentError(message);
       setLoading(false);
     }
   };
@@ -519,6 +536,12 @@ export default function PaymentPage() {
                           {loading && <Loader2 className="animate-spin text-amber-600 dark:text-amber-400" size={16} />}
                           {paymentStatus}
                         </div>
+                      </div>
+                    ) : null}
+
+                    {paymentError ? (
+                      <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-200">
+                        {paymentError}
                       </div>
                     ) : null}
 

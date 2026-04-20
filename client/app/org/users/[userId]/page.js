@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   ArrowLeft,
+  Download,
   Loader2,
   ShieldAlert,
   UserCog,
@@ -13,6 +14,7 @@ import {
 import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
 import {
+  useDownloadOrgUserProfilePdfMutation,
   useGetOrgUserByIdQuery,
   usePatchOrgUserMutation,
 } from "@/services/api/orgApi";
@@ -36,6 +38,53 @@ import {
 } from "@/utils/formValidation";
 
 const STATUS_OPTIONS = ["APPROVED", "PENDING", "REJECTED"];
+
+const toDisplayText = (value, fallback = "-") => {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+};
+
+const toDateLabel = (value, fallback = "-") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const toDateTimeLabel = (value, fallback = "-") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const toPhoneLabel = (countryCode, number) => {
+  const code = String(countryCode || "").trim();
+  const mobile = String(number || "").trim();
+  if (!code && !mobile) return "-";
+  return `${code}${mobile}`;
+};
+
+const toListLabel = (items = []) => {
+  const values = (Array.isArray(items) ? items : [])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  return values.length ? values.join(", ") : "-";
+};
 
 export default function OrgUserDetailPage() {
   const params = useParams();
@@ -66,8 +115,28 @@ export default function OrgUserDetailPage() {
   } = useGetOrgUserByIdQuery(userId, { skip: !Number.isFinite(userId) || userId <= 0 });
 
   const [patchUserMutation] = usePatchOrgUserMutation();
+  const [downloadOrgUserProfilePdf, { isLoading: downloadingProfilePdf }] =
+    useDownloadOrgUserProfilePdfMutation();
 
   const user = userData?.item || null;
+  const organization = user?.organization || null;
+  const attendanceSummary = user?.attendanceSummary || {};
+  const joiningDate = user?.membership?.joinedAt || user?.joinedAt || null;
+  const userMobileLabel = toPhoneLabel(user?.mobileCountryCode, user?.mobile);
+  const organizationPhoneLabel = toPhoneLabel(
+    organization?.phoneCountryCode,
+    organization?.phone
+  );
+  const organizationAddress = [
+    organization?.address,
+    organization?.city,
+    organization?.state,
+    organization?.country,
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
   const actorRole = normalizeRole(authUser?.currentRole);
   const manageableRoleOptions = useMemo(
     () => getManagedRoleOptions(actorRole),
@@ -90,6 +159,7 @@ export default function OrgUserDetailPage() {
   const canUpdateStatus = hasPermission(authUser, PERMISSIONS.USERS_STATUS_UPDATE);
   const canToggleAccess = hasPermission(authUser, PERMISSIONS.USERS_ACTIVE_TOGGLE);
   const canEditUser = hasPermission(authUser, PERMISSIONS.USERS_CREATE);
+  const canDownloadProfilePdf = hasPermission(authUser, PERMISSIONS.TEAM_VIEW);
 
   useEffect(() => {
     if (!user) return;
@@ -181,6 +251,33 @@ export default function OrgUserDetailPage() {
     }
   };
 
+  const downloadProfilePdf = async () => {
+    try {
+      setError("");
+      setMessage("");
+
+      const blob = await downloadOrgUserProfilePdf(userId).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const safeName = String(form.name || "user")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      anchor.href = url;
+      anchor.download = `${safeName || "user"}-profile-${userId}-hall-ticket.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+
+      setMessage("Hall ticket PDF generated successfully");
+    } catch (downloadError) {
+      setError(getErrorMessage(downloadError, "Failed to generate hall ticket PDF"));
+    }
+  };
+
   const onPermissionToggle = (permission) => {
     if (!canEditUser) return;
     setForm((prev) => ({
@@ -259,17 +356,33 @@ export default function OrgUserDetailPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={toggleAccess}
-            disabled={!canToggleAccess || togglingAccess}
-            className={`brand-btn brand-btn-sm w-full sm:w-auto disabled:opacity-60 ${
-              form.active ? "brand-btn-danger" : "brand-btn-soft"
-            }`}
-          >
-            {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <ShieldAlert size={15} />}
-            {form.active ? "Block User" : "Unblock User"}
-          </button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={downloadProfilePdf}
+              disabled={!canDownloadProfilePdf || downloadingProfilePdf}
+              className="brand-btn brand-btn-primary brand-btn-sm w-full sm:w-auto disabled:opacity-60"
+            >
+              {downloadingProfilePdf ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Download size={15} />
+              )}
+              Download Hall Ticket PDF
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleAccess}
+              disabled={!canToggleAccess || togglingAccess}
+              className={`brand-btn brand-btn-sm w-full sm:w-auto disabled:opacity-60 ${
+                form.active ? "brand-btn-danger" : "brand-btn-soft"
+              }`}
+            >
+              {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <ShieldAlert size={15} />}
+              {form.active ? "Block User" : "Unblock User"}
+            </button>
+          </div>
         </div>
 
         {error ? (
@@ -278,6 +391,52 @@ export default function OrgUserDetailPage() {
         {message ? (
           <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>
         ) : null}
+      </div>
+
+      <div className="light-glow-card-static space-y-5 rounded-[1.9rem] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Complete User Details</h3>
+          <p className="text-xs font-semibold text-slate-500">
+            Hall Ticket ID: {`ATTY-${toDisplayText(organization?.organizationCode, "ORG")}-${user.id}`}
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <DetailTile label="User ID" value={toDisplayText(user.id)} />
+          <DetailTile label="Role" value={formatRoleLabel(user.role)} />
+          <DetailTile label="Approval Status" value={toDisplayText(user.approvalStatus)} />
+          <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
+          <DetailTile label="Email" value={toDisplayText(user.email)} />
+          <DetailTile label="Mobile" value={userMobileLabel} />
+          <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
+          <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
+          <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
+          <DetailTile label="Joined On" value={toDateLabel(joiningDate)} />
+          <DetailTile label="Last Login" value={toDateTimeLabel(user.lastLoginAt)} />
+          <DetailTile label="Last Updated" value={toDateTimeLabel(user.updatedAt)} />
+          <DetailTile label="Organization" value={toDisplayText(organization?.name)} />
+          <DetailTile label="Org Code" value={toDisplayText(organization?.organizationCode)} />
+          <DetailTile label="Org Phone" value={organizationPhoneLabel} />
+          <DetailTile label="Org Address" value={toDisplayText(organizationAddress)} />
+          <DetailTile label="Teams" value={toListLabel(user.teamNames)} />
+          <DetailTile label="Leads Teams" value={toListLabel(user.ledTeamNames)} />
+          <DetailTile
+            label="Attendance Entries"
+            value={toDisplayText(Number(attendanceSummary.totalEntries || 0))}
+          />
+          <DetailTile
+            label="Present / Half / Absent"
+            value={`${Number(attendanceSummary.presentDays || 0)} / ${Number(attendanceSummary.halfDays || 0)} / ${Number(attendanceSummary.absentDays || 0)}`}
+          />
+          <DetailTile
+            label="Total Worked Minutes"
+            value={toDisplayText(Number(attendanceSummary.totalWorkedMinutes || 0))}
+          />
+          <DetailTile
+            label="Created By"
+            value={toDisplayText(user?.createdBy?.name || user?.createdBy?.email)}
+          />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -412,5 +571,14 @@ export default function OrgUserDetailPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+function DetailTile({ label, value }) {
+  return (
+    <div className="dashboard-detail-tile">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
+    </div>
   );
 }
