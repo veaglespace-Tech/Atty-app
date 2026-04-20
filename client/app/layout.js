@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { StoreProvider } from "@/components/StoreProvider";
 import AttyWidget from "@/components/AttyWidget";
 import SessionSync from "@/components/SessionSync";
+import "./globals.css";
 
 export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
