@@ -266,15 +266,15 @@ export default function OrgUserDetailPage() {
         .replace(/^-+|-+$/g, "");
 
       anchor.href = url;
-      anchor.download = `${safeName || "user"}-profile-${userId}-hall-ticket.pdf`;
+      anchor.download = `${safeName || "user"}-profile-${userId}-user-details.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
 
-      setMessage("Hall ticket PDF generated successfully");
+      setMessage("User details PDF downloaded successfully");
     } catch (downloadError) {
-      setError(getErrorMessage(downloadError, "Failed to generate hall ticket PDF"));
+      setError(getErrorMessage(downloadError, "Failed to download user details PDF"));
     }
   };
 
@@ -368,7 +368,7 @@ export default function OrgUserDetailPage() {
               ) : (
                 <Download size={15} />
               )}
-              Download Hall Ticket PDF
+              Download User Details PDF
             </button>
 
             <button
@@ -397,7 +397,7 @@ export default function OrgUserDetailPage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Complete User Details</h3>
           <p className="text-xs font-semibold text-slate-500">
-            Hall Ticket ID: {`ATTY-${toDisplayText(organization?.organizationCode, "ORG")}-${user.id}`}
+            User Details ID: {`ATTY-${toDisplayText(organization?.organizationCode, "ORG")}-${user.id}`}
           </p>
         </div>
 
