@@ -1,0 +1,42 @@
+name: Deploy Attendee
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "===== GO TO PROJECT ====="
+            cd /root/attendee || exit
+
+            echo "===== UPDATE CODE ====="
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "===== BACKEND ====="
+            cd server
+            npm install
+
+            pm2 restart attendee-server || pm2 start npm --name attendee-server -- start
+
+            echo "===== FRONTEND ====="
+            cd ../client
+
+            rm -rf .next
+            npm install
+            npm run build
+
+            pm2 restart attendee-client || pm2 start "npm run start" --name attendee-client
+
+            pm2 save
