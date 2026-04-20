@@ -17,40 +17,30 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            echo "===== CONNECTED TO VPS ====="
+            set -e
 
-            echo "===== GO TO PROJECT ====="
-            cd /root/attendee || exit
+            echo "===== CONNECTED ====="
 
-            echo "===== CURRENT BRANCH ====="
-            git branch
+            cd /root/attendee
 
-            echo "===== CLEAN + UPDATE CODE ====="
-            git fetch origin main
-            git checkout main
+            echo "===== UPDATE CODE ====="
+            git fetch origin
             git reset --hard origin/main
-            git pull origin main
 
-            echo "===== VERIFY LATEST COMMIT ====="
-            git log -1
+            echo "===== BACKEND ====="
+            cd server
+            mvn clean install -DskipTests
 
-            echo "===== BACKEND SETUP ====="
-            cd /root/attendee/server
-            npm install
+            pm2 restart attendee-server || true
 
-            echo "===== RELOAD BACKEND ====="
-            pm2 reload attendee-server || pm2 start npm --name "attendee-server" -- start
-
-            echo "===== FRONTEND BUILD ====="
-            cd /root/attendee/client
+            echo "===== FRONTEND ====="
+            cd ../client
             rm -rf .next
             npm install
             npm run build
 
-            echo "===== RELOAD FRONTEND ====="
-            pm2 reload attendee-client || pm2 start npm --name "attendee-client" -- start
+            pm2 restart attendee-client || true
 
-            echo "===== SAVE PM2 ====="
             pm2 save
 
-            echo "===== DEPLOYMENT DONE ====="
+            echo "===== DONE ====="
