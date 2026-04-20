@@ -17,26 +17,41 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            echo "===== CONNECTED TO VPS ====="
+
             echo "===== GO TO PROJECT ====="
             cd /root/attendee || exit
 
-            echo "===== UPDATE CODE ====="
-            git fetch origin
+            echo "===== CURRENT BRANCH ====="
+            git branch
+
+            echo "===== FORCE UPDATE CODE ====="
+            git fetch --all
             git reset --hard origin/main
 
-            echo "===== BACKEND ====="
-            cd server
+            echo "===== VERIFY LATEST COMMIT ====="
+            git log -1
+
+            echo "===== BACKEND SETUP ====="
+            cd /root/attendee/server
             npm install
 
-            pm2 restart attendee-server || pm2 start npm --name attendee-server -- start
+            echo "===== RESTART BACKEND ====="
+            pm2 delete attendee-server || true
+            pm2 start npm --name "attendee-server" -- start
 
-            echo "===== FRONTEND ====="
-            cd ../client
+            echo "===== FRONTEND BUILD ====="
+            cd /root/attendee/client
 
             rm -rf .next
             npm install
             npm run build
 
-            pm2 restart attendee-client || pm2 start "npm run start" --name attendee-client
+            echo "===== RESTART FRONTEND ====="
+            pm2 delete attendee-client || true
+            pm2 start "npm run start" --name "attendee-client"
 
+            echo "===== SAVE PM2 ====="
             pm2 save
+
+            echo "===== DEPLOYMENT DONE ====="
