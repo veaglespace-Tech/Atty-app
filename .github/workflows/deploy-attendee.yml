@@ -10,47 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VPS
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            echo "===== CONNECTED TO VPS ====="
+            set -e
 
-            echo "===== GO TO PROJECT ====="
+            echo "===== CONNECTED ====="
+
             cd /root/attendee || exit
 
-            echo "===== CURRENT BRANCH ====="
-            git branch
-
-            echo "===== CLEAN + UPDATE CODE ====="
-            git fetch origin main
-            git checkout main
-            git reset --hard origin/main
+            echo "===== UPDATE CODE ====="
             git pull origin main
 
-            echo "===== VERIFY LATEST COMMIT ====="
-            git log -1
+            echo "===== BACKEND (Node) ====="
+            cd server || exit
 
-            echo "===== BACKEND SETUP ====="
-            cd /root/attendee/server
             npm install
 
-            echo "===== RELOAD BACKEND ====="
-            pm2 reload attendee-server || pm2 start npm --name "attendee-server" -- start
+            # ⚠️ जर index.js नसेल तर बदल (server.js / app.js)
+            pm2 restart attendee-backend || pm2 start index.js --name attendee-backend
 
-            echo "===== FRONTEND BUILD ====="
-            cd /root/attendee/client
+            echo "===== FRONTEND ====="
+            cd ../client || exit
+
+            npm install
             rm -rf .next
-            npm install
             npm run build
 
-            echo "===== RELOAD FRONTEND ====="
-            pm2 reload attendee-client || pm2 start npm --name "attendee-client" -- start
+            pm2 delete attendee-frontend || true
+            pm2 start "npm run start -- -p 3002" --name attendee-frontend
 
-            echo "===== SAVE PM2 ====="
             pm2 save
 
-            echo "===== DEPLOYMENT DONE ====="
+            echo "===== DONE ====="
