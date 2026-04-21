@@ -8,7 +8,7 @@ The client now supports automatic API URL selection without editing code every t
 - Live/non-local hosts use `NEXT_PUBLIC_API_URL_PROD`
 - If `NEXT_PUBLIC_API_URL` is set, it overrides both
 
-Use `.env.example` as reference and keep your actual values in `.env`.
+Use `.env.example` as reference and keep your actual values in `.env.local` so they stay local to your machine.
 
 ## Getting Started
 

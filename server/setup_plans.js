@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("./config/load-env")();
 const prisma = require("./lib/prisma");
 
 const buildPlanFeatures = (userLimit) => [

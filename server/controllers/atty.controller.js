@@ -22,7 +22,8 @@ const attyChat = asyncHandler(async (req, res) => {
   res.json({
     answer: result.answer,
     confidence: result.confidence,
-    showForm: result.confidence === "low",
+    showForm: Boolean(req.user?.id) && result.topic === "unrelated",
+    topic: result.topic,
     suggestedActions: result.suggestedActions,
   });
 });

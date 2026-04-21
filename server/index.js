@@ -1,8 +1,4 @@
-const path = require("path");
-require("dotenv").config({
-  path: path.resolve(__dirname, ".env"),
-  override: true,
-});
+require("./config/load-env")();
 const Sentry = require("@sentry/node");
 const express = require("express");
 const compression = require("compression");

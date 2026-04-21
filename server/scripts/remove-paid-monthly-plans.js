@@ -1,5 +1,5 @@
+require("../config/load-env")();
 const prisma = require("../lib/prisma");
-require("dotenv").config();
 const { isLegacyPaidMonthlyPlan } = require("../services/plan.service");
 
 async function removePaidMonthlyPlans() {

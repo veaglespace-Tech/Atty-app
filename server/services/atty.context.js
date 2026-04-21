@@ -2,7 +2,28 @@ const prisma = require("../lib/prisma");
 const { resolveUserPermissions } = require("../constants/permissions");
 const { resolveUserRole, resolveOrganizationId } = require("../utils/membership");
 
+const buildGuestContext = () => ({
+  userId: null,
+  userName: "Guest",
+  userRole: "GUEST",
+  orgId: null,
+  orgName: null,
+  orgCode: null,
+  subscriptionStatus: "NONE",
+  subscriptionExpiry: null,
+  planName: null,
+  planCode: null,
+  maxUsers: null,
+  maxTeams: null,
+  teams: [],
+  permissions: [],
+});
+
 const buildAttyContext = async (user) => {
+  if (!user?.id) {
+    return buildGuestContext();
+  }
+
   try {
     const dbUser = await prisma.user.findUnique({
       where: { id: Number(user.id) },

@@ -353,9 +353,8 @@ export default function AttyWidget() {
     } catch {
       addMsg(
         "bot",
-        "I am having trouble connecting. Please try again or use the support form below.",
+        "I am having trouble connecting right now. Please try again in a moment.",
       );
-      setShowForm(true);
     }
   };
 
@@ -383,7 +382,7 @@ export default function AttyWidget() {
     <>
       {open ? (
         <div
-          className={`fixed bottom-20 left-3 right-3 z-50 flex min-w-0 max-h-[calc(100dvh-6rem)] w-auto max-w-none flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-24 sm:left-auto sm:right-4 sm:w-[24rem] sm:max-w-[calc(100vw-2rem)] sm:max-h-[min(82dvh,720px)] sm:rounded-[2rem] md:w-[26rem] lg:w-[28rem] 2xl:w-[30rem] ${widgetModeClass} ${theme.panel}`}
+          className={`fixed bottom-20 left-3 right-3 z-[80] flex min-w-0 max-h-[calc(100dvh-8.75rem)] w-auto max-w-none flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-5 sm:left-auto sm:right-4 sm:w-[22rem] sm:max-w-[calc(100vw-1.5rem)] sm:max-h-[calc(100dvh-6.75rem)] sm:rounded-[2rem] md:w-[23.5rem] lg:w-[25rem] 2xl:w-[26rem] ${widgetModeClass} ${theme.panel}`}
         >
           <div
             className={`relative flex flex-shrink-0 items-start gap-2.5 overflow-hidden px-3.5 py-3.5 sm:items-center sm:gap-3 sm:px-4 sm:py-4 ${theme.header}`}
@@ -421,7 +420,7 @@ export default function AttyWidget() {
 
             <button
               onClick={closeChat}
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/18 bg-white/10 text-white/75 transition hover:bg-white/16 hover:text-white sm:h-9 sm:w-9 sm:rounded-2xl"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/18 bg-white/10 text-white/75 sm:h-9 sm:w-9 sm:rounded-2xl"
               aria-label="Close Atty support"
             >
               <X size={18} />
@@ -540,23 +539,18 @@ export default function AttyWidget() {
         </div>
       ) : null}
 
-      <button
-        onClick={() => {
-          if (open) closeChat();
-          else setOpen(true);
-        }}
-        className={`fixed bottom-4 right-4 z-50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 sm:bottom-5 sm:right-5 ${open ? theme.fabActive : theme.fab}`}
-        aria-label="Open Atty support"
-      >
-        {open ? (
-          <X className="h-5 w-5" />
-        ) : (
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className={`fixed bottom-4 right-4 z-[80] flex items-center justify-center transition-all hover:scale-105 active:scale-95 sm:bottom-5 sm:right-5 ${theme.fab}`}
+          aria-label="Open Atty support"
+        >
           <div className="relative flex items-center justify-center">
             <MessageSquareText className="h-5 w-5" />
             <span className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white/70 dark:ring-slate-950/70" />
           </div>
-        )}
-      </button>
+        </button>
+      ) : null}
     </>
   );
 }

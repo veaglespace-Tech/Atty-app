@@ -1,4 +1,4 @@
-const { verifyToken } = require("./token.middleware");
+const { optionalToken, verifyToken } = require("./token.middleware");
 const { allowRoles } = require("./rbac.middleware");
 const { checkActiveSubscription } = require("./subscription.middleware");
 
@@ -15,5 +15,6 @@ module.exports = {
   userProtected,
   adminProtected,
   checkSubscription,
+  optionalToken,
   verifyToken,
 };

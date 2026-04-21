@@ -40,7 +40,9 @@ attendee/
 
 ### Server
 
-Create `server/.env` and set values like:
+Create `server/.env.local` for your machine-specific values. It overrides `server/.env` locally, stays out of git, and does not affect deployed environment variables.
+
+Example:
 
 ```env
 PORT=5000
@@ -72,10 +74,16 @@ SUPER_ADMIN_MOBILE="9999999999"
 
 ### Client
 
-Create `client/.env.local` only if you want to override the default API URL:
+Create `client/.env.local` to control which API your local frontend talks to:
 
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:5000/api"
+```
+
+If you want the local client to use the deployed backend instead, set:
+
+```env
+NEXT_PUBLIC_API_URL="https://atty.veaglespace.com/api"
 ```
 
 ## Installation
@@ -129,6 +137,12 @@ npm run dev
 ```
 
 Frontend runs on `http://localhost:3000` with Turbopack.
+
+## Local Dev Without Affecting Deployment
+
+- Use `server/.env.local` for your local database, JWT, and other secrets.
+- Use `client/.env.local` to choose between the local backend and deployed backend.
+- Deployment environment variables still take priority over repo files, so these local files are safe for development.
 
 ## Useful Scripts
 

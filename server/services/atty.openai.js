@@ -3,21 +3,119 @@ const loadCerebrasClient = () => {
   return sdk?.default || sdk?.Cerebras || sdk;
 };
 
+const UNRELATED_TOPIC = "unrelated";
+const PLATFORM_TOPIC = "platform";
+const SYSTEM_TOPIC = "system";
+
+const DEFAULT_UNRELATED_ANSWER =
+  "I am not familiar with that. I can help only with Veagle Attendee related questions.";
+const DEFAULT_PLATFORM_FALLBACK =
+  "I could not find a clear answer for that yet, but it does sound related to Veagle Attendee.";
+const DEFAULT_SYSTEM_FALLBACK =
+  "I am having trouble answering right now. Please try again in a moment.";
+
+const PLATFORM_KEYWORDS = Object.freeze([
+  "attendance",
+  "attendee",
+  "atty",
+  "punch",
+  "check in",
+  "check-in",
+  "check out",
+  "check-out",
+  "gps",
+  "location",
+  "geo",
+  "radius",
+  "team",
+  "member",
+  "admin",
+  "organization",
+  "organisation",
+  "org",
+  "user",
+  "dashboard",
+  "report",
+  "export",
+  "excel",
+  "pdf",
+  "subscription",
+  "plan",
+  "pricing",
+  "billing",
+  "payment",
+  "trial",
+  "renew",
+  "expire",
+  "login",
+  "log in",
+  "sign in",
+  "register",
+  "signup",
+  "sign up",
+  "forgot password",
+  "reset password",
+  "password",
+  "notification",
+  "qr",
+  "biometric",
+  "shift",
+  "leave",
+  "payroll",
+  "salary",
+  "overtime",
+  "mobile app",
+  "document",
+  "upload",
+  "work from home",
+  "remote attendance",
+  "attendance correction",
+  "past attendance",
+  "archive",
+  "delete organization",
+]);
+
+const UNRELATED_KEYWORDS = Object.freeze([
+  "cricket",
+  "football",
+  "ipl",
+  "recipe",
+  "weather",
+  "movie",
+  "song",
+  "stock",
+  "bitcoin",
+  "news",
+  "politics",
+  "joke",
+  "poem",
+  "horoscope",
+  "match score",
+]);
+
 const getClient = () => {
   const Cerebras = loadCerebrasClient();
 
   if (!process.env.CEREBRAS_API_KEY) {
     throw new Error("CEREBRAS_API_KEY is not set in .env");
   }
+
   return new Cerebras({ apiKey: process.env.CEREBRAS_API_KEY });
 };
 
 const ROLE_INSTRUCTIONS = {
-  SUPER_ADMIN: `This user is a Super Admin with full platform access. They manage all organizations, subscription plans, and system configuration.`,
-  ORG_ADMIN: `This user is an Organization Admin. They have full control over their organization: manage subscription via Razorpay, create Sub Admins, manage teams and Team Leaders, view analytics, manage employee records.`,
-  ADMIN: `This user is a Admin. They can manage users, assign roles, manage team locations, and view reports. They CANNOT manage subscriptions or billing.`,
-  TEAM_LEADER: `This user is a Team Leader. They can view and manage attendance for their assigned team(s), monitor team members, and view team reports. They CANNOT access billing, manage other teams, or create users.`,
-  MEMBER: `This user is a Member (employee). They can punch in/out using GPS location, view their own attendance records, and view their team info. They CANNOT manage other users or access any admin features.`,
+  GUEST:
+    "This visitor is not logged in. Answer platform questions in a general way and ask them to sign in only when workspace-specific data is required.",
+  SUPER_ADMIN:
+    "This user is a Super Admin with full platform access. They manage all organizations, subscription plans, and system configuration.",
+  ORG_ADMIN:
+    "This user is an Organization Admin. They can manage subscription, users, teams, attendance, reports, and organization setup.",
+  ADMIN:
+    "This user is an Admin. They can manage users, teams, and reports, but they cannot manage subscriptions or billing.",
+  TEAM_LEADER:
+    "This user is a Team Leader. They can manage attendance and reports for their assigned teams.",
+  MEMBER:
+    "This user is a Member. They can punch in or out, view their own attendance, and check their team information.",
 };
 
 const buildSystemPrompt = (ctx) => {
@@ -25,77 +123,48 @@ const buildSystemPrompt = (ctx) => {
     ? ` (expires ${new Date(ctx.subscriptionExpiry).toLocaleDateString("en-IN")})`
     : "";
 
-  const subNote =
+  const subscriptionNote =
     {
-      TRIAL: `User is on a FREE TRIAL${expiryNote}. Remind them to upgrade before it ends if relevant.`,
+      TRIAL: `User is on a free trial${expiryNote}.`,
       ACTIVE: `User has an active subscription${expiryNote}.`,
-      EXPIRED: `User's subscription has EXPIRED. Guide them to renew from the Subscription section in their dashboard.`,
-      NONE: `User has no active subscription.`,
-      UNKNOWN: `Subscription status is unknown.`,
-    }[ctx.subscriptionStatus] || "";
+      EXPIRED:
+        "User subscription has expired. Guide them to renew from the Subscription section if relevant.",
+      NONE: "User has no active subscription.",
+      UNKNOWN: "Subscription status is unknown.",
+    }[ctx.subscriptionStatus] || "Subscription status is unknown.";
 
-  return `You are Atty, the friendly support assistant for Veagle Attendee — an employee attendance management system.
+  return `You are Atty, the friendly support assistant for Veagle Attendee, an employee attendance management system.
 
-PLATFORM OVERVIEW:
-Veagle Attendee is a web-based attendance management system. Here is EXACTLY what exists and what does not.
-
-FEATURES THAT EXIST:
-- Punch in and punch out using current GPS location
-- Geo-fencing — employee must be within a defined radius to mark attendance
-- Roles: SUPER_ADMIN, ORG_ADMIN, ADMIN, TEAM_LEADER, MEMBER
-- Teams — create teams, assign team leaders, add members
-- Attendance records — view daily attendance, present/absent/late status
-- Late minutes and total working minutes calculated automatically
-- Attendance reports — filter by Daily, Weekly, Monthly — Excel and PDF export available
-- Free trial = 7 days of FULL access to ALL features — nothing is locked or restricted
-- After 7 days the trial expires and the org must subscribe to a paid plan to continue
-- There are no feature restrictions during the free trial — every feature is available
-- Org Admin can manage subscription and billing from Subscription section
-- Bulk user operations via Excel import/export
-- Organizations cannot be deleted by Org Admin
-- Only Super Admin can deactivate or archive an organization from the Organizations section
-- Org Admin has no option to delete or archive their own organization
-- Super Admin manages all organizations and plans platform-wide
-- Organization registration — anyone can register a new organization from the sign up page
-- After registration a 7 day free trial starts automatically
-- Forgot password — user can reset password from the login page via email link
+PLATFORM FACTS:
+- Users can punch in and punch out using current GPS location.
+- Geo-fencing is required for attendance marking.
+- Roles are SUPER_ADMIN, ORG_ADMIN, ADMIN, TEAM_LEADER, MEMBER.
+- Teams, attendance, reports, subscriptions, pricing, registration, and forgot password are valid platform topics.
+- Attendance reports can be exported.
+- A 7 day free trial exists with full access.
+- Org Admin manages subscription and billing.
+- Organization registration is available from the public sign up flow.
+- Forgot password works through the login page via email link.
 
 FEATURES THAT DO NOT EXIST:
-- No attendance reminders or push notifications
-- No QR code based check-in
-- No biometric integration
-- No shift scheduling or shift management
-- No leave management or leave applications
-- No payroll or salary features
-- No overtime calculation
-- No mobile app (web only)
-- No chat or messaging between users
-- No document uploads
-- No custom fields or forms
-- No feature request or feedback system
-- No Settings section in any dashboard
-- No Profile section in dashboard
-- No in-app password change without email verification
-- No remote attendance marking — employees MUST be physically within the defined geo-fence radius to punch in
-- No work from home attendance mode
-- No remote location override for regular members
-- Admin cannot enable remote work location for members
-- No editing of past attendance records — nobody can edit, modify or override past attendance
-- No attendance correction or adjustment feature
-- No manual attendance entry for past dates
-- Attendance records are final once marked
-- No self-delete or self-archive option for Org Admin
-- Org Admin cannot delete their own organization
-- There is no delete organization button for any role except Super Admin deactivation
+- QR check-in
+- biometric integration
+- shift scheduling
+- leave management
+- payroll
+- overtime calculation
+- mobile app
+- user chat or messaging
+- document uploads
+- custom fields
+- work from home attendance mode
+- editing past attendance
 
-DASHBOARD SECTIONS THAT ACTUALLY EXIST:
-ORG ADMIN dashboard has: Dashboard, Teams, Users, Attendance, Reports, Subscription, Notifications
-TEAM LEADER dashboard has: Dashboard, Teams, Attendance, Reports
-MEMBER dashboard has: Dashboard, Attendance
-SUPER ADMIN dashboard has: Dashboard, Organizations, Plans, Payments, Analytics
-
-STRICT RULE: Never mention a section that is not listed above for that role.
-STRICT RULE: If someone asks about a feature not in the EXISTS list, say warmly it is not available yet. Never make up features.
+DASHBOARD SECTIONS:
+- ORG_ADMIN: Dashboard, Teams, Users, Attendance, Reports, Subscription, Notifications
+- TEAM_LEADER: Dashboard, Teams, Attendance, Reports
+- MEMBER: Dashboard, Attendance
+- SUPER_ADMIN: Dashboard, Organizations, Plans, Payments, Analytics
 
 CURRENT USER:
 - Name: ${ctx.userName}
@@ -109,40 +178,290 @@ ROLE CONTEXT:
 ${ROLE_INSTRUCTIONS[ctx.userRole] || ROLE_INSTRUCTIONS.MEMBER}
 
 SUBSCRIPTION CONTEXT:
-${subNote}
+${subscriptionNote}
 
-IMPORTANT CLARIFICATION:
-- Creating an organization = registering a new org at the sign up page — open to anyone
-- Managing an organization = done by Org Admin from the dashboard after registration
-- Never confuse these two
+RESPONSE RULES:
+1. Answer only about Veagle Attendee.
+2. Keep answers short, warm, and in plain language.
+3. Use 1 to 2 sentences only.
+4. Do not invent features or dashboard sections.
+5. If a feature does not exist, say so clearly and warmly, and still treat it as a platform question.
+6. If the user is not logged in, still answer Veagle Attendee questions in a general way.
+7. If the question is unrelated to Veagle Attendee, answer with this meaning only: "I am not familiar with that. I can help only with Veagle Attendee related questions."
+8. Set topic to "platform" for any Veagle Attendee question, even when the feature does not exist.
+9. Set topic to "unrelated" only when the question is clearly outside Veagle Attendee.
+10. Set confidence to "low" only for unrelated questions. Otherwise use "high".
+11. Never mention support forms, escalation, or contacting support in the answer.
 
-ANSWER RULES:
-1. Talk like a helpful colleague — friendly, warm, and simple. Not like a manual.
-2. Use plain everyday language. Never say "navigate to" or mention internal paths.
-3. Keep answers to 1 to 2 sentences max. No bullet points, no headers.
-4. If someone is having trouble, be reassuring.
-5. For location/punch-in issues always mention checking if GPS is turned on.
-6. For billing questions gently say only the Org Admin can manage that.
-7. Set confidence to "high" for ANY question about attendance, roles, teams, subscription, punch-in/out, reports, or general platform usage.
-8. Only set confidence to "low" if completely unrelated to the platform (cricket, recipes, weather).
-9. Never say "let me check" or "I will look into that" — Atty cannot perform actions.
-10. If a feature clearly does not exist in the app, say so warmly and set confidence to "high" — do NOT fall back to support form just because a feature is missing.
-11. Only set confidence to "low" if the question is completely unrelated to the platform (cricket, recipes, weather) OR if you genuinely have no information about it at all.
+Return only a JSON object in this exact shape:
+{"answer":"your answer","confidence":"high","topic":"platform","suggestedActions":[]}`;
+};
 
-TONE EXAMPLES:
-BAD: "Navigate to /org/dashboard and click the Subscription tab."
-GOOD: "You can check your subscription from the Subscription section in your dashboard!"
+const normalizeTopic = (parsed = {}) => {
+  if (parsed.topic === UNRELATED_TOPIC) {
+    return UNRELATED_TOPIC;
+  }
 
-BAD: "Your GPS coordinates are outside the defined attendance radius."
-GOOD: "Looks like you are a bit outside the office area. Make sure your location is turned on and try again!"
+  if (parsed.topic === PLATFORM_TOPIC) {
+    return PLATFORM_TOPIC;
+  }
 
-IMPORTANT: Default to "high" confidence. Only use "low" for clearly off-topic questions.
+  if (parsed.confidence === "low") {
+    return UNRELATED_TOPIC;
+  }
 
-YOU MUST RESPOND WITH ONLY A JSON OBJECT. NO OTHER TEXT BEFORE OR AFTER.
-DO NOT explain. DO NOT greet. START with { and END with }
+  return PLATFORM_TOPIC;
+};
 
-Respond in this exact format:
-{"answer":"your friendly answer here","confidence":"high","suggestedActions":[]}`;
+const normalizeAnswer = (answer, topic) => {
+  const trimmed = String(answer || "").trim();
+
+  if (topic === UNRELATED_TOPIC) {
+    return DEFAULT_UNRELATED_ANSWER;
+  }
+
+  return trimmed || DEFAULT_PLATFORM_FALLBACK;
+};
+
+const normalizeMessage = (message) =>
+  String(message || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const includesAny = (text, keywords) => keywords.some((keyword) => text.includes(keyword));
+
+const isPlatformQuestion = (message) => includesAny(message, PLATFORM_KEYWORDS);
+
+const isClearlyUnrelatedQuestion = (message) =>
+  includesAny(message, UNRELATED_KEYWORDS) || (!isPlatformQuestion(message) && /\b(recipe|score|weather|movie|song|cricket|football|ipl|stock|bitcoin|politic|joke)\b/.test(message));
+
+const buildSubscriptionAnswer = (ctx) => {
+  if (ctx.subscriptionStatus === "ACTIVE") {
+    return ctx.planName
+      ? `Your workspace is on an active ${ctx.planName} subscription. The Org Admin can review it anytime from the Subscription section.`
+      : "Your workspace has an active subscription. The Org Admin can review full plan details from the Subscription section.";
+  }
+
+  if (ctx.subscriptionStatus === "TRIAL") {
+    return "Your workspace is on the 7 day free trial right now. The Org Admin can check plan and expiry details from the Subscription section.";
+  }
+
+  if (ctx.subscriptionStatus === "EXPIRED") {
+    return "Your workspace subscription has expired. The Org Admin can renew it from the Subscription section.";
+  }
+
+  return "Subscription is managed from the Subscription section by the Org Admin. New organizations start with a 7 day free trial.";
+};
+
+const buildRuleBasedFallback = (message, ctx) => {
+  const normalizedMessage = normalizeMessage(message);
+
+  if (isClearlyUnrelatedQuestion(normalizedMessage)) {
+    return {
+      answer: DEFAULT_UNRELATED_ANSWER,
+      confidence: "low",
+      topic: UNRELATED_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "punch in",
+      "punch out",
+      "check in",
+      "check out",
+      "mark attendance",
+      "attendance mark",
+    ])
+  ) {
+    return {
+      answer:
+        "Open the Attendance section, turn on your GPS, and make sure you are inside your organization location radius before you punch in or out.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "location rejected",
+      "gps",
+      "geo",
+      "radius",
+      "outside location",
+      "location issue",
+    ])
+  ) {
+    return {
+      answer:
+        "This usually means your GPS is off or you are outside the allowed attendance radius. Turn on accurate location and try again from inside the work area.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "attendance",
+      "attendance record",
+      "my attendance",
+      "history",
+      "present",
+      "absent",
+      "late",
+    ])
+  ) {
+    return {
+      answer:
+        "You can check your attendance from the Attendance section. For filtered summaries and downloads, use the Reports section if your role has access to it.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "report",
+      "export",
+      "excel",
+      "pdf",
+    ])
+  ) {
+    return {
+      answer:
+        "Reports can be filtered by period and exported in Excel or PDF. Use the Reports section in your dashboard to generate them.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "subscription",
+      "plan",
+      "pricing",
+      "billing",
+      "payment",
+      "trial",
+      "renew",
+      "expired",
+    ])
+  ) {
+    return {
+      answer: buildSubscriptionAnswer(ctx),
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "team",
+      "team leader",
+      "member",
+      "user",
+      "role",
+      "manage team",
+    ])
+  ) {
+    return {
+      answer:
+        "Teams and users are managed from the dashboard based on your role. Org Admin can manage teams and users fully, while Team Leaders mainly handle their assigned team attendance and reports.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "forgot password",
+      "reset password",
+      "password reset",
+      "login",
+      "sign in",
+    ])
+  ) {
+    return {
+      answer:
+        "Use the Forgot Password option on the login page to reset your password through email. In-app password change without email verification is not available here.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "register organization",
+      "create organization",
+      "register org",
+      "sign up organization",
+      "organization registration",
+    ])
+  ) {
+    return {
+      answer:
+        "Anyone can register a new organization from the public sign up flow. A 7 day free trial starts automatically after registration.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (
+    includesAny(normalizedMessage, [
+      "qr",
+      "biometric",
+      "shift",
+      "leave",
+      "payroll",
+      "salary",
+      "overtime",
+      "mobile app",
+      "chat",
+      "message",
+      "document upload",
+      "custom field",
+      "work from home",
+      "remote attendance",
+      "edit past attendance",
+      "attendance correction",
+      "settings",
+      "profile section",
+    ])
+  ) {
+    return {
+      answer:
+        "That feature is not available in Veagle Attendee right now. Atty can still help with attendance, teams, reports, subscription, login, and registration questions.",
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  if (isPlatformQuestion(normalizedMessage)) {
+    return {
+      answer: DEFAULT_PLATFORM_FALLBACK,
+      confidence: "high",
+      topic: PLATFORM_TOPIC,
+      suggestedActions: [],
+    };
+  }
+
+  return {
+    answer: DEFAULT_UNRELATED_ANSWER,
+    confidence: "low",
+    topic: UNRELATED_TOPIC,
+    suggestedActions: [],
+  };
 };
 
 const askOpenAI = async (message, context) => {
@@ -169,20 +488,29 @@ const askOpenAI = async (message, context) => {
 
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    const topic = normalizeTopic(parsed);
 
     console.log("[Atty] Confidence:", parsed.confidence);
+    console.log("[Atty] Topic:", topic);
 
     return {
-      answer: parsed.answer || "I couldn't find a reliable answer for that.",
-      confidence: parsed.confidence === "high" ? "high" : "low",
+      answer: normalizeAnswer(parsed.answer, topic),
+      confidence: topic === UNRELATED_TOPIC ? "low" : "high",
+      topic,
       suggestedActions: [],
     };
   } catch (err) {
     console.error("[Atty] AI error:", err.message);
+    const fallback = buildRuleBasedFallback(message, context);
+
+    if (fallback.topic === PLATFORM_TOPIC || fallback.topic === UNRELATED_TOPIC) {
+      return fallback;
+    }
+
     return {
-      answer:
-        "I'm having trouble right now. Please try again or use the support form below.",
-      confidence: "low",
+      answer: DEFAULT_SYSTEM_FALLBACK,
+      confidence: "high",
+      topic: SYSTEM_TOPIC,
       suggestedActions: [],
     };
   }
