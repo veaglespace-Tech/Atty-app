@@ -18,6 +18,34 @@ const QUICK_QUESTIONS = [
   "How do I manage my team?",
   "How do I generate reports?",
 ];
+const SUGGESTED_QUESTION_LIMIT = 3;
+
+function normalizeQuestion(question) {
+  return String(question || "").trim().toLowerCase();
+}
+
+function getSuggestedQuestions(activeQuestion) {
+  const normalizedActiveQuestion = normalizeQuestion(activeQuestion);
+  const activeQuestionIndex = QUICK_QUESTIONS.findIndex(
+    (question) => normalizeQuestion(question) === normalizedActiveQuestion,
+  );
+
+  if (activeQuestionIndex === -1) return [];
+
+  const suggestions = [];
+
+  for (let offset = 1; offset < QUICK_QUESTIONS.length; offset += 1) {
+    suggestions.push(
+      QUICK_QUESTIONS[(activeQuestionIndex + offset) % QUICK_QUESTIONS.length],
+    );
+
+    if (suggestions.length === SUGGESTED_QUESTION_LIMIT) {
+      break;
+    }
+  }
+
+  return suggestions;
+}
 
 const CHAT_THEME = {
   light: {
@@ -326,11 +354,21 @@ export default function AttyWidget() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatLoading, showForm]);
 
-  const addMsg = (role, content, extra = {}) =>
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now() + Math.random(), role, content, ...extra },
-    ]);
+  const addMsg = (role, content, extra = {}, options = {}) =>
+    setMessages((prev) => {
+      const nextMessages = options.clearSuggestions
+        ? prev.map((message) =>
+            message?.suggestions?.length
+              ? { ...message, suggestions: [] }
+              : message,
+          )
+        : prev;
+
+      return [
+        ...nextMessages,
+        { id: Date.now() + Math.random(), role, content, ...extra },
+      ];
+    });
 
   const closeChat = () => {
     setOpen(false);
@@ -340,20 +378,25 @@ export default function AttyWidget() {
   };
 
   const handleAsk = async (question) => {
-    if (!question.trim() || chatLoading) return;
+    const normalizedQuestion = String(question || "").trim();
+
+    if (!normalizedQuestion || chatLoading) return;
 
     setInput("");
     setShowForm(false);
-    addMsg("user", question);
+    addMsg("user", normalizedQuestion, {}, { clearSuggestions: true });
 
     try {
-      const data = await askAtty(question).unwrap();
-      addMsg("bot", data.answer);
+      const data = await askAtty(normalizedQuestion).unwrap();
+      addMsg("bot", data.answer, {
+        suggestions: data.showForm ? [] : getSuggestedQuestions(normalizedQuestion),
+      });
       if (data.showForm) setShowForm(true);
     } catch {
       addMsg(
         "bot",
         "I am having trouble connecting right now. Please try again in a moment.",
+        { suggestions: getSuggestedQuestions(normalizedQuestion) },
       );
     }
   };
@@ -382,7 +425,7 @@ export default function AttyWidget() {
     <>
       {open ? (
         <div
-          className={`fixed bottom-20 left-3 right-3 z-[80] flex min-w-0 max-h-[calc(100dvh-8.75rem)] w-auto max-w-none flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-5 sm:left-auto sm:right-4 sm:w-[22rem] sm:max-w-[calc(100vw-1.5rem)] sm:max-h-[calc(100dvh-6.75rem)] sm:rounded-[2rem] md:w-[23.5rem] lg:w-[25rem] 2xl:w-[26rem] ${widgetModeClass} ${theme.panel}`}
+          className={`fixed bottom-20 left-1/2 z-[80] flex min-w-0 w-[calc(100vw-1.5rem)] max-w-[24rem] -translate-x-1/2 max-h-[min(70dvh,36rem)] flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-5 sm:left-auto sm:right-4 sm:w-[22rem] sm:max-w-[calc(100vw-1.5rem)] sm:max-h-[calc(100dvh-6.75rem)] sm:translate-x-0 sm:rounded-[2rem] md:w-[23.5rem] lg:w-[25rem] 2xl:w-[26rem] ${widgetModeClass} ${theme.panel}`}
         >
           <div
             className={`relative flex flex-shrink-0 items-start gap-2.5 overflow-hidden px-3.5 py-3.5 sm:items-center sm:gap-3 sm:px-4 sm:py-4 ${theme.header}`}
@@ -456,13 +499,38 @@ export default function AttyWidget() {
                 ) : null}
 
                 <div
-                  className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed sm:max-w-[84%] ${
-                    msg.role === "user"
-                      ? `rounded-tr-sm ${theme.userBubble}`
-                      : `${theme.botBubble} rounded-tl-sm`
+                  className={`flex max-w-[88%] flex-col gap-2 sm:max-w-[84%] ${
+                    msg.role === "user" ? "items-end" : "items-start"
                   }`}
                 >
-                  {msg.content}
+                  <div
+                    className={`rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                      msg.role === "user"
+                        ? `rounded-tr-sm ${theme.userBubble}`
+                        : `${theme.botBubble} rounded-tl-sm`
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+
+                  {msg.role === "bot" && msg.suggestions?.length ? (
+                    <div className="w-full">
+                      <p className={`mb-2 pl-1 text-[10px] font-bold uppercase tracking-[0.12em] ${theme.sectionText}`}>
+                        Suggested questions
+                      </p>
+                      <div className="grid gap-2">
+                        {msg.suggestions.map((suggestedQuestion) => (
+                          <button
+                            key={suggestedQuestion}
+                            onClick={() => handleAsk(suggestedQuestion)}
+                            className={theme.quickButton}
+                          >
+                            {suggestedQuestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
