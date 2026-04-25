@@ -37,6 +37,7 @@ jobs:
             echo "===== BACKEND SETUP ====="
             cd /root/attendee/server
             npm install
+            npx prisma migrate deploy
 
             echo "===== RELOAD BACKEND ====="
             pm2 reload attendee-server || pm2 start npm --name "attendee-server" -- start
