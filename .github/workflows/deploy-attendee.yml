@@ -18,24 +18,26 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            set -e
-
             echo "===== CONNECTED TO VPS ====="
 
             echo "===== GO TO PROJECT ====="
-            cd /root/attendee
+            cd /root/attendee || exit
 
-            echo "===== UPDATE CODE ====="
+            echo "===== CURRENT BRANCH ====="
+            git branch
+
+            echo "===== CLEAN + UPDATE CODE ====="
             git fetch origin main
             git checkout main
             git reset --hard origin/main
+            git pull origin main
 
             echo "===== VERIFY LATEST COMMIT ====="
             git log -1
 
             echo "===== BACKEND SETUP ====="
             cd /root/attendee/server
-            npm ci
+            npm install
             npx prisma migrate deploy
 
             echo "===== RELOAD BACKEND ====="
@@ -43,7 +45,8 @@ jobs:
 
             echo "===== FRONTEND BUILD ====="
             cd /root/attendee/client
-            npm ci
+            rm -rf .next
+            npm install
             npm run build
 
             echo "===== RELOAD FRONTEND ====="
