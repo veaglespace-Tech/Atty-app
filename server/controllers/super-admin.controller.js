@@ -202,16 +202,6 @@ const filterOrganizationItems = (items = [], filters = {}) =>
       item.name,
       item.code,
       item.email,
-      item.phone,
-      item.phoneCountryCode,
-      item.adminName,
-      item.adminEmail,
-      item.adminPhone,
-      item.adminPhoneCountryCode,
-      item.planName,
-      item.planCode,
-      [item.phoneCountryCode, item.phone].filter(Boolean).join(" "),
-      [item.adminPhoneCountryCode, item.adminPhone].filter(Boolean).join(" "),
     ]
       .map((value) => String(value || "").toLowerCase())
       .join(" ");
@@ -267,7 +257,7 @@ const buildExportWorkbookBuffer = ({
   const headerRowNumber = infoLines.length + 3;
 
   worksheet["!cols"] = normalizedColumns.map((column) => ({
-    wch: Math.max(12, Math.round(Number(column.width || 84) / 6)),
+    wch: Math.max(12, Math.round(Number(column.width || 84) / 4.5)),
   }));
   worksheet["!merges"] = Array.from({ length: infoLines.length + 1 }, (_, index) => ({
     s: { r: index, c: 0 },
@@ -963,6 +953,83 @@ exports.getSuperAdminOrganizationById = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getSuperAdminOrganizationUsers = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      orgId: organizationId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      mobileCountryCode: true,
+      role: true,
+      status: true,
+      isActive: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.status(200).json({
+    success: true,
+    items: users,
+  });
+});
+
+exports.getSuperAdminOrganizationTeams = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  const teams = await prisma.team.findMany({
+    where: {
+      orgId: organizationId,
+      deletedAt: null,
+    },
+    include: {
+      leader: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      _count: {
+        select: {
+          members: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const items = teams.map((team) => ({
+    id: team.id,
+    name: team.name,
+    description: team.description,
+    isActive: team.isActive,
+    leader: team.leader ? { id: team.leader.id, name: team.leader.name, email: team.leader.email } : null,
+    memberCount: team._count?.members || 0,
+    createdAt: team.createdAt,
+  }));
+
+  res.status(200).json({
+    success: true,
+    items,
+  });
+});
+
 exports.patchSuperAdminOrganization = asyncHandler(async (req, res) => {
   const organizationId = parseId(req.params.organizationId);
   if (!organizationId) {
@@ -1601,18 +1668,18 @@ exports.downloadSuperAdminOrganizationsPdf = asyncHandler(async (req, res) => {
   const payload = await buildSuperAdminOrganizationsPayload(limit, filters);
   const filterLabel = formatOrganizationFiltersLabel(filters);
   const exportColumns = [
-    { key: "entryNo", label: "No.", width: 42, align: "left" },
-    { key: "name", label: "Organization", width: 128 },
-    { key: "code", label: "Org Code", width: 72, align: "left" },
-    { key: "adminName", label: "Admin", width: 94 },
-    { key: "adminEmail", label: "Admin Email", width: 132 },
-    { key: "planName", label: "Plan", width: 86 },
-    { key: "subscriptionStatus", label: "Subscription", width: 84, align: "left" },
-    { key: "users", label: "Users", width: 54, align: "left" },
-    { key: "teams", label: "Teams", width: 54, align: "left" },
-    { key: "successfulPayments", label: "Payments", width: 68, align: "left" },
-    { key: "totalRevenueLabel", label: "Revenue", width: 84, align: "left" },
-    { key: "lastPaymentAtLabel", label: "Last Payment", width: 114 },
+    { key: "entryNo", label: "No.", width: 35, align: "left" },
+    { key: "name", label: "Organization", width: 140 },
+    { key: "code", label: "Org Code", width: 70, align: "left" },
+    { key: "adminName", label: "Admin", width: 120 },
+    { key: "adminEmail", label: "Admin Email", width: 160 },
+    { key: "planName", label: "Plan", width: 80 },
+    { key: "subscriptionStatus", label: "Subscription", width: 85, align: "left" },
+    { key: "users", label: "Users", width: 55, align: "left" },
+    { key: "teams", label: "Teams", width: 55, align: "left" },
+    { key: "successfulPayments", label: "Payments", width: 65, align: "left" },
+    { key: "totalRevenueLabel", label: "Revenue", width: 90, align: "left" },
+    { key: "lastPaymentAtLabel", label: "Last Payment", width: 110 },
   ];
 
   const pdfBuffer = await buildGenericTablePdf({
@@ -1629,6 +1696,7 @@ exports.downloadSuperAdminOrganizationsPdf = asyncHandler(async (req, res) => {
       totalRevenueLabel: formatMoney(item.totalRevenue || 0),
       lastPaymentAtLabel: formatDateTime(item.lastPaymentAt),
     })),
+    size: "A3",
   });
 
   res.setHeader("Content-Type", "application/pdf");

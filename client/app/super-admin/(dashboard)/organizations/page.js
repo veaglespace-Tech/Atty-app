@@ -101,9 +101,6 @@ export default function SuperAdminOrganizationsPage() {
         organization.name,
         organization.code,
         organization.email,
-        organization.phone,
-        organization.planName,
-        organization.subscriptionStatus,
       ]
         .map((value) => String(value || "").toLowerCase())
         .join(" ")
@@ -159,8 +156,8 @@ export default function SuperAdminOrganizationsPage() {
 
   return (
     <section className="space-y-6">
-      <div className={`${panelClassName} mobile-compact-panel relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.14),transparent_28%)]" />
+      <div className={`${panelClassName} mobile-compact-panel relative z-20`}>
+        <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.14),transparent_28%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <SectionEyebrow className="mobile-hide-chip border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
@@ -175,7 +172,7 @@ export default function SuperAdminOrganizationsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:min-w-[300px]">
+          <div className="flex flex-col gap-3 sm:min-w-[240px]">
             <div className="dashboard-summary-card">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                 Live View
@@ -196,7 +193,7 @@ export default function SuperAdminOrganizationsPage() {
                 Refresh
               </button>
 
-              <div className="sm:col-span-2">
+              <div className="min-w-0">
                 <DownloadMenuButton
                   label="Download"
                   onDownloadPdf={onDownloadPdf}
@@ -247,7 +244,7 @@ export default function SuperAdminOrganizationsPage() {
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Name, code, email, phone"
+                placeholder="Name, code, email"
                 className="dashboard-field-control w-full pl-9 pr-3 text-sm"
               />
             </div>

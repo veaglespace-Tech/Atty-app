@@ -58,7 +58,8 @@ const ASSIGNABLE_PERMISSIONS_BY_ROLE = Object.freeze({
 const normalizePermission = (permission) => {
   if (!permission) return null;
   const normalized = String(permission).toUpperCase().trim().replace(/[\s-]+/g, "_");
-  return ALL_PERMISSIONS.includes(normalized) ? normalized : null;
+  // Allow if it's in the hardcoded list OR if it follows the pattern (for DB permissions)
+  return /^[A-Z0-9_]+$/.test(normalized) ? normalized : null;
 };
 
 const normalizePermissionList = (permissions = []) => {

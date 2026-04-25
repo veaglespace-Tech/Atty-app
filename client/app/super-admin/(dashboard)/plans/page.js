@@ -8,10 +8,12 @@ import {
   Plus,
   X,
   IndianRupee,
-  Activity
+  Activity,
+  Trash2
 } from "lucide-react";
 import { 
-  useCreatePlanMutation 
+  useCreatePlanMutation,
+  useDeletePlanMutation
 } from "@/services/api/planApi";
 import { useGetSuperAdminPlansQuery } from "@/services/api/superAdminApi";
 import Link from "next/link";
@@ -65,6 +67,7 @@ export default function SuperAdminPlansPage() {
   } = useGetSuperAdminPlansQuery();
   
   const [createPlanMutation] = useCreatePlanMutation();
+  const [deletePlanMutation] = useDeletePlanMutation();
 
   const plans = useMemo(
     () => filterVisiblePlans(Array.isArray(data?.items) ? data.items : []),
@@ -166,6 +169,28 @@ export default function SuperAdminPlansPage() {
       setError(err?.data?.message || err?.error || "Failed to process plan");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeletePlan = async (e, plan) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (
+      !window.confirm(
+        `Are you sure you want to PERMANENTLY DELETE plan "${plan.name}"? This action cannot be undone.`,
+      )
+    )
+      return;
+
+    try {
+      setError("");
+      setMessage("");
+      await deletePlanMutation(plan.id).unwrap();
+      setMessage("Plan deleted successfully.");
+      await refetch();
+    } catch (err) {
+      setError(err?.data?.message || err?.error || "Failed to delete plan");
     }
   };
 
@@ -330,18 +355,26 @@ export default function SuperAdminPlansPage() {
                 className={planTileClassName}
             >
                 <div className="brand-metric-glow" />
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       {formatPlanCodeLabel(plan.code)}
                     </span>
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
-                        plan.active !== false
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-                          : "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300"
-                    }`}>
-                        <div className={`h-1.5 w-1.5 rounded-full ${plan.active !== false ? "bg-emerald-500" : "bg-slate-400"}`}></div>
-                        {plan.active !== false ? "Active" : "Paused"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={(e) => handleDeletePlan(e, plan)}
+                            className="relative z-10 p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                            plan.active !== false
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+                              : "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300"
+                        }`}>
+                            <div className={`h-1.5 w-1.5 rounded-full ${plan.active !== false ? "bg-emerald-500" : "bg-slate-400"}`}></div>
+                            {plan.active !== false ? "Active" : "Paused"}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="relative mt-6 flex-1">

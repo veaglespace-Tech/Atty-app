@@ -16,6 +16,11 @@ const { syncOrganizationSubscriptionState } = require("../services/subscription.
 const { deleteProfileImage, uploadProfileImage } = require("../services/profile-image.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
+const {
+  validateEmail,
+  validatePersonName,
+  validatePasswordComplexity,
+} = require("../utils/validation");
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 15;
 const PASSWORD_RESET_TOKEN_TTL_SECONDS = PASSWORD_RESET_TOKEN_TTL_MINUTES * 60;
@@ -822,6 +827,23 @@ exports.register = asyncHandler(async (req, res) => {
       throw new Error("Please provide name, email, mobile and password");
     }
 
+    if (!validatePersonName(userData.name)) {
+      res.status(400);
+      throw new Error("Full name can only include letters, spaces, dots, or hyphens");
+    }
+
+    if (!validateEmail(userData.email)) {
+      res.status(400);
+      throw new Error("Invalid email address");
+    }
+
+    if (!validatePasswordComplexity(userData.password)) {
+      res.status(400);
+      throw new Error(
+        "Password must be 8-64 characters and include uppercase, lowercase, number, and special character",
+      );
+    }
+
     const normalizedEmail = normalizeEmail(userData.email);
     const normalizedPhone = normalizePhoneNumber({
       phone: userData.mobile,
@@ -951,6 +973,23 @@ exports.register = asyncHandler(async (req, res) => {
   if (!name || !email || !password) {
     res.status(400);
     throw new Error("Please provide name, email and password");
+  }
+
+  if (!validatePersonName(name)) {
+    res.status(400);
+    throw new Error("Full name can only include letters, spaces, dots, or hyphens");
+  }
+
+  if (!validateEmail(email)) {
+    res.status(400);
+    throw new Error("Invalid email address");
+  }
+
+  if (!validatePasswordComplexity(password)) {
+    res.status(400);
+    throw new Error(
+      "Password must be 8-64 characters and include uppercase, lowercase, number, and special character",
+    );
   }
 
   const normalizedEmail = normalizeEmail(email);
@@ -1267,6 +1306,13 @@ exports.resetPassword = asyncHandler(async (req, res) => {
     throw new Error("Reset link is invalid or expired.");
   }
 
+  if (!validatePasswordComplexity(password)) {
+    res.status(400);
+    throw new Error(
+      "Password must be 8-64 characters and include uppercase, lowercase, number, and special character",
+    );
+  }
+
   const hashedPassword = await bcrypt.hash(String(password), 10);
 
   await prisma.user.update({
@@ -1322,6 +1368,10 @@ exports.updateMe = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("Name is required");
     }
+    if (!validatePersonName(name)) {
+      res.status(400);
+      throw new Error("Full name can only include letters, spaces, dots, or hyphens");
+    }
     payload.name = name;
   }
 
@@ -1330,6 +1380,11 @@ exports.updateMe = asyncHandler(async (req, res) => {
     if (!email) {
       res.status(400);
       throw new Error("Email is required");
+    }
+
+    if (!validateEmail(email)) {
+      res.status(400);
+      throw new Error("Invalid email address");
     }
 
     if (email !== existingUser.email) {

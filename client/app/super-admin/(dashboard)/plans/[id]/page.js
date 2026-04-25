@@ -116,7 +116,12 @@ export default function PlanDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Are you sure you want to deactivate plan "${plan?.name}"?`)) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to PERMANENTLY DELETE plan "${plan?.name}"? This action cannot be undone.`,
+      )
+    )
+      return;
 
     try {
       setSubmitting(true);
@@ -125,7 +130,7 @@ export default function PlanDetailPage() {
       await deletePlanMutation(id).unwrap();
       router.push("/super-admin/plans");
     } catch (deleteError) {
-      setError(deleteError?.data?.message || deleteError?.error || "Failed to deactivate plan");
+      setError(deleteError?.data?.message || deleteError?.error || "Failed to delete plan");
     } finally {
       setSubmitting(false);
     }

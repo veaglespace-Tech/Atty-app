@@ -388,3 +388,62 @@ exports.getSuperAdminContactInquiries = asyncHandler(async (req, res) => {
     },
   });
 });
+exports.getSuperAdminContactById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const inquiry = await prisma.contactInquiry.findUnique({
+    where: { id: Number(id) },
+  });
+
+  if (!inquiry) {
+    res.status(404);
+    throw new Error("Contact inquiry not found");
+  }
+
+  res.status(200).json({
+    success: true,
+    item: toContactInquiryItem(inquiry),
+  });
+});
+
+exports.patchSuperAdminContact = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status) {
+    res.status(400);
+    throw new Error("Status is required");
+  }
+
+  const updated = await prisma.contactInquiry.update({
+    where: { id: Number(id) },
+    data: { status },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Inquiry status updated successfully",
+    item: toContactInquiryItem(updated),
+  });
+});
+
+exports.deleteSuperAdminContact = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await prisma.contactInquiry.delete({
+    where: { id: Number(id) },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Inquiry deleted successfully",
+  });
+});
+
+exports.deleteAllSuperAdminContacts = asyncHandler(async (req, res) => {
+  await prisma.contactInquiry.deleteMany({});
+
+  res.status(200).json({
+    success: true,
+    message: "All inquiries deleted successfully",
+  });
+});

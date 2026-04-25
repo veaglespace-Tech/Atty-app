@@ -640,6 +640,30 @@ model User {
   @@map("user")
 }
 
+model Permission {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  name        String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("permission")
+}
+
+model RolePermission {
+  id           Int      @id @default(autoincrement())
+  role         UserRole
+  permissionId Int
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@map("role_permission")
+}
+
 model VerificationSession {
   id                   Int      @id @default(autoincrement())
   purpose              String   @default("MEMBER_REGISTRATION")

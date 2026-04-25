@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -30,6 +30,14 @@ export const superAdminApi = createApi({
     }),
     getSuperAdminOrganizationById: builder.query({
       query: (organizationId) => `/super-admin/organizations/${organizationId}`,
+      providesTags: ["SAOrganizations"],
+    }),
+    getSuperAdminOrganizationUsers: builder.query({
+      query: (organizationId) => `/super-admin/organizations/${organizationId}/users`,
+      providesTags: ["SAOrganizations"],
+    }),
+    getSuperAdminOrganizationTeams: builder.query({
+      query: (organizationId) => `/super-admin/organizations/${organizationId}/teams`,
       providesTags: ["SAOrganizations"],
     }),
     downloadSuperAdminOrganizationsPdf: builder.mutation({
@@ -107,6 +115,75 @@ export const superAdminApi = createApi({
       query: () => "/super-admin/analytics",
       providesTags: ["SAAnalytics"],  
     }),
+    getPermissions: builder.query({
+      query: () => "/super-admin/permissions",
+      providesTags: ["SAPermissions"],
+    }),
+    createPermission: builder.mutation({
+      query: (payload) => ({
+        url: "/super-admin/permissions",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["SAPermissions"],
+    }),
+    updatePermission: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: `/super-admin/permissions/${id}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SAPermissions", "SARolePermissions"],
+    }),
+    deletePermission: builder.mutation({
+      query: (id) => ({
+        url: `/super-admin/permissions/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SAPermissions", "SARolePermissions"],
+    }),
+    getRolePermissions: builder.query({
+      query: () => "/super-admin/roles/permissions",
+      providesTags: ["SARolePermissions"],
+    }),
+    updateRolePermissions: builder.mutation({
+      query: (payload) => ({
+        url: "/super-admin/roles/permissions",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["SARolePermissions"],
+    }),
+    getSuperAdminContactById: builder.query({
+      query: (id) => `/super-admin/contacts/${id}`,
+      providesTags: ["SAContacts"],
+    }),
+    patchSuperAdminContact: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: `/super-admin/contacts/${id}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SAContacts"],
+    }),
+    deleteSuperAdminContact: builder.mutation({
+      query: (id) => ({
+        url: `/super-admin/contacts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SAContacts"],
+    }),
+    getSuperAdminContactInquiries: builder.query({
+      query: () => "/super-admin/contacts?limit=500",
+      providesTags: ["SAContacts"],
+    }),
+    deleteAllSuperAdminContacts: builder.mutation({
+      query: () => ({
+        url: "/super-admin/contacts",
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SAContacts"],
+    }),
   }),
 });
 
@@ -116,6 +193,8 @@ export const {
   useDownloadSuperAdminDashboardExcelMutation,
   useGetSuperAdminOrganizationsQuery,
   useGetSuperAdminOrganizationByIdQuery,
+  useGetSuperAdminOrganizationUsersQuery,
+  useGetSuperAdminOrganizationTeamsQuery,
   useDownloadSuperAdminOrganizationsPdfMutation,
   useDownloadSuperAdminOrganizationsExcelMutation,
   usePatchSuperAdminOrganizationMutation,
@@ -128,4 +207,15 @@ export const {
   useDownloadSuperAdminPaymentsPdfMutation,
   useDownloadSuperAdminPaymentsExcelMutation,
   useGetSuperAdminAnalyticsQuery,
+  useGetPermissionsQuery,
+  useCreatePermissionMutation,
+  useUpdatePermissionMutation,
+  useDeletePermissionMutation,
+  useGetRolePermissionsQuery,
+  useUpdateRolePermissionsMutation,
+  useGetSuperAdminContactByIdQuery,
+  usePatchSuperAdminContactMutation,
+  useDeleteSuperAdminContactMutation,
+  useGetSuperAdminContactInquiriesQuery,
+  useDeleteAllSuperAdminContactsMutation,
 } = superAdminApi;

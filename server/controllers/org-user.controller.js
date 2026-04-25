@@ -19,6 +19,11 @@ const {
   normalizeStatus,
 } = require("../services/common.service");
 const {
+  validateEmail,
+  validatePersonName,
+  validatePasswordComplexity,
+} = require("../utils/validation");
+const {
   assertPermission,
   assertRoleScope,
   sanitizePermissionsByAssigner,
@@ -342,6 +347,10 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("name cannot be empty");
     }
+    if (!validatePersonName(name)) {
+      res.status(400);
+      throw new Error("Full name can only include letters, spaces, dots, or hyphens");
+    }
     userPayload.name = name;
   }
 
@@ -482,6 +491,16 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
     throw new Error("name, email and mobile are required");
   }
 
+  if (!validatePersonName(name)) {
+    res.status(400);
+    throw new Error("Full name can only include letters, spaces, dots, or hyphens");
+  }
+
+  if (!validateEmail(email)) {
+    res.status(400);
+    throw new Error("Invalid email address");
+  }
+
   if (!USER_STATUS.has(status)) {
     res.status(400);
     throw new Error("Invalid status");
@@ -558,9 +577,11 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
     });
   } else {
     const plainPassword = req.body?.password ? String(req.body.password) : randomPassword();
-    if (plainPassword.length < 8) {
+    if (!validatePasswordComplexity(plainPassword)) {
       res.status(400);
-      throw new Error("Password must be at least 8 characters");
+      throw new Error(
+        "Password must be 8-64 characters and include uppercase, lowercase, number, and special character",
+      );
     }
 
     const hashedPassword = await bcrypt.hash(plainPassword, 10);

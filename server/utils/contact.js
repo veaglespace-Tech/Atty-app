@@ -56,8 +56,8 @@ const normalizePhoneNumber = ({
     }
   } else if (normalizedCountryCode) {
     nationalNumber = digitsOnly.replace(/^0+/, "");
-    if (nationalNumber.length < 6 || nationalNumber.length > 12) {
-      throw new Error("Local phone number must be between 6 and 12 digits");
+    if (nationalNumber.length !== 10) {
+      throw new Error("Local phone number must be exactly 10 digits");
     }
 
     const combinedDigits = `${normalizedCountryCode.slice(1)}${nationalNumber}`;
@@ -67,14 +67,14 @@ const normalizePhoneNumber = ({
 
     phoneE164 = `+${combinedDigits}`;
   } else {
-    if (digitsOnly.length < 6 || digitsOnly.length > 14) {
-      throw new Error("Phone number must be between 6 and 14 digits");
+    if (digitsOnly.length !== 10) {
+      throw new Error("Phone number must be exactly 10 digits");
     }
     phoneE164 = digitsOnly;
   }
 
-  if (nationalNumber.length < 6 || nationalNumber.length > 12) {
-    throw new Error("Local phone number must be between 6 and 12 digits");
+  if (nationalNumber.length !== 10) {
+    throw new Error("Local phone number must be exactly 10 digits");
   }
 
   return {

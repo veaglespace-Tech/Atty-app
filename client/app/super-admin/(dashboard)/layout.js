@@ -5,6 +5,7 @@ const navItems = [
   { label: "Organizations", href: "/super-admin/organizations" },
   { label: "Contacts", href: "/super-admin/contacts" },
   { label: "Plans", href: "/super-admin/plans" },
+  { label: "Access", href: "/super-admin/access" },
   { label: "Payments", href: "/super-admin/payments" },
   { label: "Analytics", href: "/super-admin/analytics" },
 ];

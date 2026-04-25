@@ -9,6 +9,9 @@ import "./globals.css";
 export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
   description: "Modern multi-tenant attendance management system for organizations.",
+  icons: {
+    icon: "/logo1-clean.webp",
+  },
 };
 
 const THEME_BOOTSTRAP_SCRIPT = `(() => {

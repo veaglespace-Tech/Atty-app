@@ -1,5 +1,5 @@
-export const PHONE_DIGIT_MIN = 6;
-export const PHONE_DIGIT_MAX = 15;
+export const PHONE_DIGIT_MIN = 10;
+export const PHONE_DIGIT_MAX = 10;
 export const ATTENDANCE_RADIUS_MIN = 5;
 export const ATTENDANCE_RADIUS_MAX = 1000;
 export const PLAN_DURATION_MAX = 3650;

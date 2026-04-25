@@ -214,15 +214,7 @@ export default function LoginPage() {
                   Create your organization
                 </Link>
               </p>
-              <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                Need platform-level access?{" "}
-                <Link
-                  href="/super-admin/login"
-                  className="font-bold text-slate-700 transition hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-300"
-                >
-                  Open super admin login
-                </Link>
-              </p>
+
             </div>
           </div>
         </div>

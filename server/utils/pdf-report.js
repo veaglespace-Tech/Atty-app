@@ -436,10 +436,11 @@ const buildGenericTablePdf = ({
   summaryCards = [],
   columns = [],
   rows = [],
+  size = "A4",
 }) =>
   new Promise((resolve, reject) => {
     const doc = new PDFDocument({
-      size: "A4",
+      size,
       layout: "landscape",
       margins: {
         top: 22,

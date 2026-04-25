@@ -267,22 +267,45 @@ exports.createPlan = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 exports.deletePlan = asyncHandler(async (req, res) => {
   const planId = Number(req.params.id);
-  const plan = await prisma.plan.findUnique({ where: { id: planId } });
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    include: {
+      _count: {
+        select: {
+          organizations: true,
+          subscriptions: true,
+          renewalIntents: true,
+        },
+      },
+    },
+  });
+
   if (!plan) {
     res.status(404);
     throw new Error("Plan not found");
   }
 
-  await prisma.plan.update({
-    where: { id: plan.id },
-    data: { isActive: false },
+  const usageCount =
+    (plan._count?.organizations || 0) +
+    (plan._count?.subscriptions || 0) +
+    (plan._count?.renewalIntents || 0);
+
+  if (usageCount > 0) {
+    res.status(400);
+    throw new Error(
+      "Cannot delete plan as it is currently in use by organizations or subscriptions. You can deactivate it instead.",
+    );
+  }
+
+  await prisma.plan.delete({
+    where: { id: planId },
   });
 
   invalidateByPrefix("plans:");
 
   res.status(200).json({
     success: true,
-    message: "Plan deactivated",
+    message: "Plan deleted successfully",
   });
 });
 

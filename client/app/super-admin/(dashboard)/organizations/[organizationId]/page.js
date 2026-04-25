@@ -14,6 +14,8 @@ import {
 import CountryPhoneField from "@/components/CountryPhoneField";
 import {
   useGetSuperAdminOrganizationByIdQuery,
+  useGetSuperAdminOrganizationUsersQuery,
+  useGetSuperAdminOrganizationTeamsQuery,
   usePatchSuperAdminOrganizationMutation,
   useUpdateOrganizationAccessMutation,
 } from "@/services/api/superAdminApi";
@@ -87,6 +89,15 @@ export default function OrganizationDetailPage() {
   } = useGetSuperAdminOrganizationByIdQuery(organizationId, {
     skip: !Number.isFinite(organizationId) || organizationId <= 0,
   });
+
+  const { data: usersData, isLoading: isLoadingUsers } = useGetSuperAdminOrganizationUsersQuery(organizationId, {
+    skip: !Number.isFinite(organizationId) || organizationId <= 0,
+  });
+
+  const { data: teamsData, isLoading: isLoadingTeams } = useGetSuperAdminOrganizationTeamsQuery(organizationId, {
+    skip: !Number.isFinite(organizationId) || organizationId <= 0,
+  });
+
   const [patchOrganizationMutation] = usePatchSuperAdminOrganizationMutation();
   const [updateOrganizationAccessMutation] = useUpdateOrganizationAccessMutation();
 
@@ -464,6 +475,70 @@ export default function OrganizationDetailPage() {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2 mt-6">
+        <div className="light-glow-card-static rounded-[1.9rem] p-6">
+          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 mb-4">
+            Organization Users
+          </h3>
+          {isLoadingUsers ? (
+            <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+          ) : usersData?.items?.length > 0 ? (
+            <div className="space-y-3">
+              {usersData.items.map((user) => (
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+                  <div>
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{user.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.email || user.mobile}</p>
+                  </div>
+                  <div className="mt-2 sm:mt-0 text-left sm:text-right">
+                    <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                      {user.role}
+                    </span>
+                    <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-400">
+                      {user.status}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No users found.</p>
+          )}
+        </div>
+
+        <div className="light-glow-card-static rounded-[1.9rem] p-6">
+          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 mb-4">
+            Organization Teams
+          </h3>
+          {isLoadingTeams ? (
+            <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+          ) : teamsData?.items?.length > 0 ? (
+            <div className="space-y-3">
+              {teamsData.items.map((team) => (
+                <div key={team.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+                  <div>
+                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{team.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{team.description || "No description"}</p>
+                  </div>
+                  <div className="mt-2 sm:mt-0 text-left sm:text-right">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {team.memberCount} Member{team.memberCount !== 1 ? 's' : ''}
+                    </p>
+                    {team.leader && (
+                      <p className="mt-1 text-[10px] text-slate-400">
+                        Lead: {team.leader.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No teams found.</p>
+          )}
         </div>
       </div>
     </section>

@@ -8,6 +8,12 @@ const { createOrganizationMembership } = require("../services/organization-membe
 const {
   truncateText,
 } = require("../services/common.service");
+const {
+  validateEmail,
+  validatePersonName,
+  validateOrganizationName,
+  validatePasswordComplexity,
+} = require("../utils/validation");
 
 exports.onboardOrganization = asyncHandler(async (req, res) => {
   const {
@@ -33,6 +39,33 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
   ) {
     res.status(400);
     throw new Error("All fields for organization and admin are required");
+  }
+
+  if (!validateOrganizationName(orgName)) {
+    res.status(400);
+    throw new Error("Organization name contains unsupported characters");
+  }
+
+  if (!validateEmail(orgEmail)) {
+    res.status(400);
+    throw new Error("Invalid organization email address");
+  }
+
+  if (!validatePersonName(adminName)) {
+    res.status(400);
+    throw new Error("Admin name can only include letters, spaces, dots, or hyphens");
+  }
+
+  if (!validateEmail(adminEmail)) {
+    res.status(400);
+    throw new Error("Invalid admin email address");
+  }
+
+  if (!validatePasswordComplexity(adminPassword)) {
+    res.status(400);
+    throw new Error(
+      "Admin password must be 8-64 characters and include uppercase, lowercase, number, and special character",
+    );
   }
 
   const normalizedOrgEmail = normalizeEmail(orgEmail);

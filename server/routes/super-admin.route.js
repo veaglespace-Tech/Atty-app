@@ -4,6 +4,8 @@ const {
   getSuperAdminDashboard,
   getSuperAdminOrganizations,
   getSuperAdminOrganizationById,
+  getSuperAdminOrganizationUsers,
+  getSuperAdminOrganizationTeams,
   patchSuperAdminOrganization,
   updateOrganizationAccess,
   getSuperAdminPlans,
@@ -21,7 +23,21 @@ const {
   archiveOrganizationAction,
   restoreOrganizationAction,
 } = require("../controllers/super-admin.controller");
-const { getSuperAdminContactInquiries } = require("../controllers/contact.controller");
+const {
+  getPermissions,
+  createPermission,
+  updatePermission,
+  deletePermission,
+  getRolePermissions,
+  updateRolePermissions,
+} = require("../controllers/permission.controller");
+const { 
+  getSuperAdminContactInquiries,
+  getSuperAdminContactById,
+  patchSuperAdminContact,
+  deleteSuperAdminContact,
+  deleteAllSuperAdminContacts
+} = require("../controllers/contact.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 
@@ -35,11 +51,17 @@ router.get("/organizations", getSuperAdminOrganizations);
 router.get("/organizations/pdf", downloadSuperAdminOrganizationsPdf);
 router.get("/organizations/excel", downloadSuperAdminOrganizationsExcel);
 router.get("/organizations/:organizationId", getSuperAdminOrganizationById);
+router.get("/organizations/:organizationId/users", getSuperAdminOrganizationUsers);
+router.get("/organizations/:organizationId/teams", getSuperAdminOrganizationTeams);
 router.patch("/organizations/:organizationId", patchSuperAdminOrganization);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);
 router.post("/organizations/:organizationId/archive", archiveOrganizationAction);
 router.post("/organizations/:organizationId/restore", restoreOrganizationAction);
 router.get("/contacts", getSuperAdminContactInquiries);
+router.get("/contacts/:id", getSuperAdminContactById);
+router.patch("/contacts/:id", patchSuperAdminContact);
+router.delete("/contacts/:id", deleteSuperAdminContact);
+router.delete("/contacts", deleteAllSuperAdminContacts);
 router.get("/plans", getSuperAdminPlans);
 router.get("/payments", getSuperAdminPayments);
 router.get("/payments/pdf", downloadSuperAdminPaymentsPdf);
@@ -48,5 +70,13 @@ router.get("/payments/:paymentId", getSuperAdminPaymentById);
 router.patch("/payments/:paymentId", updateSuperAdminPayment);
 router.delete("/payments/:paymentId", deleteSuperAdminPayment);
 router.get("/analytics", getSuperAdminAnalytics);
+
+// RBAC Management
+router.get("/permissions", getPermissions);
+router.post("/permissions", createPermission);
+router.patch("/permissions/:id", updatePermission);
+router.delete("/permissions/:id", deletePermission);
+router.get("/roles/permissions", getRolePermissions);
+router.post("/roles/permissions", updateRolePermissions);
 
 module.exports = router;
