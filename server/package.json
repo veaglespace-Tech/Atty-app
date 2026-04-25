@@ -35,7 +35,8 @@
     "pdfkit": "^0.17.2",
     "prisma": "^5.22.0",
     "razorpay": "^2.9.6",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@sentry/node": "^10.22.0",
@@ -43,7 +44,6 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "jest": "^30.2.0",
-    "supertest": "^7.1.4",
-    "zod": "^4.1.12"
+    "supertest": "^7.1.4"
   }
 }
