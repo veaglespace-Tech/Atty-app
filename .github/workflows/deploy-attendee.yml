@@ -18,25 +18,25 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
 
           script: |
+            set -e
+
             echo "===== CONNECTED ====="
 
-            # go to project
-            cd /root/attendee || exit
+            cd /root/attendee || exit 1
 
-            # update code
+            # pull latest code
             git fetch origin main
-            git checkout main
             git reset --hard origin/main
 
             echo "===== LATEST COMMIT ====="
             git log -1 --oneline
 
+            # ================= BACKEND =================
             echo "===== BACKEND ====="
-            cd server || exit
+            cd server || exit 1
 
-            # load env
             if [ ! -f .env ]; then
-              echo "Missing server/.env"
+              echo "❌ Missing server/.env"
               exit 1
             fi
 
@@ -44,28 +44,29 @@ jobs:
             . ./.env
             set +a
 
-            # install + migrate
             npm ci
             npx prisma migrate deploy
 
-            # restart backend safely
-            pm2 describe attendee-server > /dev/null \
-              && pm2 restart attendee-server \
-              || pm2 start npm --name "attendee-server" -- start
+            # restart backend
+            pm2 restart attendee-server || pm2 start npm --name "attendee-server" -- start
 
-            echo "===== FRONTEND ====="
-            cd ../client || exit
+            # ================= FRONTEND =================
+            echo "===== FRONTEND CLEAN BUILD ====="
+            cd ../client || exit 1
 
-            rm -rf .next
-            npm ci
+            # 🔥 FULL CLEAN (your requirement)
+            rm -rf .next node_modules package-lock.json
+
+            npm install
+
             npm run build
 
-            # restart frontend safely
-            pm2 describe attendee-client > /dev/null \
-              && pm2 restart attendee-client \
-              || pm2 start npm --name "attendee-client" -- start
+            # safety check
+            test -f .next/BUILD_ID || (echo "❌ Build failed" && exit 1)
 
-            # save pm2
+            # restart frontend
+            pm2 restart attendee-client || pm2 start npm --name "attendee-client" -- start
+
             pm2 save
 
-            echo "===== DONE ====="
+            echo "===== DEPLOY SUCCESS ====="
