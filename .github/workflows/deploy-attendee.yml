@@ -18,47 +18,59 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
 
           script: |
-            set -e  # ❗ IMPORTANT: fail immediately if any command fails
+            set -e
+            set -x   # 🔍 DEBUG (remove later if you want)
 
             echo "===== CONNECTED ====="
 
-            cd /root/attendee
+            cd /root/attendee || exit 1
 
             git fetch origin main
             git reset --hard origin/main
 
             echo "===== BACKEND ====="
-            cd server
+            cd server || exit 1
 
-            set -a
-            . ./.env
-            set +a
+            # ✅ SAFE ENV LOAD
+            if [ -f .env ]; then
+              export $(grep -v '^#' .env | xargs)
+            else
+              echo "❌ Missing server/.env"
+              exit 1
+            fi
 
+            # install deps
+            rm -rf node_modules
             npm ci
+
+            # prisma migrate
             npx prisma migrate deploy
 
+            # restart backend
             pm2 describe attendee-server > /dev/null \
               && pm2 restart attendee-server \
               || pm2 start npm --name "attendee-server" -- start
 
             echo "===== FRONTEND ====="
-            cd ../client
+            cd ../client || exit 1
 
-            rm -rf .next node_modules  # ✅ FULL CLEAN (important)
+            # clean everything properly
+            rm -rf .next node_modules
 
             npm ci
 
             echo "===== BUILDING NEXT ====="
             npm run build
 
-            # ✅ verify build actually exists
+            # ✅ VERIFY BUILD (fix for your error)
             if [ ! -f ".next/prerender-manifest.json" ]; then
               echo "❌ Build failed: prerender-manifest.json missing"
               exit 1
             fi
 
-            echo "✅ Build verified"
+            echo "✅ Build OK"
 
+            # restart frontend
             pm2 describe attendee-client > /dev/null \
               && pm2 restart attendee-client \
               || pm2 start npm --name "attendee-client" -- start
