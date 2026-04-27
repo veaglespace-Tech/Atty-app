@@ -1,10 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useArchiveFailedRegistrationMutation,
   useCreatePaymentOrderMutation,
-  useLazyGetPaymentPublicKeyQuery,
   useVerifyAndRegisterPaymentMutation,
 } from "@/services/api/paymentApi";
 import {
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { isHiddenPaidMonthlyPlan } from "@/utils/plans";
+import { decodePayuPayload, submitHostedPaymentForm } from "@/utils/payu";
 
 const PAYMENT_FEATURES = [
   {
@@ -39,7 +39,7 @@ const PAYMENT_FEATURES = [
   },
 ];
 
-const PAYMENT_BADGES = ["Razorpay", "Visa / Mastercard", "Protected Checkout"];
+const PAYMENT_BADGES = ["PayU", "UPI / Cards / NetBanking", "Protected Checkout"];
 
 const PLAN_CODE_BY_NAME = {
   basic: "BASIC",
@@ -57,26 +57,6 @@ const normalizePlan = (plan) => {
   };
 };
 
-const loadRazorpayScript = () =>
-  new Promise((resolve) => {
-    if (typeof window === "undefined") {
-      resolve(false);
-      return;
-    }
-
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-
 const getApiErrorMessage = (error, fallback = "Unable to process request.") => {
   const message =
     error?.data?.message ||
@@ -91,6 +71,8 @@ const getApiErrorMessage = (error, fallback = "Unable to process request.") => {
 
 export default function PaymentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackHandledRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState("");
@@ -98,9 +80,8 @@ export default function PaymentPage() {
   const [successState, setSuccessState] = useState(null);
   const [createPaymentOrder] = useCreatePaymentOrderMutation();
   const [verifyAndRegisterPayment] = useVerifyAndRegisterPaymentMutation();
-  const [getPaymentPublicKey] = useLazyGetPaymentPublicKeyQuery();
   const [archiveFailedRegistration] = useArchiveFailedRegistrationMutation();
-  const handleArchive = async (reason = "Registration abandoned") => {
+  const handleArchive = useCallback(async (reason = "Registration abandoned") => {
     try {
       const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
       const admin = JSON.parse(localStorage.getItem("adminData") || "null");
@@ -115,7 +96,7 @@ export default function PaymentPage() {
     } catch (err) {
       console.error("Failed to archive registration attempt", err);
     }
-  };
+  }, [archiveFailedRegistration]);
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("selectedPlan");
@@ -141,7 +122,87 @@ export default function PaymentPage() {
     }
   }, [router]);
 
-  const finalizeSuccess = ({ organization, admin, plan, emailSent, freeTrial = false }) => {
+  useEffect(() => {
+    const encodedPayload = searchParams.get("payu");
+    if (!encodedPayload || callbackHandledRef.current) return;
+    callbackHandledRef.current = true;
+
+    const payuPayload = decodePayuPayload(encodedPayload);
+    if (!payuPayload) {
+      setPaymentStatus("");
+      setPaymentError("Unable to read PayU callback response. Please try payment again.");
+      router.replace("/register/organisation/payment");
+      return;
+    }
+
+    const storedOrganization = localStorage.getItem("organisationData");
+    const storedAdmin = localStorage.getItem("adminData");
+    const storedPlan = localStorage.getItem("selectedPlan");
+    const organization = storedOrganization ? JSON.parse(storedOrganization) : null;
+    const admin = storedAdmin ? JSON.parse(storedAdmin) : null;
+    const resolvedPlan = storedPlan ? normalizePlan(JSON.parse(storedPlan)) : null;
+
+    if (!organization || !admin || !resolvedPlan?.code) {
+      setPaymentStatus("");
+      setPaymentError("Registration details are missing. Please restart onboarding.");
+      router.replace("/register/organisation/payment");
+      return;
+    }
+
+    const callbackStatus = String(payuPayload?.status || "").toLowerCase();
+    const isSuccessful = callbackStatus === "success" || callbackStatus === "captured";
+
+    if (!isSuccessful) {
+      const failureMessage =
+        String(payuPayload?.error_Message || payuPayload?.error_message || payuPayload?.error || "").trim() ||
+        "Payment was not successful. Please try again.";
+      setPaymentStatus("");
+      setPaymentError(failureMessage);
+      setLoading(false);
+      handleArchive(`PayU payment failed: ${failureMessage}`);
+      router.replace("/register/organisation/payment");
+      return;
+    }
+
+    const completeRegistration = async () => {
+      setLoading(true);
+      setPaymentError("");
+      setPaymentStatus("Verifying secure payment...");
+
+      try {
+        const verifyResult = await verifyAndRegisterPayment({
+          payu: payuPayload,
+          organization,
+          admin,
+          plan: resolvedPlan,
+        }).unwrap();
+
+        if (!verifyResult?.success) {
+          await handleArchive("Payment verified but registration step failed");
+          throw new Error("Payment verified but registration failed.");
+        }
+
+        setPaymentStatus("Activation successful! Redirecting...");
+        finalizeSuccess({
+          organization,
+          admin,
+          plan: resolvedPlan,
+          emailSent: verifyResult?.emailSent,
+        });
+      } catch (error) {
+        const message = getApiErrorMessage(error, "Payment captured but registration failed.");
+        setPaymentStatus("");
+        setPaymentError(message);
+        setLoading(false);
+      } finally {
+        router.replace("/register/organisation/payment");
+      }
+    };
+
+    completeRegistration();
+  }, [finalizeSuccess, handleArchive, searchParams, router, verifyAndRegisterPayment]);
+
+  const finalizeSuccess = useCallback(({ organization, admin, plan, emailSent, freeTrial = false }) => {
     setSuccessState({
       organizationName: organization?.name || "Your organization",
       adminEmail: admin?.email || "",
@@ -154,7 +215,7 @@ export default function PaymentPage() {
     localStorage.removeItem("selectedPlan");
     setPaymentStatus("");
     setLoading(false);
-  };
+  }, [selectedPlan]);
 
   const handlePayment = async () => {
     if (!selectedPlan) {
@@ -165,9 +226,6 @@ export default function PaymentPage() {
 
     const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
     const admin = JSON.parse(localStorage.getItem("adminData") || "null");
-    const adminPrefillContact = `${admin?.mobileCountryCode || ""}${admin?.mobile || ""}`;
-    const organizationPrefillContact = `${organization?.phoneCountryCode || ""}${organization?.phone || ""}`;
-
     if (!organization || !admin) {
       alert("Registration details are missing. Please start again.");
       router.push("/register/organisation");
@@ -206,88 +264,13 @@ export default function PaymentPage() {
         return;
       }
 
-      const sdkLoaded = await loadRazorpayScript();
-      if (!sdkLoaded) {
-        throw new Error("Unable to load Razorpay checkout.");
-      }
-      setPaymentStatus("Connecting to secure gateway...");
-
-      const keyResponse = await getPaymentPublicKey().unwrap();
-      if (!keyResponse?.key) {
-        throw new Error("Razorpay key not found.");
+      const paymentSession = orderResponse?.paymentSession;
+      if (!paymentSession?.action || !paymentSession?.fields) {
+        throw new Error("Failed to create PayU checkout session.");
       }
 
-      const order = orderResponse?.order;
-      if (!order?.id) {
-        throw new Error("Failed to create payment order.");
-      }
-      setPaymentStatus("Opening payment window...");
-
-      const paymentObject = new window.Razorpay({
-        key: keyResponse.key,
-        amount: order.amount,
-        currency: order.currency,
-        order_id: order.id,
-        name: "Veagle Attendee",
-        description: `${selectedPlan.name} Plan Activation`,
-        image: "/logo1-clean.webp",
-        prefill: {
-          name: admin.name || "",
-          email: admin.email || "",
-          contact: adminPrefillContact || organizationPrefillContact || "",
-        },
-        notes: {
-          planCode: selectedPlan.code,
-        },
-        theme: {
-          color: "#2563eb",
-        },
-        modal: {
-          ondismiss: () => {
-            setPaymentStatus("Payment cancelled.");
-            setLoading(false);
-            handleArchive("Payment dismissed by user");
-          },
-        },
-        handler: async (response) => {
-          try {
-            setPaymentStatus("Verifying secure payment...");
-            const verifyResult = await verifyAndRegisterPayment({
-              ...response,
-              organization,
-              admin,
-              plan: selectedPlan,
-            }).unwrap();
-
-            if (!verifyResult?.success) {
-              await handleArchive("Payment verified but registration step failed");
-              throw new Error("Payment verified but registration failed.");
-            }
-            setPaymentStatus("Activation successful! Redirecting...");
-            finalizeSuccess({
-              organization,
-              admin,
-              plan: selectedPlan,
-              emailSent: verifyResult?.emailSent,
-            });
-          } catch (error) {
-            const message = getApiErrorMessage(error, "Payment captured but registration failed.");
-            setPaymentStatus("");
-            setPaymentError(message);
-            setLoading(false);
-          }
-        },
-      });
-
-      paymentObject.on("payment.failed", (response) => {
-        const failureMessage = String(response?.error?.description || "").trim() || "Payment failed. Please try again.";
-        setPaymentStatus("");
-        setPaymentError(failureMessage);
-        setLoading(false);
-        handleArchive(`Payment failed: ${failureMessage}`);
-      });
-
-      paymentObject.open();
+      setPaymentStatus("Redirecting to PayU secure checkout...");
+      submitHostedPaymentForm(paymentSession);
     } catch (err) {
       const message = getApiErrorMessage(err, "Unable to start payment.");
       setPaymentStatus("");
@@ -525,7 +508,7 @@ export default function PaymentPage() {
                       <p className={`text-sm font-semibold leading-snug transition-colors duration-500 ${theme.securityText}`}>
                         {selectedPlan && Number(selectedPlan.price) === 0
                           ? "Free trial activated instantly upon confirmation."
-                          : "Payments securely processed via Razorpay. Your details are encrypted."}
+                          : "Payments securely processed via PayU. Your details are encrypted."}
                       </p>
                     </div>
 

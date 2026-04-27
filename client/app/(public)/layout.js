@@ -1,4 +1,6 @@
 export default function PublicLayout({ children }) {
+  const companyWebsiteUrl = "https://veaglespace.com/";
+
   return (
     <div className="w-full overflow-x-clip">
       {children}
@@ -8,10 +10,10 @@ export default function PublicLayout({ children }) {
           <p className="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 sm:text-sm">
             All Right Reserved &copy;{" "}
             <a
-              href="https://veaglespace.com/"
+              href={companyWebsiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline dark:text-blue-400"
+              className="underline decoration-slate-400 underline-offset-2 transition hover:text-blue-600 dark:hover:text-blue-300"
             >
               Veagle Space Technology Pvt. Ltd.
             </a>
@@ -19,10 +21,10 @@ export default function PublicLayout({ children }) {
           <p className="mt-1 text-[11px] font-medium tracking-wide text-slate-500 dark:text-slate-400 sm:text-xs">
             Designed &amp; Developed By{" "}
             <a
-              href="https://veaglespace.com/"
+              href={companyWebsiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline dark:text-blue-400"
+              className="underline decoration-slate-400 underline-offset-2 transition hover:text-blue-600 dark:hover:text-blue-300"
             >
               Veagle Space Technology Pvt. Ltd
             </a>

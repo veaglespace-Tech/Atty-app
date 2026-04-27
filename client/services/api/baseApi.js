@@ -44,25 +44,20 @@ const resolveApiBaseUrl = () => {
 export const API_BASE_URL = resolveApiBaseUrl();
 
 const rawBaseQuery = fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    credentials: "include",
-    prepareHeaders: (headers, { getState }) => {
-      const stateToken = getState?.()?.auth?.token;
+  baseUrl: API_BASE_URL,
+  credentials: "include",
+});
 
-      if (stateToken) {
-        headers.set("authorization", `Bearer ${stateToken}`);
-        return headers;
-      }
+const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
 
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("token");
-        if (token) {
-          headers.set("authorization", `Bearer ${token}`);
-        }
-      }
-      return headers;
-    },
-  });
+const resolveRequestUrl = (args) => {
+  if (typeof args === "string") return args;
+  return String(args?.url || "");
+};
+
+const isAuthMutationRequest = (url) =>
+  ["/auth/login", "/auth/forgot-password", "/auth/reset-password", "/auth/reset-password/validate"]
+    .some((path) => String(url).includes(path));
 
 const redirectForExpiredSubscription = (api) => {
   if (typeof window === "undefined") return;
@@ -83,11 +78,41 @@ const redirectForExpiredSubscription = (api) => {
   }
 };
 
+const handleUnauthorizedSession = (api, args) => {
+  if (typeof window === "undefined") return;
+
+  const requestUrl = resolveRequestUrl(args);
+  if (isAuthMutationRequest(requestUrl)) {
+    return;
+  }
+
+  api.dispatch(logout());
+
+  const currentPath = window.location.pathname || "/";
+  const isProtectedPath = PROTECTED_APP_ROOTS.some((root) => currentPath.startsWith(root));
+
+  if (!isProtectedPath) {
+    return;
+  }
+
+  const isSuperAdminRoute = currentPath.startsWith("/super-admin");
+  const loginPath = isSuperAdminRoute ? "/super-admin/login" : "/login";
+
+  if (currentPath !== loginPath) {
+    window.location.replace(loginPath);
+  }
+};
+
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
   const result = await rawBaseQuery(args, api, extraOptions);
+  const statusCode = Number(result?.error?.status || 0);
 
-  if (result?.error?.status === 402) {
+  if (statusCode === 402) {
     redirectForExpiredSubscription(api);
+  }
+
+  if (statusCode === 401 || statusCode === 403) {
+    handleUnauthorizedSession(api, args);
   }
 
   return result;

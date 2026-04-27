@@ -4,6 +4,7 @@ const { syncOrganizationSubscriptionState } = require("../services/subscription.
 const { resolveUserRole } = require("../utils/membership");
 
 const isProtectionBypassed = () =>
+  process.env.NODE_ENV === "test" &&
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
 
 const checkActiveSubscription = asyncHandler(async (req, res, next) => {

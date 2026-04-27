@@ -24,8 +24,24 @@ const {
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 15;
 const PASSWORD_RESET_TOKEN_TTL_SECONDS = PASSWORD_RESET_TOKEN_TTL_MINUTES * 60;
+const SESSION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const GENERIC_PASSWORD_RESET_MESSAGE =
   "If this account exists, we have sent a reset link to the registered email address.";
+
+const getSessionCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: SESSION_TOKEN_TTL_MS,
+  path: "/",
+});
+
+const getSessionCookieClearOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  path: "/",
+});
 
 const getClientBaseUrl = () => {
   const explicitBaseUrl = String(process.env.CLIENT_URL || process.env.APP_URL || "").trim();
@@ -1207,17 +1223,11 @@ exports.login = asyncHandler(async (req, res) => {
       ? "/org/subscription"
       : getDashboardPathByRole(currentRole);
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("token", token, getSessionCookieOptions());
 
   res.status(200).json({
     success: true,
     message: "Login successful",
-    token,
     user: serializeSessionUser(sessionUser, org),
     redirectPath,
   });
@@ -1330,7 +1340,7 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 });
 
 exports.logout = asyncHandler(async (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", getSessionCookieClearOptions());
   res.status(200).json({ message: "Logout successful" });
 });
 

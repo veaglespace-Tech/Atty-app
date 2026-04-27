@@ -11,6 +11,7 @@ const {
 } = require("../utils/membership");
 
 const isProtectionBypassed = () =>
+  process.env.NODE_ENV === "test" &&
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
 
 const createHttpError = (statusCode, message) => {
