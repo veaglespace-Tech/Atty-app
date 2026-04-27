@@ -1,9 +1,16 @@
-let config;
+const DEFAULT_CLIENT_BASE_URL = "https://atty.veaglespace.com";
+const DEFAULT_API_BASE_URL = `${DEFAULT_CLIENT_BASE_URL}/api`;
 
-try {
-  config = await import('./local.js');
-} catch {
-  config = await import('./hostinger.js');
-}
+const trimTrailingSlash = (value) => String(value || "").trim().replace(/\/+$/, "");
 
-export const { CLIENT_BASE_URL, API_BASE_URL } = config;
+const stripApiSuffix = (value) => value.replace(/\/api$/i, "");
+
+const configuredApiBaseUrl = trimTrailingSlash(
+  process.env.NEXT_PUBLIC_API_URL_PROD || process.env.NEXT_PUBLIC_API_URL,
+);
+
+export const API_BASE_URL = configuredApiBaseUrl || DEFAULT_API_BASE_URL;
+
+export const CLIENT_BASE_URL = trimTrailingSlash(process.env.NEXT_PUBLIC_CLIENT_BASE_URL)
+  || stripApiSuffix(API_BASE_URL)
+  || DEFAULT_CLIENT_BASE_URL;
