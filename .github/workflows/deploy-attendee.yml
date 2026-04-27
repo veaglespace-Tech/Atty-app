@@ -11,59 +11,98 @@ jobs:
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+
           script: |
+            set -e
+
             echo "===== CONNECTED ====="
 
-            # go to project
-            cd /root/attendee || exit
+            APP_ROOT="/root/attendee"
+            BRANCH="main"
 
-            # update code
-            git fetch origin main
-            git checkout main
-            git reset --hard origin/main
-
-            echo "===== LATEST COMMIT ====="
-            git log -1 --oneline
-
-            echo "===== BACKEND ====="
-            cd server || exit
-
-            # load env
-            if [ ! -f .env ]; then
-              echo "Missing server/.env"
+            # ================= PRE-CHECK =================
+            if [ ! -d "$APP_ROOT/.git" ]; then
+              echo "❌ Project not found at $APP_ROOT"
               exit 1
             fi
+
+            cd "$APP_ROOT"
+
+            echo "===== CURRENT COMMIT ====="
+            git log -1 --oneline || true
+
+            # ================= UPDATE CODE =================
+            echo "===== PULL LATEST CODE ====="
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            git clean -fd
+
+            echo "===== NEW COMMIT ====="
+            git log -1 --oneline
+
+            # ================= BACKEND =================
+            echo "===== BACKEND SETUP ====="
+            cd "$APP_ROOT/server"
+
+            if [ ! -f .env ]; then
+              echo "❌ Missing server/.env"
+              exit 1
+            fi
+
             set -a
             . ./.env
             set +a
 
-            # install + migrate
-            npm ci
-            npx prisma migrate deploy
+            echo "Installing backend deps..."
+            npm ci || { echo "❌ npm install failed"; exit 1; }
 
-            # restart backend safely
+            echo "Running DB migrations..."
+            npx prisma migrate deploy || { echo "❌ migration failed"; exit 1; }
+
+            echo "Restarting backend..."
             pm2 describe attendee-server > /dev/null \
               && pm2 restart attendee-server \
               || pm2 start npm --name "attendee-server" -- start
 
-            echo "===== FRONTEND ====="
-            cd ../client || exit
+            # ================= FRONTEND =================
+            echo "===== FRONTEND BUILD ====="
+            cd "$APP_ROOT/client"
 
+            echo "Cleaning old build..."
             rm -rf .next
-            npm ci
-            npm run build
 
-            # restart frontend safely
+            echo "Installing frontend deps..."
+            npm ci || { echo "❌ npm install failed"; exit 1; }
+
+            echo "Building frontend..."
+            npm run build || { echo "❌ BUILD FAILED"; exit 1; }
+
+            echo "Restarting frontend..."
             pm2 describe attendee-client > /dev/null \
               && pm2 restart attendee-client \
               || pm2 start npm --name "attendee-client" -- start
 
-            # save pm2
+            # ================= HEALTH CHECK =================
+            echo "===== HEALTH CHECK ====="
+            sleep 5
+
+            if ! curl -s http://localhost:3000 > /dev/null; then
+              echo "❌ Frontend not responding"
+              exit 1
+            fi
+
+            if ! curl -s http://localhost:5000 > /dev/null; then
+              echo "❌ Backend not responding"
+              exit 1
+            fi
+
+            # ================= SAVE =================
             pm2 save
 
-            echo "===== DONE ====="
+            echo "===== DEPLOY SUCCESS ✅ ====="
