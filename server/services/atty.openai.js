@@ -106,16 +106,11 @@ const getClient = () => {
 const ROLE_INSTRUCTIONS = {
   GUEST:
     "This visitor is not logged in. Answer platform questions in a general way and ask them to sign in only when workspace-specific data is required.",
-  SUPER_ADMIN:
-    "This user is a Super Admin with full platform access. They manage all organizations, subscription plans, and system configuration.",
-  ORG_ADMIN:
-    "This user is an Organization Admin. They can manage subscription, users, teams, attendance, reports, and organization setup.",
-  ADMIN:
-    "This user is an Admin. They can manage users, teams, and reports, but they cannot manage subscriptions or billing.",
-  TEAM_LEADER:
-    "This user is a Team Leader. They can manage attendance and reports for their assigned teams.",
-  MEMBER:
-    "This user is a Member. They can punch in or out, view their own attendance, and check their team information.",
+  SUPER_ADMIN: `This user is a Super Admin with full platform access. They manage all organizations, subscription plans, and system configuration.`,
+  ORG_ADMIN: `This user is an Organization Admin. They have full control over their organization: manage subscription via PayU, create Sub Admins, manage teams and Team Leaders, view analytics, manage employee records.`,
+  ADMIN: `This user is an Admin. They can manage users, assign roles, manage team locations, and view reports. They CANNOT manage subscriptions or billing.`,
+  TEAM_LEADER: `This user is a Team Leader. They can view and manage attendance for their assigned team(s), monitor team members, and view team reports. They CANNOT access billing, manage other teams, or create users.`,
+  MEMBER: `This user is a Member (employee). They can punch in/out using GPS location, view their own attendance records, and view their team info. They CANNOT manage other users or access any admin features.`,
 };
 
 const buildSystemPrompt = (ctx) => {

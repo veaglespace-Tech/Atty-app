@@ -6,9 +6,11 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
+const { ensureEnv } = require("./config/env");
 
 const getEnv = (key, fallback = "") => (process.env[key] || fallback).trim();
-const PORT = Number(getEnv("PORT", "5000"));
+const runtimeEnv = ensureEnv();
+const PORT = runtimeEnv.port;
 const sentryDsn = getEnv("SENTRY_DSN");
 const sentryEnabled = Boolean(sentryDsn);
 if (sentryEnabled) {
@@ -66,6 +68,16 @@ const apiRateLimiter = rateLimit({
     message: "Too many requests, please try again later.",
   },
 });
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: runtimeEnv.loginRateLimitMax,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many login attempts, please try again after 15 minutes.",
+  },
+});
 
 app.use(helmet());
 app.use(
@@ -82,6 +94,33 @@ app.use(
   }),
 );
 app.use(cookieParser());
+app.use("/api/auth/login", loginRateLimiter);
+
+app.get("/healthz", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "veagle-attendee-server",
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Number(process.uptime().toFixed(0)),
+  });
+});
+
+app.get("/readyz", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      status: "ready",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "not_ready",
+      database: "disconnected",
+      message: "Database connection check failed",
+    });
+  }
+});
 
 app.use("/api/auth", require("./routes/auth.route"));
 app.use("/api/org", require("./routes/org.route"));

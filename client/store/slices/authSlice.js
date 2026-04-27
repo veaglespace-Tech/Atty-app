@@ -80,16 +80,7 @@ const persistSessionUser = (user) => {
   localStorage.setItem("user", JSON.stringify(user));
 };
 
-const persistToken = (token) => {
-  if (typeof window === "undefined") return;
-
-  if (!token) {
-    localStorage.removeItem("token");
-    return;
-  }
-
-  localStorage.setItem("token", token);
-};
+const COOKIE_SESSION_TOKEN = "__cookie_session__";
 
 const persistRedirectPath = (redirectPath) => {
   if (typeof window === "undefined") return;
@@ -119,12 +110,10 @@ const readPersistedSession = () => {
   if (typeof window === "undefined") {
     return {
       user: null,
-      token: null,
       redirectPath: null,
     };
   }
 
-  const token = localStorage.getItem("token");
   const user = parseStoredUser();
   const redirectPath = user
     ? resolveDashboardPath(
@@ -135,7 +124,6 @@ const readPersistedSession = () => {
 
   return {
     user,
-    token,
     redirectPath,
   };
 };
@@ -143,7 +131,6 @@ const readPersistedSession = () => {
 const clearPersistedSession = () => {
   if (typeof window === "undefined") return;
 
-  localStorage.removeItem("token");
   localStorage.removeItem("user");
   localStorage.removeItem("status");
   localStorage.removeItem("redirectPath");
@@ -157,22 +144,22 @@ const authSlice = createSlice({
     token: null,
     redirectPath: null,
     hydrated: false,
-    loading: false,
+    loading: true,
     error: null,
   },
   reducers: {
     hydrateFromStorage: (state) => {
-      const { token, user, redirectPath } = readPersistedSession();
+      const { user, redirectPath } = readPersistedSession();
 
       state.user = user;
-      state.token = token;
+      state.token = user ? COOKIE_SESSION_TOKEN : null;
       state.redirectPath = redirectPath;
       state.hydrated = true;
-      state.loading = false;
+      state.loading = true;
     },
     setSession: (state, action) => {
       const nextUser = normalizeSessionUser(action.payload?.user);
-      const nextToken = action.payload?.token || null;
+      const nextToken = nextUser ? COOKIE_SESSION_TOKEN : null;
       const nextRedirectPath = nextUser
         ? resolveDashboardPath(
             nextUser.currentRole,
@@ -186,7 +173,6 @@ const authSlice = createSlice({
       state.hydrated = true;
       state.loading = false;
 
-      persistToken(nextToken);
       persistSessionUser(nextUser);
       persistRedirectPath(nextRedirectPath);
     },
@@ -197,13 +183,21 @@ const authSlice = createSlice({
         : null;
 
       state.user = nextUser;
+      state.token = nextUser ? COOKIE_SESSION_TOKEN : null;
       state.redirectPath = nextRedirectPath;
       state.hydrated = true;
       state.loading = false;
 
-      persistToken(state.token);
       persistSessionUser(nextUser);
       persistRedirectPath(nextRedirectPath);
+    },
+    markSessionChecked: (state) => {
+      state.hydrated = true;
+      state.loading = false;
+      if (!state.user) {
+        state.token = null;
+        state.redirectPath = null;
+      }
     },
     logout: (state) => {
       state.user = null;
@@ -216,5 +210,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { hydrateFromStorage, setSession, setCurrentUser, logout } = authSlice.actions;
+export const { hydrateFromStorage, setSession, setCurrentUser, markSessionChecked, logout } =
+  authSlice.actions;
 export default authSlice.reducer;

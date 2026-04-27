@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetMeQuery } from "@/services/api/authApi";
-import { setCurrentUser } from "@/store/slices/authSlice";
+import { logout, markSessionChecked, setCurrentUser } from "@/store/slices/authSlice";
 
 /**
  * SessionSync component ensures that the local auth state (Redux) 
@@ -13,12 +13,12 @@ import { setCurrentUser } from "@/store/slices/authSlice";
  */
 export default function SessionSync() {
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.token);
+  const user = useSelector((state) => state.auth.user);
   const hydrated = useSelector((state) => state.auth.hydrated);
 
-  // We only call getMe if we have a token and the store has been hydrated from storage
+  // Run getMe after hydration to align client state with the cookie-backed server session.
   const { data, isSuccess, error } = useGetMeQuery(undefined, {
-    skip: !token || !hydrated,
+    skip: !hydrated,
     refetchOnMountOrArgChange: true,
   });
 
@@ -31,12 +31,19 @@ export default function SessionSync() {
 
   useEffect(() => {
     if (error) {
-      // If the profile fetch fails with a 401/403 (invalid token), 
-      // we don't necessarily logout here to avoid loops, 
-      // but we could log the error.
-      console.warn("Session synchronization failed:", error);
+      const status = Number(error?.status || error?.originalStatus || 0);
+      if (status === 401 || status === 403) {
+        dispatch(logout());
+        return;
+      }
+
+      // Keep the last known session state for transient failures (network/server issues).
+      if (user) {
+        console.warn("Session synchronization failed:", error);
+      }
+      dispatch(markSessionChecked());
     }
-  }, [error]);
+  }, [dispatch, error, user]);
 
   return null;
 }

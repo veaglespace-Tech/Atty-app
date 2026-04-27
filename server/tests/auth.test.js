@@ -135,7 +135,7 @@ describe("POST /api/auth/login", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.body.token).toBe("signed-jwt-token");
+    expect(response.body.token).toBeUndefined();
     expect(response.body.user.email).toBe("alice@example.com");
     expect(jwt.sign).toHaveBeenCalledTimes(1);
   });
@@ -211,7 +211,7 @@ describe("POST /api/auth/login", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.body.token).toBe("signed-jwt-token");
+    expect(response.body.token).toBeUndefined();
     expect(response.body.user.email).toBe("alice@example.com");
   });
 
@@ -287,7 +287,7 @@ describe("POST /api/auth/login", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.body.token).toBe("signed-jwt-token");
+    expect(response.body.token).toBeUndefined();
     expect(response.body.user.organization.name).toBe("Veagle Space Technologies Pvt Ltd");
   });
 
