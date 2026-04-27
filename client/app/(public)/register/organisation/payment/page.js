@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useArchiveFailedRegistrationMutation,
@@ -70,6 +70,14 @@ const getApiErrorMessage = (error, fallback = "Unable to process request.") => {
 };
 
 export default function PaymentPage() {
+  return (
+    <Suspense fallback={<PaymentPageFallback />}>
+      <PaymentPageContent />
+    </Suspense>
+  );
+}
+
+function PaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackHandledRef = useRef(false);
@@ -97,6 +105,21 @@ export default function PaymentPage() {
       console.error("Failed to archive registration attempt", err);
     }
   }, [archiveFailedRegistration]);
+
+  const finalizeSuccess = useCallback(({ organization, admin, plan, emailSent, freeTrial = false }) => {
+    setSuccessState({
+      organizationName: organization?.name || "Your organization",
+      adminEmail: admin?.email || "",
+      planName: plan?.name || selectedPlan?.name || "Selected Plan",
+      emailSent: emailSent !== false,
+      freeTrial,
+    });
+    localStorage.removeItem("organisationData");
+    localStorage.removeItem("adminData");
+    localStorage.removeItem("selectedPlan");
+    setPaymentStatus("");
+    setLoading(false);
+  }, [selectedPlan]);
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("selectedPlan");
@@ -201,21 +224,6 @@ export default function PaymentPage() {
 
     completeRegistration();
   }, [finalizeSuccess, handleArchive, searchParams, router, verifyAndRegisterPayment]);
-
-  const finalizeSuccess = useCallback(({ organization, admin, plan, emailSent, freeTrial = false }) => {
-    setSuccessState({
-      organizationName: organization?.name || "Your organization",
-      adminEmail: admin?.email || "",
-      planName: plan?.name || selectedPlan?.name || "Selected Plan",
-      emailSent: emailSent !== false,
-      freeTrial,
-    });
-    localStorage.removeItem("organisationData");
-    localStorage.removeItem("adminData");
-    localStorage.removeItem("selectedPlan");
-    setPaymentStatus("");
-    setLoading(false);
-  }, [selectedPlan]);
 
   const handlePayment = async () => {
     if (!selectedPlan) {
@@ -570,6 +578,19 @@ export default function PaymentPage() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentPageFallback() {
+  return (
+    <div className="page-shell flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 pt-20">
+      <div className="rounded-[2rem] border border-slate-200 bg-white/85 p-8 text-center shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-950/72">
+        <Loader2 size={28} className="mx-auto animate-spin text-blue-600 dark:text-blue-300" />
+        <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
+          Preparing your secure checkout...
+        </p>
       </div>
     </div>
   );

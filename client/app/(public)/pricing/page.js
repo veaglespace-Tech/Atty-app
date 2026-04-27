@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -126,6 +126,14 @@ const getRenewalCtaLabel = ({ isCurrentPlan, subscriptionStatus, mode }) => {
 };
 
 export default function PricingPage() {
+  return (
+    <Suspense fallback={<PricingPageFallback />}>
+      <PricingPageContent />
+    </Suspense>
+  );
+}
+
+function PricingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackHandledRef = useRef(false);
@@ -735,6 +743,19 @@ function CompactInfoCard({ label, value }) {
         {label}
       </p>
       <p className="mt-1.5 text-sm font-black text-slate-950 dark:text-white">{value}</p>
+    </div>
+  );
+}
+
+function PricingPageFallback() {
+  return (
+    <div className="page-shell flex min-h-screen items-center justify-center px-4">
+      <div className="rounded-[2rem] border border-slate-200 bg-white/85 p-8 text-center shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-950/72">
+        <Loader2 size={28} className="mx-auto animate-spin text-blue-600 dark:text-blue-300" />
+        <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
+          Loading pricing options...
+        </p>
+      </div>
     </div>
   );
 }
