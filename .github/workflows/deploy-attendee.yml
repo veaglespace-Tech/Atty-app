@@ -18,54 +18,51 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
 
           script: |
+            set -e  # ❗ IMPORTANT: fail immediately if any command fails
+
             echo "===== CONNECTED ====="
 
-            # go to project
-            cd /root/attendee || exit
+            cd /root/attendee
 
-            # update code
             git fetch origin main
-            git checkout main
             git reset --hard origin/main
 
-            echo "===== LATEST COMMIT ====="
-            git log -1 --oneline
-
             echo "===== BACKEND ====="
-            cd server || exit
-
-            # load env
-            if [ ! -f .env ]; then
-              echo "Missing server/.env"
-              exit 1
-            fi
+            cd server
 
             set -a
             . ./.env
             set +a
 
-            # install + migrate
             npm ci
             npx prisma migrate deploy
 
-            # restart backend safely
             pm2 describe attendee-server > /dev/null \
               && pm2 restart attendee-server \
               || pm2 start npm --name "attendee-server" -- start
 
             echo "===== FRONTEND ====="
-            cd ../client || exit
+            cd ../client
 
-            rm -rf .next
+            rm -rf .next node_modules  # ✅ FULL CLEAN (important)
+
             npm ci
+
+            echo "===== BUILDING NEXT ====="
             npm run build
 
-            # restart frontend safely
+            # ✅ verify build actually exists
+            if [ ! -f ".next/prerender-manifest.json" ]; then
+              echo "❌ Build failed: prerender-manifest.json missing"
+              exit 1
+            fi
+
+            echo "✅ Build verified"
+
             pm2 describe attendee-client > /dev/null \
               && pm2 restart attendee-client \
               || pm2 start npm --name "attendee-client" -- start
 
-            # save pm2
             pm2 save
 
             echo "===== DONE ====="
