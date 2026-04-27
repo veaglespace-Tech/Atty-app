@@ -17,28 +17,43 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            echo "===== CONNECTED ====="
+
+            # go to project
             cd /root/attendee || exit
 
+            # update code
             git fetch origin main
-            git checkout main
             git reset --hard origin/main
 
-            cd server
+            echo "===== BACKEND ====="
+            cd server || exit
+
+            # load env
             export $(grep -v '^#' .env | xargs)
+
+            # install + migrate
             npm ci
             npx prisma migrate deploy
 
+            # restart backend safely
             pm2 describe attendee-server > /dev/null \
               && pm2 restart attendee-server \
               || pm2 start npm --name "attendee-server" -- start
 
-            cd ../client
+            echo "===== FRONTEND ====="
+            cd ../client || exit
+
             rm -rf .next
             npm ci
             npm run build
 
+            # restart frontend safely
             pm2 describe attendee-client > /dev/null \
               && pm2 restart attendee-client \
               || pm2 start npm --name "attendee-client" -- start
 
+            # save pm2
             pm2 save
+
+            echo "===== DONE ====="
