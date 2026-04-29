@@ -1,3 +1,5 @@
+const { CLIENT_BASE_URL } = require("./index");
+
 const trimValue = (value) => String(value || "").trim();
 
 const parsePort = (value, fallback = 5000) => {
@@ -32,10 +34,12 @@ const ensureEnv = () => {
 
   if (isProduction) {
     const hasClientOrigin = Boolean(
-      trimValue(process.env.CLIENT_URL) || trimValue(process.env.CLIENT_ORIGINS)
+      trimValue(process.env.CLIENT_URL) ||
+      trimValue(process.env.CLIENT_ORIGINS) ||
+      trimValue(CLIENT_BASE_URL)
     );
     if (!hasClientOrigin) {
-      errors.push("CLIENT_URL or CLIENT_ORIGINS is required in production.");
+      errors.push("CLIENT_URL, CLIENT_ORIGINS, or CLIENT_BASE_URL fallback is required in production.");
     }
   }
 

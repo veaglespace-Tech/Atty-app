@@ -50,6 +50,23 @@ jobs:
             # restart backend
             NODE_ENV=production pm2 restart attendee-server --update-env || NODE_ENV=production pm2 start npm --name "attendee-server" -- start
 
+            # verify the API is actually serving before continuing
+            BACKEND_PORT="${PORT:-5000}"
+            for attempt in 1 2 3 4 5; do
+              if curl -fsS "http://127.0.0.1:${BACKEND_PORT}/healthz" >/dev/null; then
+                echo "===== BACKEND READY ====="
+                break
+              fi
+
+              if [ "$attempt" -eq 5 ]; then
+                echo "❌ Backend health check failed on port ${BACKEND_PORT}"
+                pm2 logs attendee-server --lines 80 --nostream || true
+                exit 1
+              fi
+
+              sleep 3
+            done
+
             # ================= FRONTEND =================
             echo "===== FRONTEND CLEAN BUILD ====="
             cd ../client || exit 1
