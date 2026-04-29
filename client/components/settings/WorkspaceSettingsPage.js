@@ -285,11 +285,16 @@ export default function WorkspaceSettingsPage() {
   const effectiveRole = currentRole || user?.role || ROLES.MEMBER;
   const roleLabel = formatRoleLabel(effectiveRole);
   const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN;
+  const organizationId = getUserOrganizationId(user);
   const permissionsCount = resolveUserPermissions(user).length;
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || null;
   const referralCode = user?.organization?.referralCode || null;
   const workspaceCity = user?.city || user?.organization?.city || null;
   const [copiedReferral, setCopiedReferral] = useState(false);
+  const canManageLocationSettings =
+    !isSuperAdmin &&
+    Boolean(organizationId) &&
+    hasPermission(user, PERMISSIONS.LOCATION_SET);
 
   const {
     control,
@@ -825,7 +830,7 @@ export default function WorkspaceSettingsPage() {
             </div>
           </div>
 
-          {hasPermission(user, PERMISSIONS.LOCATION_SET) && <LocationSettings />}
+          {canManageLocationSettings && <LocationSettings />}
         </div>
       </div>
     </section>

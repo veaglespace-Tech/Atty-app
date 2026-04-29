@@ -26,6 +26,10 @@ export default function CountryPhoneField({
   inputClassName = "",
   messageClassName = "",
   iconClassName = "",
+  selectAutoComplete = "off",
+  phoneAutoComplete = "tel-national",
+  selectProps = {},
+  phoneProps = {},
 }) {
   const hasError = Boolean(countryCodeError || phoneError);
 
@@ -56,10 +60,12 @@ export default function CountryPhoneField({
           value={getDefaultCountryCode(countryCode)}
           onChange={onCountryCodeChange}
           disabled={disabled}
+          autoComplete={selectAutoComplete}
           className={cn(
             "w-[5.5rem] shrink-0 border-r border-slate-200 bg-white px-2.5 py-3 text-xs font-semibold text-slate-900 outline-none sm:w-[6.75rem] sm:px-3 sm:py-4 sm:text-sm dark:border-slate-700 dark:bg-slate-950/88 dark:text-slate-100",
             selectClassName
           )}
+          {...selectProps}
         >
           {COUNTRY_PHONE_OPTIONS.map((option) => (
             <option key={`${option.iso}-${option.code}`} value={option.code}>
@@ -71,7 +77,7 @@ export default function CountryPhoneField({
         <input
           type="tel"
           inputMode="numeric"
-          autoComplete="tel-national"
+          autoComplete={phoneAutoComplete}
           name={phoneName}
           value={phone}
           onChange={onPhoneChange}
@@ -81,6 +87,7 @@ export default function CountryPhoneField({
             "min-w-0 flex-1 bg-white px-3 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 sm:px-4 sm:py-4 dark:bg-slate-950/88 dark:text-slate-100 dark:placeholder:text-slate-500",
             inputClassName
           )}
+          {...phoneProps}
         />
       </div>
 

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import RegisterFlowShell from "@/components/register/RegisterFlowShell";
+import RegisterStepBack from "@/components/register/RegisterStepBack";
 import {
   ORGANIZATION_NAME_REGEX,
   PHONE_DIGIT_MAX,
@@ -24,6 +25,11 @@ import {
   normalizeTextInput,
   toDigitsOnly,
 } from "@/utils/formValidation";
+import {
+  getRegistrationDraft,
+  REGISTRATION_DRAFT_KEYS,
+  setRegistrationDraft,
+} from "@/utils/registerDraft";
 
 const organisationSchema = z.object({
   name: z
@@ -78,6 +84,27 @@ const fieldClassName =
 const normalFieldClassName = "border-slate-200 hover:border-slate-300 dark:border-white/80";
 const errorFieldClassName =
   "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
+const organisationDefaultValues = {
+  name: "",
+  email: "",
+  phoneCountryCode: "+91",
+  phone: "",
+  address: "",
+  city: "",
+  state: "",
+  country: "India",
+};
+const browserAutofillBlockProps = {
+  autoComplete: "off",
+  "data-lpignore": "true",
+  "data-1p-ignore": "true",
+};
+const emailFieldProps = {
+  ...browserAutofillBlockProps,
+  inputMode: "email",
+  autoCapitalize: "none",
+  spellCheck: false,
+};
 
 export default function OrganisationForm() {
   const router = useRouter();
@@ -86,39 +113,45 @@ export default function OrganisationForm() {
     register,
     handleSubmit,
     setValue,
+    reset,
     control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(organisationSchema),
     mode: "all",
-    defaultValues: {
-      name: "",
-      email: "",
-      phoneCountryCode: "+91",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      country: "India",
-    },
+    defaultValues: organisationDefaultValues,
   });
   const phoneCountryCode = useWatch({ control, name: "phoneCountryCode" });
   const phone = useWatch({ control, name: "phone" });
 
-  const onSubmit = async (values) => {
-    localStorage.setItem(
-      "organisationData",
-      JSON.stringify({
-        ...values,
-        name: normalizeTextInput(values.name),
-        email: normalizeEmailInput(values.email),
-        city: normalizeTextInput(values.city),
-        state: normalizeTextInput(values.state),
-        country: normalizeTextInput(values.country),
-        address: normalizeTextInput(values.address),
-        phone: toDigitsOnly(values.phone),
-      })
+  React.useEffect(() => {
+    const storedOrganization = getRegistrationDraft(
+      REGISTRATION_DRAFT_KEYS.organisation
     );
+
+    if (!storedOrganization) return;
+
+    reset({
+      ...organisationDefaultValues,
+      ...storedOrganization,
+      phoneCountryCode:
+        storedOrganization.phoneCountryCode ||
+        organisationDefaultValues.phoneCountryCode,
+      country: storedOrganization.country || organisationDefaultValues.country,
+    });
+  }, [reset]);
+
+  const onSubmit = async (values) => {
+    setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, {
+      ...values,
+      name: normalizeTextInput(values.name),
+      email: normalizeEmailInput(values.email),
+      city: normalizeTextInput(values.city),
+      state: normalizeTextInput(values.state),
+      country: normalizeTextInput(values.country),
+      address: normalizeTextInput(values.address),
+      phone: toDigitsOnly(values.phone),
+    });
     router.push("/register/organisation/admin");
   };
 
@@ -137,8 +170,19 @@ export default function OrganisationForm() {
       badgeIcon={ShieldCheck}
       title="Register Organization"
       description="Company profile setup"
+      beforeCard={
+        <RegisterStepBack
+          href="/register"
+          label="Back to Registration Options"
+        />
+      }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 md:grid-cols-2">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        autoComplete="off"
+        noValidate
+        className="grid gap-5 md:grid-cols-2"
+      >
         {fields.map((field) => (
           <Field
             key={field.name}
@@ -151,6 +195,7 @@ export default function OrganisationForm() {
             <input
               type={field.type || "text"}
               {...register(field.name)}
+              {...(field.name === "email" ? emailFieldProps : browserAutofillBlockProps)}
               className={`${fieldClassName} !pl-12 ${errors[field.name] ? errorFieldClassName : normalFieldClassName}`}
             />
           </Field>
@@ -161,6 +206,10 @@ export default function OrganisationForm() {
           required
           countryCode={phoneCountryCode}
           phone={phone || ""}
+          countryCodeName="organisationPhoneCountryCodeDisplay"
+          phoneName="organisationPhoneDisplay"
+          selectAutoComplete="off"
+          phoneAutoComplete="off"
           onCountryCodeChange={(event) =>
             setValue("phoneCountryCode", event.target.value, {
               shouldValidate: true,
@@ -180,6 +229,8 @@ export default function OrganisationForm() {
           helpText=""
           containerClassName="space-y-1.5 md:col-span-2"
           labelClassName="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 dark:text-slate-300"
+          selectProps={browserAutofillBlockProps}
+          phoneProps={browserAutofillBlockProps}
         />
         <input type="hidden" {...register("phoneCountryCode")} />
         <input type="hidden" {...register("phone")} />

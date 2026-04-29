@@ -24,7 +24,17 @@ const {
 
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 15;
 const PASSWORD_RESET_TOKEN_TTL_SECONDS = PASSWORD_RESET_TOKEN_TTL_MINUTES * 60;
-const SESSION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_SESSION_TOKEN_TTL_HOURS = 24;
+const parsePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(String(value || "").trim(), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+const SESSION_TOKEN_TTL_HOURS = parsePositiveInteger(
+  process.env.SESSION_TOKEN_TTL_HOURS,
+  DEFAULT_SESSION_TOKEN_TTL_HOURS
+);
+const SESSION_TOKEN_TTL_SECONDS = SESSION_TOKEN_TTL_HOURS * 60 * 60;
+const SESSION_TOKEN_TTL_MS = SESSION_TOKEN_TTL_SECONDS * 1000;
 const GENERIC_PASSWORD_RESET_MESSAGE =
   "If this account exists, we have sent a reset link to the registered email address.";
 
@@ -1215,7 +1225,7 @@ exports.login = asyncHandler(async (req, res) => {
       : hydratedUser;
 
   const token = jwt.sign({ id: user.id }, process.env.JWT_KEY, {
-    expiresIn: "7d",
+    expiresIn: SESSION_TOKEN_TTL_SECONDS,
   });
 
   const redirectPath =

@@ -19,7 +19,15 @@ import {
   Mail,
 } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import RegisterStepBack from "@/components/register/RegisterStepBack";
 import { isHiddenPaidMonthlyPlan } from "@/utils/plans";
+import {
+  clearAllRegistrationDrafts,
+  clearRegistrationDraft,
+  getRegistrationDraft,
+  REGISTRATION_DRAFT_KEYS,
+  setRegistrationDraft,
+} from "@/utils/registerDraft";
 
 const PAYMENT_FEATURES = [
   {
@@ -102,8 +110,10 @@ export default function PaymentPage() {
   const [archiveFailedRegistration] = useArchiveFailedRegistrationMutation();
   const handleArchive = async (reason = "Registration abandoned") => {
     try {
-      const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
-      const admin = JSON.parse(localStorage.getItem("adminData") || "null");
+      const organization = getRegistrationDraft(
+        REGISTRATION_DRAFT_KEYS.organisation
+      );
+      const admin = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin);
 
       if (organization && admin) {
         await archiveFailedRegistration({
@@ -118,27 +128,35 @@ export default function PaymentPage() {
   };
 
   useEffect(() => {
-    const storedPlan = localStorage.getItem("selectedPlan");
-    if (!storedPlan) {
-      router.push("/register/organisation/plan");
+    const storedOrganization = getRegistrationDraft(
+      REGISTRATION_DRAFT_KEYS.organisation
+    );
+    if (!storedOrganization) {
+      router.replace("/register/organisation");
       return;
     }
 
-    try {
-      const parsedPlan = JSON.parse(storedPlan);
-      const normalized = normalizePlan(parsedPlan);
-      if (!normalized?.code || isHiddenPaidMonthlyPlan(normalized)) {
-        localStorage.removeItem("selectedPlan");
-        router.push("/register/organisation/plan");
-        return;
-      }
-
-      setSelectedPlan(normalized);
-      localStorage.setItem("selectedPlan", JSON.stringify(normalized));
-    } catch {
-      localStorage.removeItem("selectedPlan");
-      router.push("/register/organisation/plan");
+    const storedAdmin = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin);
+    if (!storedAdmin) {
+      router.replace("/register/organisation/admin");
+      return;
     }
+
+    const storedPlan = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.selectedPlan);
+    if (!storedPlan) {
+      router.replace("/register/organisation/plan");
+      return;
+    }
+
+    const normalized = normalizePlan(storedPlan);
+    if (!normalized?.code || isHiddenPaidMonthlyPlan(normalized)) {
+      clearRegistrationDraft(REGISTRATION_DRAFT_KEYS.selectedPlan);
+      router.replace("/register/organisation/plan");
+      return;
+    }
+
+    setSelectedPlan(normalized);
+    setRegistrationDraft(REGISTRATION_DRAFT_KEYS.selectedPlan, normalized);
   }, [router]);
 
   const finalizeSuccess = ({ organization, admin, plan, emailSent, freeTrial = false }) => {
@@ -149,9 +167,7 @@ export default function PaymentPage() {
       emailSent: emailSent !== false,
       freeTrial,
     });
-    localStorage.removeItem("organisationData");
-    localStorage.removeItem("adminData");
-    localStorage.removeItem("selectedPlan");
+    clearAllRegistrationDrafts();
     setPaymentStatus("");
     setLoading(false);
   };
@@ -163,8 +179,10 @@ export default function PaymentPage() {
       return;
     }
 
-    const organization = JSON.parse(localStorage.getItem("organisationData") || "null");
-    const admin = JSON.parse(localStorage.getItem("adminData") || "null");
+    const organization = getRegistrationDraft(
+      REGISTRATION_DRAFT_KEYS.organisation
+    );
+    const admin = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin);
     const adminPrefillContact = `${admin?.mobileCountryCode || ""}${admin?.mobile || ""}`;
     const organizationPrefillContact = `${organization?.phoneCountryCode || ""}${organization?.phone || ""}`;
 
@@ -358,6 +376,15 @@ export default function PaymentPage() {
       />
 
       <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 px-4 py-4 sm:py-6 lg:grid-cols-12 lg:gap-10 lg:py-4">
+        {!successState ? (
+          <div className="lg:col-span-12">
+            <RegisterStepBack
+              href="/register/organisation/plan"
+              label="Back to Plan Selection"
+            />
+          </div>
+        ) : null}
+
         <div className="hidden lg:col-span-5 lg:flex lg:flex-col lg:justify-center lg:gap-6 lg:pl-6">
           <div>
             <SectionEyebrow className="mb-6">Final step to get started</SectionEyebrow>

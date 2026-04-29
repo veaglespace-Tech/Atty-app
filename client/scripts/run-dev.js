@@ -1,9 +1,11 @@
+const fs = require("fs");
 const { execSync, spawn } = require("child_process");
 const path = require("path");
 
 const projectRoot = process.cwd();
 const port = 3000;
 const cleanMode = process.argv.includes("--clean");
+const nextDevLogPath = path.join(projectRoot, ".next", "dev", "logs", "next-development.log");
 
 function findListeningPids(targetPort) {
   try {
@@ -74,14 +76,33 @@ function cleanupNextDirectory() {
   }
 }
 
+function shouldRecoverFromChunkLoadError() {
+  try {
+    if (!fs.existsSync(nextDevLogPath)) {
+      return false;
+    }
+
+    const logTail = fs.readFileSync(nextDevLogPath, "utf8").slice(-20000);
+    return /ChunkLoadError:\s+Failed to load chunk/i.test(logTail);
+  } catch (_) {
+    return false;
+  }
+}
+
 const stalePids = findListeningPids(port).filter((pid) => pid !== process.pid);
 if (stalePids.length > 0) {
   console.log(`Freeing port ${port} by stopping PID(s): ${stalePids.join(", ")}`);
   stalePids.forEach(killPid);
 }
 
-if (cleanMode) {
-  console.log("Clearing .next cache because --clean was requested.");
+const shouldCleanForChunkRecovery = !cleanMode && shouldRecoverFromChunkLoadError();
+
+if (cleanMode || shouldCleanForChunkRecovery) {
+  console.log(
+    cleanMode
+      ? "Clearing .next cache because --clean was requested."
+      : "Clearing .next cache because the last dev session ended with a chunk load error."
+  );
   cleanupNextDirectory();
 }
 

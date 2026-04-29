@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,7 @@ import {
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PasswordInput from "@/components/PasswordInput";
 import RegisterFlowShell from "@/components/register/RegisterFlowShell";
+import RegisterStepBack from "@/components/register/RegisterStepBack";
 import { ROLES } from "@/utils/roles";
 import {
   PERSON_NAME_REGEX,
@@ -27,6 +28,11 @@ import {
   normalizeTextInput,
   toDigitsOnly,
 } from "@/utils/formValidation";
+import {
+  getRegistrationDraft,
+  REGISTRATION_DRAFT_KEYS,
+  setRegistrationDraft,
+} from "@/utils/registerDraft";
 
 const registrationSchema = z
   .object({
@@ -80,6 +86,33 @@ const fieldClassName =
 const normalFieldClassName = "border-slate-200 hover:border-slate-300 dark:border-white/80";
 const errorFieldClassName =
   "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
+const adminDefaultValues = {
+  name: "",
+  email: "",
+  mobileCountryCode: "+91",
+  mobile: "",
+  password: "",
+  confirmPassword: "",
+  city: "",
+  gender: "MALE",
+  role: ROLES.ORG_ADMIN,
+};
+const browserAutofillBlockProps = {
+  autoComplete: "off",
+  "data-lpignore": "true",
+  "data-1p-ignore": "true",
+};
+const emailFieldProps = {
+  ...browserAutofillBlockProps,
+  inputMode: "email",
+  autoCapitalize: "none",
+  spellCheck: false,
+};
+const passwordFieldProps = {
+  autoComplete: "new-password",
+  "data-lpignore": "true",
+  "data-1p-ignore": "true",
+};
 
 export default function AdminRegistration() {
   const router = useRouter();
@@ -90,21 +123,12 @@ export default function AdminRegistration() {
     handleSubmit,
     control,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(registrationSchema),
     mode: "all",
-    defaultValues: {
-      name: "",
-      email: "",
-      mobileCountryCode: "+91",
-      mobile: "",
-      password: "",
-      confirmPassword: "",
-      city: "",
-      gender: "MALE",
-      role: ROLES.ORG_ADMIN,
-    },
+    defaultValues: adminDefaultValues,
   });
 
   const genderValue = useWatch({
@@ -115,16 +139,13 @@ export default function AdminRegistration() {
   const onSubmit = async (values) => {
     setSubmitError("");
     try {
-      localStorage.setItem(
-        "adminData",
-        JSON.stringify({
-          ...values,
-          name: normalizeTextInput(values.name),
-          email: normalizeEmailInput(values.email),
-          city: normalizeTextInput(values.city),
-          mobile: toDigitsOnly(values.mobile),
-        })
-      );
+      setRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin, {
+        ...values,
+        name: normalizeTextInput(values.name),
+        email: normalizeEmailInput(values.email),
+        city: normalizeTextInput(values.city),
+        mobile: toDigitsOnly(values.mobile),
+      });
       router.push("/register/organisation/plan");
     } catch (error) {
       setSubmitError(error.message || "Something went wrong during registration.");
@@ -141,12 +162,41 @@ export default function AdminRegistration() {
   const mobileCountryCode = useWatch({ control, name: "mobileCountryCode" });
   const mobile = useWatch({ control, name: "mobile" });
 
+  useEffect(() => {
+    const storedOrganization = getRegistrationDraft(
+      REGISTRATION_DRAFT_KEYS.organisation
+    );
+
+    if (!storedOrganization) {
+      router.replace("/register/organisation");
+      return;
+    }
+
+    const storedAdmin = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin);
+    if (!storedAdmin) return;
+
+    reset({
+      ...adminDefaultValues,
+      ...storedAdmin,
+      mobileCountryCode:
+        storedAdmin.mobileCountryCode || adminDefaultValues.mobileCountryCode,
+      gender: storedAdmin.gender || adminDefaultValues.gender,
+      role: storedAdmin.role || adminDefaultValues.role,
+    });
+  }, [reset, router]);
+
   return (
     <RegisterFlowShell
       badge="Step 2 of 4"
       badgeIcon={ShieldCheck}
       title="Admin Profile"
       description="Create your organization&apos;s primary administrator"
+      beforeCard={
+        <RegisterStepBack
+          href="/register/organisation"
+          label="Back to Organization Details"
+        />
+      }
     >
       {submitError ? (
         <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
@@ -154,7 +204,19 @@ export default function AdminRegistration() {
         </p>
       ) : null}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 md:grid-cols-2">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        autoComplete="off"
+        noValidate
+        className="grid gap-5 md:grid-cols-2"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-[-9999px] top-auto h-px w-px overflow-hidden opacity-0"
+        >
+          <input type="text" autoComplete="username" tabIndex={-1} />
+          <input type="password" autoComplete="current-password" tabIndex={-1} />
+        </div>
         {fields.map((field) => (
           <Field
             key={field.name}
@@ -167,12 +229,14 @@ export default function AdminRegistration() {
               <PasswordInput
                 icon={null}
                 {...register(field.name)}
+                {...passwordFieldProps}
                 className={`${fieldClassName} !pl-12 ${errors[field.name] ? errorFieldClassName : normalFieldClassName}`}
               />
             ) : (
               <input
                 type={field.type || "text"}
                 {...register(field.name)}
+                {...(field.name === "email" ? emailFieldProps : browserAutofillBlockProps)}
                 className={`${fieldClassName} !pl-12 ${errors[field.name] ? errorFieldClassName : normalFieldClassName}`}
               />
             )}
@@ -184,22 +248,30 @@ export default function AdminRegistration() {
           required
           countryCode={mobileCountryCode}
           phone={mobile || ""}
+          countryCodeName="adminMobileCountryCodeDisplay"
+          phoneName="adminMobileDisplay"
+          selectAutoComplete="off"
+          phoneAutoComplete="off"
           onCountryCodeChange={(event) =>
             setValue("mobileCountryCode", event.target.value, {
               shouldValidate: true,
               shouldDirty: true,
+              shouldTouch: true,
             })
           }
           onPhoneChange={(event) =>
             setValue("mobile", event.target.value.replace(/[^\d]/g, ""), {
               shouldValidate: true,
               shouldDirty: true,
+              shouldTouch: true,
             })
           }
           countryCodeError={errors.mobileCountryCode?.message}
           phoneError={errors.mobile?.message}
           containerClassName="space-y-1.5 md:col-span-2"
           labelClassName="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 dark:text-slate-300"
+          selectProps={browserAutofillBlockProps}
+          phoneProps={browserAutofillBlockProps}
         />
         <input type="hidden" {...register("mobileCountryCode")} />
         <input type="hidden" {...register("mobile")} />

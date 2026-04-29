@@ -59,6 +59,21 @@ const isAuthMutationRequest = (url) =>
   ["/auth/login", "/auth/forgot-password", "/auth/reset-password", "/auth/reset-password/validate"]
     .some((path) => String(url).includes(path));
 
+const shouldForceLogoutForForbidden = (error) => {
+  const message = String(error?.data?.message || error?.error || "").trim().toLowerCase();
+  if (!message) return false;
+
+  return [
+    "your account has been removed",
+    "your account is inactive",
+    "your registration is pending approval",
+    "your registration request was rejected",
+    "you do not belong to the selected organization",
+    "your organization membership is inactive",
+    "no active organization membership found",
+  ].some((fragment) => message.includes(fragment));
+};
+
 const redirectForExpiredSubscription = (api) => {
   if (typeof window === "undefined") return;
 
@@ -111,7 +126,7 @@ export const buildBaseQuery = () => async (args, api, extraOptions) => {
     redirectForExpiredSubscription(api);
   }
 
-  if (statusCode === 401 || statusCode === 403) {
+  if (statusCode === 401 || (statusCode === 403 && shouldForceLogoutForForbidden(result?.error))) {
     handleUnauthorizedSession(api, args);
   }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ArrowRight, Zap, Star, Crown, Loader2 } from "lucide-react";
+import RegisterStepBack from "@/components/register/RegisterStepBack";
 import { useGetPlansQuery } from "@/services/api/planApi";
 import {
   filterVisiblePlans,
@@ -10,11 +11,50 @@ import {
   formatPlanDurationShort,
   formatPlanPrice,
 } from "@/utils/plans";
+import {
+  getRegistrationDraft,
+  getRegistrationDraftRaw,
+  REGISTRATION_DRAFT_KEYS,
+  setRegistrationDraft,
+} from "@/utils/registerDraft";
 
 export default function Plans() {
   const router = useRouter();
   const { data: rawPlans, isLoading, error, refetch } = useGetPlansQuery();
-  const [selectedDuration, setSelectedDuration] = useState(90);
+  const [selectedDurationOverride, setSelectedDurationOverride] = useState(null);
+  const storedSelectedPlan = useSyncExternalStore(
+    () => () => {},
+    () => getRegistrationDraftRaw(REGISTRATION_DRAFT_KEYS.selectedPlan),
+    () => null
+  );
+
+  const selectedDuration = useMemo(() => {
+    if (selectedDurationOverride) return selectedDurationOverride;
+
+    try {
+      const parsedPlan = JSON.parse(storedSelectedPlan || "null");
+      const storedDuration = Number(parsedPlan?.durationInDays || 0);
+      return storedDuration > 0 ? storedDuration : 90;
+    } catch (_) {
+      return 90;
+    }
+  }, [selectedDurationOverride, storedSelectedPlan]);
+
+  useEffect(() => {
+    const storedOrganization = getRegistrationDraft(
+      REGISTRATION_DRAFT_KEYS.organisation
+    );
+    const storedAdmin = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin);
+
+    if (!storedOrganization) {
+      router.replace("/register/organisation");
+      return;
+    }
+
+    if (!storedAdmin) {
+      router.replace("/register/organisation/admin");
+    }
+  }, [router]);
 
   const tiers = useMemo(() => {
     const plans = filterVisiblePlans(rawPlans);
@@ -59,7 +99,7 @@ export default function Plans() {
       durationInDays: plan.durationInDays,
     };
 
-    localStorage.setItem("selectedPlan", JSON.stringify(planData));
+    setRegistrationDraft(REGISTRATION_DRAFT_KEYS.selectedPlan, planData);
     router.push("/register/organisation/payment");
   };
 
@@ -103,6 +143,12 @@ export default function Plans() {
   return (
     <div className="page-shell min-h-screen overflow-hidden px-4 py-24">
       <div className="max-w-6xl mx-auto">
+        <RegisterStepBack
+          href="/register/organisation/admin"
+          label="Back to Admin Details"
+          className="mb-8"
+        />
+
         <div className="text-center mb-16">
           <span className="inline-block py-2 px-6 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-200 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-blue-100 dark:border-blue-500/20">
             Step 3 of 4
@@ -118,7 +164,7 @@ export default function Plans() {
             {durations.map((d) => (
               <button
                 key={d.value}
-                onClick={() => setSelectedDuration(d.value)}
+                onClick={() => setSelectedDurationOverride(d.value)}
                 className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedDuration === d.value
                   ? "bg-slate-900 dark:bg-blue-400 text-white dark:text-slate-950 shadow-xl shadow-blue-200/30"
                   : "text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white"

@@ -17,6 +17,11 @@ import {
   authFieldNormalClassName,
   authPageShellClassName,
 } from "@/components/auth/AuthPageShell";
+import {
+  AuthAutofillTrap,
+  autofillGuardEmailProps,
+  autofillGuardPasswordProps,
+} from "@/components/auth/AuthAutofillGuard";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useAdminSigninMutation } from "@/services/api/authApi";
 import { setSession } from "@/store/slices/authSlice";
@@ -42,6 +47,10 @@ export default function SuperAdminLoginPage() {
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const currentRole = user?.currentRole;
   const [adminSignin, { error: apiError }] = useAdminSigninMutation();
+  const [editableFields, setEditableFields] = React.useState({
+    email: false,
+    password: false,
+  });
 
   const {
     control,
@@ -73,6 +82,12 @@ export default function SuperAdminLoginPage() {
       router.replace(nextPath);
     }
   }, [currentRole, hydrated, redirectPath, router, token, user?.dashboardPath]);
+
+  const unlockField = (fieldName) => () => {
+    setEditableFields((current) =>
+      current[fieldName] ? current : { ...current, [fieldName]: true }
+    );
+  };
 
   const onSubmit = async (values) => {
     try {
@@ -131,7 +146,14 @@ export default function SuperAdminLoginPage() {
               </div>
             ) : null}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              autoComplete="off"
+              noValidate
+              className="space-y-5 sm:space-y-6"
+            >
+              <AuthAutofillTrap />
+
               <div className="group relative">
                 <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                   Email Address
@@ -145,6 +167,9 @@ export default function SuperAdminLoginPage() {
                     placeholder="admin@veagle.com"
                     className={`${authFieldClassName} !pl-12 ${errors.email ? authFieldErrorClassName : authFieldNormalClassName}`}
                     {...register("email")}
+                    {...autofillGuardEmailProps}
+                    readOnly={!editableFields.email}
+                    onFocus={unlockField("email")}
                   />
                 </div>
                 {errors.email ? (
@@ -171,6 +196,9 @@ export default function SuperAdminLoginPage() {
                   placeholder="Enter your password"
                   className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
                   {...register("password")}
+                  {...autofillGuardPasswordProps}
+                  readOnly={!editableFields.password}
+                  onFocus={unlockField("password")}
                 />
                 {errors.password ? (
                   <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">

@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { StoreProvider } from "@/components/StoreProvider";
 import AttyWidget from "@/components/AttyWidget";
 import SessionSync from "@/components/SessionSync";
-import "./globals.css";
+import RegistrationDraftLifecycle from "@/components/register/RegistrationDraftLifecycle";
 
 export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
@@ -56,6 +56,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <StoreProvider>
             <SessionSync />
+            <RegistrationDraftLifecycle />
             <Navbar />
             <main className="w-full overflow-x-clip">{children}</main>
             <AttyWidget />
