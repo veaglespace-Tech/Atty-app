@@ -196,7 +196,7 @@ export default function Plans() {
         </div>
 
         <p className="text-center mt-12 text-slate-400 dark:text-slate-500 text-sm font-medium">
-          Secure checkout by PayU - Cancel or upgrade anytime
+          Secure checkout by Razorpay - Cancel or upgrade anytime
         </p>
       </div>
     </div>

@@ -15,12 +15,21 @@ export default function SessionSync() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const hydrated = useSelector((state) => state.auth.hydrated);
+  const token = useSelector((state) => state.auth.token);
+  const loading = useSelector((state) => state.auth.loading);
+  const shouldProbeServer = hydrated && Boolean(token);
 
-  // Run getMe after hydration to align client state with the cookie-backed server session.
+  // Probe the server only when we already have a local session candidate.
+  // This avoids a startup 401 from racing with a fresh successful login.
   const { data, isSuccess, error } = useGetMeQuery(undefined, {
-    skip: !hydrated,
+    skip: !shouldProbeServer,
     refetchOnMountOrArgChange: true,
   });
+
+  useEffect(() => {
+    if (!hydrated || token || !loading) return;
+    dispatch(markSessionChecked());
+  }, [dispatch, hydrated, loading, token]);
 
   useEffect(() => {
     if (isSuccess && data?.user) {
@@ -33,7 +42,12 @@ export default function SessionSync() {
     if (error) {
       const status = Number(error?.status || error?.originalStatus || 0);
       if (status === 401 || status === 403) {
-        dispatch(logout());
+        if (token) {
+          dispatch(logout());
+          return;
+        }
+
+        dispatch(markSessionChecked());
         return;
       }
 
@@ -43,7 +57,7 @@ export default function SessionSync() {
       }
       dispatch(markSessionChecked());
     }
-  }, [dispatch, error, user]);
+  }, [dispatch, error, token, user]);
 
   return null;
 }

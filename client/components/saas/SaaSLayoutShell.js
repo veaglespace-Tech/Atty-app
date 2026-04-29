@@ -148,7 +148,16 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     router.replace(currentRole === ROLES.SUPER_ADMIN ? "/super-admin/login" : "/login");
   };
 
-  if (!hydrated || !token) return null;
+  if (!hydrated || loading || !token) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white/88 px-6 py-4 text-sm font-semibold text-slate-600 shadow-[0_20px_50px_rgba(59,130,246,0.12)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/88 dark:text-slate-200 dark:shadow-black/30">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent dark:border-blue-300 dark:border-t-transparent" />
+          Loading your workspace...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-theme flex min-h-screen bg-background transition-colors duration-300 dark:text-slate-100">

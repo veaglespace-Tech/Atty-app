@@ -1,10 +1,19 @@
 process.env.NODE_ENV = "test";
 process.env.JWT_KEY = "test-secret";
-process.env.PAYU_KEY = "test_key";
-process.env.PAYU_SALT = "test_salt";
-process.env.PAYU_BASE_URL = "https://test.payu.in";
+process.env.RAZORPAY_API_KEY = "rzp_test_key";
+process.env.RAZORPAY_API_SECRET = "rzp_test_secret";
 
 const request = require("supertest");
+
+const mockCreateOrder = jest.fn();
+
+jest.mock("razorpay", () =>
+  jest.fn().mockImplementation(() => ({
+    orders: {
+      create: mockCreateOrder,
+    },
+  }))
+);
 
 jest.mock("../lib/prisma", () => ({
   plan: {
@@ -37,6 +46,13 @@ describe("POST /api/payment/create-order", () => {
       durationInDays: 90,
       isActive: true,
     });
+
+    mockCreateOrder.mockResolvedValue({
+      id: "order_test_123",
+      amount: 199900,
+      currency: "INR",
+      receipt: "receipt_123",
+    });
   });
 
   it("blocks checkout before payment when organization email already exists", async () => {
@@ -58,6 +74,7 @@ describe("POST /api/payment/create-order", () => {
 
     expect(response.status).toBe(409);
     expect(response.body.message).toMatch(/organization with this email already exists/i);
+    expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
   it("continues current flow for valid new registration data", async () => {
@@ -77,9 +94,7 @@ describe("POST /api/payment/create-order", () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.freeTrial).toBe(false);
-    expect(response.body.order.gateway).toBe("PAYU");
-    expect(response.body.order.id).toMatch(/^ONBOARDING_/i);
-    expect(response.body.paymentSession.action).toBe("https://test.payu.in/_payment");
-    expect(response.body.paymentSession.fields.key).toBe("test_key");
+    expect(response.body.order.id).toBe("order_test_123");
+    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
   });
 });

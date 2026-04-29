@@ -1,3 +1,4 @@
+const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcryptjs");
@@ -39,10 +40,8 @@ const FALLBACK_PLANS = {
 };
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const RENEWAL_INTENT_TTL_MS = 30 * 60 * 1000;
-const PAYU_SUCCESS_CALLBACK_PATH = "/api/payu/callback";
-const PAYU_SUCCESS_STATUSES = new Set(["success", "captured"]);
 const PAYMENT_GATEWAYS = Object.freeze({
-  PAYU: "PAYU",
+  RAZORPAY: "RAZORPAY",
   PLAN_CREDIT: "PLAN_CREDIT",
   FREE_TRIAL: "FREE_TRIAL",
 });
@@ -74,252 +73,27 @@ const getClientBaseUrl = () => {
   return CLIENT_BASE_URL;
 };
 
-const normalizeText = (value = "") => String(value || "").trim();
-
-const normalizePhoneForGateway = (value = "") => {
-  const digits = String(value || "").replace(/\D/g, "");
-  if (!digits) return "9999999999";
-  return digits.slice(-10);
-};
-
-const normalizePayuAmount = (value) => {
-  const numeric = roundMoney(value);
-  return numeric.toFixed(2);
-};
-
-const resolvePayuBaseUrl = () => {
-  const explicitBaseUrl = normalizeText(process.env.PAYU_BASE_URL);
-  if (explicitBaseUrl) {
-    return explicitBaseUrl.replace(/\/+$/, "");
-  }
-
-  const mode = normalizeText(process.env.PAYU_ENV || process.env.PAYU_MODE).toUpperCase();
-  const explicitProductionToggle = normalizeText(process.env.PAYU_IS_PRODUCTION).toLowerCase();
-  const explicitTestToggle = normalizeText(process.env.PAYU_TEST_MODE).toLowerCase();
-
-  const isProduction =
-    mode === "PRODUCTION" ||
-    mode === "LIVE" ||
-    explicitProductionToggle === "true" ||
-    explicitTestToggle === "false";
-
-  return isProduction ? "https://secure.payu.in" : "https://test.payu.in";
-};
-
-const getPayuCredentials = () => ({
-  key:
-    normalizeText(process.env.PAYU_MERCHANT_KEY) ||
-    normalizeText(process.env.PAYU_KEY),
-  salt:
-    normalizeText(process.env.PAYU_MERCHANT_SALT) ||
-    normalizeText(process.env.PAYU_SALT),
-  baseUrl: resolvePayuBaseUrl(),
-  successUrl:
-    normalizeText(process.env.PAYU_SUCCESS_URL) ||
-    `${getClientBaseUrl()}${PAYU_SUCCESS_CALLBACK_PATH}`,
-  failureUrl:
-    normalizeText(process.env.PAYU_FAILURE_URL) ||
-    `${getClientBaseUrl()}${PAYU_SUCCESS_CALLBACK_PATH}`,
+const getRazorpayCredentials = () => ({
+  keyId:
+    process.env.RAZORPAY_KEY_ID ||
+    process.env.RAZORPAY_API_KEY ||
+    process.env.RAZORPAY_KEY ||
+    process.env.KEY_ID ||
+    process.env.RP_KEY_ID ||
+    "",
+  keySecret:
+    process.env.RAZORPAY_KEY_SECRET ||
+    process.env.RAZORPAY_API_SECRET ||
+    process.env.RAZORPAY_SECRET ||
+    process.env.KEY_SECRET ||
+    process.env.RP_KEY_SECRET ||
+    "",
 });
 
-const getSha512Hash = (value) =>
-  crypto
-    .createHash("sha512")
-    .update(String(value || ""))
-    .digest("hex");
-
-const generateGatewayTransactionId = (prefix = "PAYU") =>
-  `${String(prefix || "PAYU").toUpperCase()}_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`
-    .replace(/[^a-zA-Z0-9_]/g, "")
-    .slice(0, 50);
-
-const toPayuResponsePayload = (source = {}) => {
-  const payload = source && typeof source.payu === "object" ? source.payu : source;
-  const readField = (...keys) => {
-    for (const key of keys) {
-      const value = payload?.[key];
-      if (value !== undefined && value !== null) {
-        return normalizeText(value);
-      }
-    }
-    return "";
-  };
-
-  return {
-    txnid: readField("txnid", "payu_txnid", "payuTxnId"),
-    paymentId: readField("mihpayid", "payu_mihpayid", "payuPaymentId"),
-    hash: readField("hash", "payu_hash", "payuHash"),
-    status: readField("status", "payu_status", "payuStatus"),
-    amount: readField("amount", "payu_amount", "payuAmount"),
-    productinfo: readField("productinfo", "payu_productinfo", "payuProductinfo"),
-    firstname: readField("firstname", "payu_firstname", "payuFirstname"),
-    email: readField("email", "payu_email", "payuEmail"),
-    phone: readField("phone", "payu_phone", "payuPhone"),
-    additionalCharges: readField(
-      "additionalCharges",
-      "additional_charges",
-      "payu_additional_charges",
-      "payuAdditionalCharges"
-    ),
-    udf1: readField("udf1"),
-    udf2: readField("udf2"),
-    udf3: readField("udf3"),
-    udf4: readField("udf4"),
-    udf5: readField("udf5"),
-    udf6: readField("udf6"),
-    udf7: readField("udf7"),
-    udf8: readField("udf8"),
-    udf9: readField("udf9"),
-    udf10: readField("udf10"),
-    raw: payload,
-  };
-};
-
-const createPayuSessionForPlan = ({
-  plan,
-  amount,
-  transactionId,
-  customer = {},
-  metadata = {},
-}) => {
-  const { key, salt, baseUrl, successUrl, failureUrl } = getPayuCredentials();
-
-  if (!key || !salt) {
-    const error = new Error("PayU key/salt configuration is missing on server");
-    error.statusCode = 500;
-    throw error;
-  }
-
-  const txnid = normalizeText(transactionId) || generateGatewayTransactionId(metadata.flow || "PAYU");
-  const amountString = normalizePayuAmount(amount);
-  const planCode = normalizeText(metadata.planCode || plan.code || "PLAN");
-  const productinfo = truncateText(metadata.productinfo || `${planCode} plan`, 100) || "Veagle Plan";
-  const firstname = truncateText(customer.firstname || customer.name || "Customer", 60) || "Customer";
-  const email = normalizeText(customer.email || "support@veagle.local");
-  const phone = normalizePhoneForGateway(customer.phone || "");
-  const udf1 = truncateText(normalizeText(metadata.udf1 || metadata.flow || ""), 255) || "";
-  const udf2 = truncateText(normalizeText(metadata.udf2 || planCode), 255) || "";
-  const udf3 = truncateText(normalizeText(metadata.udf3 || ""), 255) || "";
-  const udf4 = truncateText(normalizeText(metadata.udf4 || ""), 255) || "";
-  const udf5 = truncateText(normalizeText(metadata.udf5 || ""), 255) || "";
-
-  const hashSequence = [
-    key,
-    txnid,
-    amountString,
-    productinfo,
-    firstname,
-    email,
-    udf1,
-    udf2,
-    udf3,
-    udf4,
-    udf5,
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    salt,
-  ].join("|");
-
-  const hash = getSha512Hash(hashSequence);
-
-  return {
-    id: txnid,
-    amount: roundMoney(amountString),
-    currency: normalizeText(plan.currency || "INR") || "INR",
-    gateway: PAYMENT_GATEWAYS.PAYU,
-    paymentSession: {
-      action: `${baseUrl}/_payment`,
-      method: "POST",
-      fields: {
-        key,
-        txnid,
-        amount: amountString,
-        productinfo,
-        firstname,
-        email,
-        phone,
-        surl: successUrl,
-        furl: failureUrl,
-        hash,
-        service_provider: "payu_paisa",
-        udf1,
-        udf2,
-        udf3,
-        udf4,
-        udf5,
-      },
-    },
-  };
-};
-
-const verifyPayuCallbackSignature = ({
-  payuPayload,
-  expectedTransactionId = "",
-}) => {
-  const { key, salt } = getPayuCredentials();
-  if (!key || !salt) {
-    const error = new Error("PayU key/salt configuration is missing on server");
-    error.statusCode = 500;
-    throw error;
-  }
-
-  const payload = toPayuResponsePayload(payuPayload);
-  const responseStatus = normalizeText(payload.status);
-  const normalizedStatus = responseStatus.toLowerCase();
-  if (!PAYU_SUCCESS_STATUSES.has(normalizedStatus)) {
-    const error = new Error("Payment was not successful on PayU.");
-    error.statusCode = 402;
-    throw error;
-  }
-
-  if (!payload.txnid || !payload.paymentId || !payload.hash) {
-    const error = new Error("PayU payment response is incomplete.");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (expectedTransactionId && payload.txnid !== normalizeText(expectedTransactionId)) {
-    const error = new Error("Payment order does not match the active session.");
-    error.statusCode = 409;
-    throw error;
-  }
-
-  const reverseSequence = [
-    salt,
-    responseStatus,
-    "",
-    "",
-    "",
-    "",
-    "",
-    payload.udf5 || "",
-    payload.udf4 || "",
-    payload.udf3 || "",
-    payload.udf2 || "",
-    payload.udf1 || "",
-    payload.email || "",
-    payload.firstname || "",
-    payload.productinfo || "",
-    payload.amount || "",
-    payload.txnid || "",
-    key,
-  ].join("|");
-
-  const responseHash = payload.additionalCharges
-    ? getSha512Hash(`${payload.additionalCharges}|${reverseSequence}`)
-    : getSha512Hash(reverseSequence);
-
-  if (normalizeText(responseHash).toLowerCase() !== normalizeText(payload.hash).toLowerCase()) {
-    const error = new Error("Invalid PayU response signature. Verification failed.");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  return payload;
+const getRazorpayClient = () => {
+  const { keyId, keySecret } = getRazorpayCredentials();
+  if (!keyId || !keySecret) return null;
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
 };
 
 const parseCoordinates = (organization = {}) => {
@@ -512,22 +286,32 @@ const calculateProratedCredit = (subscription, now = new Date()) => {
 const createGatewayOrderForPlan = async ({
   plan,
   amountOverride = null,
-  customer = {},
   metadata = {},
 }) => {
   const resolvedAmount = roundMoney(amountOverride === null ? plan.price : amountOverride);
-  const transactionId = generateGatewayTransactionId(metadata.flow || "PAYU");
-
-  return createPayuSessionForPlan({
-    plan,
-    amount: resolvedAmount,
-    transactionId,
-    customer,
-    metadata: {
-      ...metadata,
+  const options = {
+    amount: Math.round(resolvedAmount * 100),
+    currency: plan.currency || "INR",
+    receipt: `receipt_${Date.now()}`,
+    notes: {
       planCode: metadata.planCode || plan.code,
+      payableAmount: String(resolvedAmount),
+      flow: String(metadata.flow || ""),
     },
-  });
+  };
+
+  const razorpay = getRazorpayClient();
+  if (!razorpay) {
+    const error = new Error("Razorpay key configuration is missing on server");
+    error.statusCode = 500;
+    throw error;
+  }
+
+  const order = await razorpay.orders.create(options);
+  return {
+    ...order,
+    gateway: PAYMENT_GATEWAYS.RAZORPAY,
+  };
 };
 
 const resolveRenewalContext = async ({ organizationId, planCode }) => {
@@ -662,7 +446,7 @@ const createRenewalIntent = async ({
       expectedEndDate: renewalContext.expiryDate,
       gateway:
         renewalContext.payableAmount > 0
-          ? PAYMENT_GATEWAYS.PAYU
+          ? PAYMENT_GATEWAYS.RAZORPAY
           : PAYMENT_GATEWAYS.PLAN_CREDIT,
       razorpayOrderId: resolvedOrderId,
       expiresAt:
@@ -815,23 +599,23 @@ Veagle Attendee Team`;
   });
 };
 
-// @desc    Get PayU Merchant Key
+// @desc    Get Razorpay Public Key
 // @route   GET /api/payment/get-key
 // @access  Public
 exports.getPublicKey = asyncHandler(async (req, res) => {
-  const { key } = getPayuCredentials();
-  if (!key) {
+  const { keyId } = getRazorpayCredentials();
+  if (!keyId) {
     res.status(500);
-    throw new Error("PayU merchant key is missing in server environment");
+    throw new Error("Razorpay public key is missing in server environment");
   }
 
   res.status(200).json({
     success: true,
-    key,
+    key: keyId,
   });
 });
 
-// @desc    Create PayU Payment Session
+// @desc    Create Razorpay Order
 // @route   POST /api/payment/create-order
 // @access  Public (for onboarding)
 exports.createOrder = asyncHandler(async (req, res) => {
@@ -893,29 +677,15 @@ exports.createOrder = asyncHandler(async (req, res) => {
   try {
     const order = await createGatewayOrderForPlan({
       plan,
-      customer: {
-        name: admin?.name,
-        email: adminEmail,
-        phone: `${admin?.mobileCountryCode || admin?.countryCode || ""}${admin?.mobile || ""}`,
-      },
       metadata: {
         flow: "ONBOARDING",
         planCode: plan.code,
-        productinfo: `${plan.name} plan onboarding`,
-        udf1: "ONBOARDING",
-        udf2: plan.code,
       },
     });
     res.status(200).json({
       success: true,
       freeTrial: false,
-      order: {
-        id: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        gateway: order.gateway,
-      },
-      paymentSession: order.paymentSession,
+      order,
       plan: {
         code: plan.code,
         name: plan.name,
@@ -925,13 +695,13 @@ exports.createOrder = asyncHandler(async (req, res) => {
       source: dbPlan ? "DB" : "FALLBACK",
     });
   } catch (error) {
-    console.error("PayU payment session error:", error);
+    console.error("Razorpay order creation error:", error);
     res.status(error?.statusCode || (res.statusCode === 200 ? 500 : res.statusCode));
-    throw new Error(error?.message || "Failed to create PayU payment session");
+    throw new Error(error?.message || "Failed to create Razorpay order");
   }
 });
 
-// @desc    Create PayU payment session for existing org renewal
+// @desc    Create Razorpay order for existing org renewal
 // @route   POST /api/payment/create-renewal-order
 // @access  Private/Org Admin
 exports.createRenewalOrder = asyncHandler(async (req, res) => {
@@ -982,18 +752,9 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
         ? await createGatewayOrderForPlan({
             plan: renewalContext.plan,
             amountOverride: renewalContext.payableAmount,
-            customer: {
-              name: req.user?.name || renewalContext.organization.name,
-              email: req.user?.email || renewalContext.organization.email,
-              phone: req.user?.mobile || renewalContext.organization.phone,
-            },
             metadata: {
               flow: "RENEWAL",
               planCode: renewalContext.plan.code,
-              productinfo: `${renewalContext.plan.name} plan renewal`,
-              udf1: "RENEWAL",
-              udf2: renewalContext.plan.code,
-              udf3: String(organizationId),
             },
           })
         : null;
@@ -1018,7 +779,6 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
             gateway: order.gateway,
           }
         : null,
-      paymentSession: order?.paymentSession || null,
       plan: {
         code: renewalContext.plan.code,
         name: renewalContext.plan.name,
@@ -1053,7 +813,7 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Renewal PayU session error:", error);
+    console.error("Renewal Razorpay order error:", error);
     res.status(error?.statusCode || (res.statusCode === 200 ? 500 : res.statusCode));
     throw new Error(error?.message || "Failed to create renewal order");
   }
@@ -1065,10 +825,11 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
 exports.verifyRenewal = asyncHandler(async (req, res) => {
   const {
     intentId: rawIntentId,
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
     planCode,
   } = req.body || {};
-  const payuPayloadFromRequest = toPayuResponsePayload(req.body || {});
-  const providedGatewayOrderId = normalizeText(payuPayloadFromRequest.txnid);
 
   const organizationId = Number(req.user?.organizationId || req.user?.organization);
   const userId = Number(req.user?.id);
@@ -1079,18 +840,16 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
     throw new Error("Organization context is missing");
   }
 
-  if (!intentId && !providedGatewayOrderId) {
+  if (!intentId) {
     res.status(400);
-    throw new Error("Renewal intent id or transaction id is required");
+    throw new Error("Renewal intent id is required");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  let intent = null;
-  if (intentId) {
-    intent = await prisma.subscriptionRenewalIntent.findFirst({
+  const [user, intent] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+    }),
+    prisma.subscriptionRenewalIntent.findFirst({
       where: {
         id: intentId,
         orgId: organizationId,
@@ -1099,24 +858,8 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
       include: {
         organization: true,
       },
-    });
-  }
-
-  if (!intent && providedGatewayOrderId) {
-    intent = await prisma.subscriptionRenewalIntent.findFirst({
-      where: {
-        orgId: organizationId,
-        userId,
-        razorpayOrderId: providedGatewayOrderId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        organization: true,
-      },
-    });
-  }
+    }),
+  ]);
 
   if (!user) {
     res.status(404);
@@ -1191,23 +934,30 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
 
   const payableAmount = roundMoney(intent.payableAmount);
   const expectedOrderId = String(intent.razorpayOrderId || "").trim();
-  let paymentGateway = payableAmount > 0 ? PAYMENT_GATEWAYS.PAYU : PAYMENT_GATEWAYS.PLAN_CREDIT;
-  let paymentOrderId = expectedOrderId || providedGatewayOrderId;
-  let paymentReferenceId = "";
-  let paymentSignature = "";
-  let paymentRawResponse = null;
+  let paymentGateway =
+    payableAmount > 0 ? PAYMENT_GATEWAYS.RAZORPAY : PAYMENT_GATEWAYS.PLAN_CREDIT;
+  let paymentOrderId = expectedOrderId || String(razorpay_order_id || "").trim();
+  let paymentReferenceId = payableAmount > 0 ? String(razorpay_payment_id || "").trim() : "";
+  let paymentSignature = payableAmount > 0 ? String(razorpay_signature || "").trim() : "";
+  let paymentRawResponse =
+    payableAmount > 0
+      ? {
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+        }
+      : null;
 
   if (payableAmount > 0) {
-    const verifiedPayuPayload = verifyPayuCallbackSignature({
-      payuPayload: payuPayloadFromRequest,
-      expectedTransactionId: expectedOrderId || providedGatewayOrderId,
-    });
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      res.status(400);
+      throw new Error("Payment details are required");
+    }
 
-    paymentGateway = PAYMENT_GATEWAYS.PAYU;
-    paymentOrderId = verifiedPayuPayload.txnid;
-    paymentReferenceId = verifiedPayuPayload.paymentId;
-    paymentSignature = verifiedPayuPayload.hash;
-    paymentRawResponse = verifiedPayuPayload.raw;
+    if (!expectedOrderId || expectedOrderId !== String(razorpay_order_id).trim()) {
+      res.status(409);
+      throw new Error("Payment order does not match the renewal session");
+    }
 
     const duplicatePaymentIntent = await prisma.subscriptionRenewalIntent.findFirst({
       where: {
@@ -1221,6 +971,22 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
     if (duplicatePaymentIntent) {
       res.status(409);
       throw new Error("This payment has already been used for another renewal");
+    }
+
+    const { keySecret } = getRazorpayCredentials();
+    if (!keySecret) {
+      res.status(500);
+      throw new Error("Razorpay secret key is missing on server");
+    }
+
+    const expectedSignature = crypto
+      .createHmac("sha256", keySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (expectedSignature !== String(razorpay_signature)) {
+      res.status(400);
+      throw new Error("Invalid payment signature. Verification failed.");
     }
   }
 
@@ -1494,7 +1260,9 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
 // @access  Public
 exports.verifyAndRegister = asyncHandler(async (req, res) => {
   const {
-    payu,
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
     organization,
     admin,
     plan,
@@ -1571,40 +1339,39 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
   let paidGatewayPaymentId = "";
   let paidGatewaySignature = "";
   let paidGatewayRawResponse = null;
-  let paidGatewayName = PAYMENT_GATEWAYS.PAYU;
+  let paidGatewayName = PAYMENT_GATEWAYS.RAZORPAY;
 
   if (!freeTrialPlan) {
-    const verifiedPayuPayload = verifyPayuCallbackSignature({
-      payuPayload: payu || req.body,
-    });
-
-    if (
-      verifiedPayuPayload.udf1 &&
-      String(verifiedPayuPayload.udf1 || "").toUpperCase() !== "ONBOARDING"
-    ) {
-      res.status(409);
-      throw new Error("Invalid PayU onboarding context.");
+    const { keySecret } = getRazorpayCredentials();
+    if (!keySecret) {
+      res.status(500);
+      throw new Error("Razorpay secret key is missing on server");
     }
 
-    if (
-      verifiedPayuPayload.udf2 &&
-      String(verifiedPayuPayload.udf2 || "").trim().toUpperCase() !== normalizedPlanCode
-    ) {
-      res.status(409);
-      throw new Error("Plan mismatch for this payment session.");
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      res.status(400);
+      throw new Error("Payment details are required");
     }
 
-    const payuEmail = normalizeEmail(verifiedPayuPayload.email);
-    if (payuEmail && adminEmail && payuEmail !== adminEmail) {
-      res.status(409);
-      throw new Error("Payment email does not match admin email.");
+    const expectedSignature = crypto
+      .createHmac("sha256", keySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (expectedSignature !== String(razorpay_signature)) {
+      res.status(400);
+      throw new Error("Invalid payment signature. Verification failed.");
     }
 
-    paidGatewayOrderId = verifiedPayuPayload.txnid;
-    paidGatewayPaymentId = verifiedPayuPayload.paymentId;
-    paidGatewaySignature = verifiedPayuPayload.hash;
-    paidGatewayRawResponse = verifiedPayuPayload.raw;
-    paidGatewayName = PAYMENT_GATEWAYS.PAYU;
+    paidGatewayOrderId = String(razorpay_order_id).trim();
+    paidGatewayPaymentId = String(razorpay_payment_id).trim();
+    paidGatewaySignature = String(razorpay_signature).trim();
+    paidGatewayRawResponse = {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    };
+    paidGatewayName = PAYMENT_GATEWAYS.RAZORPAY;
   } else {
     try {
       await ensureFreeTrialAvailable({
