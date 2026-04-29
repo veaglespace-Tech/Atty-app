@@ -25,8 +25,21 @@ import {
   useUpdateRolePermissionsMutation,
 } from "@/services/api/superAdminApi";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import {
+  ALL_PERMISSIONS,
+  formatPermissionLabel,
+  getDefaultPermissionsForRole,
+  ROLES,
+} from "@/utils/roles";
 
 const panelClassName = "light-glow-card-static rounded-[1.9rem] p-6";
+const ACCESS_ROLES = [
+  ROLES.SUPER_ADMIN,
+  ROLES.ORG_ADMIN,
+  ROLES.SUB_ADMIN,
+  ROLES.TEAM_LEADER,
+  ROLES.MEMBER,
+];
 
 export default function SuperAdminAccessPage() {
   const [activeTab, setActiveTab] = useState("PERMISSIONS"); // "PERMISSIONS" or "ROLES"
@@ -35,8 +48,20 @@ export default function SuperAdminAccessPage() {
   const [newPermission, setNewPermission] = useState({ key: "", name: "", description: "" });
 
   // API Hooks
-  const { data: permissionsData, isLoading: loadingPermissions, refetch: refetchPermissions } = useGetPermissionsQuery();
-  const { data: rolePermissionsData, isLoading: loadingRolePermissions, refetch: refetchRolePermissions } = useGetRolePermissionsQuery();
+  const {
+    data: permissionsData,
+    error: permissionsError,
+    isLoading: loadingPermissions,
+    isFetching: fetchingPermissions,
+    refetch: refetchPermissions,
+  } = useGetPermissionsQuery();
+  const {
+    data: rolePermissionsData,
+    error: rolePermissionsError,
+    isLoading: loadingRolePermissions,
+    isFetching: fetchingRolePermissions,
+    refetch: refetchRolePermissions,
+  } = useGetRolePermissionsQuery();
   const [createPermission, { isLoading: creating }] = useCreatePermissionMutation();
   const [updatePermission, { isLoading: updating }] = useUpdatePermissionMutation();
   const [deletePermission, { isLoading: deleting }] = useDeletePermissionMutation();
@@ -44,6 +69,43 @@ export default function SuperAdminAccessPage() {
 
   const permissions = useMemo(() => permissionsData?.items || [], [permissionsData]);
   const roleMappings = useMemo(() => rolePermissionsData?.items || [], [rolePermissionsData]);
+  const fallbackPermissions = useMemo(
+    () =>
+      ALL_PERMISSIONS.map((key, index) => ({
+        id: `fallback-${index}-${key}`,
+        key,
+        name: formatPermissionLabel(key),
+        description: `Permission to ${String(key).toLowerCase().replace(/_/g, " ")}`,
+      })),
+    []
+  );
+  const fallbackRoleMappings = useMemo(
+    () =>
+      ACCESS_ROLES.map((role) => ({
+        role,
+        permissions: fallbackPermissions.filter((permission) =>
+          getDefaultPermissionsForRole(role).includes(permission.key)
+        ),
+      })),
+    [fallbackPermissions]
+  );
+  const loading =
+    loadingPermissions || loadingRolePermissions || fetchingPermissions || fetchingRolePermissions;
+  const hasLiveAccessCatalog = permissions.length > 0 || roleMappings.length > 0;
+  const usingFallbackCatalog = !loading && !hasLiveAccessCatalog;
+  const readOnlyFallback =
+    usingFallbackCatalog || Boolean(permissionsError) || Boolean(rolePermissionsError);
+  const displayedPermissions = readOnlyFallback ? fallbackPermissions : permissions;
+  const displayedRoleMappings = readOnlyFallback ? fallbackRoleMappings : roleMappings;
+  const accessWarningMessage =
+    permissionsError || rolePermissionsError
+      ? "Live permissions data could not be loaded. Showing default access rules in read-only mode."
+      : usingFallbackCatalog
+        ? "Permissions data is not configured yet. Showing default access rules until live data is available."
+        : "";
+  const refreshAccessCatalog = async () => {
+    await Promise.all([refetchPermissions(), refetchRolePermissions()]);
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -81,6 +143,8 @@ export default function SuperAdminAccessPage() {
   };
 
   const toggleRolePermission = async (role, pId, currentPermissions) => {
+    if (readOnlyFallback) return;
+
     const currentIds = currentPermissions.map((p) => p.id);
     let nextIds;
     if (currentIds.includes(pId)) {
@@ -95,8 +159,6 @@ export default function SuperAdminAccessPage() {
       alert(err.data?.message || "Failed to update role mapping");
     }
   };
-
-  const loading = loadingPermissions || loadingRolePermissions;
 
   return (
     <section className="space-y-6">
@@ -118,7 +180,8 @@ export default function SuperAdminAccessPage() {
 
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => activeTab === "PERMISSIONS" ? refetchPermissions() : refetchRolePermissions()}
+              type="button"
+              onClick={refreshAccessCatalog}
               className="brand-btn brand-btn-secondary brand-btn-md h-fit"
               disabled={loading}
             >
@@ -126,14 +189,22 @@ export default function SuperAdminAccessPage() {
               Refresh
             </button>
             <button
+              type="button"
               onClick={() => setShowAddModal(true)}
               className="brand-btn brand-btn-primary brand-btn-md h-fit"
+              disabled={readOnlyFallback}
             >
               <Plus size={16} />
               New Permission
             </button>
           </div>
         </div>
+
+        {accessWarningMessage ? (
+          <div className="relative mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+            {accessWarningMessage}
+          </div>
+        ) : null}
 
         {/* Tabs */}
         <div className="relative mt-8 flex border-b border-slate-200 dark:border-slate-800">
@@ -156,7 +227,7 @@ export default function SuperAdminAccessPage() {
         <div className={`${panelClassName} mobile-compact-panel`}>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">
-              System Permissions ({permissions.length})
+              System Permissions ({displayedPermissions.length})
             </h3>
           </div>
 
@@ -171,7 +242,7 @@ export default function SuperAdminAccessPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {permissions.map((p) => (
+                {displayedPermissions.map((p) => (
                   <tr key={p.id} className="transition hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5">
                     <td className="px-6 py-4 font-mono text-[13px] text-indigo-600 dark:text-indigo-400">{p.key}</td>
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">{p.name}</td>
@@ -179,14 +250,18 @@ export default function SuperAdminAccessPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
+                          type="button"
                           onClick={() => setEditingPermission(p)}
                           className="brand-btn brand-btn-soft brand-btn-sm text-blue-600"
+                          disabled={readOnlyFallback}
                         >
                           <Edit size={14} />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(p.id)}
                           className="brand-btn brand-btn-soft brand-btn-sm text-rose-600"
+                          disabled={readOnlyFallback || deleting}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -200,7 +275,7 @@ export default function SuperAdminAccessPage() {
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          {roleMappings.map((rm) => (
+          {displayedRoleMappings.map((rm) => (
             <div key={rm.role} className={panelClassName}>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -215,7 +290,7 @@ export default function SuperAdminAccessPage() {
               </div>
 
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {permissions.map((p) => {
+                {displayedPermissions.map((p) => {
                   const isAssigned = rm.permissions.some((rp) => rp.id === p.id);
                   return (
                     <div
@@ -225,7 +300,7 @@ export default function SuperAdminAccessPage() {
                         isAssigned
                           ? "border-emerald-200 bg-emerald-50/50 text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-100"
                           : "border-slate-100 bg-slate-50/30 text-slate-500 hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900/30"
-                      }`}
+                      } ${readOnlyFallback ? "cursor-not-allowed opacity-75" : ""}`}
                     >
                       <div className="flex items-center gap-3">
                         {isAssigned ? (

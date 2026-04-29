@@ -1,10 +1,13 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
+const { ensureRbacCatalogReady } = require("../services/rbac-bootstrap.service");
 
 // @desc    Get all permissions
 // @route   GET /api/super-admin/permissions
 // @access  SuperAdmin
 exports.getPermissions = asyncHandler(async (req, res) => {
+  await ensureRbacCatalogReady();
+
   const permissions = await prisma.permission.findMany({
     orderBy: { key: "asc" },
   });
@@ -94,6 +97,8 @@ exports.deletePermission = asyncHandler(async (req, res) => {
 // @route   GET /api/super-admin/roles/permissions
 // @access  SuperAdmin
 exports.getRolePermissions = asyncHandler(async (req, res) => {
+  await ensureRbacCatalogReady();
+
   const rolePermissions = await prisma.rolePermission.findMany({
     include: {
       permission: true,

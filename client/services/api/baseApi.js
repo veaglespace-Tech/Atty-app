@@ -46,6 +46,12 @@ export const API_BASE_URL = resolveApiBaseUrl();
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   credentials: "include",
+  cache: "no-store",
+  prepareHeaders: (headers) => {
+    headers.set("cache-control", "no-cache, no-store, max-age=0");
+    headers.set("pragma", "no-cache");
+    return headers;
+  },
 });
 
 const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
