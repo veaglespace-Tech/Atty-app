@@ -459,7 +459,7 @@ export default function PaymentPage() {
                     </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl border border-white/60 bg-white/85 p-4 text-left shadow-[0_16px_38px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
                       <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
                         <CreditCard size={18} />
@@ -467,7 +467,7 @@ export default function PaymentPage() {
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                         Plan
                       </p>
-                      <p className={`mt-2 text-sm font-black ${theme.textMain}`}>
+                      <p className={`mt-2 break-words text-sm font-black ${theme.textMain}`}>
                         {successState.planName}
                       </p>
                     </div>
@@ -479,12 +479,12 @@ export default function PaymentPage() {
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                         Workspace
                       </p>
-                      <p className={`mt-2 text-sm font-black ${theme.textMain}`}>
+                      <p className={`mt-2 break-words text-sm font-black ${theme.textMain}`}>
                         {successState.organizationName}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-white/60 bg-white/85 p-4 text-left shadow-[0_16px_38px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70">
+                    <div className="rounded-2xl border border-white/60 bg-white/85 p-4 text-left shadow-[0_16px_38px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-slate-900/70 sm:col-span-2">
                       <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
                         <Mail size={18} />
                       </div>

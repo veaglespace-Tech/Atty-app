@@ -3,6 +3,7 @@ const {
   uploadImageDataUrl,
   deleteCloudinaryImage,
 } = require("./cloudinary-image.service");
+const { todayKey } = require("./common.service");
 
 const ATTENDANCE_SELFIE_FOLDER = String(
   process.env.CLOUDINARY_ATTENDANCE_SELFIE_FOLDER || "veagle-attendee/attendance-selfies"
@@ -28,7 +29,7 @@ const uploadAttendanceSelfie = async ({ userId, dateKey, stage, dataUrl }) => {
     throw createAttendanceSelfieError("A valid attendance face capture stage is required.", 400);
   }
 
-  const normalizedDateKey = String(dateKey || "").trim() || new Date().toISOString().split("T")[0];
+  const normalizedDateKey = String(dateKey || "").trim() || todayKey();
 
   return uploadImageDataUrl({
     dataUrl,

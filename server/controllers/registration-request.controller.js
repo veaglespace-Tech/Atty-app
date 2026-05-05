@@ -6,6 +6,8 @@ const { createOrganizationMembership } = require("../services/organization-membe
 const { ensureOrganizationId } = require("../services/common.service");
 const { assertPermission } = require("../services/access.service");
 const { PERMISSION_KEYS } = require("../constants/permissions");
+const { validatePasswordComplexity } = require("../utils/validation");
+const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
 
 const GENDER_VALUES = new Set(["MALE", "FEMALE", "OTHER"]);
 const ADDRESS_MAX_LENGTH = 191;
@@ -131,9 +133,11 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
   }
 
   const normalizedPassword = String(password || "");
-  if (normalizedPassword.length < 8) {
+  if (!validatePasswordComplexity(normalizedPassword)) {
     res.status(400);
-    throw new Error("Password must be at least 8 characters");
+    throw new Error(
+      "Password must be 8-64 characters and include uppercase, lowercase, number, and special character"
+    );
   }
 
   const normalizedGender = String(gender || "").trim().toUpperCase();
@@ -299,6 +303,8 @@ exports.acceptRegistrationRequest = asyncHandler(async (req, res) => {
     res.status(409);
     throw new Error("Email already registered. Request rejected.");
   }
+
+  await assertWithinPlanUserLimit({ orgId, res });
 
   // Create User and Membership in transaction
   const user = await prisma.$transaction(async (tx) => {

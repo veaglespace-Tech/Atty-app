@@ -2,7 +2,9 @@ const asyncHandler = require("express-async-handler")
 const prisma = require("../lib/prisma")
 const {
   ensureOrganizationId,
+  dateKey,
   formatHoursValue,
+  monthWindow,
   parseLimit,
   toDateKey,
   toSummaryItem,
@@ -29,16 +31,16 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000
 const defaultRange = () => {
   const now = new Date()
   const from = new Date(now)
-  from.setUTCDate(from.getUTCDate() - 29)
+  from.setDate(from.getDate() - 29)
   return {
-    from: from.toISOString().split("T")[0],
-    to: now.toISOString().split("T")[0],
+    from: dateKey(from),
+    to: dateKey(now),
   }
 }
 
 const rangeFromPeriod = (period = "monthly") => {
   const now = new Date()
-  const today = now.toISOString().split("T")[0]
+  const today = todayKey()
   const normalized = String(period || "monthly").trim().toLowerCase()
 
   if (normalized === "daily") {
@@ -47,17 +49,17 @@ const rangeFromPeriod = (period = "monthly") => {
 
   if (normalized === "weekly") {
     const from = new Date(now)
-    from.setUTCDate(from.getUTCDate() - 6)
+    from.setDate(from.getDate() - 6)
     return {
-      from: from.toISOString().split("T")[0],
+      from: dateKey(from),
       to: today,
       periodLabel: "Weekly",
     }
   }
 
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const { from: monthStart } = monthWindow(now)
   return {
-    from: monthStart.toISOString().split("T")[0],
+    from: monthStart,
     to: today,
     periodLabel: "Monthly",
   }

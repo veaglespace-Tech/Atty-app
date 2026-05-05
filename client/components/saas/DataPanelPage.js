@@ -11,10 +11,13 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { formatHoursValue } from "@/utils/time";
 
 const RECORD_THEMES = [
@@ -797,6 +800,19 @@ export function DashboardRecordsSection({
   description = null,
 }) {
   const [expandedMobileRows, setExpandedMobileRows] = useState({});
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(items, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.REPORTS[0],
+    dependencies: [endpoint, items.length, recordsView],
+  });
   const hiddenColumnSet = useMemo(
     () => buildHiddenColumnSet(hiddenRecordColumns),
     [hiddenRecordColumns]
@@ -846,8 +862,9 @@ export function DashboardRecordsSection({
       ) : recordsView === "table" ? (
         <div className="mt-5 space-y-4">
           <div className="grid gap-4 md:hidden">
-            {items.map((row, rowIndex) => {
-              const mobileRowKey = row.id || row._id || `${endpoint}-${rowIndex}`;
+            {paginatedItems.map((row, rowIndex) => {
+              const absoluteIndex = startIndex + rowIndex;
+              const mobileRowKey = row.id || row._id || `${endpoint}-${absoluteIndex}`;
               const isExpanded = Boolean(expandedMobileRows[mobileRowKey]);
               const hiddenCount = Math.max(resolvedTableColumns.length - MOBILE_RECORD_PREVIEW_COUNT, 0);
               const visibleColumns = isExpanded
@@ -862,7 +879,7 @@ export function DashboardRecordsSection({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                        Record {rowIndex + 1}
+                        Record {absoluteIndex}
                       </p>
                       <div className="mt-2 text-base font-black text-slate-900 dark:text-white">
                         <span className="block max-w-full break-all whitespace-pre-wrap">
@@ -876,7 +893,7 @@ export function DashboardRecordsSection({
                       </div>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                      #{rowIndex + 1}
+                      #{absoluteIndex}
                     </span>
                   </div>
 
@@ -940,9 +957,9 @@ export function DashboardRecordsSection({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {items.map((row, rowIndex) => (
+                {paginatedItems.map((row, rowIndex) => (
                   <tr
-                    key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                    key={row.id || row._id || `${endpoint}-${startIndex + rowIndex}`}
                     className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
                   >
                     {resolvedTableColumns.map((column, columnIndex) => {
@@ -972,16 +989,17 @@ export function DashboardRecordsSection({
         </div>
       ) : (
         <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {items.map((row, rowIndex) => {
+          {paginatedItems.map((row, rowIndex) => {
+            const absoluteIndex = startIndex + rowIndex;
             const { theme, title: cardTitle, heroEntries, visibleEntries } = getRecordPresentation(
               row,
-              rowIndex,
+              absoluteIndex - 1,
               hiddenColumnSet
             );
 
             return (
               <article
-                key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                key={row.id || row._id || `${endpoint}-${absoluteIndex}`}
                 className={`group light-glow-soft relative overflow-hidden rounded-[1.7rem] border p-5 ${theme.shell}`}
               >
                 <div className={`absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl ${theme.glow}`} />
@@ -991,7 +1009,7 @@ export function DashboardRecordsSection({
                       <div
                         className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${theme.chip}`}
                       >
-                        Record {rowIndex + 1}
+                        Record {absoluteIndex}
                       </div>
                       <h4 className="mt-4 truncate text-xl font-black text-slate-900 dark:text-white">
                         {cardTitle}
@@ -1041,6 +1059,23 @@ export function DashboardRecordsSection({
           })}
         </div>
       )}
+
+      {!loading && items.length > 0 ? (
+        <div className="mt-5">
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={items.length}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.REPORTS}
+            label="entries"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1104,6 +1139,19 @@ export default function DataPanelPage({
     );
   }, [hiddenSummaryLabels, payload.summary]);
   const items = useMemo(() => (Array.isArray(payload.items) ? payload.items : []), [payload.items]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(items, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.REPORTS[0],
+    dependencies: [endpoint, items.length, recordsView],
+  });
   const hiddenColumnSet = useMemo(
     () => buildHiddenColumnSet(hiddenRecordColumns),
     [hiddenRecordColumns]
@@ -1304,8 +1352,9 @@ export default function DataPanelPage({
         ) : recordsView === "table" ? (
           <div className="mt-5 space-y-4">
             <div className="grid gap-4 md:hidden">
-              {items.map((row, rowIndex) => {
-                const mobileRowKey = row.id || row._id || `${endpoint}-${rowIndex}`;
+              {paginatedItems.map((row, rowIndex) => {
+                const absoluteIndex = startIndex + rowIndex;
+                const mobileRowKey = row.id || row._id || `${endpoint}-${absoluteIndex}`;
                 const isExpanded = Boolean(expandedMobileRows[mobileRowKey]);
                 const hiddenCount = Math.max(
                   resolvedTableColumns.length - MOBILE_RECORD_PREVIEW_COUNT,
@@ -1323,7 +1372,7 @@ export default function DataPanelPage({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                          Record {rowIndex + 1}
+                          Record {absoluteIndex}
                         </p>
                         <div className="mt-2 text-base font-black text-slate-900 dark:text-white">
                           <span className="block max-w-full break-all whitespace-pre-wrap">
@@ -1337,7 +1386,7 @@ export default function DataPanelPage({
                         </div>
                       </div>
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                        #{rowIndex + 1}
+                        #{absoluteIndex}
                       </span>
                     </div>
 
@@ -1401,9 +1450,9 @@ export default function DataPanelPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {items.map((row, rowIndex) => (
+                  {paginatedItems.map((row, rowIndex) => (
                     <tr
-                      key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                      key={row.id || row._id || `${endpoint}-${startIndex + rowIndex}`}
                       className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
                     >
                       {resolvedTableColumns.map((column, columnIndex) => {
@@ -1433,16 +1482,17 @@ export default function DataPanelPage({
           </div>
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {items.map((row, rowIndex) => {
+            {paginatedItems.map((row, rowIndex) => {
+              const absoluteIndex = startIndex + rowIndex;
               const { theme, title: cardTitle, heroEntries, visibleEntries } = getRecordPresentation(
                 row,
-                rowIndex,
+                absoluteIndex - 1,
                 hiddenColumnSet
               );
 
               return (
                 <article
-                  key={row.id || row._id || `${endpoint}-${rowIndex}`}
+                  key={row.id || row._id || `${endpoint}-${absoluteIndex}`}
                   className={`group light-glow-soft relative overflow-hidden rounded-[1.7rem] border p-5 ${theme.shell}`}
                 >
                   <div className={`absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl ${theme.glow}`} />
@@ -1452,7 +1502,7 @@ export default function DataPanelPage({
                         <div
                           className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${theme.chip}`}
                         >
-                          Record {rowIndex + 1}
+                          Record {absoluteIndex}
                         </div>
                         <h4 className="mt-4 truncate text-xl font-black text-slate-900 dark:text-white">
                           {cardTitle}
@@ -1502,6 +1552,23 @@ export default function DataPanelPage({
             })}
           </div>
         )}
+
+        {!loading && items.length > 0 ? (
+          <div className="mt-5">
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={items.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.REPORTS}
+              label="entries"
+            />
+          </div>
+        ) : null}
       </div>
     </section>
   );

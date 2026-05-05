@@ -56,6 +56,13 @@ const mapUserForManagement = (user, orgId = null) => {
   const resolvedRole = resolveUserRole(user, orgId);
   const resolvedPermissions = resolveUserPermissions(user, orgId);
   const displayRole = inferManagedUserRole(user, resolvedRole, resolvedPermissions);
+  const membership = orgId
+    ? (Array.isArray(user.memberships) ? user.memberships : []).find(
+        (entry) => Number(entry?.orgId) === Number(orgId)
+      )
+    : null;
+  const membershipActive =
+    user.isActive !== false && (membership ? membership.isActive !== false : true);
 
   return {
     id: user.id,
@@ -71,7 +78,7 @@ const mapUserForManagement = (user, orgId = null) => {
     role: normalizeRole(displayRole),
     permissions: resolvedPermissions,
     approvalStatus: user.status,
-    active: Boolean(user.isActive),
+    active: Boolean(membershipActive),
     joinedAt: user.createdAt,
     createdAt: user.createdAt,
     memberships: Array.isArray(user.memberships) ? user.memberships : [],

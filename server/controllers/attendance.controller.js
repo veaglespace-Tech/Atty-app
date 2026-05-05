@@ -5,6 +5,7 @@ const { resolveUserRole } = require("../utils/membership");
 const { resolveLocationPayload } = require("../services/location.service");
 const {
   ensureOrganizationId,
+  monthWindow,
   minutesToHoursValue,
   parseLimit,
   toSummaryItem,
@@ -26,15 +27,6 @@ const attendanceTargetTeamSelect = {
   longitude: true,
   latitude: true,
   attendanceRadius: true,
-};
-
-const monthWindow = (date = new Date()) => {
-  const firstDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-  const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
-  return {
-    from: firstDay.toISOString().split("T")[0],
-    to: lastDay.toISOString().split("T")[0],
-  };
 };
 
 const getManagedAttendanceTeam = async ({ orgId, userId }) => {
@@ -243,7 +235,7 @@ exports.punchIn = asyncHandler(async (req, res) => {
     throw new Error("Organization location is not configured");
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayKey();
   const existingRecord = await prisma.attendance.findFirst({
     where: {
       orgId,
@@ -342,7 +334,7 @@ exports.punchOut = asyncHandler(async (req, res) => {
   const selfieImageDataUrl = String(input.selfieImageDataUrl || "").trim();
   const userId = Number(req.user.id);
   const orgId = ensureOrganizationId(req, res);
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayKey();
 
   if (!parsedLocation) {
     res.status(400);
@@ -481,7 +473,7 @@ exports.getMyAttendance = asyncHandler(async (req, res) => {
 exports.getAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const { date } = req.query;
-  const today = date || new Date().toISOString().split("T")[0];
+  const today = date || todayKey();
   const currentUserRole = resolveUserRole(req.user, orgId);
   const limit = currentUserRole === "MEMBER" ? 1 : parseLimit(req.query.limit, 2000, 5000);
 
@@ -580,7 +572,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
 
 exports.getAttendanceSummary = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayKey();
 
   const [present, halfDay, late, totalEligibleUsers] = await Promise.all([
     prisma.attendance.count({

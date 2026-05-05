@@ -18,11 +18,12 @@ import {
 } from "@/services/api/attendanceApi";
 import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
+import { getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatRoleLabel } from "@/utils/roles";
 import { formatHoursValue } from "@/utils/time";
 
-const todayKey = () => new Date().toISOString().split("T")[0];
+const todayKey = getTodayDateKey;
 
 const toSummaryMap = (summary) => {
   const map = new Map();

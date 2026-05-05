@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Info,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetPermissionsQuery,
   useCreatePermissionMutation,
@@ -25,6 +26,8 @@ import {
   useUpdateRolePermissionsMutation,
 } from "@/services/api/superAdminApi";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import {
   ALL_PERMISSIONS,
   formatPermissionLabel,
@@ -97,6 +100,19 @@ export default function SuperAdminAccessPage() {
     usingFallbackCatalog || Boolean(permissionsError) || Boolean(rolePermissionsError);
   const displayedPermissions = readOnlyFallback ? fallbackPermissions : permissions;
   const displayedRoleMappings = readOnlyFallback ? fallbackRoleMappings : roleMappings;
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedPermissions,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(displayedPermissions, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.PERMISSIONS[0],
+    dependencies: [activeTab, displayedPermissions.length, readOnlyFallback],
+  });
   const accessWarningMessage =
     permissionsError || rolePermissionsError
       ? "Live permissions data could not be loaded. Showing default access rules in read-only mode."
@@ -242,7 +258,7 @@ export default function SuperAdminAccessPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {displayedPermissions.map((p) => (
+                {paginatedPermissions.map((p) => (
                   <tr key={p.id} className="transition hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5">
                     <td className="px-6 py-4 font-mono text-[13px] text-indigo-600 dark:text-indigo-400">{p.key}</td>
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">{p.name}</td>
@@ -271,6 +287,21 @@ export default function SuperAdminAccessPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4">
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={displayedPermissions.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.PERMISSIONS}
+              label="permissions"
+            />
           </div>
         </div>
       ) : (

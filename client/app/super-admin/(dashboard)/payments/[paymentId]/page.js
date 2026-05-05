@@ -15,7 +15,7 @@ import {
   useGetSuperAdminPaymentByIdQuery,
   useUpdateSuperAdminPaymentMutation,
 } from "@/services/api/superAdminApi";
-import { formatCalendarDate } from "@/utils/date";
+import { formatCalendarDate, getDateKey } from "@/utils/date";
 import { getErrorMessage, normalizeTextInput } from "@/utils/formValidation";
 
 const PAYMENT_STATUS_OPTIONS = ["CREATED", "SUCCESS", "FAILED", "CANCELLED", "REFUNDED"];
@@ -42,7 +42,7 @@ const toInputDate = (value) => {
   if (!value) return "";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toISOString().split("T")[0];
+  return getDateKey(parsed);
 };
 
 const shiftDateByDays = (dateString, days) => {

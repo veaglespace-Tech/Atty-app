@@ -202,9 +202,13 @@ const toHallTicketFilename = ({ userName, userId }) => {
 exports.getOrgUsers = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const limit = parseLimit(req.query.limit, 500, 2000);
+  const currentUserId = Number(req.user.id);
 
   const users = await prisma.user.findMany({
     where: {
+      ...(Number.isFinite(currentUserId) && currentUserId > 0
+        ? { id: { not: currentUserId } }
+        : {}),
       memberships: {
         some: {
           orgId,

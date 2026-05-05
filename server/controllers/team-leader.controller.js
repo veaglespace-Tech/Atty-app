@@ -5,6 +5,8 @@ const { PERMISSION_KEYS, hasPermission } = require("../constants/permissions");
 const { resolveUserRole } = require("../utils/membership");
 const {
   ensureOrganizationId,
+  dateKey,
+  parseBoolean,
   parseId,
   parseLimit,
   toSummaryItem,
@@ -555,7 +557,12 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
     payload.attendanceRadius = Math.round(radius);
   }
   if (req.body?.isActive !== undefined) {
-    payload.isActive = Boolean(req.body.isActive);
+    const isActive = parseBoolean(req.body.isActive, null);
+    if (isActive === null) {
+      res.status(400);
+      throw new Error("isActive must be boolean");
+    }
+    payload.isActive = isActive;
   }
 
   const coordinates = normalizeCoordinatesInput(req.body || {});
@@ -745,8 +752,8 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
 
   const to = todayKey();
   const fromDate = new Date();
-  fromDate.setUTCDate(fromDate.getUTCDate() - 29);
-  const from = fromDate.toISOString().split("T")[0];
+  fromDate.setDate(fromDate.getDate() - 29);
+  const from = dateKey(fromDate);
 
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,

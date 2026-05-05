@@ -6,6 +6,7 @@ const {
   ensureOrganizationId,
   parseId,
   parseLimit,
+  parseBoolean,
   uniqueNumberList,
   truncateText,
 } = require("../services/common.service");
@@ -75,7 +76,12 @@ const normalizeTeamPayload = ({ req, res, allowMemberEdits = false }) => {
   }
 
   if (req.body?.isActive !== undefined) {
-    payload.isActive = Boolean(req.body.isActive);
+    const isActive = parseBoolean(req.body.isActive, null);
+    if (isActive === null) {
+      res.status(400);
+      throw new Error("isActive must be boolean");
+    }
+    payload.isActive = isActive;
   }
 
   const coordinates = normalizeCoordinatesInput(req.body || {});

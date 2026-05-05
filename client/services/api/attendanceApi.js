@@ -1,7 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { buildBaseQuery } from "./baseApi";
+import { getTodayDateKey } from "@/utils/date";
 
-const todayKey = () => new Date().toISOString().split("T")[0];
+const todayKey = getTodayDateKey;
 
 const ensureSummaryEntry = (summary, label, fallbackValue) => {
   const existing = Array.isArray(summary) ? summary.find((item) => item?.label === label) : null;

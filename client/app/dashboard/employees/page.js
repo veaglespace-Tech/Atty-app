@@ -13,6 +13,9 @@ import {
   Users,
   X,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { formatRoleLabel, ROLES } from "@/utils/roles";
 import { useGetOrgUsersQuery } from "@/services/api/orgApi";
 
@@ -62,6 +65,19 @@ export default function EmployeesPage() {
     }),
     [staff]
   );
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedStaff,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(filteredStaff, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS[0],
+    dependencies: [searchValue],
+  });
 
   if (loading) {
     return (
@@ -150,7 +166,7 @@ export default function EmployeesPage() {
         {filteredStaff.length > 0 ? (
           <>
             <div className="grid gap-4 p-4 md:hidden">
-              {filteredStaff.map((person, index) => (
+              {paginatedStaff.map((person, index) => (
                 <article
                   key={person._id || `${person.email || "member"}-${index}`}
                   className="brand-panel-soft rounded-[1.6rem] p-4"
@@ -222,7 +238,7 @@ export default function EmployeesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredStaff.map((person, index) => (
+                  {paginatedStaff.map((person, index) => (
                     <tr
                       key={person._id || `${person.email || "member"}-${index}`}
                       className="bg-white/70 transition-colors hover:bg-blue-50/60 dark:bg-transparent dark:hover:bg-slate-900/70"
@@ -283,6 +299,20 @@ export default function EmployeesPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="p-4 pt-0">
+              <PaginationControls
+                page={page}
+                pageSize={pageSize}
+                totalItems={filteredStaff.length}
+                totalPages={totalPages}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.USERS}
+                label="members"
+              />
             </div>
           </>
         ) : (

@@ -20,7 +20,10 @@ import {
   useVoteOnPostMutation,
   useDeletePostMutation 
 } from "@/services/api/postApi";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import { getErrorMessage } from "@/utils/formValidation";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { PostForm } from "./_components/PostForm";
 import { PostCard } from "./_components/PostCard";
 
@@ -66,6 +69,19 @@ export default function OrgPostsPage() {
       return matchesSearch && matchesType;
     });
   }, [posts, searchTerm, typeFilter]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedPosts,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(filteredPosts, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.POSTS[0],
+    dependencies: [searchTerm, typeFilter],
+  });
 
   const onInputChange = (e) => {
     const { name, value } = e.target;
@@ -243,18 +259,33 @@ export default function OrgPostsPage() {
             <p className="text-xs text-slate-400 mt-1">Try creating your first announcement!</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {filteredPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                types={POST_TYPES}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onVote={handleVote}
-                isVoting={activeVoteId === post.id}
-              />
-            ))}
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              {paginatedPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  types={POST_TYPES}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onVote={handleVote}
+                  isVoting={activeVoteId === post.id}
+                />
+              ))}
+            </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={filteredPosts.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.POSTS}
+              label="posts"
+            />
           </div>
         )}
       </div>

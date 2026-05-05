@@ -66,6 +66,14 @@ const isRenewalRestrictedPlan = (plan = {}) => {
 
 const formatExpiryLabel = (value) => formatCalendarDate(value);
 
+const formatRenewalModeLabel = (mode) =>
+  ({
+    DOWNGRADE_SCHEDULED: "Downgrade Scheduled",
+    UPGRADE_NOW: "Upgrade Now",
+    EXTEND: "Extend",
+    RENEW: "Renew",
+  }[mode] || String(mode || "-").replaceAll("_", " "));
+
 const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName }) => {
   if (!selectedPlan) return null;
 
@@ -614,23 +622,23 @@ export default function PricingPage() {
                             Upgrade Preview
                           </p>
                           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Current Plan
                               </p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                              <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-white">
                                 {renewalPreview.currentPlanName}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Mode
                               </p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                                {renewalPreview.mode}
+                              <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-white">
+                                {formatRenewalModeLabel(renewalPreview.mode)}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Remaining Days
                               </p>
@@ -638,7 +646,7 @@ export default function PricingPage() {
                                 {renewalPreview.remainingDays || 0}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Credit Applied
                               </p>
@@ -646,7 +654,7 @@ export default function PricingPage() {
                                 Rs. {formatPlanPrice(renewalPreview.upgradeCredit)}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Pay Now
                               </p>
@@ -654,7 +662,7 @@ export default function PricingPage() {
                                 Rs. {formatPlanPrice(renewalPreview.payableAmount)}
                               </p>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Next Expiry
                               </p>

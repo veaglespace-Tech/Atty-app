@@ -15,8 +15,11 @@ import {
   useCreatePlanMutation,
   useDeletePlanMutation
 } from "@/services/api/planApi";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetSuperAdminPlansQuery } from "@/services/api/superAdminApi";
 import Link from "next/link";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import {
   filterVisiblePlans,
   formatPlanCodeLabel,
@@ -102,6 +105,19 @@ export default function SuperAdminPlansPage() {
     ],
     [plans, summaryMap]
   );
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedPlans,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(plans, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.PLANS[0],
+    dependencies: [plans.length],
+  });
 
   const onInputChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -348,7 +364,7 @@ export default function SuperAdminPlansPage() {
             <p className="mt-4 text-slate-400 font-bold">No plans configured yet.</p>
           </div>
         ) : (
-          plans.map((plan) => (
+          paginatedPlans.map((plan) => (
             <Link 
                 href={`/super-admin/plans/${plan.id}`} 
                 key={plan.id}
@@ -416,6 +432,21 @@ export default function SuperAdminPlansPage() {
           ))
         )}
       </div>
+
+      {!loading && plans.length > 0 ? (
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          totalItems={plans.length}
+          totalPages={totalPages}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.PLANS}
+          label="plans"
+        />
+      ) : null}
     </section>
   );
 }

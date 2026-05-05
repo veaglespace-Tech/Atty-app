@@ -1,3 +1,5 @@
+const { dateKey, todayKey } = require("../services/common.service");
+
 const resolveOrganizationId = (user) =>
   user?.organizationId || user?.organization || user?.orgId || null;
 
@@ -11,12 +13,10 @@ const buildOrgScope = (organizationId) => {
   };
 };
 
-const todayKey = () => new Date().toISOString().split("T")[0];
-
 const daysAgoKey = (days) => {
   const date = new Date();
   date.setDate(date.getDate() - days);
-  return date.toISOString().split("T")[0];
+  return dateKey(date);
 };
 
 const clamp = (value, min, max, fallback) => {

@@ -35,11 +35,11 @@ const organisationSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(2, "Organisation name is required")
-    .max(100, "Organisation name is too long")
+    .min(2, "Organization name is required")
+    .max(100, "Organization name is too long")
     .regex(
       ORGANIZATION_NAME_REGEX,
-      "Organisation name can only include letters, numbers, spaces, and . & ( ) - characters"
+      "Organization name can only include letters, numbers, spaces, and . & ( ) - characters"
     ),
   email: z
     .string()
@@ -156,7 +156,7 @@ export default function OrganisationForm() {
   };
 
   const fields = [
-    { name: "name", label: "Organisation Name", icon: Building2, placeholder: "Acme Corp" },
+    { name: "name", label: "Organization Name", icon: Building2, placeholder: "Acme Corp" },
     { name: "email", label: "Business Email", icon: Mail, placeholder: "contact@acme.com", type: "email" },
     { name: "city", label: "City", icon: Globe, placeholder: "Mumbai" },
     { name: "state", label: "State", icon: Globe, placeholder: "Maharashtra" },

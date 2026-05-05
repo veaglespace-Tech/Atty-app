@@ -283,6 +283,19 @@ export default function SuperAdminOrganizationsPage() {
               Showing {startIndex}-{endIndex} of {filteredOrganizations.length} organizations
             </p>
 
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={filteredOrganizations.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.ORGANIZATIONS}
+              label="organizations"
+            />
+
             <div className="grid gap-4 md:hidden">
               {paginatedItems.map((organization) => (
                 <Link

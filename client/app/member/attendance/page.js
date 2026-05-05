@@ -10,10 +10,11 @@ import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
 import { usePunchInMutation, usePunchOutMutation } from "@/services/api/attendanceApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
+import { getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
 
-const todayKey = () => new Date().toISOString().split("T")[0];
+const todayKey = getTodayDateKey;
 
 const toSummaryMap = (summary) => {
   const map = new Map();

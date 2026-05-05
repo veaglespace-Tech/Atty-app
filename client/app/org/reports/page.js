@@ -10,11 +10,15 @@ import {
   LockKeyhole,
   RefreshCcw,
 } from "lucide-react"
+import PaginationControls from "@/components/dashboard/PaginationControls"
+import useLocalPagination from "@/hooks/useLocalPagination"
 import {
   useDownloadOrgReportExcelMutation,
   useDownloadOrgReportPdfMutation,
   useGetOrgReportsQuery,
 } from "@/services/api/orgApi"
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits"
+import { getDateKey, getTodayDateKey } from "@/utils/date"
 import { formatHoursValue } from "@/utils/time"
 
 const PERIOD_OPTIONS = [
@@ -42,12 +46,12 @@ const formatRange = (meta) => {
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback
 
-const todayKey = () => new Date().toISOString().split("T")[0]
+const todayKey = getTodayDateKey
 
 const daysAgoKey = (days) => {
   const date = new Date()
-  date.setUTCDate(date.getUTCDate() - Number(days || 0))
-  return date.toISOString().split("T")[0]
+  date.setDate(date.getDate() - Number(days || 0))
+  return getDateKey(date)
 }
 
 const getDefaultCustomRange = () => ({
@@ -155,6 +159,19 @@ export default function OrgReportsPage() {
   const visibleItems = customRangeError ? [] : items
   const visibleSummaryMap = customRangeError ? new Map() : summaryMap
   const downloadDisabled = loading || Boolean(customRangeError) || downloading || downloadingExcel
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(visibleItems, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.REPORTS[0],
+    dependencies: [period, customRange.from, customRange.to, visibleItems.length],
+  })
 
   const onDownloadPdf = async () => {
     try {
@@ -434,7 +451,7 @@ export default function OrgReportsPage() {
         ) : (
           <div className="mt-4 space-y-4">
             <div className="grid gap-3 md:hidden">
-              {visibleItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <article key={`mobile-${item.id}`} className="dashboard-mobile-record-card">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -481,7 +498,7 @@ export default function OrgReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {visibleItems.map((item) => (
+                  {paginatedItems.map((item) => (
                     <tr key={item.id}>
                       <td className="px-3 py-2 font-semibold text-slate-900">{item.member}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.role}</td>
@@ -494,6 +511,18 @@ export default function OrgReportsPage() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={visibleItems.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.REPORTS}
+              label="records"
+            />
           </div>
         )}
       </div>

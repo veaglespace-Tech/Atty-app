@@ -458,7 +458,9 @@ export default function OrgUsersPage() {
             </div>
 
             <p className="mobile-hide-helper text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Showing {startIndex}-{endIndex} of {filteredUsers.length} filtered users
+              {filteredUsers.length > 0
+                ? `Showing ${startIndex}-${endIndex} of ${filteredUsers.length} filtered users`
+                : "Showing 0 filtered users"}
             </p>
 
             {filteredUsers.length === 0 ? (

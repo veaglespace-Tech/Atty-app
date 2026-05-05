@@ -14,7 +14,10 @@ import {
   useGetOrgPostsQuery,
   useVoteOnPostMutation,
 } from "@/services/api/postApi";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import PollOptionsPanel from "@/components/posts/PollOptionsPanel";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { getErrorMessage } from "@/utils/formValidation";
 
 const POST_TYPES = {
@@ -53,6 +56,19 @@ export default function OrgPostsFeedPage({
   const { data: postsData, isLoading, refetch, isFetching } = useGetOrgPostsQuery();
   const [voteOnPost] = useVoteOnPostMutation();
   const posts = useMemo(() => postsData?.items || [], [postsData]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedPosts,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(posts, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.POSTS[0],
+    dependencies: [posts.length],
+  });
 
   const handleVote = async (postId, optionIndex) => {
     try {
@@ -107,7 +123,7 @@ export default function OrgPostsFeedPage({
             </div>
           ) : null}
 
-          {posts.map((post) => {
+          {paginatedPosts.map((post) => {
             const config = POST_TYPES[post.type] || POST_TYPES.NOTIFICATION;
             const Icon = config.icon;
 
@@ -167,6 +183,19 @@ export default function OrgPostsFeedPage({
               </div>
             );
           })}
+
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={posts.length}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.POSTS}
+            label="updates"
+          />
         </div>
       )}
     </div>

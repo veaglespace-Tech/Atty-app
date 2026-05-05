@@ -30,7 +30,62 @@ const parseId = (value) => {
   return Math.floor(parsed);
 };
 
-const todayKey = () => new Date().toISOString().split("T")[0];
+const DEFAULT_APP_TIME_ZONE = process.env.APP_TIME_ZONE || "Asia/Kolkata";
+
+const getDatePartsInTimeZone = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const partMap = parts.reduce((accumulator, part) => {
+    accumulator[part.type] = part.value;
+    return accumulator;
+  }, {});
+
+  if (!partMap.year || !partMap.month || !partMap.day) return null;
+  return {
+    year: Number(partMap.year),
+    month: Number(partMap.month),
+    day: Number(partMap.day),
+  };
+};
+
+const toDateKeyFromParts = (parts) => {
+  if (!parts) return null;
+  return [
+    String(parts.year).padStart(4, "0"),
+    String(parts.month).padStart(2, "0"),
+    String(parts.day).padStart(2, "0"),
+  ].join("-");
+};
+
+const dateKey = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) =>
+  toDateKeyFromParts(getDatePartsInTimeZone(value, timeZone));
+
+const todayKey = (timeZone = DEFAULT_APP_TIME_ZONE) => dateKey(new Date(), timeZone);
+
+const monthWindow = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) => {
+  const parts = getDatePartsInTimeZone(value, timeZone);
+  if (!parts) {
+    const fallbackKey = dateKey(new Date()) || new Date().toISOString().split("T")[0];
+    return {
+      from: fallbackKey,
+      to: fallbackKey,
+    };
+  }
+
+  const lastDay = new Date(Date.UTC(parts.year, parts.month, 0)).getUTCDate();
+  return {
+    from: `${String(parts.year).padStart(4, "0")}-${String(parts.month).padStart(2, "0")}-01`,
+    to: `${String(parts.year).padStart(4, "0")}-${String(parts.month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
+  };
+};
 
 const toDateKey = (value, fallback = null) => {
   if (!value) return fallback;
@@ -41,7 +96,7 @@ const toDateKey = (value, fallback = null) => {
 
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return fallback;
-  return date.toISOString().split("T")[0];
+  return dateKey(date) || fallback;
 };
 
 const normalizeStatus = (value, fallback = "") =>
@@ -126,7 +181,9 @@ module.exports = {
   parseLimit,
   parseOffset,
   parseId,
+  dateKey,
   todayKey,
+  monthWindow,
   toDateKey,
   normalizeStatus,
   resolveOrganizationId,

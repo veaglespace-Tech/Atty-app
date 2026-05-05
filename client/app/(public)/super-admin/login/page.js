@@ -129,7 +129,7 @@ export default function SuperAdminLoginPage() {
           <div className="p-7 sm:p-8 md:p-12">
             <div className="mb-10 text-center">
               <SectionEyebrow className="mb-5">
-                Admin Login
+                Super Admin Login
               </SectionEyebrow>
               <h2 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
                 Veagle Attendee Control Panel

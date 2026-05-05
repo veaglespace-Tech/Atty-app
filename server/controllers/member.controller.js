@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const {
   ensureOrganizationId,
+  monthWindow,
   minutesToHoursValue,
   parseLimit,
   toSummaryItem,
@@ -13,15 +14,6 @@ const {
   mapAttendanceRecord,
 } = require("../services/attendance-query.service");
 const { attendanceRecordSelect } = require("../services/prisma-selects.service");
-
-const monthWindow = (date = new Date()) => {
-  const firstDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-  const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
-  return {
-    from: firstDay.toISOString().split("T")[0],
-    to: lastDay.toISOString().split("T")[0],
-  };
-};
 
 const getCurrentMemberTeam = async ({ orgId, userId }) => {
   const membership = await prisma.teamMember.findFirst({

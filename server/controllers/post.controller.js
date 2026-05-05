@@ -3,6 +3,20 @@ const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
 const { PERMISSION_KEYS } = require("../constants/permissions");
+const {
+  parseBoolean,
+  parseLimit,
+  parseOffset,
+  truncateText,
+} = require("../services/common.service");
+
+const POST_TYPES = new Set([
+  "NOTIFICATION",
+  "NEWS",
+  "ARTICLE",
+  "POLL",
+  "TOURNAMENT_CARD",
+]);
 
 const POST_INCLUDE = {
   author: {
@@ -21,6 +35,12 @@ const POST_INCLUDE = {
 
 const toSafeObject = (value) =>
   value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+const normalizePostType = (value, fallback = null) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  const normalized = String(value).trim().toUpperCase();
+  return POST_TYPES.has(normalized) ? normalized : null;
+};
 
 const normalizePollOptions = (options = []) =>
   (Array.isArray(options) ? options : [])
@@ -137,11 +157,19 @@ exports.createPost = asyncHandler(async (req, res) => {
   const { title, content, type, metadata } = req.body;
   const orgId = resolveOrganizationId(req.user);
   assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
-  const normalizedType = type || "NOTIFICATION";
+  const normalizedType = normalizePostType(type, "NOTIFICATION");
 
-  if (!title || !content) {
+  const normalizedTitle = truncateText(title, 191);
+  const normalizedContent = String(content || "").trim();
+
+  if (!normalizedTitle || !normalizedContent) {
     res.status(400);
     throw new Error("Title and content are required");
+  }
+
+  if (!normalizedType) {
+    res.status(400);
+    throw new Error("Invalid post type");
   }
 
   let nextMetadata = toSafeObject(metadata);
@@ -159,8 +187,8 @@ exports.createPost = asyncHandler(async (req, res) => {
 
   const post = await prisma.post.create({
     data: {
-      title,
-      content,
+      title: normalizedTitle,
+      content: normalizedContent,
       type: normalizedType,
       metadata: nextMetadata,
       orgId,
@@ -182,6 +210,8 @@ exports.createPost = asyncHandler(async (req, res) => {
 exports.getOrgPosts = asyncHandler(async (req, res) => {
   const orgId = resolveOrganizationId(req.user);
   const { type, limit = 20, offset = 0 } = req.query;
+  const safeLimit = parseLimit(limit, 20, 100);
+  const safeOffset = parseOffset(offset, 0, 10000);
 
   const where = {
     orgId,
@@ -190,7 +220,12 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
   };
 
   if (type) {
-    where.type = type;
+    const normalizedType = normalizePostType(type);
+    if (!normalizedType) {
+      res.status(400);
+      throw new Error("Invalid post type");
+    }
+    where.type = normalizedType;
   }
 
   const [items, total] = await Promise.all([
@@ -200,8 +235,8 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
       orderBy: {
         createdAt: "desc",
       },
-      take: Number(limit),
-      skip: Number(offset),
+      take: safeLimit,
+      skip: safeOffset,
     }),
     prisma.post.count({ where }),
   ]);
@@ -211,8 +246,8 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
     items: items.map((item) => serializePost(item, req.user.id)),
     meta: {
       total,
-      limit: Number(limit),
-      offset: Number(offset),
+      limit: safeLimit,
+      offset: safeOffset,
     },
   });
 });
@@ -235,7 +270,27 @@ exports.updatePost = asyncHandler(async (req, res) => {
     throw new Error("Post not found");
   }
 
-  const nextType = type !== undefined ? type : existing.type;
+  const nextType = type !== undefined ? normalizePostType(type) : existing.type;
+  if (!nextType) {
+    res.status(400);
+    throw new Error("Invalid post type");
+  }
+
+  const nextTitle = title !== undefined ? truncateText(title, 191) : existing.title;
+  const nextContent = content !== undefined ? String(content || "").trim() : existing.content;
+
+  if (!nextTitle || !nextContent) {
+    res.status(400);
+    throw new Error("Title and content are required");
+  }
+
+  const nextIsActive =
+    isActive !== undefined ? parseBoolean(isActive, null) : existing.isActive;
+  if (nextIsActive === null) {
+    res.status(400);
+    throw new Error("isActive must be boolean");
+  }
+
   let nextMetadata =
     metadata !== undefined ? toSafeObject(metadata) : toSafeObject(existing.metadata);
 
@@ -251,18 +306,18 @@ exports.updatePost = asyncHandler(async (req, res) => {
     }
 
     nextMetadata = preparedPoll.metadata;
-  } else if (existing.type === "POLL" && type !== undefined && type !== "POLL" && metadata === undefined) {
+  } else if (existing.type === "POLL" && type !== undefined && nextType !== "POLL" && metadata === undefined) {
     nextMetadata = {};
   }
 
   const updated = await prisma.post.update({
     where: { id: Number(id) },
     data: {
-      title: title !== undefined ? title : existing.title,
-      content: content !== undefined ? content : existing.content,
+      title: nextTitle,
+      content: nextContent,
       type: nextType,
       metadata: nextMetadata,
-      isActive: isActive !== undefined ? isActive : existing.isActive,
+      isActive: nextIsActive,
     },
     include: POST_INCLUDE,
   });

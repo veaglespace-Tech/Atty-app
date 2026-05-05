@@ -7,21 +7,38 @@ import {
   ArrowLeft,
   Ban,
   Building2,
+  CreditCard,
   Loader2,
+  MapPin,
+  Pencil,
   Power,
   Save,
+  Users,
+  UsersRound,
+  X,
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetSuperAdminOrganizationByIdQuery,
-  useGetSuperAdminOrganizationUsersQuery,
   useGetSuperAdminOrganizationTeamsQuery,
+  useGetSuperAdminOrganizationUsersQuery,
   usePatchSuperAdminOrganizationMutation,
   useUpdateOrganizationAccessMutation,
 } from "@/services/api/superAdminApi";
+import useLocalPagination from "@/hooks/useLocalPagination";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { formatCalendarDate } from "@/utils/date";
 import { getErrorMessage, normalizeTextInput } from "@/utils/formValidation";
 import { getLocalPhoneNumber } from "@/utils/phone";
+
+const tabs = [
+  { id: "overview", label: "Overview", Icon: Building2 },
+  { id: "profile", label: "Profile", Icon: MapPin },
+  { id: "billing", label: "Billing", Icon: CreditCard },
+  { id: "users", label: "Users", Icon: Users },
+  { id: "teams", label: "Teams", Icon: UsersRound },
+];
 
 const formatMoney = (value, currency = "INR") => {
   const numeric = Number(value || 0);
@@ -38,6 +55,12 @@ const formatDateTime = (value) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return String(value);
   return parsed.toLocaleString("en-IN");
+};
+
+const formatPhone = (countryCode, phone) => {
+  const localPhone = getLocalPhoneNumber(phone, countryCode);
+  if (!localPhone) return "-";
+  return `${countryCode || "+91"} ${localPhone}`;
 };
 
 const getFormDefaults = (item) => ({
@@ -57,16 +80,78 @@ const getFormDefaults = (item) => ({
       : String(item.attendanceRadius),
 });
 
-function DetailTile({ label, value }) {
+const getStatusTone = (value) => {
+  switch (String(value || "").toUpperCase()) {
+    case "ACTIVE":
+    case "SUCCESS":
+    case "UNBLOCKED":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200";
+    case "BLOCKED":
+    case "EXPIRED":
+    case "FAILED":
+    case "INACTIVE":
+      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200";
+    case "CREATED":
+    case "PENDING":
+    case "PAYMENT_PENDING":
+    case "TRIAL":
+      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200";
+    default:
+      return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
+  }
+};
+
+function StatusBadge({ value }) {
   return (
-    <div className="dashboard-detail-tile">
+    <span
+      className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getStatusTone(value)}`}
+    >
+      <span className="truncate">{value || "-"}</span>
+    </span>
+  );
+}
+
+function DetailTile({ label, value, accent }) {
+  return (
+    <div className="dashboard-detail-tile min-w-0">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
         {label}
       </p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <p
+        className={`mt-2 break-words text-sm font-semibold ${
+          accent ? "text-slate-950 dark:text-white" : "text-slate-800 dark:text-slate-100"
+        }`}
+      >
         {value}
       </p>
     </div>
+  );
+}
+
+function SectionCard({ title, subtitle, action, children }) {
+  return (
+    <div className="light-glow-card-static rounded-[1.9rem] p-5 sm:p-6">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+            {title}
+          </h3>
+          {subtitle ? (
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">{subtitle}</p>
+          ) : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EmptyState({ children }) {
+  return (
+    <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+      {children}
+    </p>
   );
 }
 
@@ -75,33 +160,37 @@ export default function OrganizationDetailPage() {
   const router = useRouter();
   const organizationId = Number(params?.organizationId);
 
+  const [activeTab, setActiveTab] = useState("overview");
+  const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState(getFormDefaults(null));
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [updatingAccess, setUpdatingAccess] = useState(false);
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    refetch,
-  } = useGetSuperAdminOrganizationByIdQuery(organizationId, {
-    skip: !Number.isFinite(organizationId) || organizationId <= 0,
-  });
+  const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationByIdQuery(
+    organizationId,
+    {
+      skip: !Number.isFinite(organizationId) || organizationId <= 0,
+    }
+  );
 
-  const { data: usersData, isLoading: isLoadingUsers } = useGetSuperAdminOrganizationUsersQuery(organizationId, {
-    skip: !Number.isFinite(organizationId) || organizationId <= 0,
-  });
+  const { data: usersData, isLoading: isLoadingUsers } =
+    useGetSuperAdminOrganizationUsersQuery(organizationId, {
+      skip: !Number.isFinite(organizationId) || organizationId <= 0,
+    });
 
-  const { data: teamsData, isLoading: isLoadingTeams } = useGetSuperAdminOrganizationTeamsQuery(organizationId, {
-    skip: !Number.isFinite(organizationId) || organizationId <= 0,
-  });
+  const { data: teamsData, isLoading: isLoadingTeams } =
+    useGetSuperAdminOrganizationTeamsQuery(organizationId, {
+      skip: !Number.isFinite(organizationId) || organizationId <= 0,
+    });
 
   const [patchOrganizationMutation] = usePatchSuperAdminOrganizationMutation();
   const [updateOrganizationAccessMutation] = useUpdateOrganizationAccessMutation();
 
   const item = data?.item || null;
+  const users = Array.isArray(usersData?.items) ? usersData.items : [];
+  const teams = Array.isArray(teamsData?.items) ? teamsData.items : [];
 
   useEffect(() => {
     setForm(getFormDefaults(item));
@@ -113,6 +202,13 @@ export default function OrganizationDetailPage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const onCancelEdit = () => {
+    setForm(getFormDefaults(item));
+    setEditMode(false);
+    setError("");
+    setMessage("");
   };
 
   const onSave = async () => {
@@ -137,6 +233,7 @@ export default function OrganizationDetailPage() {
       }).unwrap();
 
       setMessage("Organization details updated successfully.");
+      setEditMode(false);
       await refetch();
     } catch (mutationError) {
       setError(getErrorMessage(mutationError, "Failed to update organization"));
@@ -201,7 +298,7 @@ export default function OrganizationDetailPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
+    <section className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -213,335 +310,595 @@ export default function OrganizationDetailPage() {
 
         <button
           type="button"
-          onClick={onSave}
-          disabled={saving || isFetching}
+          onClick={() => setActiveTab("profile")}
           className="brand-btn brand-btn-primary brand-btn-sm"
         >
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          Save Changes
+          <Pencil size={14} /> Profile
         </button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
-        <div className="brand-entity-card rounded-[2rem] p-7 sm:p-8">
-          <div className="brand-metric-glow" />
-          <p className="relative text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-blue-100/80">
-            Organization Detail
-          </p>
-          <h1 className="relative mt-3 text-3xl font-black leading-tight text-slate-900 dark:text-white">
-            {item.name}
-          </h1>
-          <p className="relative mt-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            {item.code}
-          </p>
-
-          <div className="relative mt-6 grid gap-4 sm:grid-cols-2">
-            <DetailTile label="Plan" value={item.plan?.name || "TRIAL"} />
-            <DetailTile label="Subscription" value={item.subscriptionStatus || "TRIAL"} />
-            <DetailTile label="Users" value={Number(item.counts?.users || 0)} />
-            <DetailTile label="Teams" value={Number(item.counts?.teams || 0)} />
-          </div>
-        </div>
-
-        <div className="light-glow-card-static rounded-[1.9rem] p-6">
-          <div className="mb-4 flex items-center gap-3">
-            <Building2 size={18} className="text-slate-500" />
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                Access Control
-              </h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                Manage active state and block or unblock directly from here.
-              </p>
+      <div className="brand-entity-card overflow-hidden rounded-[2rem] p-6 sm:p-8">
+        <div className="brand-metric-glow" />
+        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-blue-100/80">
+              Organization Detail
+            </p>
+            <h1 className="mt-3 break-words text-3xl font-black leading-tight text-slate-900 dark:text-white sm:text-4xl">
+              {item.name}
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <StatusBadge value={item.code || "ORG"} />
+              <StatusBadge value={item.subscriptionStatus || "TRIAL"} />
+              <StatusBadge value={item.active ? "ACTIVE" : "INACTIVE"} />
+              <StatusBadge value={item.blocked ? "BLOCKED" : "UNBLOCKED"} />
             </div>
           </div>
 
-          <div className="grid gap-3">
-            <DetailTile label="Current Access" value={item.active ? "ACTIVE" : "INACTIVE"} />
-            <DetailTile label="Block State" value={item.blocked ? "BLOCKED" : "UNBLOCKED"} />
-            <DetailTile
-              label="Subscription Expiry"
-              value={formatCalendarDate(item.subscriptionExpiry, "-")}
-            />
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                onAccessUpdate(
-                  { isBlocked: !item.blocked },
-                  `${item.name} ${item.blocked ? "unblocked" : "blocked"} successfully.`
-                )
-              }
-              disabled={updatingAccess}
-              className={`brand-btn brand-btn-sm ${item.blocked ? "brand-btn-soft" : "brand-btn-danger"}`}
-            >
-              {updatingAccess ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />}
-              {item.blocked ? "Unblock" : "Block"}
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                onAccessUpdate(
-                  { isActive: !item.active },
-                  `${item.name} ${item.active ? "deactivated" : "activated"} successfully.`
-                )
-              }
-              disabled={updatingAccess}
-              className="brand-btn brand-btn-secondary brand-btn-sm"
-            >
-              {updatingAccess ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
-              {item.active ? "Deactivate" : "Activate"}
-            </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailTile label="Plan" value={item.plan?.name || "TRIAL"} accent />
+            <DetailTile label="Revenue" value={formatMoney(item.paymentSummary?.totalRevenue || 0)} accent />
+            <DetailTile label="Users" value={Number(item.counts?.users || 0)} />
+            <DetailTile label="Teams" value={Number(item.counts?.teams || 0)} />
           </div>
         </div>
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
           {error}
         </p>
       ) : null}
       {message ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
           {message}
         </p>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <div className="light-glow-card-static rounded-[1.9rem] p-6">
-          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-            Organization Profile
-          </h3>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <FormField label="Organization Name">
-              <input
-                name="name"
-                value={form.name}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <FormField label="Email">
-              <input
-                name="email"
-                value={form.email}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <CountryPhoneField
-              label="Phone"
-              countryCode={form.phoneCountryCode}
-              phone={form.phone}
-              onCountryCodeChange={(event) =>
-                setForm((prev) => ({ ...prev, phoneCountryCode: event.target.value }))
-              }
-              onPhoneChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  phone: event.target.value.replace(/[^\d]/g, ""),
-                }))
-              }
-              containerClassName="md:col-span-2"
-              labelClassName="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
-              groupClassName="rounded-[1rem] shadow-none"
-              selectClassName="py-3"
-              inputClassName="py-3"
-            />
-
-            <FormField label="Address" fullWidth>
-              <textarea
-                name="address"
-                value={form.address}
-                onChange={onChange}
-                rows={3}
-                className="dashboard-field-control min-h-[110px] w-full py-3"
-              />
-            </FormField>
-
-            <FormField label="City">
-              <input
-                name="city"
-                value={form.city}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <FormField label="State">
-              <input
-                name="state"
-                value={form.state}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <FormField label="Country">
-              <input
-                name="country"
-                value={form.country}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <FormField label="Attendance Radius">
-              <input
-                name="attendanceRadius"
-                type="number"
-                min="5"
-                value={form.attendanceRadius}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <FormField label="Latitude">
-              <input
-                name="latitude"
-                type="number"
-                step="0.000001"
-                value={form.latitude}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-
-            <FormField label="Longitude">
-              <input
-                name="longitude"
-                type="number"
-                step="0.000001"
-                value={form.longitude}
-                onChange={onChange}
-                className="dashboard-field-control w-full"
-              />
-            </FormField>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="light-glow-card-static rounded-[1.9rem] p-6">
-            <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-              Subscription Snapshot
-            </h3>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <DetailTile label="Current Plan" value={item.plan?.name || "TRIAL"} />
-              <DetailTile label="Plan Code" value={item.plan?.code || "-"} />
-              <DetailTile
-                label="Plan Price"
-                value={formatMoney(item.plan?.price || 0, item.plan?.currency || "INR")}
-              />
-              <DetailTile
-                label="Duration"
-                value={item.plan?.durationInDays ? `${item.plan.durationInDays} days` : "-"}
-              />
-              <DetailTile
-                label="Start Date"
-                value={formatCalendarDate(item.activeSubscription?.startDate, "-")}
-              />
-              <DetailTile
-                label="End Date"
-                value={formatCalendarDate(item.activeSubscription?.endDate, "-")}
-              />
-            </div>
-          </div>
-
-          <div className="light-glow-card-static rounded-[1.9rem] p-6">
-            <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-              Admin & Revenue
-            </h3>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <DetailTile label="Admin Name" value={item.admin?.name || "-"} />
-              <DetailTile label="Admin Email" value={item.admin?.email || "-"} />
-              <DetailTile label="Payments" value={Number(item.paymentSummary?.successfulPayments || 0)} />
-              <DetailTile
-                label="Revenue"
-                value={formatMoney(item.paymentSummary?.totalRevenue || 0)}
-              />
-              <DetailTile
-                label="Created At"
-                value={formatDateTime(item.createdAt)}
-              />
-              <DetailTile
-                label="Updated At"
-                value={formatDateTime(item.updatedAt)}
-              />
-            </div>
-          </div>
+      <div className="light-glow-card-static rounded-[1.7rem] p-2">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {tabs.map(({ id, label, Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                className={`brand-btn brand-btn-md justify-center rounded-[1.25rem] ${
+                  isActive ? "brand-btn-primary" : "brand-btn-secondary"
+                }`}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2 mt-6">
-        <div className="light-glow-card-static rounded-[1.9rem] p-6">
-          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 mb-4">
-            Organization Users
-          </h3>
-          {isLoadingUsers ? (
-            <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
-          ) : usersData?.items?.length > 0 ? (
-            <div className="space-y-3">
-              {usersData.items.map((user) => (
-                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                  <div>
-                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{user.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.email || user.mobile}</p>
-                  </div>
-                  <div className="mt-2 sm:mt-0 text-left sm:text-right">
-                    <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                      {user.role}
-                    </span>
-                    <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-400">
-                      {user.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No users found.</p>
-          )}
-        </div>
+      {activeTab === "overview" ? (
+        <OverviewTab
+          item={item}
+          updatingAccess={updatingAccess}
+          onAccessUpdate={onAccessUpdate}
+        />
+      ) : null}
 
-        <div className="light-glow-card-static rounded-[1.9rem] p-6">
-          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 mb-4">
-            Organization Teams
-          </h3>
-          {isLoadingTeams ? (
-            <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
-          ) : teamsData?.items?.length > 0 ? (
-            <div className="space-y-3">
-              {teamsData.items.map((team) => (
-                <div key={team.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                  <div>
-                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{team.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{team.description || "No description"}</p>
-                  </div>
-                  <div className="mt-2 sm:mt-0 text-left sm:text-right">
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {team.memberCount} Member{team.memberCount !== 1 ? 's' : ''}
-                    </p>
-                    {team.leader && (
-                      <p className="mt-1 text-[10px] text-slate-400">
-                        Lead: {team.leader.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No teams found.</p>
-          )}
-        </div>
-      </div>
+      {activeTab === "profile" ? (
+        <ProfileTab
+          editMode={editMode}
+          form={form}
+          item={item}
+          isSaving={saving || isFetching}
+          onCancelEdit={onCancelEdit}
+          onChange={onChange}
+          onEdit={() => setEditMode(true)}
+          onSave={onSave}
+          setForm={setForm}
+        />
+      ) : null}
+
+      {activeTab === "billing" ? <BillingTab item={item} /> : null}
+
+      {activeTab === "users" ? (
+        <UsersTab users={users} isLoading={isLoadingUsers} />
+      ) : null}
+
+      {activeTab === "teams" ? (
+        <TeamsTab teams={teams} isLoading={isLoadingTeams} />
+      ) : null}
     </section>
+  );
+}
+
+function OverviewTab({ item, updatingAccess, onAccessUpdate }) {
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="space-y-6">
+        <SectionCard
+          title="At A Glance"
+          subtitle="Important account, subscription, usage, and admin details in one place."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <DetailTile label="Email" value={item.email || "-"} />
+            <DetailTile label="Phone" value={formatPhone(item.phoneCountryCode, item.phone)} />
+            <DetailTile label="Location" value={[item.city, item.state, item.country].filter(Boolean).join(", ") || "-"} />
+            <DetailTile label="Subscription Expiry" value={formatCalendarDate(item.subscriptionExpiry, "-")} />
+            <DetailTile label="Successful Payments" value={Number(item.paymentSummary?.successfulPayments || 0)} />
+            <DetailTile label="Last Payment" value={formatDateTime(item.paymentSummary?.lastPaymentAt)} />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Admin & Limits">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <DetailTile label="Admin Name" value={item.admin?.name || "-"} />
+            <DetailTile label="Admin Email" value={item.admin?.email || "-"} />
+            <DetailTile label="Member Limit" value={Number(item.plan?.memberLimit || 0) || "-"} />
+            <DetailTile label="Max Teams" value={Number(item.plan?.maxTeams || 0) || "-"} />
+          </div>
+        </SectionCard>
+      </div>
+
+      <SectionCard
+        title="Access & Risk"
+        subtitle="Use these controls only when the organization should be restricted or restored."
+      >
+        <div className="grid gap-3">
+          <DetailTile label="Access" value={<StatusBadge value={item.active ? "ACTIVE" : "INACTIVE"} />} />
+          <DetailTile label="Block State" value={<StatusBadge value={item.blocked ? "BLOCKED" : "UNBLOCKED"} />} />
+          <DetailTile label="Updated At" value={formatDateTime(item.updatedAt)} />
+        </div>
+
+        <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+          <button
+            type="button"
+            onClick={() =>
+              onAccessUpdate(
+                { isBlocked: !item.blocked },
+                `${item.name} ${item.blocked ? "unblocked" : "blocked"} successfully.`
+              )
+            }
+            disabled={updatingAccess}
+            className={`brand-btn brand-btn-md justify-center ${item.blocked ? "brand-btn-soft" : "brand-btn-danger"}`}
+          >
+            {updatingAccess ? <Loader2 size={16} className="animate-spin" /> : <Ban size={16} />}
+            {item.blocked ? "Unblock Organization" : "Block Organization"}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onAccessUpdate(
+                { isActive: !item.active },
+                `${item.name} ${item.active ? "deactivated" : "activated"} successfully.`
+              )
+            }
+            disabled={updatingAccess}
+            className="brand-btn brand-btn-secondary brand-btn-md justify-center"
+          >
+            {updatingAccess ? <Loader2 size={16} className="animate-spin" /> : <Power size={16} />}
+            {item.active ? "Deactivate" : "Activate"}
+          </button>
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
+
+function ProfileTab({
+  editMode,
+  form,
+  item,
+  isSaving,
+  onCancelEdit,
+  onChange,
+  onEdit,
+  onSave,
+  setForm,
+}) {
+  const action = editMode ? (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <button
+        type="button"
+        onClick={onCancelEdit}
+        disabled={isSaving}
+        className="brand-btn brand-btn-secondary brand-btn-sm justify-center"
+      >
+        <X size={14} /> Cancel
+      </button>
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isSaving}
+        className="brand-btn brand-btn-primary brand-btn-sm justify-center"
+      >
+        {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+        Save
+      </button>
+    </div>
+  ) : (
+    <button type="button" onClick={onEdit} className="brand-btn brand-btn-primary brand-btn-sm">
+      <Pencil size={14} /> Edit Profile
+    </button>
+  );
+
+  return (
+    <SectionCard
+      title="Organization Profile"
+      subtitle={editMode ? "Update core organization and location fields." : "Read-only profile view. Switch to edit mode when a field needs correction."}
+      action={action}
+    >
+      {editMode ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField label="Organization Name">
+            <input
+              name="name"
+              value={form.name}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <FormField label="Email">
+            <input
+              name="email"
+              value={form.email}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <CountryPhoneField
+            label="Phone"
+            countryCode={form.phoneCountryCode}
+            phone={form.phone}
+            onCountryCodeChange={(event) =>
+              setForm((prev) => ({ ...prev, phoneCountryCode: event.target.value }))
+            }
+            onPhoneChange={(event) =>
+              setForm((prev) => ({
+                ...prev,
+                phone: event.target.value.replace(/[^\d]/g, ""),
+              }))
+            }
+            containerClassName="md:col-span-2"
+            labelClassName="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
+            groupClassName="rounded-[1rem] shadow-none"
+            selectClassName="py-3"
+            inputClassName="py-3"
+          />
+
+          <FormField label="Address" fullWidth>
+            <textarea
+              name="address"
+              value={form.address}
+              onChange={onChange}
+              rows={3}
+              className="dashboard-field-control min-h-[110px] w-full py-3"
+            />
+          </FormField>
+
+          <FormField label="City">
+            <input
+              name="city"
+              value={form.city}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <FormField label="State">
+            <input
+              name="state"
+              value={form.state}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <FormField label="Country">
+            <input
+              name="country"
+              value={form.country}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <FormField label="Attendance Radius">
+            <input
+              name="attendanceRadius"
+              type="number"
+              min="5"
+              value={form.attendanceRadius}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <FormField label="Latitude">
+            <input
+              name="latitude"
+              type="number"
+              step="0.000001"
+              value={form.latitude}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+
+          <FormField label="Longitude">
+            <input
+              name="longitude"
+              type="number"
+              step="0.000001"
+              value={form.longitude}
+              onChange={onChange}
+              className="dashboard-field-control w-full"
+            />
+          </FormField>
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <DetailTile label="Name" value={item.name || "-"} />
+          <DetailTile label="Email" value={item.email || "-"} />
+          <DetailTile label="Phone" value={formatPhone(item.phoneCountryCode, item.phone)} />
+          <DetailTile label="Address" value={item.address || "-"} />
+          <DetailTile label="City" value={item.city || "-"} />
+          <DetailTile label="State" value={item.state || "-"} />
+          <DetailTile label="Country" value={item.country || "-"} />
+          <DetailTile label="Attendance Radius" value={`${item.attendanceRadius || 25} m`} />
+          <DetailTile
+            label="Coordinates"
+            value={
+              item.latitude || item.longitude
+                ? `${item.latitude || "-"}, ${item.longitude || "-"}`
+                : "-"
+            }
+          />
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+function BillingTab({ item }) {
+  const recentPayments = Array.isArray(item.recentPayments) ? item.recentPayments : [];
+  const recentSubscriptions = Array.isArray(item.recentSubscriptions) ? item.recentSubscriptions : [];
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div className="space-y-6">
+        <SectionCard title="Subscription Snapshot">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailTile label="Current Plan" value={item.plan?.name || "TRIAL"} />
+            <DetailTile label="Plan Code" value={item.plan?.code || "-"} />
+            <DetailTile
+              label="Plan Price"
+              value={formatMoney(item.plan?.price || 0, item.plan?.currency || "INR")}
+            />
+            <DetailTile
+              label="Duration"
+              value={item.plan?.durationInDays ? `${item.plan.durationInDays} days` : "-"}
+            />
+            <DetailTile
+              label="Start Date"
+              value={formatCalendarDate(item.activeSubscription?.startDate, "-")}
+            />
+            <DetailTile
+              label="End Date"
+              value={formatCalendarDate(item.activeSubscription?.endDate, "-")}
+            />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Revenue">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailTile label="Successful Payments" value={Number(item.paymentSummary?.successfulPayments || 0)} />
+            <DetailTile label="Total Revenue" value={formatMoney(item.paymentSummary?.totalRevenue || 0)} />
+            <DetailTile label="Payments Count" value={Number(item.counts?.payments || 0)} />
+            <DetailTile label="Subscriptions Count" value={Number(item.counts?.subscriptions || 0)} />
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="space-y-6">
+        <SectionCard title="Recent Payments">
+          {recentPayments.length ? (
+            <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">
+              {recentPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="grid gap-3 border-b border-slate-100 px-4 py-4 last:border-b-0 dark:border-slate-800 md:grid-cols-[minmax(0,1fr)_auto]"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-900 dark:text-white">
+                      {payment.planName || payment.planCode || "Plan"}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                      {payment.orderId || payment.paymentId || "No gateway id"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                    <p className="text-sm font-black text-slate-900 dark:text-white">
+                      {formatMoney(payment.amount, payment.currency)}
+                    </p>
+                    <StatusBadge value={payment.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No recent payments found.</EmptyState>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Recent Subscriptions">
+          {recentSubscriptions.length ? (
+            <div className="space-y-3">
+              {recentSubscriptions.map((subscription) => (
+                <div
+                  key={subscription.id}
+                  className="rounded-[1.25rem] border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/60"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-900 dark:text-white">
+                        {subscription.planName || subscription.planCode || "Subscription"}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        {formatCalendarDate(subscription.startDate, "-")} to{" "}
+                        {formatCalendarDate(subscription.endDate, "-")}
+                      </p>
+                    </div>
+                    <StatusBadge value={subscription.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No subscription history found.</EmptyState>
+          )}
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
+function UsersTab({ users, isLoading }) {
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(users, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS[0],
+    dependencies: [users.length],
+  });
+
+  return (
+    <SectionCard title="Organization Users" subtitle="Compact user list with role and status context.">
+      {isLoading ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      ) : users.length ? (
+        <>
+          <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">
+            {paginatedItems.map((user) => (
+              <div
+                key={user.id}
+                className="grid gap-3 border-b border-slate-100 px-4 py-4 last:border-b-0 dark:border-slate-800 md:grid-cols-[minmax(0,1fr)_auto]"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                    {user.name || "Unnamed User"}
+                  </p>
+                  <p className="mt-1 truncate text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    {user.email || user.mobile || "-"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                  <StatusBadge value={user.role} />
+                  <StatusBadge value={user.status || (user.isActive ? "ACTIVE" : "INACTIVE")} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4">
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={users.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.USERS}
+              label="users"
+            />
+          </div>
+        </>
+      ) : (
+        <EmptyState>No users found.</EmptyState>
+      )}
+    </SectionCard>
+  );
+}
+
+function TeamsTab({ teams, isLoading }) {
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(teams, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS[0],
+    dependencies: [teams.length],
+  });
+
+  return (
+    <SectionCard title="Organization Teams" subtitle="Team structure, assigned leader, and member count.">
+      {isLoading ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      ) : teams.length ? (
+        <>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {paginatedItems.map((team) => (
+              <div
+                key={team.id}
+                className="rounded-[1.35rem] border border-slate-200 bg-white/85 p-4 dark:border-slate-800 dark:bg-slate-950/60"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                      {team.name || "Unnamed Team"}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500 dark:text-slate-400">
+                      {team.description || "No description"}
+                    </p>
+                  </div>
+                  <StatusBadge value={team.isActive ? "ACTIVE" : "INACTIVE"} />
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <DetailTile
+                    label="Members"
+                    value={`${team.memberCount || 0} Member${team.memberCount === 1 ? "" : "s"}`}
+                  />
+                  <DetailTile label="Leader" value={team.leader?.name || "-"} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4">
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={teams.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS}
+              label="teams"
+            />
+          </div>
+        </>
+      ) : (
+        <EmptyState>No teams found.</EmptyState>
+      )}
+    </SectionCard>
   );
 }
 

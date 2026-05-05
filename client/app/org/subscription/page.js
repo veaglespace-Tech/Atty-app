@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { Loader2, RefreshCcw, Sparkles } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetOrgSubscriptionQuery } from "@/services/api/orgApi";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { formatCalendarDate } from "@/utils/date";
 
 export default function OrgSubscriptionPage() {
@@ -14,6 +17,19 @@ export default function OrgSubscriptionPage() {
   const meta = data?.meta || {};
   const usage = meta.usage || {};
   const subscriptions = Array.isArray(data?.items) ? data.items : [];
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedSubscriptions,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(subscriptions, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.SUBSCRIPTIONS[0],
+    dependencies: [subscriptions.length],
+  });
 
   if (isLoading) {
     return (
@@ -134,7 +150,7 @@ export default function OrgSubscriptionPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {subscriptions.map((subscription) => (
+                {paginatedSubscriptions.map((subscription) => (
                   <tr key={subscription.id}>
                     <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white">
                       {subscription.planName || subscription.planCode || "-"}
@@ -157,6 +173,21 @@ export default function OrgSubscriptionPage() {
             </table>
           </div>
         )}
+
+        <div className="mt-4">
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={subscriptions.length}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.SUBSCRIPTIONS}
+            label="subscriptions"
+          />
+        </div>
       </div>
     </section>
   );

@@ -13,8 +13,11 @@ import {
   UserCheck,
   UserX,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import { formatRoleLabel } from "@/utils/roles";
 import { useGetAttendanceQuery, useGetAttendanceSummaryQuery } from "@/services/api/attendanceApi";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 
 const SUMMARY_CARDS = [
   { key: "present", label: "Present", icon: UserCheck, tone: "emerald" },
@@ -50,6 +53,19 @@ export default function AttendancePage() {
       )
     );
   }, [attendance, query]);
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems: paginatedAttendance,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(filteredAttendance, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE[0],
+    dependencies: [searchValue],
+  });
 
   if (loading) {
     return (
@@ -159,7 +175,7 @@ export default function AttendancePage() {
         {filteredAttendance.length > 0 ? (
           <>
             <div className="grid gap-4 p-4 md:hidden">
-              {filteredAttendance.map((row, index) => (
+              {paginatedAttendance.map((row, index) => (
                 <article
                   key={row._id || `${row.userName || "user"}-${index}`}
                   className="brand-panel-soft rounded-[1.6rem] p-4"
@@ -215,7 +231,7 @@ export default function AttendancePage() {
                 </tr>
               </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredAttendance.map((row, index) => (
+                  {paginatedAttendance.map((row, index) => (
                     <tr
                       key={row._id || `${row.userName || "user"}-${index}`}
                       className="bg-white/70 transition-colors hover:bg-blue-50/60 dark:bg-transparent dark:hover:bg-slate-900/70"
@@ -258,6 +274,20 @@ export default function AttendancePage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="p-4 pt-0">
+              <PaginationControls
+                page={page}
+                pageSize={pageSize}
+                totalItems={filteredAttendance.length}
+                totalPages={totalPages}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.ATTENDANCE}
+                label="records"
+              />
             </div>
           </>
         ) : (

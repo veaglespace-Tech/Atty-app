@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { resolveUserRole } = require("../utils/membership");
+const { todayKey } = require("../services/common.service");
 
 exports.getStats = asyncHandler(async (req, res) => {
   const orgId = Number(req.user.organizationId || req.user.organization);
@@ -51,7 +52,7 @@ exports.getStats = asyncHandler(async (req, res) => {
       prisma.attendance.count({
         where: {
           orgId,
-          date: new Date().toISOString().split("T")[0],
+          date: todayKey(),
           deletedAt: null,
         },
       }),

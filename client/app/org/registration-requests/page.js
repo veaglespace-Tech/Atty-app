@@ -16,11 +16,14 @@ import {
   UserPlus,
   ShieldCheck,
 } from "lucide-react";
+import PaginationControls from "@/components/dashboard/PaginationControls";
+import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useGetOrgRegistrationRequestsQuery,
   useAcceptRegistrationRequestMutation,
   useRejectRegistrationRequestMutation,
 } from "@/services/api/orgApi";
+import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -57,6 +60,19 @@ export default function RegistrationRequestsPage() {
 
   const items = Array.isArray(data?.items) ? data.items : [];
   const loading = isLoading || isFetching;
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(items, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.REQUESTS[0],
+    dependencies: [items.length],
+  });
 
   const refreshRequests = async () => {
     setError("");
@@ -168,8 +184,9 @@ export default function RegistrationRequestsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedItems.map((item) => {
             const busy = String(actionId) === String(item.id);
             const showRejectForm = rejectNoteId === item.id;
 
@@ -272,6 +289,20 @@ export default function RegistrationRequestsPage() {
               </div>
             );
           })}
+          </div>
+
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={items.length}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.REQUESTS}
+            label="requests"
+          />
         </div>
       )}
     </section>
