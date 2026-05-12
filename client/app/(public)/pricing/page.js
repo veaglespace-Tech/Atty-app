@@ -1,4 +1,4 @@
-"use client"; // Deployment Trigger - Pricing Fix Verified
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";

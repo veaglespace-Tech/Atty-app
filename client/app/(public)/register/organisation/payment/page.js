@@ -238,6 +238,19 @@ export default function PaymentPage() {
                     <p className={`text-xs font-bold uppercase tracking-widest ${theme.textSub}`}>Complete Registration</p>
                   </div>
                   <div className={`relative mb-6 rounded-3xl border p-5 ${theme.planBox}`}>
+                    {paymentError && (
+                      <div className="mb-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50/80 p-4 dark:border-red-500/20 dark:bg-red-500/10">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                            <Zap size={14} fill="currentColor" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[11px] font-black uppercase tracking-wider text-red-600 dark:text-red-400">Transaction Issue</p>
+                            <p className="mt-0.5 text-sm font-bold text-red-900 dark:text-red-200">{paymentError}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="pointer-events-none absolute top-0 right-0 p-4 opacity-[0.03]"><CreditCard size={80} className="-rotate-12 text-blue-600 dark:text-white" /></div>
                     <div className="relative z-10">
                       <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-500 dark:text-blue-300">Your Plan Summary</p>
@@ -265,12 +278,19 @@ export default function PaymentPage() {
                       <p className={`text-sm font-semibold leading-snug ${theme.securityText}`}>{selectedPlan && Number(selectedPlan.price) === 0 ? "Free trial activated instantly upon confirmation." : "Payments securely processed via PayU. Your details are encrypted."}</p>
                     </div>
                     {paymentStatus ? (<div className={`mt-2 flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold shadow-sm ${theme.statusBadge}`}>{loading && <Loader2 className="animate-spin text-amber-600 dark:text-amber-400" size={16} />}{paymentStatus}</div>) : null}
-                    {paymentError ? (<div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-200">{paymentError}</div>) : null}
+
                     <div className="card-actions mt-2">
                       <button onClick={handlePayment} disabled={loading || !selectedPlan} className={`relative flex h-[3.25rem] w-full items-center justify-center overflow-hidden rounded-full px-6 text-base font-black tracking-tight transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 ${theme.buttonBase}`}>
                         <span className="absolute inset-[1px] rounded-full bg-white/10 dark:bg-white/5" />
                         <span className="relative z-10 flex items-center gap-2 text-white">
-                          {loading ? (<><Loader2 className="animate-spin" size={22} />Processing...</>) : (<>{selectedPlan && Number(selectedPlan.price) === 0 ? "Activate Details & Login" : "Confirm & Pay via PayU"}<ChevronRight size={22} className="translate-x-0.5" /></>)}
+                          {loading ? (
+                            <><Loader2 className="animate-spin" size={22} />Processing...</>
+                          ) : (
+                            <>
+                              {paymentError ? "Retry Payment" : (selectedPlan && Number(selectedPlan.price) === 0 ? "Activate Details & Login" : "Confirm & Pay via PayU")}
+                              <ChevronRight size={22} className="translate-x-0.5" />
+                            </>
+                          )}
                         </span>
                       </button>
                     </div>
