@@ -22,15 +22,39 @@ const getPayuCredentials = () => ({
   baseUrl: process.env.PAYU_BASE_URL || "https://test.payu.in/_payment",
 });
 
-const getClientBaseUrl = () => {
-  const url = String(process.env.CLIENT_URL || process.env.APP_URL || "").trim();
-  if (url) return url.replace(/\/+$/, "");
-  const first = String(process.env.CLIENT_ORIGINS || "").split(",").map(v => v.trim()).find(Boolean);
+const getClientBaseUrl = (req) => {
+  const envUrl = String(process.env.CLIENT_URL || process.env.APP_URL || "").trim();
+  if (envUrl) return envUrl.replace(/\/+$/, "");
+
+  // Try to detect from request headers if available
+  if (req) {
+    const origin = req.get("origin") || req.get("referer");
+    if (origin) {
+      try {
+        const url = new URL(origin);
+        return `${url.protocol}//${url.host}`;
+      } catch (e) {
+        // Fallback if URL is invalid
+      }
+    }
+  }
+
+  const first = String(process.env.CLIENT_ORIGINS || "")
+    .split(",")
+    .map((v) => v.trim())
+    .find(Boolean);
   return first ? first.replace(/\/+$/, "") : CLIENT_BASE_URL;
 };
 
-const getServerBaseUrl = () =>
-  String(process.env.SERVER_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
+const getServerBaseUrl = (req) => {
+  if (process.env.SERVER_BASE_URL) return process.env.SERVER_BASE_URL.replace(/\/+$/, "");
+  if (req) {
+    const protocol = req.protocol;
+    const host = req.get("host");
+    return `${protocol}://${host}`;
+  }
+  return "http://localhost:5000";
+};
 
 const generatePayuHash = ({ key, txnid, amount, productinfo, firstname, email, udf1 = "", salt }) => {
   const str = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${udf1}||||||||||${salt}`;
@@ -158,8 +182,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const email = adminEmail || String(admin?.email || "");
   const udf1 = txnid; // echo back for verification
   const hash = generatePayuHash({ key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, salt: merchantSalt });
-  const successUrl = `${getServerBaseUrl()}/api/payment/payu-success`;
-  const failureUrl = `${getServerBaseUrl()}/api/payment/payu-failure`;
+  const successUrl = `${getServerBaseUrl(req)}/api/payment/payu-success`;
+  const failureUrl = `${getServerBaseUrl(req)}/api/payment/payu-failure`;
 
   // Store registration data in memory keyed by txnid (30 min TTL)
   pendingRegistrations.set(txnid, { organization, admin, plan: { code: plan.code, name: plan.name, price: plan.price, durationInDays: plan.durationInDays }, expiresAt: Date.now() + RENEWAL_INTENT_TTL_MS });
@@ -178,7 +202,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
 exports.payuSuccess = asyncHandler(async (req, res) => {
   console.log("[PayU Success Callback] Body:", JSON.stringify(req.body));
   const { txnid, mihpayid, status, hash, amount, productinfo, firstname, email, udf1 } = req.body || {};
-  const clientBase = getClientBaseUrl();
+  const clientBase = getClientBaseUrl(req);
   const failRedirect = (msg) => {
     console.error("[PayU Success Callback] Failure:", msg);
     return res.redirect(`${clientBase}/register/organisation/payment?payustatus=failed&reason=${encodeURIComponent(msg)}`);
@@ -300,7 +324,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
 exports.payuFailure = asyncHandler(async (req, res) => {
   const { txnid } = req.body || {};
   if (txnid) pendingRegistrations.delete(txnid);
-  const clientBase = getClientBaseUrl();
+  const clientBase = getClientBaseUrl(req);
   res.redirect(`${clientBase}/register/organisation/payment?payustatus=failed&reason=${encodeURIComponent("Payment failed or was cancelled")}`);
 });
 
@@ -365,8 +389,8 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
   const intent = await createRenewalIntent({ organizationId, userId, ctx, gatewayOrderId: txnid });
   const udf1 = String(intent.id);
   const hash = generatePayuHash({ key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, salt: merchantSalt });
-  const successUrl = `${getServerBaseUrl()}/api/payment/payu-renewal-success`;
-  const failureUrl = `${getServerBaseUrl()}/api/payment/payu-renewal-failure`;
+  const successUrl = `${getServerBaseUrl(req)}/api/payment/payu-renewal-success`;
+  const failureUrl = `${getServerBaseUrl(req)}/api/payment/payu-renewal-failure`;
 
   res.status(200).json({ success: true, freeRenewal: false, intentId: intent.id, intentStatus: intent.status, intentExpiresAt: intent.expiresAt, payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, surl: successUrl, furl: failureUrl, hash }, baseUrl, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: ctx.payableAmount, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR" }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate, currentPlanPrice: ctx.curPrice, selectedPlanPrice: ctx.selPrice } });
 });
@@ -374,7 +398,7 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
 // -- POST /api/payment/payu-renewal-success -----------------------------------
 exports.payuRenewalSuccess = asyncHandler(async (req, res) => {
   const { txnid, mihpayid, status, hash, amount, productinfo, firstname, email, udf1 } = req.body || {};
-  const clientBase = getClientBaseUrl();
+  const clientBase = getClientBaseUrl(req);
   const fail = (msg) => res.redirect(`${clientBase}/pricing?payustatus=failed&reason=${encodeURIComponent(msg)}`);
   const { merchantKey, merchantSalt } = getPayuCredentials();
   const isValid = verifyPayuHash({ key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, status, hash, salt: merchantSalt });
@@ -417,7 +441,7 @@ exports.payuRenewalSuccess = asyncHandler(async (req, res) => {
 
 // -- POST /api/payment/payu-renewal-failure -----------------------------------
 exports.payuRenewalFailure = asyncHandler(async (req, res) => {
-  const clientBase = getClientBaseUrl();
+  const clientBase = getClientBaseUrl(req);
   res.redirect(`${clientBase}/pricing?payustatus=failed&reason=${encodeURIComponent("Payment failed or was cancelled")}`);
 });
 
