@@ -15,7 +15,7 @@ import {
 import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { normalizeRole, ROLES } from "@/utils/roles";
+import { PERMISSIONS, normalizeRole, ROLES, hasPermission } from "@/utils/roles";
 import { formatHoursValue } from "@/utils/time";
 import {
   getErrorMessage,
@@ -78,6 +78,8 @@ const detectLocation = () =>
 export default function OrgAttendancePage() {
   const authUser = useSelector((state) => state.auth.user);
   const currentRole = authUser?.currentRole;
+  const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
+  const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [settings, setSettings] = useState({
@@ -109,7 +111,8 @@ export default function OrgAttendancePage() {
     refetch: refetchSettings,
   } = useGetOrgAttendanceSettingsQuery();
   const { data: teamsData, isLoading: teamsLoading } = useGetOrgTeamsQuery(
-    DASHBOARD_FETCH_LIMITS.ORG_TEAMS
+    DASHBOARD_FETCH_LIMITS.ORG_TEAMS,
+    { skip: !canManageTeamAttendance }
   );
 
   const [updateSettingsMutation] = useUpdateOrgAttendanceSettingsMutation();
@@ -279,6 +282,9 @@ export default function OrgAttendancePage() {
       setMessage("");
 
       if (settings.teamId) {
+        if (!canManageTeamAttendance) {
+          throw new Error("Missing required permission");
+        }
         await patchTeamMutation({
           teamId: settings.teamId,
           attendanceRadius: Number(settings.attendanceRadius || 25),
@@ -287,6 +293,9 @@ export default function OrgAttendancePage() {
         }).unwrap();
         setMessage("Team attendance settings updated successfully.");
       } else {
+        if (!canSetWorkspaceLocation) {
+          throw new Error("Missing required permission");
+        }
         await updateSettingsMutation({
           attendanceRadius: Number(settings.attendanceRadius || 25),
           coordinates,
@@ -356,6 +365,7 @@ export default function OrgAttendancePage() {
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
       </div>
 
+      {canSetWorkspaceLocation || canManageTeamAttendance ? (
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Settings</h3>
 
@@ -364,9 +374,12 @@ export default function OrgAttendancePage() {
             name="teamId"
             value={settings.teamId}
             onChange={onTeamChange}
+            disabled={!canManageTeamAttendance}
             className="dashboard-field-control dashboard-select-control"
           >
-            <option value="">Organization-wide Geofence</option>
+            <option value="">
+              {canSetWorkspaceLocation ? "Organization-wide Geofence" : "Select Team"}
+            </option>
             {teams.map((team) => (
               <option key={team.id} value={team.id}>
                 {team.name}
@@ -381,6 +394,7 @@ export default function OrgAttendancePage() {
             value={settings.attendanceRadius}
             onChange={onSettingsChange}
             placeholder="Attendance radius (meters)"
+            disabled={!settings.teamId && !canSetWorkspaceLocation}
             className="dashboard-field-control"
           />
 
@@ -391,6 +405,7 @@ export default function OrgAttendancePage() {
                 value={searchQuery}
                 onChange={(e) => onSearchLocation(e.target.value)}
                 placeholder="Search for a place (e.g. Pune Station)"
+                disabled={!settings.teamId && !canSetWorkspaceLocation}
                 className="dashboard-field-control w-full pl-10 pr-4"
               />
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
@@ -421,7 +436,7 @@ export default function OrgAttendancePage() {
           <button
             type="button"
             onClick={onUseCurrentLocation}
-            disabled={geoLoading}
+            disabled={geoLoading || (!settings.teamId && !canSetWorkspaceLocation)}
             className="brand-btn brand-btn-secondary brand-btn-md w-full"
           >
             {geoLoading ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
@@ -435,6 +450,7 @@ export default function OrgAttendancePage() {
             value={settings.longitude}
             onChange={onSettingsChange}
             placeholder="Longitude"
+            disabled={!settings.teamId && !canSetWorkspaceLocation}
             className="dashboard-field-control"
           />
 
@@ -445,13 +461,14 @@ export default function OrgAttendancePage() {
             value={settings.latitude}
             onChange={onSettingsChange}
             placeholder="Latitude"
+            disabled={!settings.teamId && !canSetWorkspaceLocation}
             className="dashboard-field-control"
           />
 
           <div className="md:col-span-2 flex justify-stretch sm:justify-end">
             <button
               type="submit"
-              disabled={settingsLoading}
+              disabled={settingsLoading || (!settings.teamId && !canSetWorkspaceLocation)}
               className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               {settingsLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -460,6 +477,7 @@ export default function OrgAttendancePage() {
           </div>
         </form>
       </div>
+      ) : null}
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance Logs</h3>

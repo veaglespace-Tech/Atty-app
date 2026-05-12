@@ -317,26 +317,26 @@ model OrganizationMember {
 }
 
 model Payment {
-  id                Int      @id @default(autoincrement())
-  orgId             Int
-  userId            Int
-  subscriptionId    Int
+  id                   Int      @id @default(autoincrement())
+  orgId                Int
+  userId               Int
+  subscriptionId       Int
 
-  planName          String
-  planCode          String
-  amount            Float
-  currency          String   @default("INR")
-  gateway           String   @default("RAZORPAY")
-  razorpayOrderId   String
-  razorpayPaymentId String?
-  razorpaySignature String?
+  planName             String
+  planCode             String
+  amount               Float
+  currency             String   @default("INR")
+  gateway              String   @default("PAYU")
+  paymentOrderId       String
+  paymentReferenceId   String?
+  paymentSignature     String?
 
-  status            PaymentStatus @default(CREATED)
-  failureReason     String        @default("")
-  rawResponse       Json?
+  status               PaymentStatus @default(CREATED)
+  failureReason        String        @default("")
+  rawResponse          Json?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   organization Organization @relation(fields: [orgId], references: [id], map: "Payment_orgId_fkey")
   user         User         @relation(fields: [userId], references: [id], map: "Payment_userId_fkey")
@@ -345,7 +345,7 @@ model Payment {
   @@index([orgId, createdAt], map: "Payment_orgId_createdAt_idx")
   @@index([orgId], map: "Payment_orgId_idx")
   @@index([planCode, status, createdAt], map: "Payment_planCode_status_createdAt_idx")
-  @@index([razorpayOrderId], map: "Payment_razorpayOrderId_idx")
+  @@index([paymentOrderId], map: "Payment_paymentOrderId_idx")
   @@index([status], map: "Payment_status_idx")
   @@index([subscriptionId], map: "Payment_subscriptionId_idx")
   @@index([userId], map: "Payment_userId_fkey")
@@ -404,35 +404,35 @@ model Post {
 }
 
 model Subscription {
-  id                Int      @id @default(autoincrement())
-  orgId             Int
-  planId            Int?
-  createdById       Int
+  id                   Int      @id @default(autoincrement())
+  orgId                Int
+  planId               Int?
+  createdById          Int
 
-  planName          String
-  planCode          String
-  amount            Float
-  currency          String   @default("INR")
+  planName             String
+  planCode             String
+  amount               Float
+  currency             String   @default("INR")
 
-  status            SubscriptionStatus @default(ACTIVE)
-  startDate         DateTime @default(now())
-  endDate           DateTime?
-  activeKey         String?  @unique(map: "Subscription_activeKey_key")
+  status               SubscriptionStatus @default(ACTIVE)
+  startDate            DateTime @default(now())
+  endDate              DateTime?
+  activeKey            String?  @unique(map: "Subscription_activeKey_key")
 
-  paymentGateway    String   @default("RAZORPAY")
-  razorpayOrderId   String?
-  razorpayPaymentId String?
-  razorpaySignature String?
-  notes             String   @default("")
+  paymentGateway       String   @default("PAYU")
+  paymentOrderId       String?
+  paymentReferenceId   String?
+  paymentSignature     String?
+  notes                String   @default("")
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  organization         Organization  @relation("OrganizationSubscriptions", fields: [orgId], references: [id], map: "Subscription_orgId_fkey")
-  activeForOrganization Organization? @relation("OrganizationActiveSubscription")
-  plan                 Plan?         @relation(fields: [planId], references: [id], map: "Subscription_planId_fkey")
-  createdBy            User          @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], map: "Subscription_createdById_fkey")
-  payments             Payment[]
+  organization            Organization  @relation("OrganizationSubscriptions", fields: [orgId], references: [id], map: "Subscription_orgId_fkey")
+  activeForOrganization   Organization? @relation("OrganizationActiveSubscription")
+  plan                    Plan?         @relation(fields: [planId], references: [id], map: "Subscription_planId_fkey")
+  createdBy               User          @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], map: "Subscription_createdById_fkey")
+  payments                Payment[]
   renewalIntentsAsCurrent SubscriptionRenewalIntent[] @relation("RenewalIntentCurrentSubscription")
   renewalIntentsAsApplied SubscriptionRenewalIntent[] @relation("RenewalIntentAppliedSubscription")
 
@@ -441,7 +441,7 @@ model Subscription {
   @@index([orgId, status, endDate], map: "Subscription_orgId_status_endDate_idx")
   @@index([planCode, status], map: "Subscription_planCode_status_idx")
   @@index([planId], map: "Subscription_planId_fkey")
-  @@index([razorpayOrderId], map: "Subscription_razorpayOrderId_idx")
+  @@index([paymentOrderId], map: "Subscription_paymentOrderId_idx")
   @@index([status, createdAt], map: "Subscription_status_createdAt_idx")
   @@map("subscription")
 }
@@ -466,11 +466,11 @@ model SubscriptionRenewalIntent {
   remainingDays         Int                 @default(0)
   expectedStartDate     DateTime
   expectedEndDate       DateTime
-  gateway               String              @default("RAZORPAY")
+  gateway               String              @default("PAYU")
 
-  razorpayOrderId       String?             @unique(map: "SubscriptionRenewalIntent_razorpayOrderId_key")
-  razorpayPaymentId     String?             @unique(map: "SubscriptionRenewalIntent_razorpayPaymentId_key")
-  razorpaySignature     String?
+  paymentOrderId        String?             @unique(map: "SubscriptionRenewalIntent_paymentOrderId_key")
+  paymentReferenceId    String?             @unique(map: "SubscriptionRenewalIntent_paymentReferenceId_key")
+  paymentSignature      String?
   expiresAt             DateTime?
   verifiedAt            DateTime?
   appliedAt             DateTime?

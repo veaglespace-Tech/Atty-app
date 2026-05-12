@@ -46,7 +46,11 @@ router.post("/onboard", onboardOrganization);
 
 router.use(userProtected);
 
-router.get("/subscription", allowRoles("ORG_ADMIN"), getOrgSubscription);
+router.get(
+  "/subscription",
+  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"),
+  getOrgSubscription
+);
 
 router.use(
   checkActiveSubscription,

@@ -523,8 +523,8 @@ const buildSuperAdminPaymentsPayload = async (limit = 150) => {
     currency: payment.currency,
     status: payment.status,
     gateway: payment.gateway,
-    orderId: payment.razorpayOrderId,
-    paymentId: payment.razorpayPaymentId || "",
+    orderId: payment.paymentOrderId,
+    paymentId: payment.paymentReferenceId || "",
     subscriptionId: payment.subscriptionId,
     createdAt: payment.createdAt,
   }));
@@ -590,8 +590,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
           startDate: true,
           endDate: true,
           paymentGateway: true,
-          razorpayOrderId: true,
-          razorpayPaymentId: true,
+          paymentOrderId: true,
+          paymentReferenceId: true,
           notes: true,
           createdAt: true,
           updatedAt: true,
@@ -649,8 +649,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
         amount: true,
         currency: true,
         status: true,
-        razorpayOrderId: true,
-        razorpayPaymentId: true,
+        paymentOrderId: true,
+        paymentReferenceId: true,
         createdAt: true,
       },
     }),
@@ -740,8 +740,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
           startDate: organization.activeSubscription.startDate,
           endDate: organization.activeSubscription.endDate,
           paymentGateway: organization.activeSubscription.paymentGateway || "",
-          orderId: organization.activeSubscription.razorpayOrderId || "",
-          paymentId: organization.activeSubscription.razorpayPaymentId || "",
+          orderId: organization.activeSubscription.paymentOrderId || "",
+          paymentId: organization.activeSubscription.paymentReferenceId || "",
           notes: organization.activeSubscription.notes || "",
           createdAt: organization.activeSubscription.createdAt,
           updatedAt: organization.activeSubscription.updatedAt,
@@ -759,8 +759,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
       amount: Number(payment.amount || 0),
       currency: payment.currency || "INR",
       status: payment.status,
-      orderId: payment.razorpayOrderId || "",
-      paymentId: payment.razorpayPaymentId || "",
+      orderId: payment.paymentOrderId || "",
+      paymentId: payment.paymentReferenceId || "",
       createdAt: payment.createdAt,
     })),
     recentSubscriptions: recentSubscriptions.map((subscription) => ({
@@ -844,9 +844,9 @@ const buildSuperAdminPaymentDetailPayload = async (paymentId) => {
     gateway: payment.gateway || "",
     planName: payment.planName || payment.subscription?.planName || "",
     planCode: payment.planCode || payment.subscription?.planCode || "",
-    orderId: payment.razorpayOrderId || "",
-    paymentId: payment.razorpayPaymentId || "",
-    signature: payment.razorpaySignature || "",
+    orderId: payment.paymentOrderId || "",
+    paymentId: payment.paymentReferenceId || "",
+    signature: payment.paymentSignature || "",
     failureReason: payment.failureReason || "",
     rawResponse: payment.rawResponse || null,
     createdAt: payment.createdAt,
@@ -888,9 +888,9 @@ const buildSuperAdminPaymentDetailPayload = async (paymentId) => {
           startDate: payment.subscription.startDate,
           endDate: payment.subscription.endDate,
           paymentGateway: payment.subscription.paymentGateway || "",
-          orderId: payment.subscription.razorpayOrderId || "",
-          paymentId: payment.subscription.razorpayPaymentId || "",
-          signature: payment.subscription.razorpaySignature || "",
+          orderId: payment.subscription.paymentOrderId || "",
+          paymentId: payment.subscription.paymentReferenceId || "",
+          signature: payment.subscription.paymentSignature || "",
           notes: payment.subscription.notes || "",
           activeKey: payment.subscription.activeKey || "",
           createdAt: payment.subscription.createdAt,
@@ -1475,13 +1475,13 @@ exports.updateSuperAdminPayment = asyncHandler(async (req, res) => {
     paymentUpdates.planCode = normalizeTextValue(paymentPatch.planCode, 24).toUpperCase();
   }
   if (paymentPatch.orderId !== undefined) {
-    paymentUpdates.razorpayOrderId = normalizeOptionalNullableTextValue(paymentPatch.orderId, 191);
+    paymentUpdates.paymentOrderId = normalizeOptionalNullableTextValue(paymentPatch.orderId, 191);
   }
   if (paymentPatch.paymentId !== undefined) {
-    paymentUpdates.razorpayPaymentId = normalizeOptionalNullableTextValue(paymentPatch.paymentId, 191);
+    paymentUpdates.paymentReferenceId = normalizeOptionalNullableTextValue(paymentPatch.paymentId, 191);
   }
   if (paymentPatch.signature !== undefined) {
-    paymentUpdates.razorpaySignature = normalizeOptionalNullableTextValue(paymentPatch.signature, 191);
+    paymentUpdates.paymentSignature = normalizeOptionalNullableTextValue(paymentPatch.signature, 191);
   }
   if (paymentPatch.failureReason !== undefined) {
     paymentUpdates.failureReason = normalizeOptionalTextValue(paymentPatch.failureReason, 191) || "";
@@ -1523,13 +1523,13 @@ exports.updateSuperAdminPayment = asyncHandler(async (req, res) => {
     subscriptionUpdates.planId = matchedPlan?.id || null;
   }
   if (subscriptionPatch.orderId !== undefined) {
-    subscriptionUpdates.razorpayOrderId = normalizeOptionalNullableTextValue(subscriptionPatch.orderId, 191);
+    subscriptionUpdates.paymentOrderId = normalizeOptionalNullableTextValue(subscriptionPatch.orderId, 191);
   }
   if (subscriptionPatch.paymentId !== undefined) {
-    subscriptionUpdates.razorpayPaymentId = normalizeOptionalNullableTextValue(subscriptionPatch.paymentId, 191);
+    subscriptionUpdates.paymentReferenceId = normalizeOptionalNullableTextValue(subscriptionPatch.paymentId, 191);
   }
   if (subscriptionPatch.signature !== undefined) {
-    subscriptionUpdates.razorpaySignature = normalizeOptionalNullableTextValue(subscriptionPatch.signature, 191);
+    subscriptionUpdates.paymentSignature = normalizeOptionalNullableTextValue(subscriptionPatch.signature, 191);
   }
   if (subscriptionPatch.notes !== undefined) {
     subscriptionUpdates.notes = normalizeOptionalTextValue(subscriptionPatch.notes, 191) || "";

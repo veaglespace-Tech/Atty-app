@@ -37,8 +37,11 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 
-  "https://atty.veaglespace.com",   
-  "http://atty.veaglespace.com",   
+  "https://atty.veaglespace.com",
+  "http://atty.veaglespace.com",
+
+  "https://test.payu.in",
+  "https://secure.payu.in",
 
   ...envAllowedOrigins,
 ]);
@@ -48,7 +51,11 @@ const localOriginPattern =
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow if no origin (server-to-server, curl, etc.)
     if (!origin) return callback(null, true);
+
+    // Allow null origin (often set by browsers during cross-origin POST redirects)
+    if (origin === "null") return callback(null, true);
 
     if (allowedOrigins.has(origin) || localOriginPattern.test(origin)) {
       return callback(null, true);
@@ -93,6 +100,7 @@ app.use(
     limit: getEnv("JSON_BODY_LIMIT", "6mb"),
   }),
 );
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/api/auth/login", loginRateLimiter);
 

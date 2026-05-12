@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import {
   ChevronDown,
   ChevronUp,
@@ -24,7 +25,7 @@ import {
   usePatchOrgTeamMutation,
 } from "@/services/api/orgApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { ROLES, formatRoleLabel, normalizeRole } from "@/utils/roles";
+import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
 import {
   getErrorMessage,
   normalizeTextInput,
@@ -58,6 +59,11 @@ const selectorChipClassName =
 
 export default function OrgTeamsPage() {
   const router = useRouter();
+  const authUser = useSelector((state) => state.auth.user);
+  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM_CREATE);
+  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
+  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM_DELETE);
+  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
   const [submitting, setSubmitting] = useState(false);
   const [actionTeamId, setActionTeamId] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -74,7 +80,7 @@ export default function OrgTeamsPage() {
     leaderId: "",
     memberIds: [],
   });
-  const shouldLoadUsers = createOpen;
+  const shouldLoadUsers = createOpen && canCreateTeams && canAssignMembers;
 
   const {
     data: teamsData,
@@ -217,6 +223,10 @@ export default function OrgTeamsPage() {
 
   const createTeam = async (event) => {
     event.preventDefault();
+    if (!canCreateTeams) {
+      setError("Missing required permission");
+      return;
+    }
 
     const validationError = validateTeamForm({
       name: form.name,
@@ -241,8 +251,12 @@ export default function OrgTeamsPage() {
         name: normalizeTextInput(form.name),
         description: normalizeTextInput(form.description),
         attendanceRadius: Number(form.attendanceRadius || 25),
-        leaderId: form.leaderId || null,
-        memberIds: form.memberIds,
+        ...(canAssignMembers
+          ? {
+              leaderId: form.leaderId || null,
+              memberIds: form.memberIds,
+            }
+          : {}),
       }).unwrap();
 
       setMessage("Team created successfully");
@@ -279,6 +293,10 @@ export default function OrgTeamsPage() {
     );
 
   const deleteTeam = (team) => {
+    if (!canDeleteTeams) {
+      setError("Missing required permission");
+      return;
+    }
     const confirmed = window.confirm(`Delete team ${team.name}?`);
     if (!confirmed) return;
 
@@ -299,15 +317,17 @@ export default function OrgTeamsPage() {
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
-            <button
-              type="button"
-              onClick={() => setCreateOpen((prev) => !prev)}
-              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
-            >
-              <Plus size={15} />
-              Create Team
-              {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
+            {canCreateTeams ? (
+              <button
+                type="button"
+                onClick={() => setCreateOpen((prev) => !prev)}
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+              >
+                <Plus size={15} />
+                Create Team
+                {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            ) : null}
 
             <button
               type="button"
@@ -375,6 +395,7 @@ export default function OrgTeamsPage() {
               rows={3}
             />
 
+            {canAssignMembers ? (
             <div className={selectorCardClassName}>
               <p className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Team Leader</p>
               <div className="mt-2 relative">
@@ -447,7 +468,9 @@ export default function OrgTeamsPage() {
                 </div>
               ) : null}
             </div>
+            ) : null}
 
+            {canAssignMembers ? (
             <div className={selectorCardClassName}>
               <p className="text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">Team Members</p>
               <div className="mt-2 relative">
@@ -525,6 +548,7 @@ export default function OrgTeamsPage() {
                 </div>
               ) : null}
             </div>
+            ) : null}
 
             <div className="xl:col-span-2 flex justify-stretch sm:justify-end">
               <button
@@ -597,20 +621,24 @@ export default function OrgTeamsPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <ActionButton
-                        label={team.isActive ? "Deactivate" : "Activate"}
-                        icon={<ShieldAlert size={14} />}
-                        onClick={() => toggleTeamActive(team)}
-                        disabled={busy}
-                        tone={team.isActive ? "danger" : "default"}
-                      />
-                      <ActionButton
-                        label="Delete"
-                        icon={<Trash2 size={14} />}
-                        onClick={() => deleteTeam(team)}
-                        disabled={busy}
-                        tone="danger"
-                      />
+                      {canUpdateTeams ? (
+                        <ActionButton
+                          label={team.isActive ? "Deactivate" : "Activate"}
+                          icon={<ShieldAlert size={14} />}
+                          onClick={() => toggleTeamActive(team)}
+                          disabled={busy}
+                          tone={team.isActive ? "danger" : "default"}
+                        />
+                      ) : null}
+                      {canDeleteTeams ? (
+                        <ActionButton
+                          label="Delete"
+                          icon={<Trash2 size={14} />}
+                          onClick={() => deleteTeam(team)}
+                          disabled={busy}
+                          tone="danger"
+                        />
+                      ) : null}
                       {busy ? <Loader2 size={14} className="animate-spin self-center text-slate-500" /> : null}
                     </div>
                   </article>
@@ -648,20 +676,24 @@ export default function OrgTeamsPage() {
                         <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{formatDate(team.createdAt)}</td>
                         <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                           <div className="flex flex-wrap gap-2">
-                            <ActionButton
-                              label={team.isActive ? "Deactivate" : "Activate"}
-                              icon={<ShieldAlert size={14} />}
-                              onClick={() => toggleTeamActive(team)}
-                              disabled={busy}
-                              tone={team.isActive ? "danger" : "default"}
-                            />
-                            <ActionButton
-                              label="Delete"
-                              icon={<Trash2 size={14} />}
-                              onClick={() => deleteTeam(team)}
-                              disabled={busy}
-                              tone="danger"
-                            />
+                            {canUpdateTeams ? (
+                              <ActionButton
+                                label={team.isActive ? "Deactivate" : "Activate"}
+                                icon={<ShieldAlert size={14} />}
+                                onClick={() => toggleTeamActive(team)}
+                                disabled={busy}
+                                tone={team.isActive ? "danger" : "default"}
+                              />
+                            ) : null}
+                            {canDeleteTeams ? (
+                              <ActionButton
+                                label="Delete"
+                                icon={<Trash2 size={14} />}
+                                onClick={() => deleteTeam(team)}
+                                disabled={busy}
+                                tone="danger"
+                              />
+                            ) : null}
                             {busy ? <Loader2 size={14} className="animate-spin text-slate-500" /> : null}
                           </div>
                         </td>

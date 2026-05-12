@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Star,
   Zap,
+  ChevronRight,
 } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -17,7 +18,6 @@ import { useGetPlansQuery } from "@/services/api/planApi";
 import { useGetOrgSubscriptionQuery } from "@/services/api/orgApi";
 import {
   useCreateRenewalOrderMutation,
-  useLazyGetPaymentPublicKeyQuery,
   useVerifyRenewalPaymentMutation,
 } from "@/services/api/paymentApi";
 import { getErrorMessage } from "@/utils/formValidation";
@@ -39,25 +39,20 @@ function getAccentPalette(color) {
   };
 }
 
-const loadRazorpayScript = () =>
-  new Promise((resolve) => {
-    if (typeof window === "undefined") {
-      resolve(false);
-      return;
-    }
-
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
+const submitPayuForm = ({ baseUrl, payuParams }) => {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = baseUrl;
+  Object.entries(payuParams).forEach(([key, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = String(value ?? "");
+    form.appendChild(input);
   });
+  document.body.appendChild(form);
+  form.submit();
+};
 
 const isRenewalRestrictedPlan = (plan = {}) => {
   const code = String(plan.code || "").trim().toUpperCase();
@@ -166,12 +161,32 @@ export default function PricingPage() {
       skip: !isOrgAdminRenewal,
     });
   const [createRenewalOrder] = useCreateRenewalOrderMutation();
-  const [getPaymentPublicKey] = useLazyGetPaymentPublicKeyQuery();
   const [verifyRenewalPayment] = useVerifyRenewalPaymentMutation();
   const [selectedDurations, setSelectedDurations] = useState({});
   const [paymentStatus, setPaymentStatus] = useState("");
   const [processingPlanCode, setProcessingPlanCode] = useState("");
   const [successState, setSuccessState] = useState(null);
+
+  // Handle PayU redirect callback
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const payuStatus = params.get("payustatus");
+    if (payuStatus === "failed") {
+      setPaymentStatus(params.get("reason") || "Payment failed. Please try again.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (payuStatus === "success") {
+      setSuccessState({
+        planName: "Your selected plan",
+        organizationName: user?.organization?.name || "Your workspace",
+        expiryDate: null, // Will be updated by refetch
+        redirectPath: "/org/dashboard",
+        emailSent: true,
+      });
+      refetchSubscription?.();
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [refetchSubscription, user]);
 
   const tiers = useMemo(() => {
     const plans = filterVisiblePlans(rawPlans).filter(
@@ -275,93 +290,11 @@ export default function PricingPage() {
         return;
       }
 
-      const sdkLoaded = await loadRazorpayScript();
-      if (!sdkLoaded) {
-        throw new Error("Unable to load Razorpay checkout.");
-      }
-
-      setPaymentStatus("Connecting to secure gateway...");
-
-      const keyResponse = await getPaymentPublicKey().unwrap();
-      if (!keyResponse?.key) {
-        throw new Error("Razorpay key not found.");
-      }
-
-      const order = orderResponse?.order;
-      if (!order?.id) {
+      if (!orderResponse?.payuParams || !orderResponse?.baseUrl) {
         throw new Error("Failed to create renewal order.");
       }
-
-      setPaymentStatus("Opening payment window...");
-
-      const paymentObject = new window.Razorpay({
-        key: keyResponse.key,
-        amount: order.amount,
-        currency: order.currency,
-        order_id: order.id,
-        name: "Veagle Attendee",
-        description: `${selectedPlan.name} Workspace Renewal`,
-        image: "/logo1-clean.webp",
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-          contact: user?.mobile || "",
-        },
-        notes: {
-          planCode: selectedPlan.code,
-          organizationCode: orgMeta.organizationCode || "",
-        },
-        theme: {
-          color: "#4f46e5",
-        },
-        modal: {
-          ondismiss: () => {
-            setPaymentStatus("Payment cancelled.");
-            setProcessingPlanCode("");
-          },
-        },
-        handler: async (response) => {
-          try {
-            setPaymentStatus("Verifying secure payment...");
-
-            const verifyResult = await verifyRenewalPayment({
-              ...response,
-              intentId,
-              planCode: selectedPlan.code,
-            }).unwrap();
-
-            setSuccessState({
-              planName: verifyResult?.subscription?.planName || selectedPlan.name,
-              organizationName:
-                verifyResult?.organization?.name ||
-                orgMeta.organizationName ||
-                user?.organization?.name ||
-                "Your workspace",
-              expiryDate:
-                verifyResult?.organization?.subscriptionExpiry ||
-                verifyResult?.subscription?.endDate ||
-                null,
-              redirectPath: verifyResult?.redirectPath || "/org/dashboard",
-              emailSent: verifyResult?.emailSent !== false,
-            });
-            setPaymentStatus("");
-            setProcessingPlanCode("");
-            refetchSubscription?.();
-          } catch (renewalError) {
-            setPaymentStatus(
-              getErrorMessage(renewalError, "Payment captured but renewal could not be completed.")
-            );
-            setProcessingPlanCode("");
-          }
-        },
-      });
-
-      paymentObject.on("payment.failed", (response) => {
-        setPaymentStatus(response?.error?.description || "Payment failed. Please try again.");
-        setProcessingPlanCode("");
-      });
-
-      paymentObject.open();
+      setPaymentStatus("Redirecting to PayU secure gateway...");
+      submitPayuForm({ baseUrl: orderResponse.baseUrl, payuParams: orderResponse.payuParams });
     } catch (renewalError) {
       setPaymentStatus(getErrorMessage(renewalError, "Unable to start renewal payment."));
       setProcessingPlanCode("");
@@ -562,7 +495,7 @@ export default function PricingPage() {
                   key={tier.name}
                   className={`group relative rounded-[2.5rem] border border-transparent bg-white p-1 shadow-[0_30px_84px_rgba(59,130,246,0.12),0_14px_34px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-2 hover:border-blue-100 hover:shadow-[0_36px_96px_rgba(59,130,246,0.16),0_18px_42px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-black/25 ${palette.hoverShadow}`}
                 >
-                  <div className="flex h-full flex-col rounded-[2.3rem] border border-slate-100 bg-white p-8 transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/90 md:p-10">
+                  <div className="flex h-full flex-col rounded-[2.3rem] border border-slate-100 bg-white p-8 transition-all duration-500 dark:border-slate-800 dark:bg-slate-900/90 md:p-10">
                     <div className="mb-8 flex items-center justify-between gap-3">
                       <div
                         className={`brand-hover-white-media flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-500 group-hover:scale-105 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 ${palette.icon}`}

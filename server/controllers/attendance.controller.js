@@ -509,29 +509,29 @@ exports.getAttendance = asyncHandler(async (req, res) => {
   const attendanceRecords =
     userIds.length > 0
       ? await prisma.attendance.findMany({
-          where: {
-            orgId,
-            date: today,
-            deletedAt: null,
-            userId: {
-              in: userIds,
-            },
+        where: {
+          orgId,
+          date: today,
+          deletedAt: null,
+          userId: {
+            in: userIds,
           },
-          select: {
-            id: true,
-            userId: true,
-            status: true,
-            punchInAt: true,
-            punchOutAt: true,
-            lateMinutes: true,
-            punchInLatitude: true,
-            punchInLongitude: true,
-            punchInLocationMeta: true,
-            punchInSelfieUrl: true,
-            punchOutSelfieUrl: true,
-          },
-          take: limit,
-        })
+        },
+        select: {
+          id: true,
+          userId: true,
+          status: true,
+          punchInAt: true,
+          punchOutAt: true,
+          lateMinutes: true,
+          punchInLatitude: true,
+          punchInLongitude: true,
+          punchInLocationMeta: true,
+          punchInSelfieUrl: true,
+          punchOutSelfieUrl: true,
+        },
+        take: limit,
+      })
       : [];
 
   const attendanceMap = attendanceRecords.reduce((acc, record) => {

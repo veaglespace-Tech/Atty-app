@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const { buildEmailTemplate } = require("./email-template");
 
 const parseBooleanFlag = (value) => {
   const normalized = String(value || "")
@@ -80,7 +81,7 @@ const sendEmail = async (options) => {
       to: options.email,
       subject: options.subject,
       text: options.message,
-      html: options.html,
+      html: options.html || (options.intro || options.sections ? buildEmailTemplate(options) : undefined),
       replyTo: options.replyTo || undefined,
       attachments: Array.isArray(options.attachments) ? options.attachments : undefined,
     };

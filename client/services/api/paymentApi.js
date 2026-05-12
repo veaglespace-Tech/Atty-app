@@ -9,39 +9,19 @@ export const paymentApi = createApi({
       query: () => "/payment/get-key",
     }),
     createPaymentOrder: builder.mutation({
-      query: (payload) => ({
-        url: "/payment/create-order",
-        method: "POST",
-        body: payload,
-      }),
+      query: (payload) => ({ url: "/payment/create-order", method: "POST", body: payload }),
     }),
     createRenewalOrder: builder.mutation({
-      query: (payload) => ({
-        url: "/payment/create-renewal-order",
-        method: "POST",
-        body: payload,
-      }),
+      query: (payload) => ({ url: "/payment/create-renewal-order", method: "POST", body: payload }),
     }),
     verifyAndRegisterPayment: builder.mutation({
-      query: (payload) => ({
-        url: "/payment/verify-and-register",
-        method: "POST",
-        body: payload,
-      }),
+      query: (payload) => ({ url: "/payment/verify-and-register", method: "POST", body: payload }),
     }),
     verifyRenewalPayment: builder.mutation({
-      query: (payload) => ({
-        url: "/payment/verify-renewal",
-        method: "POST",
-        body: payload,
-      }),
+      query: (payload) => ({ url: "/payment/verify-renewal", method: "POST", body: payload }),
     }),
     archiveFailedRegistration: builder.mutation({
-      query: (payload) => ({
-        url: "/payment/archive-failed-registration",
-        method: "POST",
-        body: payload,
-      }),
+      query: (payload) => ({ url: "/payment/archive-failed-registration", method: "POST", body: payload }),
     }),
   }),
 });
@@ -55,4 +35,3 @@ export const {
   useVerifyRenewalPaymentMutation,
   useArchiveFailedRegistrationMutation,
 } = paymentApi;
-

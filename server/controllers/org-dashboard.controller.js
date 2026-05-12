@@ -21,6 +21,8 @@ const {
 const { isFreePlan } = require("../services/organization-plan.service")
 const { buildAttendanceDetailedPdf } = require("../utils/pdf-report")
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service")
+const { assertPermission } = require("../services/access.service")
+const { PERMISSION_KEYS } = require("../constants/permissions")
 const xlsx = require("xlsx")
 
 const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"])
@@ -373,6 +375,7 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
 
 exports.getOrgReports = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -413,6 +416,7 @@ exports.getOrgReports = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -453,6 +457,7 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -492,62 +497,30 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
 
 exports.getOrgSubscription = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
+  assertPermission(res, req.user, PERMISSION_KEYS.SUBSCRIPTION_VIEW, orgId)
   const limit = parseLimit(req.query.limit, 25, 200)
-  const { activeSubscription } = await syncOrganizationSubscriptionState({
-    organizationId: orgId,
-    now: new Date(),
-  })
+  const { activeSubscription } = await syncOrganizationSubscriptionState({ organizationId: orgId, now: new Date() })
 
   const [organization, subscriptions, paymentAggregate, userCount, teamCount] = await Promise.all([
-    prisma.organization.findUnique({
-      where: { id: orgId },
-      select: organizationSubscriptionSelect,
-    }),
-    prisma.subscription.findMany({
-      where: {
-        orgId,
-      },
-      orderBy: [{ createdAt: "desc" }],
-      take: limit,
-    }),
-    prisma.payment.aggregate({
-      where: {
-        orgId,
-        status: "SUCCESS",
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        _all: true,
-      },
-    }),
-    prisma.user.count({
-      where: {
-        orgId,
-        deletedAt: null,
-      },
-    }),
-    prisma.team.count({
-      where: {
-        orgId,
-        deletedAt: null,
-      },
-    }),
+    prisma.organization.findUnique({ where: { id: orgId }, select: organizationSubscriptionSelect }),
+    prisma.subscription.findMany({ where: { orgId }, orderBy: [{ createdAt: "desc" }], take: limit }),
+    prisma.payment.aggregate({ where: { orgId, status: "SUCCESS" }, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.user.count({ where: { orgId, deletedAt: null } }),
+    prisma.team.count({ where: { orgId, deletedAt: null } }),
   ])
 
-  const items = subscriptions.map((subscription) => ({
-    id: subscription.id,
-    planName: subscription.planName,
-    planCode: subscription.planCode,
-    status: subscription.status,
-    amount: subscription.amount,
-    currency: subscription.currency,
-    startDate: subscription.startDate,
-    endDate: subscription.endDate,
-    createdAt: subscription.createdAt,
-    razorpayOrderId: subscription.razorpayOrderId || "",
-    razorpayPaymentId: subscription.razorpayPaymentId || "",
+  const items = subscriptions.map((sub) => ({
+    id: sub.id,
+    planName: sub.planName,
+    planCode: sub.planCode,
+    status: sub.status,
+    amount: sub.amount,
+    currency: sub.currency,
+    startDate: sub.startDate,
+    endDate: sub.endDate,
+    createdAt: sub.createdAt,
+    paymentOrderId: sub.paymentOrderId || "",
+    paymentReferenceId: sub.paymentReferenceId || "",
   }))
 
   res.status(200).json({
@@ -572,10 +545,7 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
         maxTeams: Number(organization?.plan?.maxTeams || 0),
         maxLocations: Number(organization?.plan?.maxLocations || 0),
       },
-      usage: {
-        users: Number(userCount || 0),
-        teams: Number(teamCount || 0),
-      },
+      usage: { users: Number(userCount || 0), teams: Number(teamCount || 0) },
       subscriptionStatus: organization?.subscriptionStatus || "TRIAL",
       subscriptionExpiry: organization?.subscriptionExpiry || null,
       activeSubscriptionId: organization?.subscriptionId || null,

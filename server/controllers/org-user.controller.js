@@ -24,6 +24,7 @@ const {
   validatePasswordComplexity,
 } = require("../utils/validation");
 const {
+  assertAnyPermission,
   assertPermission,
   assertRoleScope,
   sanitizePermissionsByAssigner,
@@ -201,6 +202,17 @@ const toHallTicketFilename = ({ userName, userId }) => {
 
 exports.getOrgUsers = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
+  assertAnyPermission(
+    res,
+    req.user,
+    [
+      PERMISSION_KEYS.USERS_CREATE,
+      PERMISSION_KEYS.TEAM_CREATE,
+      PERMISSION_KEYS.TEAM_UPDATE,
+      PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS,
+    ],
+    orgId
+  );
   const limit = parseLimit(req.query.limit, 500, 2000);
   const currentUserId = Number(req.user.id);
 

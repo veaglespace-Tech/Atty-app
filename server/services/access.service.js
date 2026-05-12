@@ -12,6 +12,17 @@ const assertPermission = (res, user, permissionKey, orgId = null) => {
   }
 };
 
+const assertAnyPermission = (res, user, permissionKeys = [], orgId = null) => {
+  const allowed = permissionKeys.some((permissionKey) =>
+    hasPermission(user, permissionKey, orgId)
+  );
+
+  if (!allowed) {
+    res.status(403);
+    throw new Error("Missing required permission");
+  }
+};
+
 const assertRoleScope = (res, actor, targetRole, orgId = null) => {
   const actorRole = resolveUserRole(actor, orgId);
   const normalizedTargetRole = normalizeRole(targetRole);
@@ -61,6 +72,7 @@ const sanitizePermissionsByAssigner = (actor, fallbackRolePermissions, orgId = n
 
 module.exports = {
   assertPermission,
+  assertAnyPermission,
   assertRoleScope,
   sanitizePermissionsByAssigner,
 };

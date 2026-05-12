@@ -98,9 +98,7 @@ const adminDefaultValues = {
   role: ROLES.ORG_ADMIN,
 };
 const browserAutofillBlockProps = {
-  autoComplete: "off",
-  "data-lpignore": "true",
-  "data-1p-ignore": "true",
+  autoComplete: "on",
 };
 const emailFieldProps = {
   ...browserAutofillBlockProps,
@@ -206,7 +204,6 @@ export default function AdminRegistration() {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        autoComplete="off"
         noValidate
         className="grid gap-5 md:grid-cols-2"
       >
@@ -250,8 +247,8 @@ export default function AdminRegistration() {
           phone={mobile || ""}
           countryCodeName="adminMobileCountryCodeDisplay"
           phoneName="adminMobileDisplay"
-          selectAutoComplete="off"
-          phoneAutoComplete="off"
+          selectAutoComplete="on"
+          phoneAutoComplete="on"
           onCountryCodeChange={(event) =>
             setValue("mobileCountryCode", event.target.value, {
               shouldValidate: true,

@@ -90,6 +90,19 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       ),
     [navItems, user]
   );
+  const currentNavItem = useMemo(() => {
+    const candidates = Array.isArray(navItems) ? navItems : [];
+    return candidates
+      .filter(
+        (item) =>
+          item?.href &&
+          (pathname === item.href || pathname?.startsWith(`${item.href}/`))
+      )
+      .sort((left, right) => String(right.href).length - String(left.href).length)[0];
+  }, [navItems, pathname]);
+  const isCurrentPathBlocked =
+    Boolean(currentNavItem?.permission) &&
+    !hasPermission(user, currentNavItem.permission);
   const resolvedNavItems = useMemo(
     () =>
       visibleNavItems.map((item) => ({
@@ -131,8 +144,27 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       if (pathname !== fallbackPath) {
         router.replace(fallbackPath);
       }
+      return;
     }
-  }, [dashboardPath, expectedRoot, hydrated, loading, loginPath, pathname, router, sectionRoot, token]);
+
+    if (isCurrentPathBlocked) {
+      const fallbackPath = dashboardPath || `${sectionRoot || "/member"}/dashboard`;
+      if (pathname !== fallbackPath) {
+        router.replace(fallbackPath);
+      }
+    }
+  }, [
+    dashboardPath,
+    expectedRoot,
+    hydrated,
+    isCurrentPathBlocked,
+    loading,
+    loginPath,
+    pathname,
+    router,
+    sectionRoot,
+    token,
+  ]);
 
   useIdleRoutePrefetch(router, prefetchedRoutes);
 
@@ -148,7 +180,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     router.replace(currentRole === ROLES.SUPER_ADMIN ? "/super-admin/login" : "/login");
   };
 
-  if (!hydrated || loading || !token) {
+  if (!hydrated || loading || !token || isCurrentPathBlocked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white/88 px-6 py-4 text-sm font-semibold text-slate-600 shadow-[0_20px_50px_rgba(59,130,246,0.12)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/88 dark:text-slate-200 dark:shadow-black/30">

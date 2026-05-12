@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   ChevronDown,
@@ -20,7 +21,7 @@ import {
   useGetOrgUsersQuery,
   usePatchOrgTeamMutation,
 } from "@/services/api/orgApi";
-import { ROLES, formatRoleLabel, normalizeRole } from "@/utils/roles";
+import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
 
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback;
@@ -28,7 +29,11 @@ const getErrorMessage = (error, fallback) =>
 export default function OrgTeamDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const authUser = useSelector((state) => state.auth.user);
   const teamId = Number(params?.teamId);
+  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
+  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM_DELETE);
+  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
 
   const [savingBasics, setSavingBasics] = useState(false);
   const [savingLeader, setSavingLeader] = useState(false);
@@ -56,7 +61,9 @@ export default function OrgTeamDetailPage() {
     refetch: refetchTeam,
   } = useGetOrgTeamByIdQuery(teamId, { skip: !Number.isFinite(teamId) || teamId <= 0 });
 
-  const { data: usersData, isLoading: usersLoading } = useGetOrgUsersQuery(500);
+  const { data: usersData, isLoading: usersLoading } = useGetOrgUsersQuery(500, {
+    skip: !canAssignMembers,
+  });
 
   const [patchTeamMutation] = usePatchOrgTeamMutation();
   const [deleteTeamMutation] = useDeleteOrgTeamMutation();
@@ -160,6 +167,11 @@ export default function OrgTeamDetailPage() {
   };
 
   const saveBasics = async () => {
+    if (!canUpdateTeams) {
+      setError("Missing required permission");
+      return;
+    }
+
     if (!form.name.trim()) {
       setError("Team name is required");
       return;
@@ -186,6 +198,11 @@ export default function OrgTeamDetailPage() {
   };
 
   const saveLeader = async () => {
+    if (!canAssignMembers) {
+      setError("Missing required permission");
+      return;
+    }
+
     try {
       setSavingLeader(true);
       setError("");
@@ -204,6 +221,11 @@ export default function OrgTeamDetailPage() {
   };
 
   const saveMembers = async () => {
+    if (!canAssignMembers) {
+      setError("Missing required permission");
+      return;
+    }
+
     try {
       setSavingMembers(true);
       setError("");
@@ -223,6 +245,10 @@ export default function OrgTeamDetailPage() {
 
   const deleteTeam = async () => {
     if (!team) return;
+    if (!canDeleteTeams) {
+      setError("Missing required permission");
+      return;
+    }
     const confirmed = window.confirm(`Delete team ${team.name}?`);
     if (!confirmed) return;
 
@@ -289,15 +315,17 @@ export default function OrgTeamDetailPage() {
             <p className="mt-1 text-sm font-medium text-slate-600">Manage details, team leader and members separately.</p>
           </div>
 
-          <button
-            type="button"
-            onClick={deleteTeam}
-            disabled={deleting}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
-          >
-            {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-            Delete Team
-          </button>
+          {canDeleteTeams ? (
+            <button
+              type="button"
+              onClick={deleteTeam}
+              disabled={deleting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
+            >
+              {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+              Delete Team
+            </button>
+          ) : null}
         </div>
 
         {error ? (
@@ -317,6 +345,7 @@ export default function OrgTeamDetailPage() {
             <input
               value={form.name}
               onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              disabled={!canUpdateTeams}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
               required
             />
@@ -327,6 +356,7 @@ export default function OrgTeamDetailPage() {
             <textarea
               value={form.description}
               onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              disabled={!canUpdateTeams}
               rows={4}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
             />
@@ -342,6 +372,7 @@ export default function OrgTeamDetailPage() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, attendanceRadius: event.target.value }))
                 }
+                disabled={!canUpdateTeams}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
               />
             </div>
@@ -351,6 +382,7 @@ export default function OrgTeamDetailPage() {
                 type="checkbox"
                 checked={form.isActive}
                 onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+                disabled={!canUpdateTeams}
                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
               />
               Active Team
@@ -360,7 +392,7 @@ export default function OrgTeamDetailPage() {
           <button
             type="button"
             onClick={saveBasics}
-            disabled={savingBasics || teamFetching}
+            disabled={!canUpdateTeams || savingBasics || teamFetching}
             className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {savingBasics ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -368,6 +400,7 @@ export default function OrgTeamDetailPage() {
           </button>
         </div>
 
+        {canAssignMembers ? (
         <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Leader</h3>
 
@@ -437,7 +470,9 @@ export default function OrgTeamDetailPage() {
             Update Leader
           </button>
         </div>
+        ) : null}
 
+        {canAssignMembers ? (
         <div className="light-glow-card-static space-y-4 rounded-[1.9rem] p-6 xl:col-span-1">
           <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Members</h3>
 
@@ -514,6 +549,7 @@ export default function OrgTeamDetailPage() {
             Update Members
           </button>
         </div>
+        ) : null}
       </div>
     </section>
   );
