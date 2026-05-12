@@ -25,9 +25,6 @@ if (sentryEnabled) {
 const prisma = require("./lib/prisma");
 const app = express();
 
-// Trust proxy for correct protocol detection on live servers
-app.set("trust proxy", true);
-
 const envAllowedOrigins = [process.env.CLIENT_URL, process.env.CLIENT_ORIGINS]
   .filter(Boolean)
   .join(",")
