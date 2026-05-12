@@ -242,6 +242,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
 
     console.log("[PayU Success Callback] Transaction committed successfully.");
     pendingRegistrations.delete(txnid);
+    try {
       console.log("[PayU Success Callback] Sending welcome email...");
       await sendEmail({
         email: adminEmail,
