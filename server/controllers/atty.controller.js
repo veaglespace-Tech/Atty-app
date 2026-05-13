@@ -7,7 +7,7 @@ const {
   ensureSupportTicketsTable,
 } = require("../utils/ensure-support-tickets-table");
 
-// POST /api/atty/chat
+
 const attyChat = asyncHandler(async (req, res) => {
   const { message } = req.body;
 
@@ -28,7 +28,7 @@ const attyChat = asyncHandler(async (req, res) => {
   });
 });
 
-// POST /api/atty/support
+
 const attySupport = asyncHandler(async (req, res) => {
   const { name, email, role, subject, message } = req.body;
 
@@ -43,7 +43,7 @@ const attySupport = asyncHandler(async (req, res) => {
   const resolvedSubject = subject?.trim() || "Support Query";
   const resolvedMessage = message.trim();
 
-  // Fetch orgId and orgName from user context
+
   const resolvedOrgId = req.user?.organizationId
     ? Number(req.user.organizationId)
     : req.user?.orgId
@@ -52,7 +52,6 @@ const attySupport = asyncHandler(async (req, res) => {
 
   const resolvedUserId = req.user?.id ? Number(req.user.id) : null;
 
-  // Fetch org name from DB using orgId
   let resolvedOrgName = req.user?.organization?.name || null;
   if (!resolvedOrgName && resolvedOrgId) {
     try {
@@ -61,7 +60,7 @@ const attySupport = asyncHandler(async (req, res) => {
         select: { name: true },
       });
       resolvedOrgName = org?.name || null;
-    } catch (_) {}
+    } catch (_) { }
   }
 
   await ensureSupportTicketsTable();

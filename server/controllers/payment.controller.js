@@ -156,6 +156,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const productinfo = `${plan.name} Plan`;
   const firstname = String(admin?.name || "Customer").split(" ")[0];
   const email = adminEmail || String(admin?.email || "");
+  const phone = admin?.mobile || "";
   const udf1 = txnid; // echo back for verification
   const hash = generatePayuHash({ key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, salt: merchantSalt });
   const successUrl = `${getServerBaseUrl()}/api/payment/payu-success`;
@@ -167,7 +168,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true, freeTrial: false,
-    payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, surl: successUrl, furl: failureUrl, hash },
+    payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, phone, udf1, surl: successUrl, furl: failureUrl, hash },
     baseUrl,
     plan: { code: plan.code, name: plan.name, price: plan.price, durationInDays: plan.durationInDays },
     source: dbPlan ? "DB" : "FALLBACK",
@@ -368,7 +369,7 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
   const successUrl = `${getServerBaseUrl()}/api/payment/payu-renewal-success`;
   const failureUrl = `${getServerBaseUrl()}/api/payment/payu-renewal-failure`;
 
-  res.status(200).json({ success: true, freeRenewal: false, intentId: intent.id, intentStatus: intent.status, intentExpiresAt: intent.expiresAt, payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, udf1, surl: successUrl, furl: failureUrl, hash }, baseUrl, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: ctx.payableAmount, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR" }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate, currentPlanPrice: ctx.curPrice, selectedPlanPrice: ctx.selPrice } });
+  res.status(200).json({ success: true, freeRenewal: false, intentId: intent.id, intentStatus: intent.status, intentExpiresAt: intent.expiresAt, payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, phone: userRecord?.mobile || "", udf1, surl: successUrl, furl: failureUrl, hash }, baseUrl, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: ctx.payableAmount, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR" }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate, currentPlanPrice: ctx.curPrice, selectedPlanPrice: ctx.selPrice } });
 });
 
 // -- POST /api/payment/payu-renewal-success -----------------------------------
@@ -515,7 +516,49 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       return { newOrg, newUser };
     });
     let emailSent = false;
-    try { await sendEmail({ email: result.newUser.email, subject: `Welcome to Veagle Attendee - ${result.newOrg.organizationCode}`, message: `Hello ${result.newUser.name}, your organization has been registered.`, html: "" }); emailSent = true; } catch {}
+    try {
+      await sendEmail({
+        email: result.newUser.email,
+        subject: `Welcome to Veagle Attendee - ${result.newOrg.organizationCode}`,
+        greeting: `Hello ${result.newUser.name},`,
+        intro: [
+          "Congratulations! Your organization has been successfully registered on Veagle Attendee.",
+          "Your Free Trial workspace is now active and ready for use. Below are your account details.",
+        ],
+        sections: [
+          {
+            eyebrow: "Account Details",
+            title: "Organization Workspace",
+            rows: [
+              { label: "Org Name", value: result.newOrg.name },
+              { label: "Org Code", value: result.newOrg.organizationCode },
+              { label: "Admin Email", value: result.newUser.email },
+            ],
+          },
+          {
+            eyebrow: "Subscription Info",
+            title: "Free Trial",
+            rows: [
+              { label: "Status", value: "ACTIVE (TRIAL)" },
+              { label: "Start Date", value: new Date().toLocaleDateString("en-GB") },
+              { label: "Expiry Date", value: new Date(result.newOrg.subscriptionExpiry).toLocaleDateString("en-GB") },
+            ],
+          },
+        ],
+        action: {
+          label: "Go to Login",
+          href: `${getClientBaseUrl()}/login`,
+        },
+        footnotes: [
+          "Please keep your Organization Code safe. You and your team members will need it to login to the system.",
+          "For security reasons, your password is not included in this email.",
+        ],
+        footerNote: "Empowering your workspace with smart attendance solutions.",
+      });
+      emailSent = true;
+    } catch (e) {
+      console.error("Free trial welcome email error:", e);
+    }
     res.status(201).json({ success: true, message: "Registration completed successfully.", emailSent, user: { id: result.newUser.id, name: result.newUser.name, email: result.newUser.email } });
   } catch (dbErr) {
     console.error("DB Error during registration:", dbErr);
