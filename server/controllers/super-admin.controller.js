@@ -17,6 +17,12 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const { getCachedValue } = require("../services/runtime-cache.service");
 const xlsx = require("xlsx");
+const bcrypt = require("bcryptjs");
+const { generateUniqueOrgCode } = require("../utils/org-code");
+const { generateUniqueReferralCode } = require("../utils/referral-code");
+const { normalizeRole } = require("../constants/rbac");
+const { createOrganizationMembership } = require("../services/organization-member.service");
+
 
 const SUBSCRIPTION_STATUS = new Set(["TRIAL", "ACTIVE", "EXPIRED", "PAYMENT_PENDING"]);
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -2029,5 +2035,257 @@ exports.getSuperAdminAnalytics = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     ...payload,
+  });
+});
+
+exports.createSuperAdminOrganization = asyncHandler(async (req, res) => {
+  const { organization, admin, planCode } = req.body;
+
+  if (!organization || !admin || !planCode) {
+    res.status(400);
+    throw new Error("Organization, admin details, and plan code are required");
+  }
+
+  const orgEmail = normalizeEmail(organization.email);
+  const adminEmail = normalizeEmail(admin.email);
+
+  // Validate plan
+  const dbPlan = await prisma.plan.findFirst({
+    where: { code: planCode.toUpperCase(), isActive: true }
+  });
+
+  if (!dbPlan) {
+    res.status(404);
+    throw new Error("Selected plan not found or inactive");
+  }
+
+  // Check existence
+  const [uE, oE] = await Promise.all([
+    prisma.user.findUnique({ where: { email: adminEmail } }),
+    prisma.organization.findUnique({ where: { email: orgEmail } }),
+  ]);
+
+  if (uE) {
+    res.status(409);
+    throw new Error("Admin user with this email already exists");
+  }
+  if (oE) {
+    res.status(409);
+    throw new Error("Organization with this email already exists");
+  }
+
+  let organizationPhone, adminPhone;
+  try {
+    organizationPhone = normalizePhoneNumber({
+      phone: organization.phone,
+      countryCode: organization.phoneCountryCode || organization.countryCode || "IN",
+      requireCountryCode: true
+    });
+    adminPhone = normalizePhoneNumber({
+      phone: admin.mobile,
+      countryCode: admin.mobileCountryCode || admin.countryCode || "IN",
+      requireCountryCode: true
+    });
+  } catch (err) {
+    res.status(400);
+    throw new Error(err.message || "Invalid phone number format");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const orgCode = await generateUniqueOrgCode(tx);
+    const refCode = await generateUniqueReferralCode(tx);
+    const duration = dbPlan.durationInDays || 30;
+    const expiryDate = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
+
+    const newOrg = await tx.organization.create({
+      data: {
+        name: truncateText(organization.name, 120),
+        organizationCode: orgCode,
+        referralCode: refCode,
+        email: orgEmail,
+        phone: organizationPhone.e164,
+        phoneCountryCode: organizationPhone.countryCode,
+        address: truncateText(organization.address, 191) || null,
+        city: truncateText(organization.city, 120) || null,
+        state: truncateText(organization.state, 120) || null,
+        country: organization.country || "India",
+        latitude: Number(organization.latitude) || 0,
+        longitude: Number(organization.longitude) || 0,
+        subscriptionStatus: "ACTIVE",
+        subscriptionExpiry: expiryDate,
+        planId: dbPlan.id,
+        isActive: true
+      }
+    });
+
+    const hashedPw = await bcrypt.hash(admin.password, 10);
+    const adminRole = normalizeRole("ORG_ADMIN");
+
+    const newUser = await tx.user.create({
+      data: {
+        name: truncateText(admin.name, 120),
+        email: adminEmail,
+        mobile: adminPhone.e164,
+        mobileCountryCode: adminPhone.countryCode,
+        password: hashedPw,
+        role: adminRole,
+        orgId: newOrg.id,
+        status: "APPROVED",
+        isActive: true
+      }
+    });
+
+    await createOrganizationMembership(tx, {
+      userId: newUser.id,
+      orgId: newOrg.id,
+      role: adminRole,
+      isActive: true
+    });
+
+    const sub = await tx.subscription.create({
+      data: {
+        orgId: newOrg.id,
+        planId: dbPlan.id,
+        planName: dbPlan.name,
+        planCode: dbPlan.code,
+        amount: Number(dbPlan.price),
+        status: "ACTIVE",
+        startDate: new Date(),
+        endDate: expiryDate,
+        paymentGateway: "ADMIN_BYPASS",
+        paymentOrderId: `BYPASS_${Date.now()}`,
+        createdById: Number(req.user.id),
+        activeKey: `ORG_${newOrg.id}`
+      }
+    });
+
+    await tx.payment.create({
+      data: {
+        orgId: newOrg.id,
+        userId: newUser.id,
+        subscriptionId: sub.id,
+        planName: dbPlan.name,
+        planCode: dbPlan.code,
+        amount: 0,
+        gateway: "ADMIN_BYPASS",
+        paymentOrderId: sub.paymentOrderId,
+        status: "SUCCESS"
+      }
+    });
+
+    await tx.organization.update({
+      where: { id: newOrg.id },
+      data: { subscriptionId: sub.id, orgAdminId: newUser.id }
+    });
+
+    return { organization: newOrg, admin: newUser };
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Organization created successfully by Super Admin",
+    data: result
+  });
+});
+
+exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  const { additionalDays, planCode } = req.body;
+
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+  if (!additionalDays || isNaN(Number(additionalDays)) || Number(additionalDays) < 1) {
+    res.status(400);
+    throw new Error("additionalDays must be a positive number");
+  }
+
+  const days = Math.floor(Number(additionalDays));
+
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    include: { plan: true, activeSubscription: true },
+  });
+
+  if (!org) {
+    res.status(404);
+    throw new Error("Organization not found");
+  }
+
+  // Decide which plan to use: override or keep existing
+  let plan = org.plan;
+  if (planCode) {
+    plan = await prisma.plan.findFirst({ where: { code: planCode.toUpperCase(), isActive: true } });
+    if (!plan) {
+      res.status(404);
+      throw new Error("Plan not found or inactive");
+    }
+  }
+  if (!plan) {
+    res.status(400);
+    throw new Error("Organization has no active plan. Please provide a planCode.");
+  }
+
+  const now = new Date();
+  // Extend from current expiry if still active, otherwise from today
+  const baseDate = org.subscriptionExpiry && org.subscriptionExpiry > now
+    ? new Date(org.subscriptionExpiry)
+    : now;
+  const newExpiry = new Date(baseDate.getTime() + days * DAY_IN_MS);
+
+  const result = await prisma.$transaction(async (tx) => {
+    // Create a new subscription record for the extension
+    const newSub = await tx.subscription.create({
+      data: {
+        orgId: org.id,
+        planId: plan.id,
+        planName: plan.name,
+        planCode: plan.code,
+        amount: 0, // bypass — no charge
+        status: "ACTIVE",
+        startDate: baseDate,
+        endDate: newExpiry,
+        paymentGateway: "ADMIN_BYPASS",
+        paymentOrderId: `EXTEND_${Date.now()}`,
+        createdById: Number(req.user.id),
+        activeKey: `ORG_EXT_${org.id}_${Date.now()}`,
+      },
+    });
+
+    // Create a bypass payment record
+    await tx.payment.create({
+      data: {
+        orgId: org.id,
+        userId: org.orgAdminId || Number(req.user.id),
+        subscriptionId: newSub.id,
+        planName: plan.name,
+        planCode: plan.code,
+        amount: 0,
+        gateway: "ADMIN_BYPASS",
+        paymentOrderId: newSub.paymentOrderId,
+        status: "SUCCESS",
+      },
+    });
+
+    // Update organization: new expiry, active plan, active status
+    const updatedOrg = await tx.organization.update({
+      where: { id: org.id },
+      data: {
+        subscriptionExpiry: newExpiry,
+        subscriptionStatus: "ACTIVE",
+        subscriptionId: newSub.id,
+        planId: plan.id,
+        isActive: true,
+      },
+    });
+
+    return { organization: updatedOrg, subscription: newSub, newExpiry };
+  });
+
+  res.status(200).json({
+    success: true,
+    message: `Plan extended by ${days} day(s). New expiry: ${result.newExpiry.toISOString()}`,
+    data: result,
   });
 });

@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Ban,
   Building2,
+  CalendarClock,
   CreditCard,
   Loader2,
   MapPin,
@@ -20,9 +21,11 @@ import {
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
+  useExtendSuperAdminOrganizationPlanMutation,
   useGetSuperAdminOrganizationByIdQuery,
   useGetSuperAdminOrganizationTeamsQuery,
   useGetSuperAdminOrganizationUsersQuery,
+  useGetSuperAdminPlansQuery,
   usePatchSuperAdminOrganizationMutation,
   useUpdateOrganizationAccessMutation,
 } from "@/services/api/superAdminApi";
@@ -167,6 +170,7 @@ export default function OrganizationDetailPage() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [updatingAccess, setUpdatingAccess] = useState(false);
+  const [showExtendModal, setShowExtendModal] = useState(false);
 
   const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationByIdQuery(
     organizationId,
@@ -398,7 +402,21 @@ export default function OrganizationDetailPage() {
         />
       ) : null}
 
-      {activeTab === "billing" ? <BillingTab item={item} /> : null}
+      {activeTab === "billing" ? (
+        <BillingTab
+          item={item}
+          organizationId={organizationId}
+          onExtend={() => setShowExtendModal(true)}
+        />
+      ) : null}
+
+      <ExtendPlanModal
+        isOpen={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        organizationId={organizationId}
+        organization={item}
+        onExtended={async () => { await refetch(); setMessage("Plan extended successfully."); }}
+      />
 
       {activeTab === "users" ? (
         <UsersTab users={users} isLoading={isLoadingUsers} />
@@ -661,14 +679,26 @@ function ProfileTab({
   );
 }
 
-function BillingTab({ item }) {
+function BillingTab({ item, onExtend }) {
   const recentPayments = Array.isArray(item.recentPayments) ? item.recentPayments : [];
   const recentSubscriptions = Array.isArray(item.recentSubscriptions) ? item.recentSubscriptions : [];
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       <div className="space-y-6">
-        <SectionCard title="Subscription Snapshot">
+        <SectionCard
+          title="Subscription Snapshot"
+          action={
+            <button
+              type="button"
+              onClick={onExtend}
+              className="brand-btn brand-btn-primary brand-btn-sm"
+            >
+              <CalendarClock size={14} />
+              Extend Plan
+            </button>
+          }
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <DetailTile label="Current Plan" value={item.plan?.name || "TRIAL"} />
             <DetailTile label="Plan Code" value={item.plan?.code || "-"} />
@@ -909,6 +939,173 @@ function FormField({ label, children, fullWidth = false }) {
         {label}
       </p>
       {children}
+    </div>
+  );
+}
+
+function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExtended }) {
+  const [extendPlan, { isLoading }] = useExtendSuperAdminOrganizationPlanMutation();
+  const { data: plansData } = useGetSuperAdminPlansQuery();
+  const plans = Array.isArray(plansData?.items) ? plansData.items : [];
+
+  const [additionalDays, setAdditionalDays] = useState("");
+  const [planCode, setPlanCode] = useState("");
+  const [error, setError] = useState("");
+
+  const quickDays = [7, 14, 30, 60, 90, 180, 365];
+
+  const onSubmit = async () => {
+    if (!additionalDays || Number(additionalDays) < 1) {
+      setError("Please enter a valid number of days (minimum 1)");
+      return;
+    }
+    try {
+      setError("");
+      await extendPlan({
+        organizationId,
+        additionalDays: Number(additionalDays),
+        ...(planCode ? { planCode } : {}),
+      }).unwrap();
+      await onExtended();
+      onClose();
+      setAdditionalDays("");
+      setPlanCode("");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to extend plan"));
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const currentExpiry = organization?.subscriptionExpiry;
+  const baseDate = currentExpiry && new Date(currentExpiry) > new Date()
+    ? new Date(currentExpiry)
+    : new Date();
+  const previewExpiry = additionalDays && Number(additionalDays) > 0
+    ? new Date(baseDate.getTime() + Number(additionalDays) * 24 * 60 * 60 * 1000)
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-xl overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95">
+        <div className="brand-metric-glow" />
+        <div className="relative flex flex-col">
+
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-200/60 px-8 py-6 dark:border-slate-800/60">
+            <div>
+              <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">Extend Plan</h3>
+              <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+                {organization?.name || "Organization"}
+              </p>
+            </div>
+            <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50">
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="space-y-6 px-8 py-6">
+            {error && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+                {error}
+              </p>
+            )}
+
+            {/* Current state info */}
+            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Current Plan</p>
+                <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">{organization?.plan?.name || "TRIAL"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Current Expiry</p>
+                <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
+                  {currentExpiry ? new Date(currentExpiry).toLocaleDateString("en-IN") : "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick day presets */}
+            <div>
+              <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Quick Select Days</p>
+              <div className="flex flex-wrap gap-2">
+                {quickDays.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setAdditionalDays(String(d))}
+                    className={`rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-wider transition-all ${
+                      String(additionalDays) === String(d)
+                        ? "border-blue-500 bg-blue-500 text-white shadow-[0_0_14px_rgba(59,130,246,0.4)]"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                    }`}
+                  >
+                    {d >= 365 ? `${d / 365}yr` : `${d}d`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom days input */}
+            <FormField label="Custom Days">
+              <input
+                type="number"
+                min="1"
+                value={additionalDays}
+                onChange={(e) => setAdditionalDays(e.target.value)}
+                placeholder="e.g. 45"
+                className="dashboard-field-control w-full"
+              />
+            </FormField>
+
+            {/* Preview */}
+            {previewExpiry && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/8">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">New Expiry Preview</p>
+                <p className="mt-1 text-base font-black text-emerald-700 dark:text-emerald-300">
+                  {previewExpiry.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              </div>
+            )}
+
+            {/* Optional plan override */}
+            {plans.length > 0 && (
+              <FormField label="Switch Plan (Optional)">
+                <select
+                  value={planCode}
+                  onChange={(e) => setPlanCode(e.target.value)}
+                  className="dashboard-field-control dashboard-select-control w-full"
+                >
+                  <option value="">Keep current plan ({organization?.plan?.name || "TRIAL"})</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.code}>
+                      {p.name} — ₹{p.price} / {p.durationInDays}d
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 border-t border-slate-200/60 bg-slate-50/50 px-8 py-5 dark:border-slate-800/60 dark:bg-slate-900/50">
+            <button type="button" onClick={onClose} className="brand-btn brand-btn-secondary brand-btn-md px-8">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={isLoading || !additionalDays || Number(additionalDays) < 1}
+              className="brand-btn brand-btn-primary brand-btn-md px-10"
+            >
+              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <CalendarClock size={16} />}
+              Extend Plan
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

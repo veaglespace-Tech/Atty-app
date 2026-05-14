@@ -7,6 +7,8 @@ const {
   getSuperAdminOrganizationUsers,
   getSuperAdminOrganizationTeams,
   patchSuperAdminOrganization,
+  createSuperAdminOrganization,
+  extendSuperAdminOrganizationPlan,
   updateOrganizationAccess,
   getSuperAdminPlans,
   getSuperAdminPayments,
@@ -48,6 +50,7 @@ router.get("/dashboard", getSuperAdminDashboard);
 router.get("/dashboard/pdf", downloadSuperAdminDashboardPdf);
 router.get("/dashboard/excel", downloadSuperAdminDashboardExcel);
 router.get("/organizations", getSuperAdminOrganizations);
+router.post("/organizations", createSuperAdminOrganization);
 router.get("/organizations/pdf", downloadSuperAdminOrganizationsPdf);
 router.get("/organizations/excel", downloadSuperAdminOrganizationsExcel);
 router.get("/organizations/:organizationId", getSuperAdminOrganizationById);
@@ -57,6 +60,7 @@ router.patch("/organizations/:organizationId", patchSuperAdminOrganization);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);
 router.post("/organizations/:organizationId/archive", archiveOrganizationAction);
 router.post("/organizations/:organizationId/restore", restoreOrganizationAction);
+router.post("/organizations/:organizationId/extend-plan", extendSuperAdminOrganizationPlan);
 router.get("/contacts", getSuperAdminContactInquiries);
 router.get("/contacts/:id", getSuperAdminContactById);
 router.patch("/contacts/:id", patchSuperAdminContact);

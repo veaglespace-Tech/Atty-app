@@ -62,6 +62,22 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: ["SAOrganizations", "SADashboard"],
     }),
+    createSuperAdminOrganization: builder.mutation({
+      query: (payload) => ({
+        url: "/super-admin/organizations",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["SAOrganizations", "SADashboard"],
+    }),
+    extendSuperAdminOrganizationPlan: builder.mutation({
+      query: ({ organizationId, ...payload }) => ({
+        url: `/super-admin/organizations/${organizationId}/extend-plan`,
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["SAOrganizations", "SADashboard"],
+    }),
     updateOrganizationAccess: builder.mutation({
       query: ({ organizationId, ...payload }) => ({
         url: `/super-admin/organizations/${organizationId}/access`,
@@ -198,6 +214,8 @@ export const {
   useDownloadSuperAdminOrganizationsPdfMutation,
   useDownloadSuperAdminOrganizationsExcelMutation,
   usePatchSuperAdminOrganizationMutation,
+  useCreateSuperAdminOrganizationMutation,
+  useExtendSuperAdminOrganizationPlanMutation,
   useUpdateOrganizationAccessMutation,
   useGetSuperAdminPlansQuery,
   useGetSuperAdminPaymentsQuery,

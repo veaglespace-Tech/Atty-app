@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Loader2, RefreshCcw, Search } from "lucide-react";
+import { ArrowRight, Loader2, Plus, RefreshCcw, Search, X } from "lucide-react";
+import CountryPhoneField from "@/components/CountryPhoneField";
+
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import {
+  useCreateSuperAdminOrganizationMutation,
   useDownloadSuperAdminOrganizationsExcelMutation,
   useDownloadSuperAdminOrganizationsPdfMutation,
   useGetSuperAdminOrganizationsQuery,
+  useGetSuperAdminPlansQuery,
 } from "@/services/api/superAdminApi";
 import { downloadBlobFile } from "@/utils/download";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
@@ -70,6 +74,7 @@ export default function SuperAdminOrganizationsPage() {
   const [accessFilter, setAccessFilter] = useState("ALL");
   const [blockFilter, setBlockFilter] = useState("ALL");
   const [downloadError, setDownloadError] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationsQuery(
     DASHBOARD_FETCH_LIMITS.SUPER_ADMIN_ORGANIZATIONS
@@ -78,11 +83,16 @@ export default function SuperAdminOrganizationsPage() {
     useDownloadSuperAdminOrganizationsPdfMutation();
   const [downloadOrganizationsExcel, { isLoading: downloadingExcel }] =
     useDownloadSuperAdminOrganizationsExcelMutation();
+  const [createOrganizationMutation] = useCreateSuperAdminOrganizationMutation();
+  const { data: plansData } = useGetSuperAdminPlansQuery();
+
 
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const organizations = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
   const summaryMap = useMemo(() => toSummaryMap(summary), [summary]);
+  const plans = useMemo(() => (Array.isArray(plansData?.items) ? plansData.items : []), [plansData]);
   const loading = isLoading || isFetching;
+
 
   const filteredOrganizations = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -156,6 +166,13 @@ export default function SuperAdminOrganizationsPage() {
 
   return (
     <section className="space-y-6">
+      <CreateOrganizationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        plans={plans}
+        onCreated={() => refetch()}
+      />
+
       <div className={`${panelClassName} mobile-compact-panel relative z-20`}>
         <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.14),transparent_28%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -182,7 +199,18 @@ export default function SuperAdminOrganizationsPage() {
               </p>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-1">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="brand-btn brand-btn-primary brand-btn-md w-full justify-center"
+              >
+                <Plus size={18} />
+                Create Organization
+              </button>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+
               <button
                 type="button"
                 onClick={refetch}
@@ -206,6 +234,7 @@ export default function SuperAdminOrganizationsPage() {
             </div>
           </div>
         </div>
+      </div>
 
         {downloadError ? (
           <p className="relative mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
@@ -438,6 +467,250 @@ function CompactInfo({ label, value }) {
         {label}
       </p>
       <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</p>
+    </div>
+  );
+}
+
+function FormField({ label, children, fullWidth = false }) {
+  return (
+    <div className={fullWidth ? "md:col-span-2" : ""}>
+      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
+  const [createOrganization, { isLoading: isCreating }] = useCreateSuperAdminOrganizationMutation();
+  const [form, setForm] = useState({
+    organization: {
+      name: "",
+      email: "",
+      phone: "",
+      phoneCountryCode: "+91",
+      address: "",
+      city: "",
+      state: "",
+      country: "India",
+      latitude: "",
+      longitude: "",
+    },
+    admin: {
+      name: "",
+      email: "",
+      mobile: "",
+      mobileCountryCode: "+91",
+      password: "",
+    },
+    planCode: "",
+  });
+  const [error, setError] = useState("");
+
+  const onChange = (section, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value,
+      },
+    }));
+  };
+
+  const onSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!form.planCode) {
+      setError("Please select a plan");
+      return;
+    }
+    try {
+      setError("");
+      await createOrganization(form).unwrap();
+      onCreated();
+      onClose();
+      // Reset form
+      setForm({
+        organization: { name: "", email: "", phone: "", phoneCountryCode: "+91", address: "", city: "", state: "", country: "India", latitude: "", longitude: "" },
+        admin: { name: "", email: "", mobile: "", mobileCountryCode: "+91", password: "" },
+        planCode: "",
+      });
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to create organization"));
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90">
+        <div className="brand-metric-glow" />
+        <div className="relative flex flex-col max-h-[90vh]">
+          <div className="flex items-center justify-between border-b border-slate-200/60 px-8 py-6 dark:border-slate-800/60">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Create New Organization</h3>
+              <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">Directly onboard a new organization (Payment Bypassed)</p>
+            </div>
+            <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50">
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="overflow-y-auto px-8 py-6 space-y-8">
+            {error && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200 font-semibold">
+                {error}
+              </p>
+            )}
+
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="space-y-5">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">Organization Information</h4>
+                <div className="grid gap-4">
+                  <FormField label="Organization Name">
+                    <input
+                      required
+                      value={form.organization.name}
+                      onChange={(e) => onChange("organization", "name", e.target.value)}
+                      className="dashboard-field-control w-full"
+                      placeholder="e.g. Acme Corp"
+                    />
+                  </FormField>
+                  <FormField label="Organization Email">
+                    <input
+                      required
+                      type="email"
+                      value={form.organization.email}
+                      onChange={(e) => onChange("organization", "email", e.target.value)}
+                      className="dashboard-field-control w-full"
+                      placeholder="org@example.com"
+                    />
+                  </FormField>
+                  <CountryPhoneField
+                    label="Organization Phone"
+                    countryCode={form.organization.phoneCountryCode}
+                    phone={form.organization.phone}
+                    onCountryCodeChange={(e) => onChange("organization", "phoneCountryCode", e.target.value)}
+                    onPhoneChange={(e) => onChange("organization", "phone", e.target.value.replace(/[^\d]/g, ""))}
+                    labelClassName="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
+                    groupClassName="rounded-[1rem] shadow-none"
+                    selectClassName="py-2.5"
+                    inputClassName="py-2.5"
+                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField label="City">
+                      <input
+                        value={form.organization.city}
+                        onChange={(e) => onChange("organization", "city", e.target.value)}
+                        className="dashboard-field-control w-full"
+                      />
+                    </FormField>
+                    <FormField label="Country">
+                      <input
+                        value={form.organization.country}
+                        onChange={(e) => onChange("organization", "country", e.target.value)}
+                        className="dashboard-field-control w-full"
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">Admin Account Information</h4>
+                <div className="grid gap-4">
+                  <FormField label="Admin Full Name">
+                    <input
+                      required
+                      value={form.admin.name}
+                      onChange={(e) => onChange("admin", "name", e.target.value)}
+                      className="dashboard-field-control w-full"
+                      placeholder="John Doe"
+                    />
+                  </FormField>
+                  <FormField label="Admin Email">
+                    <input
+                      required
+                      type="email"
+                      value={form.admin.email}
+                      onChange={(e) => onChange("admin", "email", e.target.value)}
+                      className="dashboard-field-control w-full"
+                      placeholder="admin@example.com"
+                    />
+                  </FormField>
+                  <CountryPhoneField
+                    label="Admin Mobile"
+                    countryCode={form.admin.mobileCountryCode}
+                    phone={form.admin.mobile}
+                    onCountryCodeChange={(e) => onChange("admin", "mobileCountryCode", e.target.value)}
+                    onPhoneChange={(e) => onChange("admin", "mobile", e.target.value.replace(/[^\d]/g, ""))}
+                    labelClassName="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
+                    groupClassName="rounded-[1rem] shadow-none"
+                    selectClassName="py-2.5"
+                    inputClassName="py-2.5"
+                  />
+                  <FormField label="Initial Password">
+                    <input
+                      required
+                      type="password"
+                      value={form.admin.password}
+                      onChange={(e) => onChange("admin", "password", e.target.value)}
+                      className="dashboard-field-control w-full"
+                      placeholder="••••••••"
+                    />
+                  </FormField>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">Subscription Plan</h4>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-4">
+                {plans.map((plan) => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, planCode: plan.code }))}
+                    className={`relative flex flex-col rounded-[1.5rem] border p-4 text-left transition-all ${
+                      form.planCode === plan.code
+                        ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20 dark:bg-blue-500/10"
+                        : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900"
+                    }`}
+                  >
+                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{plan.name}</p>
+                    <p className="mt-1 text-lg font-black text-blue-600">₹{plan.price}</p>
+                    <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{plan.durationInDays} Days</p>
+                    {form.planCode === plan.code && (
+                      <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-slate-200/60 px-8 py-6 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="brand-btn brand-btn-secondary brand-btn-md px-8"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={isCreating}
+              className="brand-btn brand-btn-primary brand-btn-md px-10"
+            >
+              {isCreating ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+              Create Organization
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
