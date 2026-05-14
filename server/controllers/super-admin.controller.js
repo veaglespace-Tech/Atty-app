@@ -16,6 +16,8 @@ const {
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const { getCachedValue } = require("../services/runtime-cache.service");
+const sendEmail = require("../utils/email");
+const { buildEmailTemplate } = require("../utils/email-template");
 const xlsx = require("xlsx");
 const bcrypt = require("bcryptjs");
 const { generateUniqueOrgCode } = require("../utils/org-code");
@@ -2181,6 +2183,62 @@ exports.createSuperAdminOrganization = asyncHandler(async (req, res) => {
     return { organization: newOrg, admin: newUser };
   });
 
+  // Send welcome email (non-fatal)
+  try {
+    const clientBase = String(process.env.CLIENT_URL || process.env.APP_URL || process.env.CLIENT_ORIGINS?.split(",")[0] || "http://localhost:3000").trim().replace(/\/+$/, "");
+    const expiryDate = new Date(Date.now() + (dbPlan.durationInDays || 30) * DAY_IN_MS);
+    const html = buildEmailTemplate({
+      eyebrow: "Organization Created",
+      title: "Welcome to Veagle Attendee",
+      subtitle: "Your workspace is ready. Here are your account details.",
+      greeting: `Hello ${admin.name},`,
+      intro: [
+        "Your organization has been successfully set up on Veagle Attendee by the administrator.",
+        "Your workspace is now active. Please find your account and subscription details below.",
+      ],
+      sections: [
+        {
+          eyebrow: "Account Details",
+          title: "Organization Workspace",
+          rows: [
+            { label: "Org Name",  value: result.organization.name },
+            { label: "Org Code",  value: result.organization.organizationCode },
+            { label: "Admin",     value: admin.name },
+            { label: "Login Email", value: adminEmail },
+          ],
+        },
+        {
+          eyebrow: "Subscription Info",
+          title: dbPlan.name,
+          rows: [
+            { label: "Status",     value: "ACTIVE" },
+            { label: "Plan",       value: dbPlan.name },
+            { label: "Start Date", value: new Date().toLocaleDateString("en-GB") },
+            { label: "Expiry Date", value: expiryDate.toLocaleDateString("en-GB") },
+          ],
+        },
+      ],
+      action: {
+        label: "Go to Login",
+        href: `${clientBase}/login`,
+      },
+      footnotes: [
+        "Please keep your Organization Code safe — you and your team will need it to log in.",
+        "For security, your password is not included in this email.",
+        "If you did not expect this email, please contact support.",
+      ],
+      footerNote: "Empowering your workspace with smart attendance solutions.",
+    });
+
+    await sendEmail({
+      email: adminEmail,
+      subject: `Welcome to Veagle Attendee — ${truncateText(result.organization.name, 40)}`,
+      html,
+    });
+  } catch (emailErr) {
+    console.error("[createSuperAdminOrganization] Welcome email error (non-fatal):", emailErr?.message);
+  }
+
   res.status(201).json({
     success: true,
     message: "Organization created successfully by Super Admin",
@@ -2205,7 +2263,7 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
 
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    include: { plan: true, activeSubscription: true },
+    include: { plan: true, activeSubscription: true, orgAdmin: true },
   });
 
   if (!org) {
@@ -2282,6 +2340,52 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
 
     return { organization: updatedOrg, subscription: newSub, newExpiry };
   });
+
+  // Send plan extension email (non-fatal)
+  try {
+    if (org.orgAdmin && org.orgAdmin.email) {
+      const adminEmail = org.orgAdmin.email;
+      const clientBase = String(process.env.CLIENT_URL || process.env.APP_URL || process.env.CLIENT_ORIGINS?.split(",")[0] || "http://localhost:3000").trim().replace(/\/+$/, "");
+      const html = buildEmailTemplate({
+        eyebrow: "Plan Extended",
+        title: "Your Subscription Has Been Extended",
+        subtitle: "The administrator has extended your workspace plan.",
+        greeting: `Hello ${org.orgAdmin.name},`,
+        intro: [
+          `Great news! The administrator has successfully extended your organization's plan by ${days} day(s).`,
+          "Your workspace will continue to operate without any interruptions.",
+        ],
+        sections: [
+          {
+            eyebrow: "Extension Details",
+            title: "Updated Subscription Info",
+            rows: [
+              { label: "Org Name",    value: result.organization.name },
+              { label: "Plan",        value: plan.name },
+              { label: "Days Added",  value: `${days} Days` },
+              { label: "New Expiry",  value: result.newExpiry.toLocaleDateString("en-GB") },
+            ],
+          },
+        ],
+        action: {
+          label: "Go to Dashboard",
+          href: `${clientBase}/login`,
+        },
+        footnotes: [
+          "If you have any questions regarding this extension, please contact support.",
+        ],
+        footerNote: "Empowering your workspace with smart attendance solutions.",
+      });
+
+      await sendEmail({
+        email: adminEmail,
+        subject: `Plan Extended — ${truncateText(result.organization.name, 40)}`,
+        html,
+      });
+    }
+  } catch (emailErr) {
+    console.error("[extendSuperAdminOrganizationPlan] Extension email error (non-fatal):", emailErr?.message);
+  }
 
   res.status(200).json({
     success: true,
