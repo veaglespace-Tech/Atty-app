@@ -260,6 +260,8 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
             rows: [
               { label: "Org Name", value: newOrg.name },
               { label: "Org Code", value: newOrg.organizationCode },
+              { label: "Referral Code", value: newOrg.referralCode },
+              { label: "Join Link", valueHtml: `<a href="${clientBase}/register/user?ref=${newOrg.referralCode}" style="color:#7dd3fc;text-decoration:underline;word-break:break-all;">${clientBase}/register/user?ref=${newOrg.referralCode}</a>` },
               { label: "Admin", value: admin.name },
               { label: "Admin Email", value: adminEmail },
             ],
@@ -532,6 +534,8 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
             rows: [
               { label: "Org Name", value: result.newOrg.name },
               { label: "Org Code", value: result.newOrg.organizationCode },
+              { label: "Referral Code", value: result.newOrg.referralCode },
+              { label: "Join Link", valueHtml: `<a href="${getClientBaseUrl()}/register/user?ref=${result.newOrg.referralCode}" style="color:#7dd3fc;text-decoration:underline;word-break:break-all;">${getClientBaseUrl()}/register/user?ref=${result.newOrg.referralCode}</a>` },
               { label: "Admin Email", value: result.newUser.email },
             ],
           },

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -110,7 +110,7 @@ const normalFieldClassName = "border-slate-200 hover:border-slate-300 dark:borde
 const errorFieldClassName =
   "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
 
-export default function UserRegisterPage() {
+function RegisterFormContent() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [submitMessage, setSubmitMessage] = useState("");
@@ -142,6 +142,15 @@ export default function UserRegisterPage() {
   });
   const mobileCountryCode = useWatch({ control, name: "mobileCountryCode" });
   const mobile = useWatch({ control, name: "mobile" });
+
+  const searchParams = useSearchParams();
+  const refParam = searchParams?.get("ref");
+
+  useEffect(() => {
+    if (refParam) {
+      setValue("referralCode", refParam, { shouldValidate: true });
+    }
+  }, [refParam, setValue]);
 
   const onSubmit = async (values) => {
     try {
@@ -376,6 +385,14 @@ export default function UserRegisterPage() {
         </button>
       </form>
     </RegisterFlowShell>
+  );
+}
+
+export default function UserRegisterPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>}>
+      <RegisterFormContent />
+    </Suspense>
   );
 }
 

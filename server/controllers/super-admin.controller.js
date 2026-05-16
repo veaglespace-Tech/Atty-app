@@ -2203,6 +2203,8 @@ exports.createSuperAdminOrganization = asyncHandler(async (req, res) => {
           rows: [
             { label: "Org Name",  value: result.organization.name },
             { label: "Org Code",  value: result.organization.organizationCode },
+            { label: "Referral Code", value: result.organization.referralCode },
+            { label: "Join Link", valueHtml: `<a href="${clientBase}/register/user?ref=${result.organization.referralCode}" style="color:#7dd3fc;text-decoration:underline;word-break:break-all;">${clientBase}/register/user?ref=${result.organization.referralCode}</a>` },
             { label: "Admin",     value: admin.name },
             { label: "Login Email", value: adminEmail },
           ],

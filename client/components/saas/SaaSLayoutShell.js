@@ -27,6 +27,7 @@ import { logout } from "@/store/slices/authSlice";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
 import { useUserSignOutMutation } from "@/services/api/authApi";
+import { useGetOrgNotificationsQuery, useGetOrgRegistrationRequestsQuery } from "@/services/api/orgApi";
 import UserAvatar from "@/components/UserAvatar";
 import {
   formatRoleLabel,
@@ -111,6 +112,17 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       })),
     [visibleNavItems]
   );
+
+  const hasNotificationsNavItem = visibleNavItems.some((item) => item.label === "Notifications");
+  const hasRequestsNavItem = visibleNavItems.some((item) => item.label === "Requests");
+
+  const { data: notificationsData } = useGetOrgNotificationsQuery(1, { skip: !hasNotificationsNavItem });
+  const { data: requestsData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !hasRequestsNavItem });
+
+  const badgeCounts = useMemo(() => ({
+    Notifications: notificationsData?.meta?.total || 0,
+    Requests: requestsData?.items?.length || 0,
+  }), [notificationsData, requestsData]);
 
   const roleLabel = formatRoleLabel(currentRole);
   const roleBadgeTheme = getRoleBadgeTheme(currentRole);
@@ -212,9 +224,16 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                   active ? "brand-nav-item-active" : "brand-nav-item"
                 )}
               >
-                <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl">
-                  <Icon size={20} />
-                </span>
+                <div className="relative">
+                  <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl">
+                    <Icon size={20} />
+                  </span>
+                  {badgeCounts[item.label] > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex min-w-[20px] h-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-950">
+                      {badgeCounts[item.label] > 99 ? "99+" : badgeCounts[item.label]}
+                    </span>
+                  ) : null}
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold tracking-[0.01em]">{item.label}</p>
                 </div>
@@ -315,9 +334,16 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                       active ? "brand-nav-item-active" : "brand-nav-item"
                     )}
                   >
-                    <span className="brand-nav-icon flex h-10 w-10 items-center justify-center rounded-2xl">
-                      <Icon size={18} />
-                    </span>
+                    <div className="relative">
+                      <span className="brand-nav-icon flex h-10 w-10 items-center justify-center rounded-2xl">
+                        <Icon size={18} />
+                      </span>
+                      {badgeCounts[item.label] > 0 ? (
+                        <span className="absolute -right-1 -top-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-950">
+                          {badgeCounts[item.label] > 99 ? "99+" : badgeCounts[item.label]}
+                        </span>
+                      ) : null}
+                    </div>
                     <span className="text-sm font-semibold tracking-[0.01em]">{item.label}</span>
                   </Link>
                 );

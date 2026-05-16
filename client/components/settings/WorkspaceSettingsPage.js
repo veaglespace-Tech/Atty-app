@@ -291,6 +291,8 @@ export default function WorkspaceSettingsPage() {
   const referralCode = user?.organization?.referralCode || null;
   const workspaceCity = user?.city || user?.organization?.city || null;
   const [copiedReferral, setCopiedReferral] = useState(false);
+
+  const referralLinkUrl = typeof window !== "undefined" && referralCode ? `${window.location.origin}/register/user?ref=${referralCode}` : "";
   const canManageLocationSettings =
     !isSuperAdmin &&
     Boolean(organizationId) &&
@@ -706,24 +708,32 @@ export default function WorkspaceSettingsPage() {
               </div>
               {!isSuperAdmin && referralCode ? (
                 <div className="brand-panel-soft rounded-[1.25rem] p-4">
-                  <p className="brand-kicker">My Referral Code</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <p className="text-sm font-bold tracking-wider text-blue-600 dark:text-blue-400">
-                      {referralCode}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const joinLink = `${window.location.origin}/join/${referralCode}`;
-                        navigator.clipboard.writeText(joinLink);
-                        setCopiedReferral(true);
-                        setTimeout(() => setCopiedReferral(false), 2000);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
-                    >
-                      {copiedReferral ? <Check size={12} /> : <Copy size={12} />}
-                      {copiedReferral ? "Copied!" : "Copy Link"}
-                    </button>
+                  <p className="brand-kicker">My Referral Link</p>
+                  <div className="mt-2 flex flex-col gap-3">
+                    <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold tracking-wider text-blue-600 dark:text-blue-400" suppressHydrationWarning>
+                      {referralLinkUrl ? (
+                        <a href={referralLinkUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {referralLinkUrl}
+                        </a>
+                      ) : (
+                        referralCode
+                      )}
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const joinLink = `${window.location.origin}/register/user?ref=${referralCode}`;
+                          navigator.clipboard.writeText(joinLink);
+                          setCopiedReferral(true);
+                          setTimeout(() => setCopiedReferral(false), 2000);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+                      >
+                        {copiedReferral ? <Check size={12} /> : <Copy size={12} />}
+                        {copiedReferral ? "Copied!" : "Copy Link"}
+                      </button>
+                    </div>
                   </div>
                   <p className="mt-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                     Share this link so new members can request to join your organization.
