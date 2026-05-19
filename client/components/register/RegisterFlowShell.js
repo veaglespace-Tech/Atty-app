@@ -52,7 +52,7 @@ export default function RegisterFlowShell({
                 {title ? (
                   <h2
                     className={cn(
-                      "mb-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl",
+                      "mb-2 break-words text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl",
                       titleClassName
                     )}
                   >
@@ -61,7 +61,7 @@ export default function RegisterFlowShell({
                 ) : null}
 
                 {description ? (
-                  <p className={cn("font-medium text-slate-500 dark:text-slate-300", descriptionClassName)}>
+                  <p className={cn("break-words font-medium text-slate-500 dark:text-slate-300", descriptionClassName)}>
                     {description}
                   </p>
                 ) : null}

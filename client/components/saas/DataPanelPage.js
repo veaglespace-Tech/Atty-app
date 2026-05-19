@@ -1189,7 +1189,7 @@ export default function DataPanelPage({
           </div>
         </div>
 
-        <div className="relative mt-6 flex flex-wrap items-center gap-2">
+        <div className="relative mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {isDashboardEndpoint && currentRole === "TEAM_LEADER" ? (
             <TeamLeaderLiveLocationButton
               teamId={payload.meta?.teamId}
@@ -1213,7 +1213,7 @@ export default function DataPanelPage({
             type="button"
             onClick={fetchData}
             disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md"
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
             Refresh
@@ -1247,7 +1247,7 @@ export default function DataPanelPage({
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
               {downloadSection.mode === "menu" ? (
                 <DownloadMenuButton
                   label={downloadSection.buttonLabel || "Download"}
@@ -1262,7 +1262,7 @@ export default function DataPanelPage({
                     type="button"
                     onClick={downloadSection.onDownloadPdf}
                     disabled={downloadSection.downloadingPdf || downloadSection.downloadingExcel}
-                    className="brand-btn brand-btn-secondary brand-btn-md"
+                    className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
                   >
                     {downloadSection.downloadingPdf ? (
                       <Loader2 size={16} className="animate-spin" />
@@ -1276,7 +1276,7 @@ export default function DataPanelPage({
                     type="button"
                     onClick={downloadSection.onDownloadExcel}
                     disabled={downloadSection.downloadingPdf || downloadSection.downloadingExcel}
-                    className="brand-btn brand-btn-secondary brand-btn-md"
+                    className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
                   >
                     {downloadSection.downloadingExcel ? (
                       <Loader2 size={16} className="animate-spin" />
@@ -1504,7 +1504,7 @@ export default function DataPanelPage({
                         >
                           Record {absoluteIndex}
                         </div>
-                        <h4 className="mt-4 truncate text-xl font-black text-slate-900 dark:text-white">
+                        <h4 className="mt-4 break-words text-xl font-black text-slate-900 dark:text-white md:truncate">
                           {cardTitle}
                         </h4>
                       </div>

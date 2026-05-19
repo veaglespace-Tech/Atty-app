@@ -258,8 +258,8 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/88 px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() =>
@@ -276,7 +276,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <div className="brand-panel-soft hidden min-w-[320px] max-w-[420px] rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] lg:block">
                 <div className="flex items-center gap-3">
                   <UserAvatar
@@ -318,7 +318,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         </header>
 
         {mobileNavOpen ? (
-          <div className="border-b border-slate-200/80 bg-white/92 px-3 py-3 shadow-[0_12px_32px_rgba(30,112,209,0.10)] dark:border-slate-800 dark:bg-slate-950 sm:px-4 sm:py-4 lg:hidden">
+          <div className="max-h-[calc(100vh-4.5rem)] overflow-y-auto border-b border-slate-200/80 bg-white/92 px-3 py-3 shadow-[0_12px_32px_rgba(30,112,209,0.10)] dark:border-slate-800 dark:bg-slate-950 sm:px-4 sm:py-4 lg:hidden">
             <div className="space-y-2">
               {resolvedNavItems.map((item) => {
                 const active = pathname === item.href;

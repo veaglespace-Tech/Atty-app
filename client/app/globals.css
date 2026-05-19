@@ -103,6 +103,10 @@
     max-width: 100%;
   }
 
+  :where(a, button, input, select, textarea) {
+    max-width: 100%;
+  }
+
   table {
     width: 100%;
   }
@@ -806,6 +810,23 @@
       0 14px 30px rgb(var(--brand-ink) / 0.08);
   }
 
+  .dashboard-theme,
+  .dashboard-theme :where(main, section, article, aside, header, nav, form, div),
+  .page-shell,
+  .page-shell :where(main, section, article, aside, header, nav, form, div) {
+    min-width: 0;
+  }
+
+  .dashboard-theme :where(.light-glow-card, .light-glow-card-static, .brand-panel-soft, .brand-entity-card, .brand-spotlight),
+  .page-shell :where(.light-glow-card, .light-glow-card-static, .brand-panel-soft, .brand-entity-card, .brand-spotlight) {
+    max-width: 100%;
+  }
+
+  .dashboard-theme :where(.brand-kicker, .brand-chip, .dashboard-summary-card, .dashboard-detail-tile),
+  .page-shell :where(.brand-kicker, .brand-chip, .dashboard-summary-card, .dashboard-detail-tile) {
+    overflow-wrap: anywhere;
+  }
+
   .dashboard-mobile-record-card {
     border-radius: 1.45rem;
     border: 1px solid rgb(var(--brand-line) / 0.82);
@@ -930,8 +951,41 @@
       padding-inline: 0.9rem;
     }
 
+    .light-glow-card,
+    .light-glow-card-static,
+    .brand-panel-soft,
+    .brand-entity-card,
+    .brand-spotlight,
+    .surface-card,
+    .surface-card-strong,
+    .surface-panel {
+      border-radius: 1.35rem !important;
+    }
+
+    .dashboard-theme :where(.light-glow-card, .light-glow-card-static, .brand-panel-soft, .brand-entity-card, .brand-spotlight),
+    .page-shell :where(.light-glow-card, .light-glow-card-static, .brand-panel-soft, .brand-entity-card, .brand-spotlight) {
+      padding: 1rem !important;
+    }
+
+    .dashboard-theme :where(.brand-btn),
+    .page-shell :where(.brand-btn) {
+      min-height: 2.75rem;
+      padding-inline: 0.9rem;
+      line-height: 1.2;
+    }
+
+    .dashboard-theme :where(.brand-chip),
+    .page-shell :where(.brand-chip) {
+      max-width: 100%;
+      padding: 0.45rem 0.7rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      white-space: normal;
+    }
+
     .dashboard-summary-card {
       min-height: 7.1rem;
+      padding: 0.85rem;
     }
 
     .mobile-hide-copy,
@@ -974,6 +1028,11 @@
 
     .dashboard-dropdown-menu {
       width: 100%;
+    }
+
+    .dashboard-mobile-record-card,
+    .dashboard-detail-tile {
+      border-radius: 1rem;
     }
   }
 
@@ -1031,8 +1090,12 @@
     align-items: center;
     justify-content: center;
     gap: 0.625rem;
+    min-width: 0;
+    max-width: 100%;
     border-radius: 1rem;
     font-weight: 800;
+    text-align: center;
+    white-space: normal;
     transition:
       transform 0.3s ease,
       box-shadow 0.3s ease,
@@ -1040,6 +1103,10 @@
       border-color 0.3s ease,
       color 0.3s ease,
       opacity 0.3s ease;
+  }
+
+  .brand-btn > svg {
+    flex-shrink: 0;
   }
 
   .brand-btn:hover {

@@ -116,7 +116,7 @@ export default function Dashboard() {
               <div className="mt-6">
                 <Link
                   href="/dashboard/employees"
-                  className="brand-btn brand-btn-primary brand-btn-lg rounded-[1.25rem]"
+                  className="brand-btn brand-btn-primary brand-btn-lg w-full rounded-[1.25rem] sm:w-auto"
                 >
                   <PlusCircle size={18} />
                   Add Team Member
@@ -174,13 +174,13 @@ export default function Dashboard() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="brand-panel-soft group flex items-center justify-between rounded-[1.35rem] px-4 py-4 transition-all duration-300 hover:-translate-y-0.5"
+                  className="brand-panel-soft group flex items-center justify-between gap-3 rounded-[1.35rem] px-4 py-4 transition-all duration-300 hover:-translate-y-0.5"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="brand-icon-shell flex h-10 w-10 items-center justify-center rounded-2xl">
                       <item.icon size={18} />
                     </div>
-                    <span className="text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                    <span className="min-w-0 break-words text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
                       {item.label}
                     </span>
                   </div>

@@ -86,17 +86,17 @@ export default function ReportsPage() {
               </span>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
-                className="brand-btn brand-btn-primary brand-btn-lg rounded-[1.25rem]"
+                className="brand-btn brand-btn-primary brand-btn-lg w-full rounded-[1.25rem] sm:w-auto"
               >
                 <Download size={18} />
                 Bulk Export
               </button>
               <button
                 type="button"
-                className="brand-btn brand-btn-secondary brand-btn-lg mobile-hide-chip rounded-[1.25rem]"
+                className="brand-btn brand-btn-secondary brand-btn-lg mobile-hide-chip rounded-[1.25rem] sm:w-auto"
               >
                 <Filter size={18} />
                 Global Filters
@@ -157,7 +157,7 @@ export default function ReportsPage() {
                   <p className="brand-copy-sm mobile-hide-copy mt-2">{report.desc}</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex w-full items-center gap-3 md:w-auto">
                   <button
                     type="button"
                     className="brand-btn brand-btn-secondary h-12 w-12 rounded-2xl p-0"
@@ -166,7 +166,7 @@ export default function ReportsPage() {
                   </button>
                   <button
                     type="button"
-                    className="brand-btn brand-btn-primary brand-btn-md rounded-[1.2rem]"
+                    className="brand-btn brand-btn-primary brand-btn-md flex-1 rounded-[1.2rem] md:flex-none"
                   >
                     Generate
                     <ChevronRight size={18} />

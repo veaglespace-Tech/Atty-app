@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
@@ -85,12 +85,24 @@ export default function Sidebar() {
 
   useIdleRoutePrefetch(router, prefetchedRoutes);
 
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    document.documentElement.style.overflow = isOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <>
       <div className="fixed left-4 top-4 z-50 lg:hidden">
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Close dashboard navigation" : "Open dashboard navigation"}
           className="brand-btn brand-btn-secondary group relative overflow-hidden rounded-2xl p-3"
         >
           <div className="relative z-10">{isOpen ? <X size={20} /> : <Menu size={20} />}</div>

@@ -81,7 +81,7 @@ export default function Navbar() {
       <nav className="fixed top-0 left-0 right-0 z-[70] border-b border-slate-100 bg-white/80 shadow-[0_16px_48px_rgba(30,112,209,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-black/20">
         <div className="site-container">
           <div className="flex h-16 items-center justify-between gap-2.5 sm:h-20 sm:gap-3 min-[1180px]:gap-6">
-            <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2.5 lg:gap-3">
+            <Link href="/" className="group flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none lg:gap-3">
               <div key={pathname} className="brand-logo-reveal relative flex h-10 w-10 shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-11 md:w-11 2xl:h-12 2xl:w-12">
                 <div className="brand-logo-orbit absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(92,209,229,0.28),rgba(30,112,209,0.04)_70%)] blur-lg" />
                 <div className="brand-logo-spotlight relative h-full w-full">
@@ -94,7 +94,7 @@ export default function Navbar() {
                   />
                 </div>
               </div>
-              <span className="truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl 2xl:text-2xl">
+              <span className="min-w-0 truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl 2xl:text-2xl">
                 Veagle <span className="brand-wordmark">Attendee</span>
               </span>
             </Link>

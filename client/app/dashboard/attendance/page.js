@@ -105,17 +105,17 @@ export default function AttendancePage() {
               </span>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
-                className="brand-btn brand-btn-primary brand-btn-lg rounded-[1.25rem]"
+                className="brand-btn brand-btn-primary brand-btn-lg w-full rounded-[1.25rem] sm:w-auto"
               >
                 <Download size={18} />
                 Export Snapshot
               </button>
               <button
                 type="button"
-                className="brand-btn brand-btn-secondary brand-btn-lg mobile-hide-chip rounded-[1.25rem]"
+                className="brand-btn brand-btn-secondary brand-btn-lg mobile-hide-chip rounded-[1.25rem] sm:w-auto"
               >
                 Review Logs
                 <ArrowUpRight size={18} />
@@ -164,7 +164,7 @@ export default function AttendancePage() {
             </label>
             <button
               type="button"
-              className="brand-btn brand-btn-secondary brand-btn-md rounded-[1.2rem]"
+              className="brand-btn brand-btn-secondary brand-btn-md w-full rounded-[1.2rem] md:w-auto"
             >
               <Download size={16} />
               Export

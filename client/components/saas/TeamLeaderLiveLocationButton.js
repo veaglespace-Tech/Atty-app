@@ -52,7 +52,7 @@ export default function TeamLeaderLiveLocationButton({
       type="button"
       onClick={handleClick}
       disabled={disabled || loading}
-      className="brand-btn brand-btn-primary brand-btn-md"
+      className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
     >
       {loading ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
       Set Today&apos;s Live Location

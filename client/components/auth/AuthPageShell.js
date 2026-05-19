@@ -42,12 +42,12 @@ export default function AuthPageShell({
               <div className="mb-8 text-center sm:mb-10">
                 {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}
                 {title ? (
-                  <h2 className="mb-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl">
+                  <h2 className="mb-2 break-words text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl">
                     {title}
                   </h2>
                 ) : null}
                 {description ? (
-                  <p className="font-medium tracking-wide text-slate-500 dark:text-slate-300">
+                  <p className="break-words font-medium tracking-wide text-slate-500 dark:text-slate-300">
                     {description}
                   </p>
                 ) : null}

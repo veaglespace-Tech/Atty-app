@@ -114,7 +114,7 @@ export default function EmployeesPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(true)}
-                  className="brand-btn brand-btn-primary brand-btn-lg rounded-[1.25rem]"
+                  className="brand-btn brand-btn-primary brand-btn-lg w-full rounded-[1.25rem] sm:w-auto"
                 >
                   <UserPlus size={18} />
                   Onboard New Staff
@@ -197,7 +197,7 @@ export default function EmployeesPage() {
                     <StaffCardDetail label="Access" value={person.active ? "Enabled" : "Review Required"} />
                   </div>
 
-                  <div className="mt-4 flex gap-3">
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <button
                       type="button"
                       className="brand-btn brand-btn-secondary brand-btn-md flex-1 rounded-[1.15rem]"
@@ -336,7 +336,7 @@ export default function EmployeesPage() {
             onClick={() => setShowAddModal(false)}
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
           />
-          <div className="light-glow-card-static relative w-full max-w-lg rounded-[2rem] p-6 sm:p-8">
+          <div className="light-glow-card-static relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="brand-kicker">Quick Onboarding</p>
