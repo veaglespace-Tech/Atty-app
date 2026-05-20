@@ -28,3 +28,16 @@ export const formatDurationHmsFromMinutes = (minutes) => {
 
   return `${hours}h ${mins}m ${secs}s`;
 };
+
+export const formatDurationHmFromMinutes = (minutes) => {
+  const totalMinutes = Number(minutes || 0);
+  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+    return "0m";
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = Math.floor(totalMinutes % 60);
+
+  if (hours === 0) return `${mins}m`;
+  return `${hours}h ${mins}m`;
+};

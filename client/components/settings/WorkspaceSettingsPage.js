@@ -6,6 +6,7 @@ import {
   Bell,
   Building2,
   Check,
+  Clock,
   Copy,
   ImageUp,
   Globe,
@@ -339,6 +340,153 @@ function LocationSettings() {
         >
           {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           Update Geofencing Settings
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TimeSettings() {
+  const { data: settingsData, isLoading: loadingSettings } = useGetOrgAttendanceSettingsQuery();
+  const [updateSettings, { isLoading: isUpdating }] = useUpdateOrgAttendanceSettingsMutation();
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
+
+  const persistedSettings = settingsData?.settings;
+  const defaultStartTime = persistedSettings?.attendanceStartTime || "09:00";
+  const defaultEndTime = persistedSettings?.attendanceEndTime || "18:00";
+  const defaultGraceMinutes = Number(persistedSettings?.lateGraceMinutes) || 0;
+
+  const [draftStartTime, setDraftStartTime] = useState(null);
+  const [draftEndTime, setDraftEndTime] = useState(null);
+  const [draftGraceMinutes, setDraftGraceMinutes] = useState(null);
+
+  const startTime = draftStartTime ?? defaultStartTime;
+  const endTime = draftEndTime ?? defaultEndTime;
+  const graceMinutes = draftGraceMinutes ?? defaultGraceMinutes;
+
+  const hasChanges = draftStartTime !== null || draftEndTime !== null || draftGraceMinutes !== null;
+
+  const handleUndo = () => {
+    setDraftStartTime(null);
+    setDraftEndTime(null);
+    setDraftGraceMinutes(null);
+    setFeedback({ type: "", message: "" });
+  };
+
+  const handleSave = async () => {
+    setFeedback({ type: "", message: "" });
+    try {
+      await updateSettings({
+        attendanceStartTime: startTime,
+        attendanceEndTime: endTime,
+        lateGraceMinutes: graceMinutes,
+      }).unwrap();
+      setFeedback({ type: "success", message: "Time settings updated successfully." });
+      setDraftStartTime(null);
+      setDraftEndTime(null);
+      setDraftGraceMinutes(null);
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error?.data?.message || "Failed to update time settings.",
+      });
+    }
+  };
+
+  if (loadingSettings) {
+    return (
+      <div className="flex h-32 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="light-glow-card-static rounded-[1.75rem] p-6 text-left">
+      <div className="flex items-center gap-3">
+        <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
+          <Clock size={18} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">
+            Workspace Time Settings
+          </h3>
+          <p className="brand-copy-sm mt-1">Configure standard working hours and late grace period.</p>
+        </div>
+      </div>
+
+      {feedback.message ? (
+        <p
+          className={cn(
+            "mt-4 rounded-2xl border px-4 py-3 text-sm font-medium",
+            feedback.type === "error"
+              ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+          )}
+        >
+          {feedback.message}
+        </p>
+      ) : null}
+
+      <div className="mt-6 space-y-5">
+        <div className="rounded-[1.5rem] bg-slate-50/50 p-4 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/60">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-1">
+            <span className="brand-kicker">Shift Timing</span>
+            {hasChanges && (
+              <button
+                type="button"
+                onClick={handleUndo}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-all active:scale-95"
+              >
+                <RotateCcw size={12} />
+                Undo
+              </button>
+            )}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="brand-kicker mb-1.5 ml-1 block">Start Time (HH:MM)</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setDraftStartTime(e.target.value)}
+                className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+              />
+            </div>
+            <div>
+              <label className="brand-kicker mb-1.5 ml-1 block">End Time (HH:MM)</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setDraftEndTime(e.target.value)}
+                className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="brand-kicker mb-1.5 ml-1 block">Late Grace Period (Minutes)</label>
+          <input
+            type="number"
+            value={graceMinutes}
+            onChange={(e) => setDraftGraceMinutes(Number(e.target.value))}
+            className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+            min="0"
+            max="180"
+          />
+          <p className="mt-2 text-xs font-medium text-slate-500">Allowable delay before a late mark is issued (0 to 180 mins).</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isUpdating || !hasChanges}
+          className="brand-btn brand-btn-primary brand-btn-md w-full justify-center"
+        >
+          {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          Update Time Settings
         </button>
       </div>
     </div>
@@ -915,7 +1063,12 @@ export default function WorkspaceSettingsPage() {
             </div>
           </div>
 
-          {canManageLocationSettings && <LocationSettings />}
+          {canManageLocationSettings && (
+            <div className="space-y-4">
+              <LocationSettings />
+              <TimeSettings />
+            </div>
+          )}
         </div>
       </div>
     </section>

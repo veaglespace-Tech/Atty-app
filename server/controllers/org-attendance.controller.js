@@ -107,47 +107,80 @@ exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.LOCATION_SET);
 
-  const attendanceRadius = Number(req.body?.attendanceRadius || 25);
-  if (!Number.isFinite(attendanceRadius) || attendanceRadius < 5 || attendanceRadius > 1000) {
-    res.status(400);
-    throw new Error("attendanceRadius must be between 5 and 1000");
-  }
-
-  const attendanceStartTime = normalizeAttendanceTime(req.body?.attendanceStartTime, "09:00");
-  const attendanceEndTime = normalizeAttendanceTime(req.body?.attendanceEndTime, "18:00");
-  if (!attendanceStartTime || !attendanceEndTime) {
-    res.status(400);
-    throw new Error("attendanceStartTime and attendanceEndTime must be in HH:mm format");
-  }
-
-  if (toMinutesFromTime(attendanceEndTime) <= toMinutesFromTime(attendanceStartTime)) {
-    res.status(400);
-    throw new Error("attendanceEndTime must be later than attendanceStartTime");
-  }
-
-  const lateGraceMinutes = Number(req.body?.lateGraceMinutes ?? 0);
-  if (!Number.isFinite(lateGraceMinutes) || lateGraceMinutes < 0 || lateGraceMinutes > 180) {
-    res.status(400);
-    throw new Error("lateGraceMinutes must be between 0 and 180");
-  }
-
-  const coordinates = normalizeCoordinatesInput(req.body || {});
-  if (!coordinates) {
-    res.status(400);
-    throw new Error("Valid coordinates are required");
-  }
-
-  await prisma.organization.update({
+  const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    data: {
-      attendanceRadius: Math.round(attendanceRadius),
-      attendanceStartTime,
-      attendanceEndTime,
-      lateGraceMinutes: Math.floor(lateGraceMinutes),
-      longitude: coordinates[0],
-      latitude: coordinates[1],
+    select: {
+      attendanceRadius: true,
+      attendanceStartTime: true,
+      attendanceEndTime: true,
+      lateGraceMinutes: true,
+      longitude: true,
+      latitude: true,
     },
   });
+
+  if (!org) {
+    res.status(404);
+    throw new Error("Organization not found");
+  }
+
+  const updateData = {};
+
+  if (req.body?.attendanceRadius !== undefined) {
+    const attendanceRadius = Number(req.body.attendanceRadius);
+    if (!Number.isFinite(attendanceRadius) || attendanceRadius < 5 || attendanceRadius > 1000) {
+      res.status(400);
+      throw new Error("attendanceRadius must be between 5 and 1000");
+    }
+    updateData.attendanceRadius = Math.round(attendanceRadius);
+  }
+
+  const newStartTime = req.body?.attendanceStartTime !== undefined 
+    ? normalizeAttendanceTime(req.body.attendanceStartTime, null)
+    : org.attendanceStartTime;
+    
+  const newEndTime = req.body?.attendanceEndTime !== undefined 
+    ? normalizeAttendanceTime(req.body.attendanceEndTime, null)
+    : org.attendanceEndTime;
+
+  if (req.body?.attendanceStartTime !== undefined || req.body?.attendanceEndTime !== undefined) {
+    if (!newStartTime || !newEndTime) {
+      res.status(400);
+      throw new Error("attendanceStartTime and attendanceEndTime must be in HH:mm format");
+    }
+    if (toMinutesFromTime(newEndTime) <= toMinutesFromTime(newStartTime)) {
+      res.status(400);
+      throw new Error("attendanceEndTime must be later than attendanceStartTime");
+    }
+    if (req.body?.attendanceStartTime !== undefined) updateData.attendanceStartTime = newStartTime;
+    if (req.body?.attendanceEndTime !== undefined) updateData.attendanceEndTime = newEndTime;
+  }
+
+  if (req.body?.lateGraceMinutes !== undefined) {
+    const lateGraceMinutes = Number(req.body.lateGraceMinutes);
+    if (!Number.isFinite(lateGraceMinutes) || lateGraceMinutes < 0 || lateGraceMinutes > 180) {
+      res.status(400);
+      throw new Error("lateGraceMinutes must be between 0 and 180");
+    }
+    updateData.lateGraceMinutes = Math.floor(lateGraceMinutes);
+  }
+
+  if (req.body?.coordinates !== undefined) {
+    const coordinates = normalizeCoordinatesInput(req.body);
+    if (!coordinates) {
+      res.status(400);
+      throw new Error("Valid coordinates are required");
+    }
+    updateData.longitude = coordinates[0];
+    updateData.latitude = coordinates[1];
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.organization.update({
+      where: { id: orgId },
+      data: updateData,
+    });
+  }
 
   res.status(200).json({
     success: true,

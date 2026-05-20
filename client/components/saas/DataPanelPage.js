@@ -18,7 +18,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { formatDurationHmsFromMinutes, formatHoursValue } from "@/utils/time";
+import { formatDurationHmFromMinutes, formatDurationHmsFromMinutes, formatHoursValue } from "@/utils/time";
 
 const RECORD_THEMES = [
   {
@@ -79,7 +79,7 @@ const DISPLAY_LABEL_OVERRIDES = {
   enabledmodules: "Modules",
   halfday: "Half Day",
   halfdays: "Half Day",
-  lateminutes: "Late (h/m/s)",
+  lateminutes: "Late (h/m)",
   memberid: "Member ID",
   organizationcode: "Org Code",
   pendingpunchout: "Pending Out",
@@ -420,7 +420,7 @@ const formatValue = (value, keyHint = "") => {
     return formatHoursValue(value, { fromMinutes: Boolean(preset?.fromMinutes) });
   }
   if (preset?.type === "duration") {
-    return formatDurationHmsFromMinutes(value);
+    return formatDurationHmFromMinutes(value);
   }
   if (preset?.type === "date") return formatDateOnlyValue(value);
   if (preset?.type === "datetime") return formatDateTimeValue(value);
@@ -566,7 +566,7 @@ const formatCompactTableValue = (value, column = {}) => {
     return formatHoursValue(value, { fromMinutes: Boolean(column.fromMinutes) });
   }
   if (column.type === "duration") {
-    return formatDurationHmsFromMinutes(value);
+    return formatDurationHmFromMinutes(value);
   }
 
   if (column.type === "date") return formatDateOnlyValue(value);

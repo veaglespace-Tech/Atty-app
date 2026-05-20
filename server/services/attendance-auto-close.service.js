@@ -48,8 +48,9 @@ const runAttendanceAutoCloseJob = async () => {
       const startTime = organization?.attendanceStartTime || config.startTime;
       const endTime = organization?.attendanceEndTime || config.endTime;
       const endMinutes = parseStartTimeMinutes(endTime);
+      const AUTO_CLOSE_GRACE_MINUTES = 120;
 
-      if (nowMinutes < endMinutes) {
+      if (nowMinutes < endMinutes + AUTO_CLOSE_GRACE_MINUTES) {
         continue;
       }
 
