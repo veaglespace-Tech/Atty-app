@@ -26,7 +26,7 @@ jest.mock("../services/attendance-time.service", () => ({
     graceMinutes: 0,
   })),
   resolveTimeOfDayMinutes: jest.fn((value) => {
-    if (value instanceof Date) return 19 * 60 + 5;
+    if (value instanceof Date) return 19 * 60 + 125;
     return 10 * 60;
   }),
   parseStartTimeMinutes: jest.fn(() => 19 * 60),
