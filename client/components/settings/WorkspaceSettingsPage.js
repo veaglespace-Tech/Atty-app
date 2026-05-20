@@ -260,19 +260,35 @@ function LocationSettings() {
         <div className="rounded-[1.5rem] bg-slate-50/50 p-4 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/60">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-1">
             <span className="brand-kicker">Geofencing Coordinates</span>
-            <button
-              type="button"
-              onClick={handleFetchCurrentLocation}
-              disabled={isFetchingLocation}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
-            >
-              {isFetchingLocation ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <MapPin size={12} />
+            <div className="flex items-center gap-2">
+              {(draftLatitude !== null || draftLongitude !== null) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftLatitude(null);
+                    setDraftLongitude(null);
+                    setFeedback({ type: "", message: "" });
+                  }}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-all active:scale-95"
+                >
+                  <RotateCcw size={12} />
+                  Undo
+                </button>
               )}
-              {isFetchingLocation ? "Detecting..." : "Detect Location"}
-            </button>
+              <button
+                type="button"
+                onClick={handleFetchCurrentLocation}
+                disabled={isFetchingLocation}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+              >
+                {isFetchingLocation ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <MapPin size={12} />
+                )}
+                {isFetchingLocation ? "Detecting..." : "Detect Location"}
+              </button>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -296,6 +312,22 @@ function LocationSettings() {
                 className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
               />
             </div>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between px-1">
+            {latitude && longitude ? (
+              <a
+                href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all hover:underline"
+              >
+                <Globe size={13} />
+                Verify on Google Maps
+              </a>
+            ) : (
+              <span className="text-xs text-slate-400 dark:text-slate-500">No coordinates configured</span>
+            )}
           </div>
         </div>
 
