@@ -147,12 +147,7 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {apiError ? (
-              <div className="mb-6 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
-                {apiError?.data?.message || apiError?.message || "Login failed"}
-              </div>
-            ) : null}
+
 
             <form
               onSubmit={handleSubmit(onSubmit)}

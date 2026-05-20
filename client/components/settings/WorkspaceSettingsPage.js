@@ -32,6 +32,7 @@ import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
 import { useForgotPasswordMutation, useUpdateMeMutation } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
+import { addNotification } from "@/store/slices/notificationSlice";
 import {
   formatRoleLabel,
   getUserOrganizationId,
@@ -150,9 +151,9 @@ function PreferenceCard({ icon: Icon, title, value, children }) {
 }
 
 function LocationSettings() {
+  const dispatch = useDispatch();
   const { data: settingsData, isLoading: loadingSettings } = useGetOrgAttendanceSettingsQuery();
   const [updateSettings, { isLoading: isUpdating }] = useUpdateOrgAttendanceSettingsMutation();
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
   const persistedSettings = settingsData?.settings;
   const persistedLocation = Array.isArray(persistedSettings?.location)
@@ -174,38 +175,49 @@ function LocationSettings() {
 
   const handleFetchCurrentLocation = async () => {
     setIsFetchingLocation(true);
-    setFeedback({ type: "", message: "" });
     try {
       const [lng, lat] = await getCurrentCoordinates();
       setDraftLatitude(lat);
       setDraftLongitude(lng);
-      setFeedback({
-        type: "success",
-        message: "Current coordinates fetched successfully! Please click 'Update Geofencing Settings' to save.",
-      });
+      dispatch(
+        addNotification({
+          type: "success",
+          message: "Current coordinates fetched successfully! Please click 'Update Geofencing Settings' to save.",
+        })
+      );
     } catch (error) {
-      setFeedback({
-        type: "error",
-        message: error?.message || "Failed to fetch current location.",
-      });
+      dispatch(
+        addNotification({
+          type: "error",
+          message: error?.message || "Failed to fetch current location.",
+        })
+      );
     } finally {
       setIsFetchingLocation(false);
     }
   };
 
   const handleSave = async () => {
-    setFeedback({ type: "", message: "" });
     try {
       await updateSettings({
         attendanceRadius: radius,
         coordinates: [longitude, latitude],
       }).unwrap();
-      setFeedback({ type: "success", message: "Location settings updated successfully." });
+      dispatch(
+        addNotification({
+          type: "success",
+          message: "Location settings updated successfully.",
+        })
+      );
     } catch (error) {
-      setFeedback({
-        type: "error",
-        message: error?.data?.message || "Failed to update location settings.",
-      });
+      if (!error?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: error?.message || "Failed to update location settings.",
+          })
+        );
+      }
     }
   };
 
@@ -231,18 +243,7 @@ function LocationSettings() {
         </div>
       </div>
 
-      {feedback.message ? (
-        <p
-          className={cn(
-            "mt-4 rounded-2xl border px-4 py-3 text-sm font-medium",
-            feedback.type === "error"
-              ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-          )}
-        >
-          {feedback.message}
-        </p>
-      ) : null}
+
 
       <div className="mt-6 space-y-5">
         <div>
@@ -347,9 +348,9 @@ function LocationSettings() {
 }
 
 function TimeSettings() {
+  const dispatch = useDispatch();
   const { data: settingsData, isLoading: loadingSettings } = useGetOrgAttendanceSettingsQuery();
   const [updateSettings, { isLoading: isUpdating }] = useUpdateOrgAttendanceSettingsMutation();
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
   const persistedSettings = settingsData?.settings;
   const defaultStartTime = persistedSettings?.attendanceStartTime || "09:00";
@@ -370,26 +371,33 @@ function TimeSettings() {
     setDraftStartTime(null);
     setDraftEndTime(null);
     setDraftGraceMinutes(null);
-    setFeedback({ type: "", message: "" });
   };
 
   const handleSave = async () => {
-    setFeedback({ type: "", message: "" });
     try {
       await updateSettings({
         attendanceStartTime: startTime,
         attendanceEndTime: endTime,
         lateGraceMinutes: graceMinutes,
       }).unwrap();
-      setFeedback({ type: "success", message: "Time settings updated successfully." });
+      dispatch(
+        addNotification({
+          type: "success",
+          message: "Time settings updated successfully.",
+        })
+      );
       setDraftStartTime(null);
       setDraftEndTime(null);
       setDraftGraceMinutes(null);
     } catch (error) {
-      setFeedback({
-        type: "error",
-        message: error?.data?.message || "Failed to update time settings.",
-      });
+      if (!error?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: error?.message || "Failed to update time settings.",
+          })
+        );
+      }
     }
   };
 
@@ -415,18 +423,7 @@ function TimeSettings() {
         </div>
       </div>
 
-      {feedback.message ? (
-        <p
-          className={cn(
-            "mt-4 rounded-2xl border px-4 py-3 text-sm font-medium",
-            feedback.type === "error"
-              ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-          )}
-        >
-          {feedback.message}
-        </p>
-      ) : null}
+
 
       <div className="mt-6 space-y-5">
         <div className="rounded-[1.5rem] bg-slate-50/50 p-4 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/60">
@@ -498,8 +495,6 @@ export default function WorkspaceSettingsPage() {
   const { user } = useSelector((state) => state.auth);
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
   const [forgotPassword, { isLoading: sendingResetLink }] = useForgotPasswordMutation();
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
-  const [passwordResetFeedback, setPasswordResetFeedback] = useState({ type: "", message: "" });
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImageError, setProfileImageError] = useState("");
@@ -572,8 +567,6 @@ export default function WorkspaceSettingsPage() {
 
   const resetForm = () => {
     reset(getFormDefaults(user));
-    setFeedback({ type: "", message: "" });
-    setPasswordResetFeedback({ type: "", message: "" });
     setProfileImageDataUrl("");
     setRemoveProfileImage(false);
     setProfileImageError("");
@@ -608,14 +601,12 @@ export default function WorkspaceSettingsPage() {
       setProfileImageDataUrl(nextDataUrl);
       setRemoveProfileImage(false);
       setProfileImageError("");
-      setFeedback({ type: "", message: "" });
     } catch (error) {
       setProfileImageError(error.message || "Failed to prepare the selected image.");
     }
   };
 
   const toggleProfileImageRemoval = () => {
-    setFeedback({ type: "", message: "" });
     setProfileImageError("");
 
     if (removeProfileImage) {
@@ -634,7 +625,6 @@ export default function WorkspaceSettingsPage() {
   };
 
   const onSubmit = async (values) => {
-    setFeedback({ type: "", message: "" });
     setProfileImageError("");
 
     const nextMobile = values.mobile.trim();
@@ -662,37 +652,45 @@ export default function WorkspaceSettingsPage() {
       setProfileImageDataUrl("");
       setRemoveProfileImage(false);
       setProfileImageError("");
-      setFeedback({
-        type: "success",
-        message: result?.message || "Profile updated successfully.",
-      });
+      dispatch(
+        addNotification({
+          type: "success",
+          message: result?.message || "Profile updated successfully.",
+        })
+      );
     } catch (error) {
       setProfileImageError("");
-      setFeedback({
-        type: "error",
-        message: error?.data?.message || error?.message || "Failed to update profile.",
-      });
+      if (!error?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: error?.message || "Failed to update profile.",
+          })
+        );
+      }
     }
   };
 
   const sendResetPasswordLink = async () => {
-    setPasswordResetFeedback({ type: "", message: "" });
-
     const organizationId = getUserOrganizationId(user);
     const organizationCode = user?.organizationCode || user?.organization?.organizationCode || "";
     if (!user?.email || !effectiveRole) {
-      setPasswordResetFeedback({
-        type: "error",
-        message: "Unable to prepare password reset request for this account.",
-      });
+      dispatch(
+        addNotification({
+          type: "error",
+          message: "Unable to prepare password reset request for this account.",
+        })
+      );
       return;
     }
 
     if (!isSuperAdmin && !organizationId && !organizationCode) {
-      setPasswordResetFeedback({
-        type: "error",
-        message: "Organization details are missing for this account.",
-      });
+      dispatch(
+        addNotification({
+          type: "error",
+          message: "Organization details are missing for this account.",
+        })
+      );
       return;
     }
 
@@ -708,16 +706,22 @@ export default function WorkspaceSettingsPage() {
       }
 
       const result = await forgotPassword(payload).unwrap();
-      setPasswordResetFeedback({
-        type: "success",
-        message:
-          result?.message || "If this account exists, we have sent a reset link to the registered email address.",
-      });
+      dispatch(
+        addNotification({
+          type: "success",
+          message:
+            result?.message || "If this account exists, we have sent a reset link to the registered email address.",
+        })
+      );
     } catch (error) {
-      setPasswordResetFeedback({
-        type: "error",
-        message: error?.data?.message || error?.message || "Failed to send reset password email.",
-      });
+      if (!error?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: error?.message || "Failed to send reset password email.",
+          })
+        );
+      }
     }
   };
 
@@ -767,18 +771,7 @@ export default function WorkspaceSettingsPage() {
             </div>
           </div>
 
-          {feedback.message ? (
-            <p
-              className={cn(
-                "mt-4 rounded-2xl border px-4 py-3 text-sm font-medium",
-                feedback.type === "error"
-                  ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-              )}
-            >
-              {feedback.message}
-            </p>
-          ) : null}
+
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
             <div className="brand-panel-soft rounded-[1.5rem] p-4">
@@ -1023,18 +1016,7 @@ export default function WorkspaceSettingsPage() {
               <p className="text-xs font-medium text-slate-500 dark:text-slate-300">
                 A secure reset link will be sent to {previewEmail}. Use it to set a new password.
               </p>
-              {passwordResetFeedback.message ? (
-                <p
-                  className={cn(
-                    "rounded-2xl border px-4 py-3 text-sm font-medium",
-                    passwordResetFeedback.type === "error"
-                      ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-                  )}
-                >
-                  {passwordResetFeedback.message}
-                </p>
-              ) : null}
+
             </div>
           </PreferenceCard>
 

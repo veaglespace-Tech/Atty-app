@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Layers3, Loader2, RefreshCcw } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { addNotification } from "@/store/slices/notificationSlice";
 import { attendanceDashboardTableColumns } from "@/components/saas/attendanceDashboardColumns";
 import { DashboardRecordsSection } from "@/components/saas/DataPanelPage";
 import { useGetTeamLeaderDashboardQuery } from "@/services/api/teamLeaderApi";
@@ -19,8 +20,8 @@ const summaryMapFromArray = (summary) => {
 };
 
 export default function TeamLeaderDashboardPage() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [error, setError] = useState("");
   const { data, isLoading, isFetching, refetch } = useGetTeamLeaderDashboardQuery();
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
@@ -32,11 +33,17 @@ export default function TeamLeaderDashboardPage() {
   const firstName = String(user?.name || "").trim().split(/\s+/)[0] || "User";
 
   const fetchDashboard = async () => {
-    setError("");
     try {
       await refetch();
     } catch (err) {
-      setError(err?.data?.message || err?.error || "Failed to load dashboard");
+      if (!err?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: err?.data?.message || err?.error || "Failed to load dashboard",
+          })
+        );
+      }
     }
   };
 
@@ -62,9 +69,7 @@ export default function TeamLeaderDashboardPage() {
           </button>
         </div>
 
-        {error ? (
-          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">{error}</p>
-        ) : null}
+
 
         {meta?.message ? (
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">

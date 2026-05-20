@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle } from "lucide-react";
 import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
@@ -13,6 +13,7 @@ import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/das
 import { getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
+import { addNotification } from "@/store/slices/notificationSlice";
 
 const todayKey = getTodayDateKey;
 
@@ -60,10 +61,10 @@ const formatPunchLocation = (record) => {
 
 
 export default function MemberAttendancePage() {
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const [actionLoading, setActionLoading] = useState("");
   const [pendingPunchType, setPendingPunchType] = useState("");
-  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const {
     data: dashboardData,
@@ -112,10 +113,16 @@ export default function MemberAttendancePage() {
 
   const fetchAttendance = async () => {
     try {
-      setError("");
       await Promise.all([refetchDashboard(), refetchAttendance()]);
     } catch (err) {
-      setError(err?.data?.message || err?.error || "Unable to fetch attendance data");
+      if (!err?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: err?.data?.message || err?.error || err?.message || "Unable to fetch attendance data",
+          })
+        );
+      }
     }
   };
 
@@ -138,7 +145,6 @@ export default function MemberAttendancePage() {
   const submitPunch = async (type, selfieImageDataUrl) => {
     try {
       setActionLoading(type);
-      setError("");
       setMessage("");
 
       const locationPayload = await resolvePunchLocationPayload();
@@ -161,7 +167,14 @@ export default function MemberAttendancePage() {
       setPendingPunchType("");
       await fetchAttendance();
     } catch (err) {
-      setError(err?.data?.message || err?.error || "Attendance action failed");
+      if (!err?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: err?.data?.message || err?.error || err?.message || "Attendance action failed",
+          })
+        );
+      }
     } finally {
       setActionLoading("");
     }
@@ -229,9 +242,7 @@ export default function MemberAttendancePage() {
         </div>
 
 
-        {error ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-        ) : null}
+
 
         {message ? (
           <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>

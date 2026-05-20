@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin } from "lucide-react";
+import { addNotification } from "@/store/slices/notificationSlice";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
@@ -76,6 +77,7 @@ const detectLocation = () =>
   });
 
 export default function OrgAttendancePage() {
+  const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
   const currentRole = authUser?.currentRole;
   const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
@@ -89,7 +91,6 @@ export default function OrgAttendancePage() {
     longitude: "",
     latitude: "",
   });
-  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -155,8 +156,18 @@ export default function OrgAttendancePage() {
   }, [settingsData]);
 
   const refreshData = async () => {
-    setError("");
-    await Promise.all([refetchAttendance(), refetchSettings()]);
+    try {
+      await Promise.all([refetchAttendance(), refetchSettings()]);
+    } catch (err) {
+      if (!err?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: err?.data?.message || err?.error || "Failed to refresh attendance",
+          })
+        );
+      }
+    }
   };
 
   const onSettingsChange = (event) => {
@@ -200,7 +211,6 @@ export default function OrgAttendancePage() {
   const onUseCurrentLocation = async () => {
     try {
       setGeoLoading(true);
-      setError("");
       const { longitude, latitude } = await detectLocation();
       setSettings((prev) => ({
         ...prev,
@@ -209,7 +219,12 @@ export default function OrgAttendancePage() {
       }));
       setMessage("Organization location detected successfully.");
     } catch (geoError) {
-      setError(geoError.message || "Failed to detect location");
+      dispatch(
+        addNotification({
+          type: "error",
+          message: geoError.message || "Failed to detect location",
+        })
+      );
     } finally {
       setGeoLoading(false);
     }
@@ -278,7 +293,6 @@ export default function OrgAttendancePage() {
 
     try {
       setSettingsLoading(true);
-      setError("");
       setMessage("");
 
       if (settings.teamId) {
@@ -305,7 +319,14 @@ export default function OrgAttendancePage() {
 
       await Promise.all([refetchAttendance(), refetchSettings()]);
     } catch (mutationError) {
-      setError(getErrorMessage(mutationError, "Failed to save attendance settings"));
+      if (!mutationError?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: mutationError?.message || "Failed to save attendance settings",
+          })
+        );
+      }
     } finally {
       setSettingsLoading(false);
     }
@@ -340,9 +361,7 @@ export default function OrgAttendancePage() {
           </button>
         </div>
 
-        {error ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-        ) : null}
+
 
         {message ? (
           <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>

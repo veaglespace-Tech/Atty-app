@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { addNotification } from "@/store/slices/notificationSlice";
 import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin } from "lucide-react";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
@@ -91,9 +92,9 @@ const getCoordinates = async () => {
 };
 
 export default function TeamLeaderAttendancePage() {
+  const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
   const currentRole = authUser?.currentRole;
-  const [error, setError] = useState("");
   const [filters, setFilters] = useState({
     ...DEFAULT_FILTERS,
   });
@@ -430,10 +431,16 @@ export default function TeamLeaderAttendancePage() {
             type="button"
             onClick={async () => {
               try {
-                setError("");
                 await refetch();
               } catch (err) {
-                setError(err?.data?.message || err?.error || "Failed to load team attendance");
+                if (!err?.status) {
+                  dispatch(
+                    addNotification({
+                      type: "error",
+                      message: err?.data?.message || err?.error || "Failed to load team attendance",
+                    })
+                  );
+                }
               }
             }}
             disabled={loading}
@@ -443,10 +450,6 @@ export default function TeamLeaderAttendancePage() {
             Refresh
           </button>
         </div>
-
-        {error ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-        ) : null}
       </div>
 
       {showSelfAttendance ? (
