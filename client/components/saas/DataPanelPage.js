@@ -18,7 +18,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { formatHoursValue } from "@/utils/time";
+import { formatDurationHmsFromMinutes, formatHoursValue } from "@/utils/time";
 
 const RECORD_THEMES = [
   {
@@ -79,7 +79,7 @@ const DISPLAY_LABEL_OVERRIDES = {
   enabledmodules: "Modules",
   halfday: "Half Day",
   halfdays: "Half Day",
-  lateminutes: "Late Min",
+  lateminutes: "Late (h/m/s)",
   memberid: "Member ID",
   organizationcode: "Org Code",
   pendingpunchout: "Pending Out",
@@ -123,7 +123,7 @@ const COLUMN_PRESETS = {
   createdat: { type: "datetime", minWidth: 168, wrap: "nowrap" },
   date: { type: "date", minWidth: 132, wrap: "nowrap" },
   gateway: { minWidth: 120, wrap: "nowrap" },
-  lateminutes: { minWidth: 88, wrap: "nowrap" },
+  lateminutes: { type: "duration", fromMinutes: true, minWidth: 124, wrap: "nowrap" },
   member: { minWidth: 152 },
   memberid: { align: "center", minWidth: 92, wrap: "nowrap" },
   orderid: { minWidth: 156, wrap: "nowrap" },
@@ -419,6 +419,9 @@ const formatValue = (value, keyHint = "") => {
   if (preset?.type === "hours") {
     return formatHoursValue(value, { fromMinutes: Boolean(preset?.fromMinutes) });
   }
+  if (preset?.type === "duration") {
+    return formatDurationHmsFromMinutes(value);
+  }
   if (preset?.type === "date") return formatDateOnlyValue(value);
   if (preset?.type === "datetime") return formatDateTimeValue(value);
   if (preset?.type === "coordinates") return formatCoordinatesValue(value);
@@ -561,6 +564,9 @@ const formatCompactTableValue = (value, column = {}) => {
 
   if (column.type === "hours") {
     return formatHoursValue(value, { fromMinutes: Boolean(column.fromMinutes) });
+  }
+  if (column.type === "duration") {
+    return formatDurationHmsFromMinutes(value);
   }
 
   if (column.type === "date") return formatDateOnlyValue(value);

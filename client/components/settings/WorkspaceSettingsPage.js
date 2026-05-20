@@ -53,6 +53,7 @@ import {
   normalizeTextInput,
   toDigitsOnly,
 } from "@/utils/formValidation";
+import { getCurrentCoordinates } from "@/utils/location";
 
 const settingsSchema = z.object({
   name: z
@@ -168,6 +169,29 @@ function LocationSettings() {
   const latitude = draftLatitude ?? defaultLatitude;
   const longitude = draftLongitude ?? defaultLongitude;
 
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+
+  const handleFetchCurrentLocation = async () => {
+    setIsFetchingLocation(true);
+    setFeedback({ type: "", message: "" });
+    try {
+      const [lng, lat] = await getCurrentCoordinates();
+      setDraftLatitude(lat);
+      setDraftLongitude(lng);
+      setFeedback({
+        type: "success",
+        message: "Current coordinates fetched successfully! Please click 'Update Geofencing Settings' to save.",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error?.message || "Failed to fetch current location.",
+      });
+    } finally {
+      setIsFetchingLocation(false);
+    }
+  };
+
   const handleSave = async () => {
     setFeedback({ type: "", message: "" });
     try {
@@ -233,26 +257,45 @@ function LocationSettings() {
           <p className="mt-2 text-xs font-medium text-slate-500">Range: 5 to 1000 meters.</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="brand-kicker mb-1.5 ml-1 block">Latitude</label>
-            <input
-              type="number"
-              step="any"
-              value={latitude}
-              onChange={(e) => setDraftLatitude(Number(e.target.value))}
-              className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
-            />
+        <div className="rounded-[1.5rem] bg-slate-50/50 p-4 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/60">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-1">
+            <span className="brand-kicker">Geofencing Coordinates</span>
+            <button
+              type="button"
+              onClick={handleFetchCurrentLocation}
+              disabled={isFetchingLocation}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+            >
+              {isFetchingLocation ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <MapPin size={12} />
+              )}
+              {isFetchingLocation ? "Detecting..." : "Detect Location"}
+            </button>
           </div>
-          <div>
-            <label className="brand-kicker mb-1.5 ml-1 block">Longitude</label>
-            <input
-              type="number"
-              step="any"
-              value={longitude}
-              onChange={(e) => setDraftLongitude(Number(e.target.value))}
-              className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
-            />
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="brand-kicker mb-1.5 ml-1 block">Latitude</label>
+              <input
+                type="number"
+                step="any"
+                value={latitude}
+                onChange={(e) => setDraftLatitude(Number(e.target.value))}
+                className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+              />
+            </div>
+            <div>
+              <label className="brand-kicker mb-1.5 ml-1 block">Longitude</label>
+              <input
+                type="number"
+                step="any"
+                value={longitude}
+                onChange={(e) => setDraftLongitude(Number(e.target.value))}
+                className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
+              />
+            </div>
           </div>
         </div>
 

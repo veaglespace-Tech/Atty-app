@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
 import {
   useArchiveFailedRegistrationMutation,
   useCreatePaymentOrderMutation,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import RegisterStepBack from "@/components/register/RegisterStepBack";
+import { addNotification } from "@/store/slices/notificationSlice";
 import { isHiddenPaidMonthlyPlan } from "@/utils/plans";
 import {
   clearAllRegistrationDrafts, clearRegistrationDraft,
@@ -55,6 +57,7 @@ const getApiErrorMessage = (error, fallback = "Unable to process request.") => {
 
 export default function PaymentPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState("");
@@ -99,7 +102,7 @@ export default function PaymentPage() {
       }
       window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [router]);
+  }, []);
 
   const handleArchive = async (reason = "Registration abandoned") => {
     try {
@@ -125,7 +128,7 @@ export default function PaymentPage() {
     }
     setSelectedPlan(normalized);
     setRegistrationDraft(REGISTRATION_DRAFT_KEYS.selectedPlan, normalized);
-  }, [router]);
+  }, [router, successState]);
 
   const finalizeSuccess = ({ organization, admin, plan, emailSent, freeTrial = false }) => {
     setSuccessState({ organizationName: organization?.name || "Your organization", adminEmail: admin?.email || "", planName: plan?.name || selectedPlan?.name || "Selected Plan", emailSent: emailSent !== false, freeTrial });
@@ -135,10 +138,30 @@ export default function PaymentPage() {
   };
 
   const handlePayment = async () => {
-    if (!selectedPlan) { alert("Please select a plan first."); router.push("/register/organisation/plan"); return; }
+    if (!selectedPlan) {
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Action failed",
+          message: "Please select a plan first.",
+        })
+      );
+      router.push("/register/organisation/plan");
+      return;
+    }
     const organization = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation);
     const admin = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin);
-    if (!organization || !admin) { alert("Registration details are missing. Please start again."); router.push("/register/organisation"); return; }
+    if (!organization || !admin) {
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Action failed",
+          message: "Registration details are missing. Please start again.",
+        })
+      );
+      router.push("/register/organisation");
+      return;
+    }
 
     setLoading(true);
     setPaymentError("");

@@ -37,6 +37,12 @@ const SESSION_TOKEN_TTL_SECONDS = SESSION_TOKEN_TTL_HOURS * 60 * 60;
 const SESSION_TOKEN_TTL_MS = SESSION_TOKEN_TTL_SECONDS * 1000;
 const GENERIC_PASSWORD_RESET_MESSAGE =
   "If this account exists, we have sent a reset link to the registered email address.";
+const PENDING_APPROVAL_LOGIN_MESSAGE =
+  "Your registration request is pending admin approval. You can sign in after your organization admin approves it.";
+const REJECTED_APPROVAL_LOGIN_MESSAGE =
+  "Your registration request was rejected by the organization admin. Please contact your administrator.";
+const EXPIRED_APPROVAL_LOGIN_MESSAGE =
+  "Your registration request has expired. Please submit a new join request or contact your administrator.";
 
 const getSessionCookieOptions = () => ({
   httpOnly: true,
@@ -760,6 +766,65 @@ const resolveAuthMembership = ({
   };
 };
 
+const getRegistrationRequestLoginBlockMessage = (registrationRequest) => {
+  if (!registrationRequest) return null;
+
+  const status = String(registrationRequest.status || "").trim().toUpperCase();
+  const expiresAt = registrationRequest.expiresAt
+    ? new Date(registrationRequest.expiresAt)
+    : null;
+  const isExpired = expiresAt instanceof Date && !Number.isNaN(expiresAt.getTime()) && expiresAt < new Date();
+
+  if (status === "PENDING") {
+    return isExpired ? EXPIRED_APPROVAL_LOGIN_MESSAGE : PENDING_APPROVAL_LOGIN_MESSAGE;
+  }
+
+  if (status === "REJECTED") {
+    return REJECTED_APPROVAL_LOGIN_MESSAGE;
+  }
+
+  return null;
+};
+
+const findRegistrationRequestLoginBlockMessage = async ({ email, password }) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !password) return null;
+
+  const registrationRequests = await prisma.registrationRequest.findMany({
+    where: {
+      email: normalizedEmail,
+      status: {
+        in: ["PENDING", "REJECTED"],
+      },
+    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    take: 5,
+  });
+
+  if (!Array.isArray(registrationRequests) || registrationRequests.length === 0) {
+    return null;
+  }
+
+  const inputPassword = String(password || "");
+  const trimmedPassword = inputPassword.trim();
+  const candidatePasswords = [inputPassword];
+  if (trimmedPassword && trimmedPassword !== inputPassword) {
+    candidatePasswords.push(trimmedPassword);
+  }
+
+  for (const request of registrationRequests) {
+    if (!request?.password) continue;
+    const passwordChecks = await Promise.all(
+      candidatePasswords.map((candidate) => bcrypt.compare(candidate, request.password))
+    );
+    if (passwordChecks.some(Boolean)) {
+      return getRegistrationRequestLoginBlockMessage(request);
+    }
+  }
+
+  return null;
+};
+
 const serializeSessionUser = (user, organization = null) => {
   if (!user) return null;
 
@@ -1110,6 +1175,16 @@ exports.login = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
+    const registrationRequestMessage = await findRegistrationRequestLoginBlockMessage({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (registrationRequestMessage) {
+      res.status(403);
+      throw new Error(registrationRequestMessage);
+    }
+
     res.status(401);
     throw new Error("Invalid credentials");
   }
@@ -1142,12 +1217,12 @@ exports.login = asyncHandler(async (req, res) => {
 
   if (user.status === "PENDING") {
     res.status(403);
-    throw new Error("Your registration is pending admin approval.");
+    throw new Error(PENDING_APPROVAL_LOGIN_MESSAGE);
   }
 
   if (user.status === "REJECTED") {
     res.status(403);
-    throw new Error("Your registration request was rejected. Contact your administrator.");
+    throw new Error(REJECTED_APPROVAL_LOGIN_MESSAGE);
   }
 
   let authContext;

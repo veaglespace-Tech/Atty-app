@@ -5,6 +5,7 @@ import { StoreProvider } from "@/components/StoreProvider";
 import AttyWidget from "@/components/AttyWidget";
 import SessionSync from "@/components/SessionSync";
 import RegistrationDraftLifecycle from "@/components/register/RegistrationDraftLifecycle";
+import GlobalErrorToast from "@/components/GlobalErrorToast";
 
 export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
@@ -59,6 +60,7 @@ export default function RootLayout({ children }) {
             <RegistrationDraftLifecycle />
             <Navbar />
             <main className="w-full overflow-x-clip">{children}</main>
+            <GlobalErrorToast />
             <AttyWidget />
           </StoreProvider>
         </ThemeProvider>

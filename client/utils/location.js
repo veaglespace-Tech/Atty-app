@@ -18,7 +18,10 @@ const isSecureLocationContext = () => {
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname === "::1" ||
-    hostname === "[::1]"
+    hostname === "[::1]" ||
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)
   );
 };
 
@@ -38,6 +41,16 @@ const mapGeolocationError = (error) => {
       return GEOLOCATION_UNAVAILABLE_MESSAGE;
   }
 };
+
+const requestCurrentPosition = (options) =>
+  new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+
+const coordinatesFromPosition = (position) => [
+  Number(position.coords.longitude.toFixed(6)),
+  Number(position.coords.latitude.toFixed(6)),
+];
 
 export const getGeolocationPermissionState = async () => {
   if (typeof window === "undefined" || !navigator.geolocation) {
@@ -76,20 +89,27 @@ export const getCurrentCoordinates = async () => {
     throw new Error(GEOLOCATION_DENIED_MESSAGE);
   }
 
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve([
-          Number(position.coords.longitude.toFixed(6)),
-          Number(position.coords.latitude.toFixed(6)),
-        ]);
-      },
-      (error) => reject(new Error(mapGeolocationError(error))),
-      {
+  try {
+    const position = await requestCurrentPosition({
         enableHighAccuracy: true,
         timeout: 15000,
         maximumAge: 0,
-      }
-    );
-  });
+    });
+    return coordinatesFromPosition(position);
+  } catch (error) {
+    if (error?.code === 1) {
+      throw new Error(mapGeolocationError(error));
+    }
+
+    try {
+      const fallbackPosition = await requestCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 25000,
+        maximumAge: 60000,
+      });
+      return coordinatesFromPosition(fallbackPosition);
+    } catch (fallbackError) {
+      throw new Error(mapGeolocationError(fallbackError || error));
+    }
+  }
 };

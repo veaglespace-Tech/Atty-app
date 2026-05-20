@@ -105,6 +105,9 @@ model ArchiveOrg {
   latitude           Float?
   longitude          Float?
   attendanceRadius   Int?
+  attendanceStartTime String?
+  attendanceEndTime   String?
+  lateGraceMinutes    Int?
 
   subscriptionStatus SubscriptionStatus?
   subscriptionExpiry DateTime?
@@ -268,6 +271,9 @@ model Organization {
   latitude           Float
   longitude          Float
   attendanceRadius   Int                @default(25)
+  attendanceStartTime String            @default("09:00")
+  attendanceEndTime   String            @default("18:00")
+  lateGraceMinutes    Int               @default(0)
 
   subscriptionStatus SubscriptionStatus @default(TRIAL)
   subscriptionExpiry DateTime?

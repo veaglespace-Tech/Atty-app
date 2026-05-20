@@ -23,6 +23,10 @@ if (sentryEnabled) {
 }
 
 const prisma = require("./lib/prisma");
+const {
+  startAttendanceAutoCloseScheduler,
+  stopAttendanceAutoCloseScheduler,
+} = require("./services/attendance-auto-close.service");
 const app = express();
 
 const envAllowedOrigins = [process.env.CLIENT_URL, process.env.CLIENT_ORIGINS]
@@ -153,11 +157,18 @@ if (sentryEnabled) {
 
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const isSchemaMismatchError =
+    err?.code === "P2022" ||
+    String(err?.message || "").toLowerCase().includes("does not exist in the current database");
+  const clientMessage = isSchemaMismatchError
+    ? "Server settings are updating. Please retry in a moment."
+    : err.message || "Server Error";
+
   if (sentryEnabled) {
     Sentry.captureException(err);
   }
   res.status(statusCode).json({
-    message: err.message || "Server Error",
+    message: clientMessage,
     error: process.env.NODE_ENV === "production" ? null : err.stack,
   });
 });
@@ -176,7 +187,13 @@ const startServer = async () => {
   console.log("mysql/prisma connected");
 
   await listen(PORT);
+  startAttendanceAutoCloseScheduler();
   console.log(`server running on port ${PORT}`);
+};
+
+const shutdownServer = async () => {
+  stopAttendanceAutoCloseScheduler();
+  await prisma.$disconnect().catch(() => {});
 };
 
 if (process.env.NODE_ENV !== "test" && require.main === module) {
@@ -189,7 +206,7 @@ if (process.env.NODE_ENV !== "test" && require.main === module) {
       console.error("Failed to start server:", error.message);
     }
 
-    await prisma.$disconnect().catch(() => {});
+    await shutdownServer();
     process.exit(1);
   });
 }
@@ -197,4 +214,5 @@ if (process.env.NODE_ENV !== "test" && require.main === module) {
 module.exports = {
   app,
   startServer,
+  shutdownServer,
 };

@@ -14,6 +14,7 @@ const {
 const { attendanceRecordSelect } = require("../services/prisma-selects.service");
 const { mapAttendanceRecord } = require("../services/attendance-query.service");
 const {
+  calculateAttendanceStatus,
   calculateLateMinutes,
   resolveAttendanceLateMinutes,
 } = require("../services/attendance-time.service");
@@ -222,6 +223,8 @@ exports.punchIn = asyncHandler(async (req, res) => {
       longitude: true,
       latitude: true,
       attendanceRadius: true,
+      attendanceStartTime: true,
+      lateGraceMinutes: true,
     },
   });
 
@@ -278,7 +281,11 @@ exports.punchIn = asyncHandler(async (req, res) => {
   }
 
   const punchInAt = new Date();
-  const lateMinutes = calculateLateMinutes({ punchInAt });
+  const lateMinutes = calculateLateMinutes({
+    punchInAt,
+    startTime: org?.attendanceStartTime || null,
+    graceMinutes: org?.lateGraceMinutes ?? null,
+  });
   let uploadedSelfie = null;
 
   try {
@@ -374,6 +381,8 @@ exports.punchOut = asyncHandler(async (req, res) => {
       longitude: true,
       latitude: true,
       attendanceRadius: true,
+      attendanceStartTime: true,
+      attendanceEndTime: true,
     },
   });
 
@@ -409,6 +418,11 @@ exports.punchOut = asyncHandler(async (req, res) => {
   const punchOutAt = new Date();
   const diff = attendance.punchInAt ? Math.abs(punchOutAt - attendance.punchInAt) : 0;
   const totalMinutesWorked = Math.floor(diff / 1000 / 60);
+  const status = calculateAttendanceStatus({
+    totalMinutesWorked,
+    startTime: org?.attendanceStartTime || null,
+    endTime: org?.attendanceEndTime || null,
+  });
   let uploadedSelfie = null;
 
   try {
@@ -433,6 +447,7 @@ exports.punchOut = asyncHandler(async (req, res) => {
         punchOutDistanceMeters: distance,
         isPunchOutValid: isValid,
         totalMinutesWorked,
+        status,
       },
     });
 

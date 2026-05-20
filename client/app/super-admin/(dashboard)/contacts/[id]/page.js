@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
 import { 
   ArrowLeft, 
   Mail, 
@@ -20,12 +21,14 @@ import {
 } from "@/services/api/superAdminApi";
 import Link from "next/link";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import { addNotification } from "@/store/slices/notificationSlice";
 
 const panelClassName = "light-glow-card-static rounded-[1.9rem] p-8";
 
 export default function ContactDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const dispatch = useDispatch();
 
   const { data, isLoading, error } = useGetSuperAdminContactByIdQuery(id);
   const [patchContact, { isLoading: isUpdating }] = usePatchSuperAdminContactMutation();
@@ -37,7 +40,13 @@ export default function ContactDetailPage() {
     try {
       await patchContact({ id, status: newStatus }).unwrap();
     } catch (err) {
-      alert("Failed to update status");
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Action failed",
+          message: err?.data?.message || "Failed to update status",
+        })
+      );
     }
   };
 
@@ -47,7 +56,13 @@ export default function ContactDetailPage() {
         await deleteContact(id).unwrap();
         router.push("/super-admin/contacts");
       } catch (err) {
-        alert("Failed to delete message");
+        dispatch(
+          addNotification({
+            type: "error",
+            title: "Action failed",
+            message: err?.data?.message || "Failed to delete message",
+          })
+        );
       }
     }
   };

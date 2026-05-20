@@ -17,6 +17,9 @@ const ddlStatements = [
       \`latitude\` DOUBLE NULL,
       \`longitude\` DOUBLE NULL,
       \`attendanceRadius\` INTEGER NULL,
+      \`attendanceStartTime\` VARCHAR(191) NULL,
+      \`attendanceEndTime\` VARCHAR(191) NULL,
+      \`lateGraceMinutes\` INTEGER NULL,
       \`subscriptionStatus\` VARCHAR(191) NULL,
       \`subscriptionExpiry\` DATETIME(3) NULL,
       \`planId\` INTEGER NULL,
@@ -110,7 +113,7 @@ const copyArchiveOrgSql = `
   INSERT INTO \`archive_org\` (
     \`id\`, \`orgId\`, \`name\`, \`organizationCode\`, \`email\`, \`phone\`,
     \`phoneCountryCode\`, \`address\`, \`city\`, \`state\`, \`country\`,
-    \`latitude\`, \`longitude\`, \`attendanceRadius\`, \`subscriptionStatus\`,
+    \`latitude\`, \`longitude\`, \`attendanceRadius\`, \`attendanceStartTime\`, \`attendanceEndTime\`, \`lateGraceMinutes\`, \`subscriptionStatus\`,
     \`subscriptionExpiry\`, \`planId\`, \`subscriptionId\`, \`isActive\`,
     \`isBlocked\`, \`deletedAt\`, \`archivedById\`, \`archiveReason\`,
     \`archivedAt\`, \`originalCreatedAt\`, \`originalUpdatedAt\`, \`metadata\`
@@ -119,7 +122,7 @@ const copyArchiveOrgSql = `
     source.\`id\`, source.\`orgId\`, source.\`name\`, source.\`organizationCode\`,
     source.\`email\`, source.\`phone\`, source.\`phoneCountryCode\`,
     source.\`address\`, source.\`city\`, source.\`state\`, source.\`country\`,
-    source.\`latitude\`, source.\`longitude\`, source.\`attendanceRadius\`,
+    source.\`latitude\`, source.\`longitude\`, source.\`attendanceRadius\`, source.\`attendanceStartTime\`, source.\`attendanceEndTime\`, source.\`lateGraceMinutes\`,
     source.\`subscriptionStatus\`, source.\`subscriptionExpiry\`, source.\`planId\`,
     source.\`subscriptionId\`, source.\`isActive\`, source.\`isBlocked\`,
     source.\`deletedAt\`, source.\`archivedById\`, source.\`archiveReason\`,
@@ -232,6 +235,12 @@ const syncMissingSchema = async () => {
   await ensureColumn("Attendance", "punchInSelfiePublicId", "VARCHAR(191) NULL");
   await ensureColumn("Attendance", "punchOutSelfieUrl", "VARCHAR(191) NULL");
   await ensureColumn("Attendance", "punchOutSelfiePublicId", "VARCHAR(191) NULL");
+  await ensureColumn("Organization", "attendanceStartTime", "VARCHAR(191) NOT NULL DEFAULT '09:00'");
+  await ensureColumn("Organization", "attendanceEndTime", "VARCHAR(191) NOT NULL DEFAULT '18:00'");
+  await ensureColumn("Organization", "lateGraceMinutes", "INTEGER NOT NULL DEFAULT 0");
+  await ensureColumn("archive_org", "attendanceStartTime", "VARCHAR(191) NULL");
+  await ensureColumn("archive_org", "attendanceEndTime", "VARCHAR(191) NULL");
+  await ensureColumn("archive_org", "lateGraceMinutes", "INTEGER NULL");
 
   if (await tableExists("archieve_org")) {
     await prisma.$executeRawUnsafe(copyArchiveOrgSql);

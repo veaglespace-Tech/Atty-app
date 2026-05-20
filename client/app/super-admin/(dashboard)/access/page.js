@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDispatch } from "react-redux";
 import {
   Shield,
   ShieldCheck,
@@ -34,6 +35,7 @@ import {
   getDefaultPermissionsForRole,
   ROLES,
 } from "@/utils/roles";
+import { addNotification } from "@/store/slices/notificationSlice";
 
 const panelClassName = "light-glow-card-static rounded-[1.9rem] p-6";
 const ACCESS_ROLES = [
@@ -45,6 +47,7 @@ const ACCESS_ROLES = [
 ];
 
 export default function SuperAdminAccessPage() {
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("PERMISSIONS"); // "PERMISSIONS" or "ROLES"
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPermission, setEditingPermission] = useState(null);
@@ -130,7 +133,13 @@ export default function SuperAdminAccessPage() {
       setShowAddModal(false);
       setNewPermission({ key: "", name: "", description: "" });
     } catch (err) {
-      alert(err.data?.message || "Failed to create permission");
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Action failed",
+          message: err?.data?.message || "Failed to create permission",
+        })
+      );
     }
   };
 
@@ -144,7 +153,13 @@ export default function SuperAdminAccessPage() {
       }).unwrap();
       setEditingPermission(null);
     } catch (err) {
-      alert(err.data?.message || "Failed to update permission");
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Action failed",
+          message: err?.data?.message || "Failed to update permission",
+        })
+      );
     }
   };
 
@@ -153,7 +168,13 @@ export default function SuperAdminAccessPage() {
       try {
         await deletePermission(id).unwrap();
       } catch (err) {
-        alert(err.data?.message || "Failed to delete permission");
+        dispatch(
+          addNotification({
+            type: "error",
+            title: "Action failed",
+            message: err?.data?.message || "Failed to delete permission",
+          })
+        );
       }
     }
   };
@@ -172,7 +193,13 @@ export default function SuperAdminAccessPage() {
     try {
       await updateRolePermissions({ role, permissionIds: nextIds }).unwrap();
     } catch (err) {
-      alert(err.data?.message || "Failed to update role mapping");
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Action failed",
+          message: err?.data?.message || "Failed to update role mapping",
+        })
+      );
     }
   };
 

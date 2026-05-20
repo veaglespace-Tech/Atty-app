@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
+import { useDispatch } from "react-redux";
 import { 
   Search, 
   Loader2, 
@@ -20,10 +21,12 @@ import SectionEyebrow from "@/components/SectionEyebrow";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
+import { addNotification } from "@/store/slices/notificationSlice";
 
 const panelClassName = "light-glow-card-static rounded-[1.9rem] p-6";
 
 export default function SuperAdminContactsPage() {
+  const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
@@ -40,7 +43,13 @@ export default function SuperAdminContactsPage() {
       try {
         await deleteAllContacts().unwrap();
       } catch (err) {
-        alert("Failed to delete all messages");
+        dispatch(
+          addNotification({
+            type: "error",
+            title: "Action failed",
+            message: err?.data?.message || "Failed to delete all messages",
+          })
+        );
       }
     }
   };

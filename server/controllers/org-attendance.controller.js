@@ -19,6 +19,25 @@ const {
 } = require("../services/prisma-selects.service");
 const { PERMISSION_KEYS } = require("../constants/permissions");
 
+const ATTENDANCE_TIME_PATTERN = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+
+const normalizeAttendanceTime = (value, fallback) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  const match = raw.match(ATTENDANCE_TIME_PATTERN);
+  if (!match) return null;
+  const hours = String(Number(match[1])).padStart(2, "0");
+  const minutes = String(Number(match[2])).padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+
+const toMinutesFromTime = (hhmm) => {
+  const [hours, minutes] = String(hhmm || "00:00")
+    .split(":")
+    .map((part) => Number(part));
+  return hours * 60 + minutes;
+};
+
 exports.getOrgAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
@@ -61,6 +80,9 @@ exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
       attendanceRadius: true,
       longitude: true,
       latitude: true,
+      attendanceStartTime: true,
+      attendanceEndTime: true,
+      lateGraceMinutes: true,
       updatedAt: true,
     },
   });
@@ -69,6 +91,9 @@ exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
     success: true,
     settings: {
       attendanceRadius: org?.attendanceRadius || 25,
+      attendanceStartTime: org?.attendanceStartTime || "09:00",
+      attendanceEndTime: org?.attendanceEndTime || "18:00",
+      lateGraceMinutes: Number(org?.lateGraceMinutes || 0),
       location:
         Number.isFinite(org?.longitude) && Number.isFinite(org?.latitude)
           ? [org.longitude, org.latitude]
@@ -88,6 +113,24 @@ exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
     throw new Error("attendanceRadius must be between 5 and 1000");
   }
 
+  const attendanceStartTime = normalizeAttendanceTime(req.body?.attendanceStartTime, "09:00");
+  const attendanceEndTime = normalizeAttendanceTime(req.body?.attendanceEndTime, "18:00");
+  if (!attendanceStartTime || !attendanceEndTime) {
+    res.status(400);
+    throw new Error("attendanceStartTime and attendanceEndTime must be in HH:mm format");
+  }
+
+  if (toMinutesFromTime(attendanceEndTime) <= toMinutesFromTime(attendanceStartTime)) {
+    res.status(400);
+    throw new Error("attendanceEndTime must be later than attendanceStartTime");
+  }
+
+  const lateGraceMinutes = Number(req.body?.lateGraceMinutes ?? 0);
+  if (!Number.isFinite(lateGraceMinutes) || lateGraceMinutes < 0 || lateGraceMinutes > 180) {
+    res.status(400);
+    throw new Error("lateGraceMinutes must be between 0 and 180");
+  }
+
   const coordinates = normalizeCoordinatesInput(req.body || {});
   if (!coordinates) {
     res.status(400);
@@ -98,6 +141,9 @@ exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
     where: { id: orgId },
     data: {
       attendanceRadius: Math.round(attendanceRadius),
+      attendanceStartTime,
+      attendanceEndTime,
+      lateGraceMinutes: Math.floor(lateGraceMinutes),
       longitude: coordinates[0],
       latitude: coordinates[1],
     },

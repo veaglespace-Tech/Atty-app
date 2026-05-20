@@ -1,5 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
+import notificationReducer from "./slices/notificationSlice";
+import { apiErrorNotificationMiddleware } from "./middleware/apiErrorNotificationMiddleware";
 import { authApi } from "@/services/api/authApi";
 import { planApi } from "@/services/api/planApi";
 import { orgApi } from "@/services/api/orgApi";
@@ -16,6 +18,7 @@ import { attyApi } from "@/services/api/attyApi";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    notifications: notificationReducer,
     [authApi.reducerPath]: authApi.reducer,
     [planApi.reducerPath]: planApi.reducer,
     [orgApi.reducerPath]: orgApi.reducer,
@@ -34,6 +37,7 @@ export const store = configureStore({
       immutableCheck: false,
       serializableCheck: false,
     }).concat(
+      apiErrorNotificationMiddleware,
       authApi.middleware,
       planApi.middleware,
       orgApi.middleware,

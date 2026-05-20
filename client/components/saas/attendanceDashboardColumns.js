@@ -9,7 +9,7 @@ export const attendanceDashboardTableColumns = [
   { key: "punchInAt", label: "Punch In" },
   { key: "punchOutAt", label: "Punch Out" },
   { key: "workedHours", label: "Worked Hrs" },
-  { key: "lateMinutes", label: "Late (min)" },
+  { key: "lateMinutes", label: "Late (h/m/s)" },
   { key: "punchInValid", label: "Check-In Valid" },
   { key: "punchOutValid", label: "Check-Out Valid" },
   { key: "punchInDistanceMeters", label: "Check-In Distance" },
