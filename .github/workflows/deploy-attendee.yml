@@ -45,6 +45,7 @@ jobs:
             set +a
 
             npm ci
+            npx prisma generate
             npx prisma migrate deploy
 
             # restart backend
