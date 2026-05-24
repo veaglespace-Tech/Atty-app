@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin } from "lucide-react";
+import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X } from "lucide-react";
 import { addNotification } from "@/store/slices/notificationSlice";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
@@ -16,7 +16,7 @@ import {
 import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { PERMISSIONS, normalizeRole, ROLES, hasPermission } from "@/utils/roles";
+import { PERMISSIONS, normalizeRole, ROLES, hasPermission, formatRoleLabel } from "@/utils/roles";
 import { formatHoursValue } from "@/utils/time";
 import {
   getErrorMessage,
@@ -106,6 +106,7 @@ export default function OrgAttendancePage() {
   const currentRole = authUser?.currentRole;
   const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
   const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [settings, setSettings] = useState({
@@ -555,21 +556,17 @@ export default function OrgAttendancePage() {
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <AttendanceDetail label="Role" value={record.role} />
-                    <AttendanceDetail label="Punch In" value={formatDate(record.punchInAt)} />
-                    <AttendanceDetail label="Punch Out" value={formatDate(record.punchOutAt)} />
-                    <AttendanceDetail label="Location" value={formatLocation(record)} />
-                    <AttendanceDetail label="Worked Hrs" value={formatWorkedHours(record)} />
-                    <AttendanceDetail label="Geo Valid" value={formatGeoStatus(record)} />
-                    <AttendanceDetail
-                      label="Selfie Proof"
-                      value={
-                        <AttendanceSelfieProofLinks
-                          punchInSelfieUrl={record.punchInSelfieUrl}
-                          punchOutSelfieUrl={record.punchOutSelfieUrl}
-                        />
-                      }
-                    />
+                    <AttendanceDetail label="Role" value={formatRoleLabel(record.role)} />
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRecord(record)}
+                      className="brand-btn brand-btn-soft brand-btn-sm w-full"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </article>
               ))}
@@ -583,31 +580,32 @@ export default function OrgAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
+                    <th className="px-3 py-2 text-right text-[11px] font-black uppercase tracking-wider text-slate-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedRecords.map((record) => (
-                    <tr key={record.id}>
-                      <td className="px-3 py-2 text-slate-700">{record.date}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.member}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.role}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatDate(record.punchInAt)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatDate(record.punchOutAt)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatLocation(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatGeoStatus(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">
-                        <AttendanceSelfieProofLinks
-                          punchInSelfieUrl={record.punchInSelfieUrl}
-                          punchOutSelfieUrl={record.punchOutSelfieUrl}
-                        />
+                    <tr
+                      key={record.id}
+                      onClick={() => setSelectedRecord(record)}
+                      className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
+                    >
+                      <td className="px-3 py-3 text-slate-700 font-medium">{record.date}</td>
+                      <td className="px-3 py-3 text-slate-900 font-bold">{record.member}</td>
+                      <td className="px-3 py-3 text-slate-700 font-semibold">{formatRoleLabel(record.role)}</td>
+                      <td className="px-3 py-3 text-slate-700">
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                          {record.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRecord(record)}
+                          className="brand-btn brand-btn-soft brand-btn-sm"
+                        >
+                          View Details
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -630,6 +628,121 @@ export default function OrgAttendancePage() {
           </div>
         )}
       </div>
+
+      {selectedRecord && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedRecord(null)} />
+          <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 p-6 sm:p-7">
+            <div className="brand-metric-glow" />
+            <div className="relative flex flex-col max-h-[85vh]">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-800/60">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Attendance Details</h3>
+                  <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Detailed punch log and verification</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRecord(null)}
+                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="overflow-y-auto py-4 space-y-4 pr-1">
+                {/* Member Profile info */}
+                <div className="flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-200 font-bold text-base">
+                    {selectedRecord.member?.[0] || "M"}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">{selectedRecord.member}</h4>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{formatRoleLabel(selectedRecord.role)}</p>
+                  </div>
+                </div>
+
+                {/* Date & Status */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="dashboard-detail-tile">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Date</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{selectedRecord.date}</p>
+                  </div>
+                  <div className="dashboard-detail-tile">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
+                    <p className="mt-1 text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">{selectedRecord.status}</p>
+                  </div>
+                </div>
+
+                {/* Geo Validation & Worked Hours */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="dashboard-detail-tile">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Geo Valid</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatGeoStatus(selectedRecord)}</p>
+                  </div>
+                  <div className="dashboard-detail-tile">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatWorkedHours(selectedRecord)}</p>
+                  </div>
+                </div>
+
+                {/* Punch In Info */}
+                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                  <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In Details</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Time</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{formatDate(selectedRecord.punchInAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{formatLocation(selectedRecord)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Punch Out Info */}
+                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                  <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out Details</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Time</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{formatDate(selectedRecord.punchOutAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        {selectedRecord.punchOutLocationMeta?.displayText || selectedRecord.punchOutLocationMeta?.areaLabel || formatCoordinates(selectedRecord.punchOutCoordinates)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selfie Proof */}
+                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                  <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Verification</h5>
+                  <AttendanceSelfieProofLinks
+                    punchInSelfieUrl={selectedRecord.punchInSelfieUrl}
+                    punchOutSelfieUrl={selectedRecord.punchOutSelfieUrl}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end border-t border-slate-200/60 pt-4 dark:border-slate-800/60">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRecord(null)}
+                  className="brand-btn brand-btn-secondary brand-btn-md px-6"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
