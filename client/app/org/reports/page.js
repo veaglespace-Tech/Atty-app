@@ -17,6 +17,7 @@ import {
   useDownloadOrgReportExcelMutation,
   useDownloadOrgReportPdfMutation,
   useGetOrgReportsQuery,
+  useGetOrgAttendanceQuery,
 } from "@/services/api/orgApi"
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits"
 import { getDateKey, getTodayDateKey } from "@/utils/date"
@@ -102,7 +103,20 @@ export default function OrgReportsPage() {
   const [downloadError, setDownloadError] = useState("")
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const downloadMenuRef = useRef(null)
-  const [selectedItem, setSelectedItem] = useState(null)
+  const [selectedMemberReport, setSelectedMemberReport] = useState(null)
+
+  const { data: attendanceData, isLoading: attendanceLoading } = useGetOrgAttendanceQuery(2000, {
+    skip: !selectedMemberReport,
+  })
+
+  const filteredMemberLogs = useMemo(() => {
+    if (!selectedMemberReport || !attendanceData?.items) return []
+    return attendanceData.items.filter(
+      (log) =>
+        log.userId === selectedMemberReport.id ||
+        log.member === selectedMemberReport.member
+    )
+  }, [selectedMemberReport, attendanceData])
 
   const rangeRules = useMemo(
     () => ({
@@ -238,6 +252,136 @@ export default function OrgReportsPage() {
     }))
     setDownloadError("")
     setShowDownloadMenu(false)
+  }
+
+  const formatWorkedHours = (record) => {
+    const val = record?.workedHours ?? record?.workedMinutes
+    if (val == null) return "-"
+    return typeof val === "number" ? val.toFixed(2) : String(val)
+  }
+
+  const formatGeoStatus = (record) => {
+    if (record?.punchInValid === false) return "No"
+    if (record?.punchOutValid === false) return "No"
+    if (record?.punchInValid === true || record?.punchOutValid === true) return "Yes"
+    return "-"
+  }
+
+  if (selectedMemberReport) {
+    return (
+      <section className="space-y-6">
+        {/* Back button and profile header */}
+        <div className="light-glow-card-static rounded-[1.9rem] p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_32%)]" />
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={() => setSelectedMemberReport(null)}
+                className="brand-btn brand-btn-secondary brand-btn-md self-start sm:self-auto"
+              >
+                ← Back to Reports
+              </button>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+                  {selectedMemberReport.member}
+                </h2>
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mt-1">
+                  {selectedMemberReport.role || "Member"} • Attendance History
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Selected Range</p>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1">
+                {formatRange(meta)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Metrics Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard label="Present Days" value={selectedMemberReport.presentDays} />
+          <MetricCard label="Half Days" value={selectedMemberReport.halfDays} />
+          <MetricCard label="Absent Days" value={selectedMemberReport.absentDays} />
+          <MetricCard label="Total Worked Hrs" value={selectedMemberReport.workedHours} />
+        </div>
+
+        {/* Daily Attendance Logs */}
+        <div className="light-glow-card-static rounded-[1.9rem] p-6">
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 mb-4">
+            Daily Attendance Logs ({filteredMemberLogs.length} entries)
+          </h3>
+
+          {attendanceLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-slate-500">
+              <Loader2 className="animate-spin" size={18} />
+              <span className="text-sm font-medium">Loading history logs...</span>
+            </div>
+          ) : filteredMemberLogs.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+              <FileText size={20} className="mx-auto mb-2 text-slate-400" />
+              No daily attendance records found for this period.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-3 md:hidden">
+                {filteredMemberLogs.map((log) => (
+                  <article key={log.id} className="dashboard-mobile-record-card">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-bold text-slate-900">{log.date}</h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          In: {log.punchInAt ? new Date(log.punchInAt).toLocaleTimeString() : "-"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Out: {log.punchOutAt ? new Date(log.punchOutAt).toLocaleTimeString() : "-"}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                        {log.status}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto rounded-[1.4rem] border border-slate-200 bg-white/90 md:block">
+                <table className="min-w-[640px] w-full divide-y divide-slate-200 text-sm">
+                  <thead>
+                    <tr>
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Date</th>
+                      <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Status</th>
+                      <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Punch In</th>
+                      <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Punch Out</th>
+                      <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Worked Hrs</th>
+                      <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Geo Valid</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredMemberLogs.map((log) => (
+                      <tr key={log.id}>
+                        <td className="px-3 py-3 font-semibold text-slate-900">{log.date}</td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center text-slate-700">{log.punchInAt ? new Date(log.punchInAt).toLocaleTimeString() : "-"}</td>
+                        <td className="px-3 py-3 text-center text-slate-700">{log.punchOutAt ? new Date(log.punchOutAt).toLocaleTimeString() : "-"}</td>
+                        <td className="px-3 py-3 text-center text-slate-700">{formatWorkedHours(log)} hrs</td>
+                        <td className="px-3 py-3 text-center text-slate-700">{formatGeoStatus(log)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -475,7 +619,7 @@ export default function OrgReportsPage() {
                   <div className="mt-4">
                     <button
                       type="button"
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => setSelectedMemberReport(item)}
                       className="brand-btn brand-btn-soft brand-btn-sm w-full"
                     >
                       View Details
@@ -513,7 +657,7 @@ export default function OrgReportsPage() {
                   {paginatedItems.map((item) => (
                     <tr
                       key={item.id}
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => setSelectedMemberReport(item)}
                       className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                     >
                       <td className="px-3 py-2 font-semibold text-slate-900">{item.member}</td>
@@ -541,7 +685,6 @@ export default function OrgReportsPage() {
             />
           </div>
         )}
-      <ReportDetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} />
     </div>
   </section>
 )
@@ -561,118 +704,6 @@ function ReportMetric({ label, value }) {
     <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-800">{value}</p>
-    </div>
-  )
-}
-
-function ReportDetailsModal({ item, onClose }) {
-  if (!item) return null
-
-  const formatRoleLabel = (role) => {
-    if (!role) return "-"
-    return String(role)
-      .toLowerCase()
-      .replace(/_/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-  }
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 p-6 sm:p-7 text-left">
-        <div className="brand-metric-glow" />
-        <div className="relative flex flex-col max-h-[85vh]">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-800/60">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                Member Report Details
-              </h3>
-              <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Summary of attendance metrics
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="overflow-y-auto py-4 space-y-4 pr-1">
-            {/* Profile */}
-            <div className="flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 font-bold text-base">
-                {item.member?.[0] || "M"}
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">{item.member}</h4>
-                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{formatRoleLabel(item.role)}</p>
-              </div>
-            </div>
-
-            {/* Basic Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Present Days</p>
-                <p className="mt-1 text-sm font-black text-emerald-600 dark:text-emerald-400">{item.presentDays ?? 0} days</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Absent Days</p>
-                <p className="mt-1 text-sm font-black text-rose-600 dark:text-rose-400">{item.absentDays ?? 0} days</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Half Days</p>
-                <p className="mt-1 text-sm font-black text-amber-600 dark:text-amber-400">{item.halfDays ?? 0} days</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
-                <p className="mt-1 text-sm font-black text-indigo-600 dark:text-indigo-400">{formatHoursValue(item.workedHours)} hrs</p>
-              </div>
-            </div>
-
-            {/* Other Fields Dynamic Rendering */}
-            {Object.entries(item).filter(([key]) => !["id", "_id", "member", "role", "presentDays", "absentDays", "halfDays", "workedHours"].includes(key)).length > 0 && (
-              <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
-                <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Additional Information</h5>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {Object.entries(item)
-                    .filter(([key]) => !["id", "_id", "member", "role", "presentDays", "absentDays", "halfDays", "workedHours"].includes(key))
-                    .map(([key, value]) => (
-                      <div key={key} className="rounded-[1.2rem] border border-slate-100 bg-white/70 p-3 dark:border-slate-850 dark:bg-slate-900/60">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                          {key.replace(/([A-Z])/g, " $1").trim().toUpperCase()}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100 break-words">
-                          {value === true ? "Yes" : value === false ? "No" : String(value ?? "-")}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-end border-t border-slate-200/60 pt-4 dark:border-slate-800/60">
-            <button
-              type="button"
-              onClick={onClose}
-              className="brand-btn brand-btn-secondary brand-btn-md px-6"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
