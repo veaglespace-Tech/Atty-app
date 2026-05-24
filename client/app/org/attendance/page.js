@@ -573,14 +573,17 @@ export default function OrgAttendancePage() {
             </div>
 
             <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <table className="min-w-full divide-y divide-slate-200 text-sm" style={{ minWidth: "860px" }}>
                 <thead>
                   <tr>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
-                    <th className="px-3 py-2 text-right text-[11px] font-black uppercase tracking-wider text-slate-400">Actions</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -590,23 +593,22 @@ export default function OrgAttendancePage() {
                       onClick={() => setSelectedRecord(record)}
                       className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                     >
-                      <td className="px-3 py-3 text-slate-700 font-medium">{record.date}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-medium">{record.date}</td>
                       <td className="px-3 py-3 text-slate-900 font-bold">{record.member}</td>
-                      <td className="px-3 py-3 text-slate-700 font-semibold">{formatRoleLabel(record.role)}</td>
-                      <td className="px-3 py-3 text-slate-700">
+                      <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-semibold">{formatRoleLabel(record.role)}</td>
+                      <td className="px-3 py-3 text-center">
                         <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                           {record.status}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRecord(record)}
-                          className="brand-btn brand-btn-soft brand-btn-sm"
-                        >
-                          View Details
-                        </button>
+                      <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">
+                        {record.punchInAt ? new Date(record.punchInAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}
                       </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">
+                        {record.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">{formatWorkedHours(record)}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">{formatGeoStatus(record)}</td>
                     </tr>
                   ))}
                 </tbody>
