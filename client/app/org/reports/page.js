@@ -9,6 +9,7 @@ import {
   Loader2,
   LockKeyhole,
   RefreshCcw,
+  X,
 } from "lucide-react"
 import PaginationControls from "@/components/dashboard/PaginationControls"
 import useLocalPagination from "@/hooks/useLocalPagination"
@@ -101,6 +102,7 @@ export default function OrgReportsPage() {
   const [downloadError, setDownloadError] = useState("")
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const downloadMenuRef = useRef(null)
+  const [selectedItem, setSelectedItem] = useState(null)
 
   const rangeRules = useMemo(
     () => ({
@@ -469,6 +471,16 @@ export default function OrgReportsPage() {
                     <ReportMetric label="Absent" value={item.absentDays} />
                     <ReportMetric label="Worked Hrs" value={formatHoursValue(item.workedHours)} />
                   </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedItem(item)}
+                      className="brand-btn brand-btn-soft brand-btn-sm w-full"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
@@ -499,7 +511,11 @@ export default function OrgReportsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedItems.map((item) => (
-                    <tr key={item.id}>
+                    <tr
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
+                    >
                       <td className="px-3 py-2 font-semibold text-slate-900">{item.member}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.role}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
@@ -525,9 +541,10 @@ export default function OrgReportsPage() {
             />
           </div>
         )}
-      </div>
-    </section>
-  )
+      <ReportDetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+    </div>
+  </section>
+)
 }
 
 function MetricCard({ label, value }) {
@@ -544,6 +561,118 @@ function ReportMetric({ label, value }) {
     <div className="dashboard-detail-tile">
       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-800">{value}</p>
+    </div>
+  )
+}
+
+function ReportDetailsModal({ item, onClose }) {
+  if (!item) return null
+
+  const formatRoleLabel = (role) => {
+    if (!role) return "-"
+    return String(role)
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 p-6 sm:p-7 text-left">
+        <div className="brand-metric-glow" />
+        <div className="relative flex flex-col max-h-[85vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-800/60">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                Member Report Details
+              </h3>
+              <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Summary of attendance metrics
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="overflow-y-auto py-4 space-y-4 pr-1">
+            {/* Profile */}
+            <div className="flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 font-bold text-base">
+                {item.member?.[0] || "M"}
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">{item.member}</h4>
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{formatRoleLabel(item.role)}</p>
+              </div>
+            </div>
+
+            {/* Basic Stats Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Present Days</p>
+                <p className="mt-1 text-sm font-black text-emerald-600 dark:text-emerald-400">{item.presentDays ?? 0} days</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Absent Days</p>
+                <p className="mt-1 text-sm font-black text-rose-600 dark:text-rose-400">{item.absentDays ?? 0} days</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Half Days</p>
+                <p className="mt-1 text-sm font-black text-amber-600 dark:text-amber-400">{item.halfDays ?? 0} days</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
+                <p className="mt-1 text-sm font-black text-indigo-600 dark:text-indigo-400">{formatHoursValue(item.workedHours)} hrs</p>
+              </div>
+            </div>
+
+            {/* Other Fields Dynamic Rendering */}
+            {Object.entries(item).filter(([key]) => !["id", "_id", "member", "role", "presentDays", "absentDays", "halfDays", "workedHours"].includes(key)).length > 0 && (
+              <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Additional Information</h5>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {Object.entries(item)
+                    .filter(([key]) => !["id", "_id", "member", "role", "presentDays", "absentDays", "halfDays", "workedHours"].includes(key))
+                    .map(([key, value]) => (
+                      <div key={key} className="rounded-[1.2rem] border border-slate-100 bg-white/70 p-3 dark:border-slate-850 dark:bg-slate-900/60">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                          {key.replace(/([A-Z])/g, " $1").trim().toUpperCase()}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100 break-words">
+                          {value === true ? "Yes" : value === false ? "No" : String(value ?? "-")}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end border-t border-slate-200/60 pt-4 dark:border-slate-800/60">
+            <button
+              type="button"
+              onClick={onClose}
+              className="brand-btn brand-btn-secondary brand-btn-md px-6"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
