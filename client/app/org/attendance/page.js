@@ -35,6 +35,30 @@ const formatWorkedHours = (record) =>
     fromMinutes: record?.workedHours == null,
   });
 
+const formatCoordinates = (coordinates) => {
+  if (!Array.isArray(coordinates) || coordinates.length !== 2) {
+    return "-";
+  }
+  const longitude = Number(coordinates[0]);
+  const latitude = Number(coordinates[1]);
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+    return "-";
+  }
+  return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+};
+
+const formatLocation = (record) => {
+  if (record?.punchInLocationMeta?.displayText) return record.punchInLocationMeta.displayText;
+  if (record?.punchInLocationMeta?.areaLabel) return record.punchInLocationMeta.areaLabel;
+  return formatCoordinates(record?.punchInCoordinates);
+};
+
+const formatGeoStatus = (record) => {
+  if (record?.punchInValid === false) return "No";
+  if (record?.punchOutValid === false) return "No";
+  return "Yes";
+};
+
 const summaryMapFromArray = (summary) => {
   const map = new Map();
   for (const item of summary || []) {
@@ -534,7 +558,9 @@ export default function OrgAttendancePage() {
                     <AttendanceDetail label="Role" value={record.role} />
                     <AttendanceDetail label="Punch In" value={formatDate(record.punchInAt)} />
                     <AttendanceDetail label="Punch Out" value={formatDate(record.punchOutAt)} />
+                    <AttendanceDetail label="Location" value={formatLocation(record)} />
                     <AttendanceDetail label="Worked Hrs" value={formatWorkedHours(record)} />
+                    <AttendanceDetail label="Geo Valid" value={formatGeoStatus(record)} />
                     <AttendanceDetail
                       label="Selfie Proof"
                       value={
@@ -559,7 +585,9 @@ export default function OrgAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
@@ -572,7 +600,9 @@ export default function OrgAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{record.status}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDate(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDate(record.punchOutAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatGeoStatus(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks
                           punchInSelfieUrl={record.punchInSelfieUrl}
