@@ -9,11 +9,13 @@ import {
   FileText,
   Loader2,
   RefreshCcw,
+  X,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
+import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetUtilityEndpointQuery } from "@/services/api/utilityApi";
@@ -794,6 +796,227 @@ const getHeroDescription = ({ description, isDashboardEndpoint, isSuperAdminEndp
 
 const TeamLeaderLiveLocationButton = dynamic(() => import("@/components/saas/TeamLeaderLiveLocationButton"));
 
+function RecordDetailsModal({ record, onClose }) {
+  if (!record) return null;
+
+  const isAttendance =
+    "status" in record &&
+    ("punchInAt" in record ||
+      "punchOutAt" in record ||
+      "workedHours" in record ||
+      "punchInCoordinates" in record);
+
+  const formatRoleLabel = (role) => {
+    if (!role) return "-";
+    return String(role)
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const formatCoordinates = (coordinates) => {
+    if (!Array.isArray(coordinates) || coordinates.length !== 2) return "-";
+    const longitude = Number(coordinates[0]);
+    const latitude = Number(coordinates[1]);
+    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return "-";
+    return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+  };
+
+  const formatLocation = (rec) => {
+    if (rec?.punchInLocationMeta?.displayText) return rec.punchInLocationMeta.displayText;
+    if (rec?.punchInLocationMeta?.areaLabel) return rec.punchInLocationMeta.areaLabel;
+    return formatCoordinates(rec?.punchInCoordinates);
+  };
+
+  const formatWorkedHours = (rec) => {
+    const val = rec?.workedHours ?? rec?.workedMinutes;
+    if (val == null) return "-";
+    return typeof val === "number" ? val.toFixed(2) : String(val);
+  };
+
+  const formatGeoStatus = (rec) => {
+    if (rec?.punchInValid === false) return "No";
+    if (rec?.punchOutValid === false) return "No";
+    if (rec?.punchInValid === true || rec?.punchOutValid === true) return "Yes";
+    return "-";
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 p-6 sm:p-7 text-left">
+        <div className="brand-metric-glow" />
+        <div className="relative flex flex-col max-h-[85vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-800/60">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                {isAttendance ? "Attendance Details" : "Record Details"}
+              </h3>
+              <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {isAttendance ? "Detailed punch log and verification" : "Overview of all fields"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="overflow-y-auto py-4 space-y-4 pr-1">
+            {isAttendance ? (
+              <>
+                {/* Member Profile info */}
+                <div className="flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-200 font-bold text-base">
+                    {(record.member || record.userName || "M")?.[0]}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">{record.member || record.userName}</h4>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{formatRoleLabel(record.role)}</p>
+                  </div>
+                </div>
+
+                {/* Date & Status */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Date</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{record.date || "-"}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
+                    <p className="mt-1 text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">{record.status || "-"}</p>
+                  </div>
+                </div>
+
+                {/* Geo Validation & Worked Hours */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Geo Valid</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatGeoStatus(record)}</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatWorkedHours(record)} hrs</p>
+                  </div>
+                </div>
+
+                {/* Punch In Info */}
+                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                  <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In Details</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Time</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{formatDate(record.punchInAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{formatLocation(record)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Punch Out Info */}
+                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                  <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out Details</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Time</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{formatDate(record.punchOutAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        {record.punchOutLocationMeta?.displayText ||
+                          record.punchOutLocationMeta?.areaLabel ||
+                          formatCoordinates(record.punchOutCoordinates)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selfie Proof */}
+                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+                  <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Verification</h5>
+                  <AttendanceSelfieProofLinks
+                    punchInSelfieUrl={record.punchInSelfieUrl}
+                    punchOutSelfieUrl={record.punchOutSelfieUrl}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {Object.entries(record)
+                  .filter(([key]) => key !== "id" && key !== "_id")
+                  .map(([key, value]) => {
+                    if (typeof value === "object" && value !== null) {
+                      return (
+                        <div
+                          key={key}
+                          className="sm:col-span-2 rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40"
+                        >
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                            {key.replace(/([A-Z])/g, " $1").trim().toUpperCase()}
+                          </p>
+                          <pre className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100 overflow-x-auto whitespace-pre-wrap max-h-40">
+                            {JSON.stringify(value, null, 2)}
+                          </pre>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div
+                        key={key}
+                        className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40"
+                      >
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          {key.replace(/([A-Z])/g, " $1").trim().toUpperCase()}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100 break-words">
+                          {value === true ? "Yes" : value === false ? "No" : String(value ?? "-")}
+                        </p>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end border-t border-slate-200/60 pt-4 dark:border-slate-800/60">
+            <button
+              type="button"
+              onClick={onClose}
+              className="brand-btn brand-btn-secondary brand-btn-md px-6"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardRecordsSection({
   items = [],
   loading = false,
@@ -806,6 +1029,7 @@ export function DashboardRecordsSection({
   description = null,
 }) {
   const [expandedMobileRows, setExpandedMobileRows] = useState({});
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const {
     page,
     pageSize,
@@ -928,6 +1152,16 @@ export function DashboardRecordsSection({
                       {isExpanded ? "Show Less" : `Show ${hiddenCount} More`}
                     </button>
                   ) : null}
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRecord(row)}
+                      className="brand-btn brand-btn-soft brand-btn-sm w-full"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 </article>
               );
             })}
@@ -966,7 +1200,8 @@ export function DashboardRecordsSection({
                 {paginatedItems.map((row, rowIndex) => (
                   <tr
                     key={row.id || row._id || `${endpoint}-${startIndex + rowIndex}`}
-                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
+                    onClick={() => setSelectedRecord(row)}
+                    className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
                   >
                     {resolvedTableColumns.map((column, columnIndex) => {
                       const alignment = getColumnAlignment(column);
@@ -1082,6 +1317,7 @@ export function DashboardRecordsSection({
           />
         </div>
       ) : null}
+      <RecordDetailsModal record={selectedRecord} onClose={() => setSelectedRecord(null)} />
     </div>
   );
 }
@@ -1112,6 +1348,7 @@ export default function DataPanelPage({
   const payload = data || {};
   const loading = endpointLoading || endpointFetching;
   const [expandedMobileRows, setExpandedMobileRows] = useState({});
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const isDashboardEndpoint = String(endpoint || "").endsWith("/dashboard");
   const isSuperAdminEndpoint = String(endpoint || "").startsWith("/super-admin/");
   const effectiveTitle = isDashboardEndpoint ? `${firstName} Dashboard` : title;
@@ -1421,6 +1658,16 @@ export default function DataPanelPage({
                         {isExpanded ? "Show Less" : `Show ${hiddenCount} More`}
                       </button>
                     ) : null}
+
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRecord(row)}
+                        className="brand-btn brand-btn-soft brand-btn-sm w-full"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </article>
                 );
               })}
@@ -1459,7 +1706,8 @@ export default function DataPanelPage({
                   {paginatedItems.map((row, rowIndex) => (
                     <tr
                       key={row.id || row._id || `${endpoint}-${startIndex + rowIndex}`}
-                      className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
+                      onClick={() => setSelectedRecord(row)}
+                      className="cursor-pointer transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/70"
                     >
                       {resolvedTableColumns.map((column, columnIndex) => {
                         const alignment = getColumnAlignment(column);
@@ -1575,7 +1823,8 @@ export default function DataPanelPage({
             />
           </div>
         ) : null}
-      </div>
-    </section>
-  );
+      <RecordDetailsModal record={selectedRecord} onClose={() => setSelectedRecord(null)} />
+    </div>
+  </section>
+);
 }
