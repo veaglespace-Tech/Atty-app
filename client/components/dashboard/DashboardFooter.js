@@ -23,7 +23,7 @@ export default function DashboardFooter() {
             rel="noopener noreferrer"
             className="underline decoration-slate-400 underline-offset-2 transition hover:text-blue-600 dark:hover:text-blue-300"
           >
-            Veagle Space Technology Pvt. Ltd.
+            Veagle Space Technology Pvt. Ltd. 2026
           </a>
         </p>
       </div>

@@ -24,6 +24,7 @@ import {
   normalizeEmailInput,
   normalizeTextInput,
   toDigitsOnly,
+  isNotCommonEmailTypo,
 } from "@/utils/formValidation";
 import {
   getRegistrationDraft,
@@ -45,7 +46,10 @@ const organisationSchema = z.object({
     .string()
     .trim()
     .min(1, "Business email is required")
-    .email("Invalid business email address"),
+    .email("Invalid business email address")
+    .refine(isNotCommonEmailTypo, {
+      message: "Did you mean .com or .co.in? Please enter a valid email address.",
+    }),
   phoneCountryCode: z.string().regex(/^\+\d{1,3}$/, "Select a valid country code"),
   phone: z
     .string()

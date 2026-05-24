@@ -27,6 +27,7 @@ import {
   normalizeEmailInput,
   normalizeTextInput,
   toDigitsOnly,
+  isNotCommonEmailTypo,
 } from "@/utils/formValidation";
 import {
   getRegistrationDraft,
@@ -45,7 +46,14 @@ const registrationSchema = z
         PERSON_NAME_REGEX,
         "Full name can only include letters, spaces, apostrophes, dots, or hyphens"
       ),
-    email: z.string().trim().min(1, "Email is required").email("Invalid email address"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Invalid email address")
+      .refine(isNotCommonEmailTypo, {
+        message: "Did you mean .com or .co.in? Please enter a valid email address.",
+      }),
     mobileCountryCode: z.string().regex(/^\+\d{1,3}$/, "Select a valid country code"),
     mobile: z
       .string()

@@ -5,7 +5,7 @@ const { sendContactInquiryNotifications } = require("../services/contact-inquiry
 const { normalizeEmail } = require("../utils/contact");
 
 const CONTACT_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const CONTACT_SUBJECT_MAX = 120;
 const CONTACT_MESSAGE_MAX = 500;
 

@@ -27,13 +27,13 @@ export default function PaginationControls({
         </p>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-300">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+        <label className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-300 sm:mr-2">
           Rows
           <select
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className="dashboard-field-control dashboard-select-control min-w-[88px] flex-1 px-3 py-2 text-xs sm:flex-none"
+            className="dashboard-field-control dashboard-select-control min-w-[88px] flex-1 !min-h-[36px] !h-[36px] !py-1 px-3 text-xs sm:flex-none"
           >
             {pageSizeOptions.map((option) => (
               <option key={option} value={option}>

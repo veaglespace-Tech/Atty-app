@@ -7,7 +7,14 @@ export const PLAN_PRICE_MAX = 10000000;
 export const PLAN_LIMIT_MAX = 1000000;
 export const TEXT_AREA_MAX = 500;
 
-export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+export const isNotCommonEmailTypo = (email) => {
+  const normalized = String(email || "").trim().toLowerCase();
+  const domain = normalized.split("@")[1] || "";
+  const commonTypoDomains = ["gmail.co", "yahoo.co", "hotmail.co", "outlook.co", "icloud.co"];
+  return !commonTypoDomains.includes(domain);
+};
 export const PERSON_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
 export const ORGANIZATION_NAME_REGEX = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}\s&().,'/-]{1,119}$/u;
 export const PLACE_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,79}$/u;
@@ -53,6 +60,9 @@ export const validateEmailInput = (value, label = "Email") => {
   const normalized = normalizeEmailInput(value);
   if (!normalized) return `${label} is required`;
   if (!EMAIL_REGEX.test(normalized)) return `Enter a valid ${label.toLowerCase()}`;
+  if (!isNotCommonEmailTypo(normalized)) {
+    return "Did you mean .com or .co.in? Please enter a valid email address.";
+  }
   return null;
 };
 

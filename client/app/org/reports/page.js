@@ -104,7 +104,7 @@ export default function OrgReportsPage() {
 
   const rangeRules = useMemo(
     () => ({
-      minDays: 90,
+      minDays: 1,
       maxDays: 364,
     }),
     []
@@ -248,7 +248,7 @@ export default function OrgReportsPage() {
             </h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Generate attendance reports for daily, weekly, monthly, or custom date windows. Custom
-              range is reserved for longer history between 90 and 364 days.
+              range is reserved for history between 1 and 364 days.
             </p>
           </div>
 

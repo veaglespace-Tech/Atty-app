@@ -72,7 +72,7 @@ export default function AttendanceFaceCaptureModal({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
+        await videoRef.current.play().catch(() => { });
       }
     } catch (error) {
       setCameraError(getCameraErrorMessage(error));
@@ -122,7 +122,7 @@ export default function AttendanceFaceCaptureModal({
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play().catch(() => {});
+          await videoRef.current.play().catch(() => { });
         }
       } catch (error) {
         if (!cancelled) {

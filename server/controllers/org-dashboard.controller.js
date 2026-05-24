@@ -26,7 +26,7 @@ const { PERMISSION_KEYS } = require("../constants/permissions")
 const xlsx = require("xlsx")
 
 const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"])
-const CUSTOM_REPORT_MIN_DAYS = 90
+const CUSTOM_REPORT_MIN_DAYS = 1
 const CUSTOM_REPORT_MAX_DAYS = 364
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 
