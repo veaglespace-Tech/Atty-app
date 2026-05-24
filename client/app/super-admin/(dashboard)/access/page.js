@@ -354,11 +354,10 @@ export default function SuperAdminAccessPage() {
                     <div
                       key={p.id}
                       onClick={() => toggleRolePermission(rm.role, p.id, rm.permissions)}
-                      className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 transition-all ${
-                        isAssigned
+                      className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 transition-all ${isAssigned
                           ? "border-emerald-200 bg-emerald-50/50 text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-100"
                           : "border-slate-100 bg-slate-50/30 text-slate-500 hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900/30"
-                      } ${readOnlyFallback ? "cursor-not-allowed opacity-75" : ""}`}
+                        } ${readOnlyFallback ? "cursor-not-allowed opacity-75" : ""}`}
                     >
                       <div className="flex items-center gap-3">
                         {isAssigned ? (
@@ -486,11 +485,10 @@ function TabButton({ active, onClick, icon, label }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-4 text-sm font-black transition-all ${
-        active
+      className={`flex items-center gap-2 px-6 py-4 text-sm font-black transition-all ${active
           ? "border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400"
           : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-      }`}
+        }`}
     >
       {icon}
       {label}

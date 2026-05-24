@@ -28,7 +28,7 @@ export default function PaginationControls({
       </div>
 
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-        <label className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-300 sm:mr-2">
+        <label className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-300 mr-4 sm:mr-6">
           Rows
           <select
             value={pageSize}
