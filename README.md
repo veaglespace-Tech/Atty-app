@@ -183,6 +183,7 @@ npm run create:super-admin
 
 - CORS already allows localhost frontend development by default.
 - Plan data should be seeded before testing organization onboarding.
+- Outgoing mail can rotate through the Hostinger mailbox pool defined in `server/.env.example`; each mailbox is capped at `EMAIL_DAILY_LIMIT` sends per day before the helper moves to the next one.
 - Razorpay and email features require valid credentials to work fully.
 - Prisma schema is located at `server/prisma/schema.prisma`.
 

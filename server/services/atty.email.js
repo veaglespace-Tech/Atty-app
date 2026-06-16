@@ -2,7 +2,7 @@ const sendEmail = require("../utils/email");
 const { buildEmailTemplate, escapeHtml } = require("../utils/email-template");
 
 const getSupportRecipient = () =>
-  String(process.env.SUPPORT_EMAIL || process.env.SMTP_USER || process.env.EMAIL || "").trim();
+  String(process.env.SUPPORT_EMAIL || sendEmail.getDefaultMailboxEmail() || "").trim();
 
 const formatMessageHtml = (subject, message) => `
   <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#ffffff;font-weight:700">

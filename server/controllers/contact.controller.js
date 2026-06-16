@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { parseLimit, toSummaryItem, truncateText } = require("../services/common.service");
 const { sendContactInquiryNotifications } = require("../services/contact-inquiry.email");
+const sendEmail = require("../utils/email");
 const { normalizeEmail } = require("../utils/contact");
 
 const CONTACT_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
@@ -61,10 +62,7 @@ const normalizeMultilineText = (value) =>
 
 const resolveNotificationMailbox = () =>
   normalizeEmail(
-    process.env.SUPPORT_EMAIL ||
-      process.env.EMAIL_USER ||
-      process.env.EMAIL ||
-      process.env.SMTP_USER
+    process.env.SUPPORT_EMAIL || sendEmail.getDefaultMailboxEmail()
   );
 
 const ensureLength = ({ value, label, min, max }) => {
