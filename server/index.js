@@ -29,6 +29,9 @@ const {
 } = require("./services/attendance-auto-close.service");
 const app = express();
 
+// Trust Nginx/Cloudflare proxy
+app.set("trust proxy", 1);
+
 const envAllowedOrigins = [process.env.CLIENT_URL, process.env.CLIENT_ORIGINS]
   .filter(Boolean)
   .join(",")
