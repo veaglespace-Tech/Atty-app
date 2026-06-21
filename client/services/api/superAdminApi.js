@@ -200,6 +200,18 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: ["SAContacts"],
     }),
+    getSuperAdminUserById: builder.query({
+      query: (userId) => `/super-admin/users/${userId}`,
+      providesTags: ["SAOrganizations"],
+    }),
+    patchSuperAdminUser: builder.mutation({
+      query: ({ userId, ...payload }) => ({
+        url: `/super-admin/users/${userId}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SAOrganizations", "SADashboard"],
+    }),
   }),
 });
 
@@ -236,4 +248,6 @@ export const {
   useDeleteSuperAdminContactMutation,
   useGetSuperAdminContactInquiriesQuery,
   useDeleteAllSuperAdminContactsMutation,
+  useGetSuperAdminUserByIdQuery,
+  usePatchSuperAdminUserMutation,
 } = superAdminApi;

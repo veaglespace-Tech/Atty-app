@@ -6,6 +6,7 @@ const {
   parseLimit,
   toSummaryItem,
   truncateText,
+  normalizeStatus,
 } = require("../services/common.service");
 const { filterVisiblePlans } = require("../services/plan.service");
 const { archiveOrganization, restoreOrganizationFromArchive } = require("../services/archive.service");
@@ -2395,3 +2396,371 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
     data: result,
   });
 });
+
+exports.getSuperAdminUserById = asyncHandler(async (req, res) => {
+  const userId = parseId(req.params.userId);
+  if (!userId) {
+    res.status(400);
+    throw new Error("Invalid user id");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          organizationCode: true,
+          phone: true,
+          phoneCountryCode: true,
+          address: true,
+          city: true,
+          state: true,
+          country: true,
+        },
+      },
+      teamMemberships: {
+        where: {
+          team: {
+            deletedAt: null,
+            isActive: true,
+          },
+        },
+        include: {
+          team: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      teamsLed: {
+        where: {
+          deletedAt: null,
+          isActive: true,
+        },
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!user || user.deletedAt) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  // Calculate attendance summary if they belong to an organization
+  let attendanceSummary = {};
+  if (user.orgId) {
+    const where = {
+      orgId: user.orgId,
+      userId: user.id,
+      deletedAt: null,
+    };
+    const [statusGroups, aggregates] = await Promise.all([
+      prisma.attendance.groupBy({
+        by: ["status"],
+        where,
+        _count: {
+          _all: true,
+        },
+      }),
+      prisma.attendance.aggregate({
+        where,
+        _count: {
+          _all: true,
+        },
+        _sum: {
+          totalMinutesWorked: true,
+        },
+      }),
+    ]);
+    const counts = statusGroups.reduce(
+      (accumulator, item) => ({
+        ...accumulator,
+        [String(item.status || "").toUpperCase()]: Number(item?._count?._all || 0),
+      }),
+      {}
+    );
+    attendanceSummary = {
+      totalEntries: Number(aggregates?._count?._all || 0),
+      presentDays: Number(counts.PRESENT || 0),
+      halfDays: Number(counts.HALF_DAY || 0),
+      absentDays: Number(counts.ABSENT || 0),
+      totalWorkedMinutes: Number(aggregates?._sum?.totalMinutesWorked || 0),
+    };
+  }
+
+  const teamNames = user.teamMemberships.map((membership) => membership.team?.name).filter(Boolean);
+  const ledTeamNames = user.teamsLed.map((team) => team.name).filter(Boolean);
+
+  res.status(200).json({
+    success: true,
+    item: {
+      id: user.id,
+      orgId: user.orgId,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      mobileCountryCode: user.mobileCountryCode || "",
+      emergencyContact: user.emergencyContact || "",
+      currentAddress: user.currentAddress || "",
+      permanentAddress: user.permanentAddress || "",
+      role: user.role,
+      approvalStatus: user.status,
+      active: user.isActive,
+      profileImageUrl: user.profileImageUrl,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      lastLoginAt: user.lastLoginAt,
+      organization: user.organization,
+      attendanceSummary,
+      teamNames,
+      ledTeamNames,
+    },
+  });
+});
+
+exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
+  const userId = parseId(req.params.userId);
+  if (!userId) {
+    res.status(400);
+    throw new Error("Invalid user id");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!user || user.deletedAt) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  const userPayload = {};
+  const membershipPayload = {};
+
+  if (typeof req.body?.name === "string") {
+    const name = truncateText(req.body.name, 120);
+    if (!name) {
+      res.status(400);
+      throw new Error("Name cannot be empty");
+    }
+    userPayload.name = name;
+  }
+
+  if (req.body?.email !== undefined) {
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+      res.status(400);
+      throw new Error("Email cannot be empty");
+    }
+    userPayload.email = email;
+  }
+
+  if (req.body?.mobile !== undefined) {
+    let normalizedPhone = null;
+    try {
+      normalizedPhone = normalizePhoneNumber({
+        phone: req.body.mobile,
+        countryCode: req.body.mobileCountryCode || req.body.countryCode,
+        requireCountryCode: false,
+      });
+    } catch (phoneError) {
+      res.status(400);
+      throw new Error(phoneError.message || "Invalid mobile number");
+    }
+    userPayload.mobile = normalizedPhone.e164;
+    userPayload.mobileCountryCode = normalizedPhone.countryCode;
+  }
+
+  if (req.body?.emergencyContact !== undefined) {
+    userPayload.emergencyContact = req.body.emergencyContact ? truncateText(req.body.emergencyContact, 120) : null;
+  }
+
+  if (req.body?.currentAddress !== undefined) {
+    userPayload.currentAddress = req.body.currentAddress ? truncateText(req.body.currentAddress, 191) : null;
+  }
+
+  if (req.body?.permanentAddress !== undefined) {
+    userPayload.permanentAddress = req.body.permanentAddress ? truncateText(req.body.permanentAddress, 191) : null;
+  }
+
+  if (req.body?.role !== undefined) {
+    const role = normalizeRole(req.body.role);
+    userPayload.role = role;
+    membershipPayload.role = role;
+  }
+
+  if (req.body?.status !== undefined) {
+    const status = normalizeStatus(req.body.status);
+    userPayload.status = status;
+    if (status === "REJECTED") {
+      userPayload.isActive = false;
+      membershipPayload.isActive = false;
+    }
+  }
+
+  if (req.body?.isActive !== undefined) {
+    const isActive = parseBoolean(req.body.isActive, null);
+    if (isActive === null) {
+      res.status(400);
+      throw new Error("isActive must be boolean");
+    }
+    userPayload.isActive = isActive;
+    membershipPayload.isActive = isActive;
+  }
+
+  if (Array.isArray(req.body?.permissions)) {
+    userPayload.permissions = req.body.permissions;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(userPayload).length > 0) {
+      await tx.user.update({
+        where: { id: userId },
+        data: userPayload,
+      });
+    }
+
+    if (user.orgId && Object.keys(membershipPayload).length > 0) {
+      const memberObj = await tx.organizationMember.findUnique({
+        where: {
+          userId_orgId: {
+            userId: userId,
+            orgId: user.orgId,
+          },
+        },
+      });
+      if (memberObj) {
+        await tx.organizationMember.update({
+          where: {
+            userId_orgId: {
+              userId: userId,
+              orgId: user.orgId,
+            },
+          },
+          data: membershipPayload,
+        });
+      }
+    }
+  });
+
+  const updated = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          organizationCode: true,
+          phone: true,
+          phoneCountryCode: true,
+          address: true,
+          city: true,
+          state: true,
+          country: true,
+        },
+      },
+      teamMemberships: {
+        where: {
+          team: {
+            deletedAt: null,
+            isActive: true,
+          },
+        },
+        include: {
+          team: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      teamsLed: {
+        where: {
+          deletedAt: null,
+          isActive: true,
+        },
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  // Calculate attendance summary if they belong to an organization
+  let attendanceSummary = {};
+  if (updated.orgId) {
+    const where = {
+      orgId: updated.orgId,
+      userId: updated.id,
+      deletedAt: null,
+    };
+    const [statusGroups, aggregates] = await Promise.all([
+      prisma.attendance.groupBy({
+        by: ["status"],
+        where,
+        _count: {
+          _all: true,
+        },
+      }),
+      prisma.attendance.aggregate({
+        where,
+        _count: {
+          _all: true,
+        },
+        _sum: {
+          totalMinutesWorked: true,
+        },
+      }),
+    ]);
+    const counts = statusGroups.reduce(
+      (accumulator, item) => ({
+        ...accumulator,
+        [String(item.status || "").toUpperCase()]: Number(item?._count?._all || 0),
+      }),
+      {}
+    );
+    attendanceSummary = {
+      totalEntries: Number(aggregates?._count?._all || 0),
+      presentDays: Number(counts.PRESENT || 0),
+      halfDays: Number(counts.HALF_DAY || 0),
+      absentDays: Number(counts.ABSENT || 0),
+      totalWorkedMinutes: Number(aggregates?._sum?.totalMinutesWorked || 0),
+    };
+  }
+
+  const teamNames = updated.teamMemberships.map((membership) => membership.team?.name).filter(Boolean);
+  const ledTeamNames = updated.teamsLed.map((team) => team.name).filter(Boolean);
+
+  res.status(200).json({
+    success: true,
+    message: "User updated successfully",
+    item: {
+      id: updated.id,
+      orgId: updated.orgId,
+      name: updated.name,
+      email: updated.email,
+      mobile: updated.mobile,
+      mobileCountryCode: updated.mobileCountryCode || "",
+      emergencyContact: updated.emergencyContact || "",
+      currentAddress: updated.currentAddress || "",
+      permanentAddress: updated.permanentAddress || "",
+      role: updated.role,
+      approvalStatus: updated.status,
+      active: updated.isActive,
+      profileImageUrl: updated.profileImageUrl,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      lastLoginAt: updated.lastLoginAt,
+      organization: updated.organization,
+      attendanceSummary,
+      teamNames,
+      ledTeamNames,
+    },
+  });
+});
+

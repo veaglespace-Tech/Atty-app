@@ -24,6 +24,8 @@ const {
   downloadSuperAdminPaymentsExcel,
   archiveOrganizationAction,
   restoreOrganizationAction,
+  getSuperAdminUserById,
+  patchSuperAdminUser,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -57,6 +59,8 @@ router.get("/organizations/:organizationId", getSuperAdminOrganizationById);
 router.get("/organizations/:organizationId/users", getSuperAdminOrganizationUsers);
 router.get("/organizations/:organizationId/teams", getSuperAdminOrganizationTeams);
 router.patch("/organizations/:organizationId", patchSuperAdminOrganization);
+router.get("/users/:userId", getSuperAdminUserById);
+router.patch("/users/:userId", patchSuperAdminUser);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);
 router.post("/organizations/:organizationId/archive", archiveOrganizationAction);
 router.post("/organizations/:organizationId/restore", restoreOrganizationAction);

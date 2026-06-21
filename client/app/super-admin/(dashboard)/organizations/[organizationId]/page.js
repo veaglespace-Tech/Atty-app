@@ -419,7 +419,7 @@ export default function OrganizationDetailPage() {
       />
 
       {activeTab === "users" ? (
-        <UsersTab users={users} isLoading={isLoadingUsers} />
+        <UsersTab users={users} isLoading={isLoadingUsers} organizationId={organizationId} />
       ) : null}
 
       {activeTab === "teams" ? (
@@ -794,7 +794,8 @@ function BillingTab({ item, onExtend }) {
   );
 }
 
-function UsersTab({ users, isLoading }) {
+function UsersTab({ users, isLoading, organizationId }) {
+  const router = useRouter();
   const {
     page,
     pageSize,
@@ -821,7 +822,8 @@ function UsersTab({ users, isLoading }) {
             {paginatedItems.map((user) => (
               <div
                 key={user.id}
-                className="grid gap-3 border-b border-slate-100 px-4 py-4 last:border-b-0 dark:border-slate-800 md:grid-cols-[minmax(0,1fr)_auto]"
+                onClick={() => router.push(`/super-admin/organizations/${organizationId}/users/${user.id}`)}
+                className="grid cursor-pointer gap-3 border-b border-slate-100 px-4 py-4 last:border-b-0 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/70 dark:hover:bg-slate-900/50 md:grid-cols-[minmax(0,1fr)_auto] transition-colors"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-black text-slate-900 dark:text-white">
