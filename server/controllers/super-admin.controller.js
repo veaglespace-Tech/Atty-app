@@ -2764,3 +2764,34 @@ exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
+  const users = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      mobileCountryCode: true,
+      role: true,
+      status: true,
+      isActive: true,
+      createdAt: true,
+      orgId: true,
+      organization: {
+        select: {
+          name: true,
+          code: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.status(200).json({
+    success: true,
+    items: users,
+  });
+});

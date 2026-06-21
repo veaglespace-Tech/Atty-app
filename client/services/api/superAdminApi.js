@@ -200,6 +200,10 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: ["SAContacts"],
     }),
+    getAllSuperAdminUsers: builder.query({
+      query: () => "/super-admin/users",
+      providesTags: ["SAOrganizations"],
+    }),
     getSuperAdminUserById: builder.query({
       query: (userId) => `/super-admin/users/${userId}`,
       providesTags: ["SAOrganizations"],
@@ -249,5 +253,6 @@ export const {
   useGetSuperAdminContactInquiriesQuery,
   useDeleteAllSuperAdminContactsMutation,
   useGetSuperAdminUserByIdQuery,
+  useGetAllSuperAdminUsersQuery,
   usePatchSuperAdminUserMutation,
 } = superAdminApi;
