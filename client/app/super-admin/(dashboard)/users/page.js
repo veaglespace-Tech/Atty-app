@@ -9,7 +9,7 @@ import SectionEyebrow from "@/components/SectionEyebrow";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetAllSuperAdminUsersQuery } from "@/services/api/superAdminApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { ROLES, formatPermissionLabel } from "@/utils/roles";
+import { ROLES, formatRoleLabel } from "@/utils/roles";
 
 const panelClassName = "light-glow-card-static rounded-[1.9rem] p-6";
 
@@ -190,7 +190,7 @@ export default function SuperAdminUsersPage() {
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <CompactInfo label="Role" value={formatPermissionLabel(user.role)} />
+                    <CompactInfo label="Role" value={formatRoleLabel(user.role)} />
                     <CompactInfo label="Organization" value={user.organization?.name || "-"} />
                     <div className="dashboard-detail-tile">
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Status</p>
@@ -235,7 +235,7 @@ export default function SuperAdminUsersPage() {
                         <p className="text-[12px] text-slate-500">{user.email}</p>
                       </td>
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-200">
-                        {formatPermissionLabel(user.role)}
+                        {formatRoleLabel(user.role)}
                       </td>
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-200">
                         {user.organization ? (
