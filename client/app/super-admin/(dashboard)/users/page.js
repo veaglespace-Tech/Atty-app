@@ -88,7 +88,7 @@ export default function SuperAdminUsersPage() {
               Users
             </h2>
             <p className="mobile-hide-copy mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-              View all users across the entire platform. Open a user's detail page to manage their profile and permissions.
+              View all users across the entire platform. Open a user&apos;s detail page to manage their profile and permissions.
             </p>
           </div>
 
