@@ -174,7 +174,7 @@ export default function SuperAdminAccessPage() {
             title: "Action failed",
             message: err?.data?.message || "Failed to delete permission",
           })
-AHWEY);
+        );
       }
     }
   };
