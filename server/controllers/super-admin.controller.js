@@ -2783,7 +2783,7 @@ exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
       organization: {
         select: {
           name: true,
-          code: true,
+          organizationCode: true,
         },
       },
     },

@@ -43,7 +43,7 @@ export default function SuperAdminUsersPage() {
         user.name,
         user.email,
         user.organization?.name,
-        user.organization?.code,
+        user.organization?.organizationCode,
       ]
         .map((value) => String(value || "").toLowerCase())
         .join(" ")
@@ -241,7 +241,7 @@ export default function SuperAdminUsersPage() {
                         {user.organization ? (
                           <>
                             <span className="block font-medium">{user.organization.name}</span>
-                            <span className="text-[11px] text-slate-400">{user.organization.code}</span>
+                            <span className="text-[11px] text-slate-400">{user.organization.organizationCode}</span>
                           </>
                         ) : "-"}
                       </td>
