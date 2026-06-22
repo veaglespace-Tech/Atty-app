@@ -29,6 +29,10 @@ const {
   getAllSuperAdminUsers,
   getSystemSettings,
   updateSystemSetting,
+  getSuperAdminPosts,
+  createSuperAdminPost,
+  updateSuperAdminPost,
+  deleteSuperAdminPost,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -85,6 +89,12 @@ router.get("/analytics", getSuperAdminAnalytics);
 
 router.get("/settings", getSystemSettings);
 router.patch("/settings", updateSystemSetting);
+
+// Post Management
+router.get("/posts", getSuperAdminPosts);
+router.post("/posts", createSuperAdminPost);
+router.patch("/posts/:id", updateSuperAdminPost);
+router.delete("/posts/:id", deleteSuperAdminPost);
 
 // RBAC Management
 router.get("/permissions", getPermissions);

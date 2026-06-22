@@ -2814,3 +2814,143 @@ exports.updateSystemSetting = asyncHandler(async (req, res) => {
   });
   res.status(200).json({ success: true, item: setting });
 });
+
+// ─── Super Admin Post Management ────────────────────────────────────────────
+
+const SA_POST_TYPES = new Set([
+  "NOTIFICATION", "NEWS", "ARTICLE", "POLL", "TOURNAMENT_CARD",
+]);
+
+const safePostMeta = (v) =>
+  v && typeof v === "object" && !Array.isArray(v) ? v : {};
+
+const normSaPostType = (v, fallback = null) => {
+  if (!v) return fallback;
+  const n = String(v).trim().toUpperCase();
+  return SA_POST_TYPES.has(n) ? n : null;
+};
+
+const normSaPollOptions = (opts = []) =>
+  (Array.isArray(opts) ? opts : [])
+    .map((o) => (typeof o === "string" ? o.trim() : String(o ?? "").trim()))
+    .filter(Boolean);
+
+const prepareSaPoll = (meta = {}, existingMeta = {}) => {
+  const options = normSaPollOptions(safePostMeta(meta).options);
+  if (options.length < 2) return { error: "Poll must include at least two options" };
+  const prevOpts = normSaPollOptions(safePostMeta(existingMeta).options);
+  const sameOpts = options.length === prevOpts.length && options.every((o, i) => o === prevOpts[i]);
+  const votes = sameOpts ? (safePostMeta(existingMeta).votes ?? {}) : {};
+  return { metadata: { ...safePostMeta(meta), options, votes } };
+};
+
+// GET /super-admin/posts  — list all posts across orgs
+exports.getSuperAdminPosts = asyncHandler(async (req, res) => {
+  const limit = parseLimit(req.query.limit, 50, 200);
+  const offset = Math.max(0, Number(req.query.offset) || 0);
+  const orgId = req.query.orgId ? Number(req.query.orgId) : undefined;
+  const type = normSaPostType(req.query.type);
+
+  const where = { deletedAt: null, ...(orgId ? { orgId } : {}), ...(type ? { type } : {}) };
+
+  const [items, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      include: {
+        author: { select: { name: true } },
+        organization: { select: { id: true, name: true, organizationCode: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.post.count({ where }),
+  ]);
+
+  res.status(200).json({ success: true, items, meta: { total, limit, offset } });
+});
+
+// POST /super-admin/posts  — create post for any org
+exports.createSuperAdminPost = asyncHandler(async (req, res) => {
+  const { title, content, type, metadata, orgId } = req.body;
+
+  if (!orgId) { res.status(400); throw new Error("orgId is required"); }
+  const normalizedType = normSaPostType(type, "NOTIFICATION");
+  if (!normalizedType) { res.status(400); throw new Error("Invalid post type"); }
+
+  const normalizedTitle = truncateText(String(title || "").trim(), 191);
+  const normalizedContent = String(content || "").trim();
+  if (!normalizedTitle || !normalizedContent) {
+    res.status(400); throw new Error("Title and content are required");
+  }
+
+  let nextMetadata = safePostMeta(metadata);
+  if (normalizedType === "POLL") {
+    const poll = prepareSaPoll(metadata);
+    if (poll.error) { res.status(400); throw new Error(poll.error); }
+    nextMetadata = poll.metadata;
+  }
+
+  const post = await prisma.post.create({
+    data: {
+      title: normalizedTitle, content: normalizedContent,
+      type: normalizedType, metadata: nextMetadata,
+      orgId: Number(orgId), authorId: req.user.id,
+    },
+    include: { author: { select: { name: true } }, organization: { select: { id: true, name: true } } },
+  });
+
+  res.status(201).json({ success: true, message: "Post created successfully", item: post });
+});
+
+// PATCH /super-admin/posts/:id
+exports.updateSuperAdminPost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, content, type, metadata, isActive } = req.body;
+
+  const existing = await prisma.post.findUnique({ where: { id: Number(id) } });
+  if (!existing || existing.deletedAt) { res.status(404); throw new Error("Post not found"); }
+
+  const nextType = type !== undefined ? normSaPostType(type) : existing.type;
+  if (!nextType) { res.status(400); throw new Error("Invalid post type"); }
+
+  const nextTitle = title !== undefined ? truncateText(String(title || "").trim(), 191) : existing.title;
+  const nextContent = content !== undefined ? String(content || "").trim() : existing.content;
+  if (!nextTitle || !nextContent) { res.status(400); throw new Error("Title and content are required"); }
+
+  let nextMeta = metadata !== undefined ? safePostMeta(metadata) : safePostMeta(existing.metadata);
+  if (nextType === "POLL") {
+    const poll = prepareSaPoll(
+      metadata !== undefined ? metadata : existing.metadata,
+      existing.metadata
+    );
+    if (poll.error) { res.status(400); throw new Error(poll.error); }
+    nextMeta = poll.metadata;
+  }
+
+  const updated = await prisma.post.update({
+    where: { id: Number(id) },
+    data: {
+      title: nextTitle, content: nextContent, type: nextType,
+      metadata: nextMeta,
+      ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
+    },
+    include: { author: { select: { name: true } }, organization: { select: { id: true, name: true } } },
+  });
+
+  res.status(200).json({ success: true, message: "Post updated successfully", item: updated });
+});
+
+// DELETE /super-admin/posts/:id  — soft delete
+exports.deleteSuperAdminPost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const existing = await prisma.post.findUnique({ where: { id: Number(id) } });
+  if (!existing || existing.deletedAt) { res.status(404); throw new Error("Post not found"); }
+
+  await prisma.post.update({
+    where: { id: Number(id) },
+    data: { deletedAt: new Date(), isActive: false },
+  });
+
+  res.status(200).json({ success: true, message: "Post deleted successfully" });
+});
