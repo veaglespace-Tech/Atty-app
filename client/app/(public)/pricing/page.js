@@ -19,6 +19,7 @@ import { useGetOrgSubscriptionQuery } from "@/services/api/orgApi";
 import {
   useCreateRenewalOrderMutation,
   useVerifyRenewalPaymentMutation,
+  useGetGstRateQuery,
 } from "@/services/api/paymentApi";
 import { getErrorMessage } from "@/utils/formValidation";
 import { formatCalendarDate } from "@/utils/date";
@@ -166,6 +167,8 @@ export default function PricingPage() {
   const [paymentStatus, setPaymentStatus] = useState("");
   const [processingPlanCode, setProcessingPlanCode] = useState("");
   const [successState, setSuccessState] = useState(null);
+  const { data: gstData } = useGetGstRateQuery();
+  const gstRate = gstData?.gstRate || 0;
 
   // Handle PayU redirect callback
   useEffect(() => {
@@ -521,6 +524,11 @@ export default function PricingPage() {
                         /{formatPlanDurationLong(selectedPlan.durationInDays)}
                       </span>
                     </div>
+                    {Number(selectedPlan.price) > 0 && (
+                      <p className="mt-[-1.25rem] mb-6 text-xs text-slate-500 dark:text-slate-400">
+                        + {gstRate}% GST applicable at checkout
+                      </p>
+                    )}
 
                     <div className="mb-8 flex rounded-2xl border border-slate-200 bg-slate-100/80 p-1.5 dark:border-slate-800 dark:bg-slate-900/80">
                       {tier.options.map((option) => {
@@ -589,7 +597,7 @@ export default function PricingPage() {
                             </div>
                             <div className="min-w-0">
                               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                                Pay Now
+                                Pay Now (inc. GST)
                               </p>
                               <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                                 Rs. {formatPlanPrice(renewalPreview.payableAmount)}

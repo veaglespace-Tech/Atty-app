@@ -2795,3 +2795,22 @@ exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
     items: users,
   });
 });
+
+exports.getSystemSettings = asyncHandler(async (req, res) => {
+  const settings = await prisma.systemSetting.findMany();
+  res.status(200).json({ success: true, items: settings });
+});
+
+exports.updateSystemSetting = asyncHandler(async (req, res) => {
+  const { key, value } = req.body;
+  if (!key) {
+    res.status(400);
+    throw new Error("Setting key is required");
+  }
+  const setting = await prisma.systemSetting.upsert({
+    where: { key },
+    update: { value: String(value) },
+    create: { key, value: String(value) },
+  });
+  res.status(200).json({ success: true, item: setting });
+});

@@ -8,6 +8,9 @@ export const paymentApi = createApi({
     getPaymentPublicKey: builder.query({
       query: () => "/payment/get-key",
     }),
+    getGstRate: builder.query({
+      query: () => "/payment/gst",
+    }),
     createPaymentOrder: builder.mutation({
       query: (payload) => ({ url: "/payment/create-order", method: "POST", body: payload }),
     }),
@@ -29,6 +32,7 @@ export const paymentApi = createApi({
 export const {
   useGetPaymentPublicKeyQuery,
   useLazyGetPaymentPublicKeyQuery,
+  useGetGstRateQuery,
   useCreatePaymentOrderMutation,
   useCreateRenewalOrderMutation,
   useVerifyAndRegisterPaymentMutation,

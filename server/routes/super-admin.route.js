@@ -27,6 +27,8 @@ const {
   getSuperAdminUserById,
   patchSuperAdminUser,
   getAllSuperAdminUsers,
+  getSystemSettings,
+  updateSystemSetting,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -80,6 +82,9 @@ router.get("/payments/:paymentId", getSuperAdminPaymentById);
 router.patch("/payments/:paymentId", updateSuperAdminPayment);
 router.delete("/payments/:paymentId", deleteSuperAdminPayment);
 router.get("/analytics", getSuperAdminAnalytics);
+
+router.get("/settings", getSystemSettings);
+router.patch("/settings", updateSystemSetting);
 
 // RBAC Management
 router.get("/permissions", getPermissions);

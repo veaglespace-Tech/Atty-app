@@ -216,6 +216,18 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: ["SAOrganizations", "SADashboard"],
     }),
+    getSystemSettings: builder.query({
+      query: () => "/super-admin/settings",
+      providesTags: ["SASettings"],
+    }),
+    updateSystemSetting: builder.mutation({
+      query: (payload) => ({
+        url: "/super-admin/settings",
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SASettings"],
+    }),
   }),
 });
 
@@ -255,4 +267,6 @@ export const {
   useGetSuperAdminUserByIdQuery,
   useGetAllSuperAdminUsersQuery,
   usePatchSuperAdminUserMutation,
+  useGetSystemSettingsQuery,
+  useUpdateSystemSettingMutation,
 } = superAdminApi;

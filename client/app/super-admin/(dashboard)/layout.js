@@ -9,6 +9,7 @@ const navItems = [
   { label: "Access", href: "/super-admin/access" },
   { label: "Payments", href: "/super-admin/payments" },
   { label: "Analytics", href: "/super-admin/analytics" },
+  { label: "Settings", href: "/super-admin/settings" },
 ];
 
 export default function SuperAdminLayout({ children }) {

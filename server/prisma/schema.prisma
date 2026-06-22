@@ -706,3 +706,13 @@ model VerificationSession {
   @@index([email, phoneE164, purpose, createdAt], map: "verification_lookup_idx")
   @@map("verificationsession")
 }
+
+model SystemSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_setting")
+}
