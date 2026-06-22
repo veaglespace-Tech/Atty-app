@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { 
   Loader2, 
   RefreshCcw, 
@@ -17,7 +18,11 @@ import {
 } from "@/services/api/planApi";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import useLocalPagination from "@/hooks/useLocalPagination";
-import { useGetSuperAdminPlansQuery } from "@/services/api/superAdminApi";
+import { 
+  useGetSuperAdminPlansQuery,
+  useGetSystemSettingsQuery,
+  useUpdateSystemSettingMutation
+} from "@/services/api/superAdminApi";
 import Link from "next/link";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import {
@@ -27,6 +32,7 @@ import {
   formatPlanNameLabel,
   formatPlanPrice,
 } from "@/utils/plans";
+import { addNotification } from "@/store/slices/notificationSlice";
 
 const summaryMapFromArray = (summary) => {
   const map = new Map();
@@ -43,10 +49,13 @@ const planTileClassName =
   "brand-entity-card group active:scale-[0.99]";
 
 export default function SuperAdminPlansPage() {
+  const dispatch = useDispatch();
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  
+  const [gstRate, setGstRate] = useState("18");
 
   const [form, setForm] = useState({
     name: "",
@@ -69,8 +78,53 @@ export default function SuperAdminPlansPage() {
     refetch,
   } = useGetSuperAdminPlansQuery();
   
+  const { data: gstData } = useGetSystemSettingsQuery();
+  const [updateSetting, { isLoading: isUpdatingGst }] = useUpdateSystemSettingMutation();
+
   const [createPlanMutation] = useCreatePlanMutation();
   const [deletePlanMutation] = useDeletePlanMutation();
+
+  useEffect(() => {
+    if (gstData?.items) {
+      const gstSetting = gstData.items.find(s => s.key === "GST_RATE");
+      if (gstSetting) {
+        setGstRate(gstSetting.value);
+      }
+    }
+  }, [gstData]);
+
+  const handleSaveGst = async (e) => {
+    e.preventDefault();
+    if (!gstRate || isNaN(parseFloat(gstRate))) {
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Invalid Input",
+          message: "Please enter a valid GST percentage.",
+        })
+      );
+      return;
+    }
+
+    try {
+      await updateSetting({ key: "GST_RATE", value: parseFloat(gstRate).toString() }).unwrap();
+      dispatch(
+        addNotification({
+          type: "success",
+          title: "Settings Saved",
+          message: "GST percentage updated successfully!",
+        })
+      );
+    } catch (err) {
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Update Failed",
+          message: err?.data?.message || "Failed to update GST setting.",
+        })
+      );
+    }
+  };
 
   const plans = useMemo(
     () => filterVisiblePlans(Array.isArray(data?.items) ? data.items : []),
@@ -249,6 +303,46 @@ export default function SuperAdminPlansPage() {
             hint={card.hint}
           />
         ))}
+      </div>
+
+      {/* Global Tax Settings (GST) */}
+      <div className="light-glow-card-static rounded-[1.9rem] p-6 sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 rounded-2xl">
+              <Zap size={22} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Global GST Settings</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Manage dynamic tax rate applied during registration checkout</p>
+            </div>
+          </div>
+          <form onSubmit={handleSaveGst} className="flex items-center gap-3">
+            <div className="relative max-w-[120px]">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={gstRate}
+                onChange={(e) => setGstRate(e.target.value)}
+                className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-black text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="18"
+                required
+              />
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <span className="text-slate-500 text-xs font-bold">%</span>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={isUpdatingGst}
+              className="brand-btn brand-btn-primary brand-btn-sm h-10 font-black animate-in fade-in"
+            >
+              {isUpdatingGst ? <Loader2 size={16} className="animate-spin" /> : "Save GST"}
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Toggleable Add Form */}
