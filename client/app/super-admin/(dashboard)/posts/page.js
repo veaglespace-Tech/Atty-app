@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import {
   Megaphone,
@@ -16,14 +16,8 @@ import {
   Edit2,
   Building2,
   X,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  Vote,
   Calendar,
   User,
-  Eye,
-  Settings
 } from "lucide-react";
 import {
   useGetSuperAdminPostsQuery,
@@ -77,7 +71,7 @@ export default function SuperAdminPostsPage() {
 
   const [createPost, { isLoading: creating }] = useCreateSuperAdminPostMutation();
   const [updatePost, { isLoading: updating }] = useUpdateSuperAdminPostMutation();
-  const [deletePost, { isLoading: deleting }] = useDeletePostMutation();
+  const [deletePost] = useDeleteSuperAdminPostMutation();
 
   const posts = useMemo(() => postsData?.items || [], [postsData]);
 
