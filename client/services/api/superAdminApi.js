@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -228,6 +228,40 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: ["SASettings"],
     }),
+    getSuperAdminPosts: builder.query({
+      query: ({ orgId, type, limit = 50, offset = 0 } = {}) => {
+        const params = new URLSearchParams();
+        if (orgId) params.append("orgId", orgId);
+        if (type) params.append("type", type);
+        params.append("limit", limit);
+        params.append("offset", offset);
+        return `/super-admin/posts?${params.toString()}`;
+      },
+      providesTags: ["SAPosts"],
+    }),
+    createSuperAdminPost: builder.mutation({
+      query: (payload) => ({
+        url: "/super-admin/posts",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["SAPosts", "SADashboard"],
+    }),
+    updateSuperAdminPost: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: `/super-admin/posts/${id}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SAPosts", "SADashboard"],
+    }),
+    deleteSuperAdminPost: builder.mutation({
+      query: (id) => ({
+        url: `/super-admin/posts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SAPosts", "SADashboard"],
+    }),
   }),
 });
 
@@ -269,4 +303,8 @@ export const {
   usePatchSuperAdminUserMutation,
   useGetSystemSettingsQuery,
   useUpdateSystemSettingMutation,
+  useGetSuperAdminPostsQuery,
+  useCreateSuperAdminPostMutation,
+  useUpdateSuperAdminPostMutation,
+  useDeleteSuperAdminPostMutation,
 } = superAdminApi;
