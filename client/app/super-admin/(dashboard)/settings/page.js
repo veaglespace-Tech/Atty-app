@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import {
   useGetSystemSettingsQuery,
   useUpdateSystemSettingMutation,
 } from "@/services/api/superAdminApi";
-import { toast } from "sonner";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import ErrorState from "@/components/ui/ErrorState";
+import { addNotification } from "@/store/slices/notificationSlice";
+import { Loader2 } from "lucide-react";
 
 export default function SuperAdminSettingsPage() {
+  const dispatch = useDispatch();
   const { data, isLoading, error, refetch } = useGetSystemSettingsQuery();
   const [updateSetting, { isLoading: isUpdating }] = useUpdateSystemSettingMutation();
 
@@ -27,20 +28,66 @@ export default function SuperAdminSettingsPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!gstRate || isNaN(parseFloat(gstRate))) {
-      toast.error("Please enter a valid GST percentage.");
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Invalid Input",
+          message: "Please enter a valid GST percentage.",
+        })
+      );
       return;
     }
 
     try {
       await updateSetting({ key: "GST_RATE", value: parseFloat(gstRate).toString() }).unwrap();
-      toast.success("Settings updated successfully!");
+      dispatch(
+        addNotification({
+          type: "success",
+          title: "Settings Saved",
+          message: "GST configuration updated successfully!",
+        })
+      );
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to update settings");
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Update Failed",
+          message: err?.data?.message || "Failed to update settings.",
+        })
+      );
     }
   };
 
-  if (isLoading) return <LoadingOverlay message="Loading settings..." />;
-  if (error) return <ErrorState error={error} onRetry={refetch} />;
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" size={40} />
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Loading settings...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6 bg-white dark:bg-[#1C1C1C] border border-gray-200 dark:border-gray-800 rounded-xl max-w-3xl mx-auto shadow-sm">
+        <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Failed to Load Settings</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md">
+          {error?.data?.message || "There was a problem retrieving the global system settings."}
+        </p>
+        <button
+          onClick={refetch}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -84,7 +131,14 @@ export default function SuperAdminSettingsPage() {
               disabled={isUpdating}
               className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isUpdating ? "Saving..." : "Save Settings"}
+              {isUpdating ? (
+                <>
+                  <Loader2 className="animate-spin mr-2" size={16} />
+                  Saving...
+                </>
+              ) : (
+                "Save Settings"
+              )}
             </button>
           </div>
         </form>
