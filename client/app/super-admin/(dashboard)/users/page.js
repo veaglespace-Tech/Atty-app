@@ -182,11 +182,9 @@ export default function SuperAdminUsersPage() {
                         {user.email}
                       </p>
                     </div>
-                    {user.orgId && (
-                      <Link href={`/super-admin/organizations/${user.orgId}/users/${user.id}`}>
+                    <Link href={`/super-admin/users/${user.id}`}>
                         <ArrowRight size={16} className="shrink-0 text-slate-400 hover:text-blue-500" />
                       </Link>
-                    )}
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -253,17 +251,13 @@ export default function SuperAdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-right">
-                        {user.orgId ? (
                           <Link
-                            href={`/super-admin/organizations/${user.orgId}/users/${user.id}`}
+                            href={`/super-admin/users/${user.id}`}
                             className="brand-btn brand-btn-soft brand-btn-sm"
                           >
                             Open Detail
                           </Link>
-                        ) : (
-                          <span className="text-[11px] italic text-slate-400">No Org Detail</span>
-                        )}
-                      </td>
+                        </td>
                     </tr>
                   ))}
                 </tbody>
