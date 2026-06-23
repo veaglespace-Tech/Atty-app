@@ -40,6 +40,8 @@ const {
   downloadSuperAdminUserAttendancePdf,
   downloadSuperAdminUserAttendanceExcel,
   generateDatabaseBackup,
+  exportSuperAdminOrganizationUsersExcel,
+  exportAllSuperAdminUsersExcel,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -79,9 +81,11 @@ router.get("/organizations/pdf", downloadSuperAdminOrganizationsPdf);
 router.get("/organizations/excel", downloadSuperAdminOrganizationsExcel);
 router.get("/organizations/:organizationId", getSuperAdminOrganizationById);
 router.get("/organizations/:organizationId/users", getSuperAdminOrganizationUsers);
+router.get("/organizations/:organizationId/users/excel", exportSuperAdminOrganizationUsersExcel);
 router.get("/organizations/:organizationId/teams", getSuperAdminOrganizationTeams);
 router.patch("/organizations/:organizationId", patchSuperAdminOrganization);
 router.get("/users", getAllSuperAdminUsers);
+router.get("/users/excel", exportAllSuperAdminUsersExcel);
 router.get("/users/:userId", getSuperAdminUserById);
 router.patch("/users/:userId", patchSuperAdminUser);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);

@@ -296,6 +296,20 @@ export const superAdminApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    exportSuperAdminOrganizationUsersExcel: builder.mutation({
+      query: (organizationId) => ({
+        url: `/super-admin/organizations/${organizationId}/users/excel`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    exportAllSuperAdminUsersExcel: builder.mutation({
+      query: () => ({
+        url: "/super-admin/users/excel",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
     downloadDatabaseBackup: builder.mutation({
       query: () => ({
         url: "/super-admin/backup/download",
@@ -355,4 +369,6 @@ export const {
   useDownloadSuperAdminUserAttendancePdfMutation,
   useDownloadSuperAdminUserAttendanceExcelMutation,
   useDownloadDatabaseBackupMutation,
+  useExportSuperAdminOrganizationUsersExcelMutation,
+  useExportAllSuperAdminUsersExcelMutation,
 } = superAdminApi;

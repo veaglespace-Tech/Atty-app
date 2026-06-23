@@ -9,6 +9,7 @@ import {
   Building2,
   CalendarClock,
   CreditCard,
+  Download,
   Loader2,
   MapPin,
   Pencil,
@@ -22,6 +23,7 @@ import CountryPhoneField from "@/components/CountryPhoneField";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useExtendSuperAdminOrganizationPlanMutation,
+  useExportSuperAdminOrganizationUsersExcelMutation,
   useGetSuperAdminOrganizationByIdQuery,
   useGetSuperAdminOrganizationTeamsQuery,
   useGetSuperAdminOrganizationUsersQuery,
@@ -796,6 +798,25 @@ function BillingTab({ item, onExtend }) {
 
 function UsersTab({ users, isLoading, organizationId }) {
   const router = useRouter();
+  const [downloading, setDownloading] = useState(false);
+  const [exportOrgUsersExcel] = useExportSuperAdminOrganizationUsersExcelMutation();
+
+  const handleExcelDownload = async () => {
+    try {
+      setDownloading(true);
+      const blob = await exportOrgUsersExcel(organizationId).unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `org-${organizationId}-users.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently ignore; toast handled by middleware
+    } finally {
+      setDownloading(false);
+    }
+  };
   const {
     page,
     pageSize,
@@ -811,7 +832,22 @@ function UsersTab({ users, isLoading, organizationId }) {
   });
 
   return (
-    <SectionCard title="Organization Users" subtitle="Compact user list with role and status context.">
+    <SectionCard
+      title="Organization Users"
+      subtitle="Compact user list with role and status context."
+      action={
+        <button
+          type="button"
+          id="btn-export-org-users-excel"
+          onClick={handleExcelDownload}
+          disabled={downloading || isLoading || users.length === 0}
+          className="brand-btn brand-btn-secondary brand-btn-sm"
+        >
+          {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          Export Excel
+        </button>
+      }
+    >
       {isLoading ? (
         <div className="flex justify-center p-8">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />

@@ -183,6 +183,13 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    downloadOrgUsersExcel: builder.mutation({
+      query: () => ({
+        url: "/org/users/excel",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -217,4 +224,5 @@ export const {
   useGetOrgRegistrationRequestsQuery,
   useAcceptRegistrationRequestMutation,
   useRejectRegistrationRequestMutation,
+  useDownloadOrgUsersExcelMutation,
 } = orgApi;

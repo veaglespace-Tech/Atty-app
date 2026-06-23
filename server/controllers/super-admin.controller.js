@@ -3529,3 +3529,208 @@ exports.generateDatabaseBackup = asyncHandler(async (req, res) => {
 
   await archive.finalize();
 });
+
+// ─── Super Admin User Excel Exports ───────────────────────────────────────────
+
+exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) => {
+  const organizationId = parseId(req.params.organizationId);
+  if (!organizationId) {
+    res.status(400);
+    throw new Error("Invalid organization id");
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId, deletedAt: null },
+    select: { name: true },
+  });
+  if (!organization) {
+    res.status(404);
+    throw new Error("Organization not found");
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      memberships: { some: { orgId: organizationId } },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      emergencyContact: true,
+      currentAddress: true,
+      permanentAddress: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      isActive: true,
+      createdAt: true,
+    },
+    orderBy: [{ name: "asc" }],
+    take: 5000,
+  });
+
+  const orgName = organization.name || "Organization";
+  const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+  const headers = [
+    "Sr. No.", "Name", "Email", "Contact No.", "Emergency Contact",
+    "Current Address", "Permanent Address", "Profile Photo URL",
+    "Role", "Status", "Active", "Joined At",
+  ];
+
+  const sheetData = [
+    [`${orgName} — User Directory`],
+    [`Exported on: ${new Date().toLocaleString("en-IN")}`],
+    [],
+    headers,
+    ...users.map((user, index) => [
+      index + 1,
+      user.name || "-",
+      user.email || "-",
+      user.mobile || "-",
+      user.emergencyContact || "-",
+      user.currentAddress || "-",
+      user.permanentAddress || "-",
+      user.profileImageUrl || "-",
+      user.role || "-",
+      user.status || "-",
+      user.isActive ? "Active" : "Blocked",
+      user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+    ]),
+  ];
+
+  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
+  worksheet["!cols"] = headers.map((h, i) => ({ wch: i === 0 ? 8 : i >= 5 && i <= 7 ? 40 : 25 }));
+  worksheet["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+  ];
+
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Users");
+  const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${safeName}-users.xlsx"`);
+  res.status(200).send(buffer);
+});
+
+exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
+  const organizations = await prisma.organization.findMany({
+    where: { deletedAt: null },
+    select: { id: true, name: true },
+    orderBy: [{ name: "asc" }],
+  });
+
+  const allUsers = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+      orgId: { not: null },
+      role: { not: "SUPER_ADMIN" },
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      emergencyContact: true,
+      currentAddress: true,
+      permanentAddress: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      isActive: true,
+      orgId: true,
+      createdAt: true,
+    },
+    orderBy: [{ orgId: "asc" }, { name: "asc" }],
+    take: 50000,
+  });
+
+  const orgMap = new Map(organizations.map((o) => [o.id, o.name]));
+
+  const headers = [
+    "Sr. No.", "Organization", "Name", "Email", "Contact No.", "Emergency Contact",
+    "Current Address", "Permanent Address", "Profile Photo URL",
+    "Role", "Status", "Active", "Joined At",
+  ];
+
+  const workbook = xlsx.utils.book_new();
+
+  // Sheet 1 — All Users combined
+  const allSheetData = [
+    ["All Users Directory"],
+    [`Exported on: ${new Date().toLocaleString("en-IN")}`],
+    [],
+    headers,
+    ...allUsers.map((user, index) => [
+      index + 1,
+      orgMap.get(user.orgId) || "-",
+      user.name || "-",
+      user.email || "-",
+      user.mobile || "-",
+      user.emergencyContact || "-",
+      user.currentAddress || "-",
+      user.permanentAddress || "-",
+      user.profileImageUrl || "-",
+      user.role || "-",
+      user.status || "-",
+      user.isActive ? "Active" : "Blocked",
+      user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+    ]),
+  ];
+  const allSheet = xlsx.utils.aoa_to_sheet(allSheetData);
+  allSheet["!cols"] = headers.map((h, i) => ({ wch: i === 0 ? 8 : i >= 6 && i <= 8 ? 40 : 25 }));
+  allSheet["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+  ];
+  xlsx.utils.book_append_sheet(workbook, allSheet, "All Users");
+
+  // One sheet per organization (max 30 sheets due to Excel limit)
+  const orgHeaders = headers.slice(1); // Remove "Organization" column for per-org sheets
+  const orgsWithUsers = organizations.slice(0, 29);
+  for (const org of orgsWithUsers) {
+    const orgUsers = allUsers.filter((u) => u.orgId === org.id);
+    if (orgUsers.length === 0) continue;
+
+    const safeName = (org.name || "Org").slice(0, 28); // Excel sheet name max 31 chars
+    const sheetData = [
+      [`${org.name} — User Directory`],
+      [`Exported on: ${new Date().toLocaleString("en-IN")}`],
+      [],
+      orgHeaders,
+      ...orgUsers.map((user, index) => [
+        index + 1,
+        user.name || "-",
+        user.email || "-",
+        user.mobile || "-",
+        user.emergencyContact || "-",
+        user.currentAddress || "-",
+        user.permanentAddress || "-",
+        user.profileImageUrl || "-",
+        user.role || "-",
+        user.status || "-",
+        user.isActive ? "Active" : "Blocked",
+        user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+      ]),
+    ];
+
+    const sheet = xlsx.utils.aoa_to_sheet(sheetData);
+    sheet["!cols"] = orgHeaders.map((h, i) => ({ wch: i === 0 ? 8 : i >= 5 && i <= 7 ? 40 : 25 }));
+    sheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: orgHeaders.length - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: orgHeaders.length - 1 } },
+    ];
+    xlsx.utils.book_append_sheet(workbook, sheet, safeName);
+  }
+
+  const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", 'attachment; filename="all-users-org-wise.xlsx"');
+  res.status(200).send(buffer);
+});
+

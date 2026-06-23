@@ -843,3 +843,97 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     },
   });
 });
+
+exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
+  const xlsx = require("xlsx");
+  const orgId = ensureOrganizationId(req, res);
+  assertAnyPermission(
+    res,
+    req.user,
+    [PERMISSION_KEYS.USERS_CREATE, PERMISSION_KEYS.TEAM_VIEW],
+    orgId
+  );
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true },
+  });
+
+  const users = await prisma.user.findMany({
+    where: {
+      memberships: { some: { orgId } },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      mobileCountryCode: true,
+      emergencyContact: true,
+      currentAddress: true,
+      permanentAddress: true,
+      profileImageUrl: true,
+      role: true,
+      status: true,
+      isActive: true,
+      createdAt: true,
+    },
+    orderBy: [{ name: "asc" }],
+    take: 5000,
+  });
+
+  const orgName = organization?.name || "Organization";
+  const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+  const headers = [
+    "Sr. No.",
+    "Name",
+    "Email",
+    "Contact No.",
+    "Emergency Contact",
+    "Current Address",
+    "Permanent Address",
+    "Profile Photo URL",
+    "Role",
+    "Status",
+    "Active",
+    "Joined At",
+  ];
+
+  const sheetData = [
+    [`${orgName} — User Directory`],
+    [`Exported on: ${new Date().toLocaleString("en-IN")}`],
+    [],
+    headers,
+    ...users.map((user, index) => [
+      index + 1,
+      user.name || "-",
+      user.email || "-",
+      user.mobile || "-",
+      user.emergencyContact || "-",
+      user.currentAddress || "-",
+      user.permanentAddress || "-",
+      user.profileImageUrl || "-",
+      user.role || "-",
+      user.status || "-",
+      user.isActive ? "Active" : "Blocked",
+      user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+    ]),
+  ];
+
+  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
+  worksheet["!cols"] = headers.map((h, i) => ({ wch: i === 0 ? 8 : i >= 5 && i <= 7 ? 40 : 25 }));
+  worksheet["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+  ];
+
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Users");
+  const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${safeName}-users.xlsx"`);
+  res.status(200).send(buffer);
+});

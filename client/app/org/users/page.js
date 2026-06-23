@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, Loader2, Plus, RefreshCcw, Search, UserPlus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Loader2, Plus, RefreshCcw, Search, UserPlus, X } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PasswordInput from "@/components/PasswordInput";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import {
   useCreateOrgUserMutation,
+  useDownloadOrgUsersExcelMutation,
   useGetOrgUsersQuery,
 } from "@/services/api/orgApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
@@ -52,6 +53,7 @@ export default function OrgUsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [downloading, setDownloading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -74,7 +76,10 @@ export default function OrgUsersPage() {
     refetch,
   } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
 
-  const [createUserMutation] = useCreateOrgUserMutation();
+  const [
+    createUserMutation,
+  ] = useCreateOrgUserMutation();
+  const [downloadUsersExcelMutation] = useDownloadOrgUsersExcelMutation();
   const manageableRoleOptions = useMemo(
     () => getManagedRoleOptions(authUser?.currentRole),
     [authUser?.currentRole]
@@ -216,6 +221,23 @@ export default function OrgUsersPage() {
 
   const loading = isLoading || isFetching;
 
+  const handleDownloadExcel = async () => {
+    try {
+      setDownloading(true);
+      const blob = await downloadUsersExcelMutation().unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "users.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Failed to download Excel file. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <section className="space-y-6">
       <div className={`${sectionCardClassName} mobile-compact-panel`}>
@@ -246,6 +268,17 @@ export default function OrgUsersPage() {
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               Refresh
+            </button>
+
+            <button
+              type="button"
+              id="btn-download-users-excel"
+              onClick={handleDownloadExcel}
+              disabled={downloading || isLoading}
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+            >
+              {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Export Excel
             </button>
           </div>
         </div>
