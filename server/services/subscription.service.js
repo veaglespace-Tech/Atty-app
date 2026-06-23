@@ -173,7 +173,19 @@ const syncOrganizationSubscriptionState = async ({ organizationId, organization 
     };
   }
 
-  const [, , syncedOrganization] = await prisma.$transaction([
+  const [, , , syncedOrganization] = await prisma.$transaction([
+    prisma.subscription.updateMany({
+      where: {
+        orgId,
+        id: {
+          not: activeSubscription.id,
+        },
+        activeKey: `ORG_${orgId}`,
+      },
+      data: {
+        activeKey: null,
+      },
+    }),
     prisma.subscription.updateMany({
       where: {
         orgId,
