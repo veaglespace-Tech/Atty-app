@@ -10,18 +10,6 @@ const {
 } = require("../services/access.service");
 const { normalizeCoordinatesInput } = require("../services/location.service");
 const {
-const asyncHandler = require("express-async-handler");
-const prisma = require("../lib/prisma");
-
-const {
-  ensureOrganizationId,
-  parseLimit,
-} = require("../services/common.service");
-const {
-  assertPermission,
-} = require("../services/access.service");
-const { normalizeCoordinatesInput } = require("../services/location.service");
-const {
   buildAttendanceWhere,
   buildAttendanceSummary,
   mapAttendanceRecord,
