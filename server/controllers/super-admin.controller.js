@@ -2313,9 +2313,12 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
         data: {
           status: "EXPIRED",
           endDate: now,
+          activeKey: null,
         },
       });
     }
+
+    const newSubActiveKey = isUpgrade ? `ORG_${org.id}` : null;
 
     // Create a new subscription record for the extension
     const newSub = await tx.subscription.create({
@@ -2331,7 +2334,7 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
         paymentGateway: "ADMIN_BYPASS",
         paymentOrderId: `EXTEND_${Date.now()}`,
         createdById: Number(req.user.id),
-        activeKey: `ORG_${org.id}`,
+        activeKey: newSubActiveKey,
       },
     });
 
