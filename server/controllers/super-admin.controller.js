@@ -2291,13 +2291,32 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
   }
 
   const now = new Date();
-  // Extend from current expiry if still active, otherwise from today
-  const baseDate = org.subscriptionExpiry && org.subscriptionExpiry > now
-    ? new Date(org.subscriptionExpiry)
-    : now;
+  
+  const isUpgrade = planCode && org.plan && planCode.toUpperCase() !== org.plan.code;
+
+  let baseDate;
+  if (isUpgrade) {
+    baseDate = now;
+  } else {
+    // Extend from current expiry if still active, otherwise from today
+    baseDate = org.subscriptionExpiry && org.subscriptionExpiry > now
+      ? new Date(org.subscriptionExpiry)
+      : now;
+  }
+
   const newExpiry = new Date(baseDate.getTime() + days * DAY_IN_MS);
 
   const result = await prisma.$transaction(async (tx) => {
+    if (isUpgrade && org.subscriptionId) {
+      await tx.subscription.update({
+        where: { id: org.subscriptionId },
+        data: {
+          status: "CANCELLED",
+          endDate: now,
+        },
+      });
+    }
+
     // Create a new subscription record for the extension
     const newSub = await tx.subscription.create({
       data: {
