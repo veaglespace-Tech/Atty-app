@@ -2311,7 +2311,7 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
       await tx.subscription.update({
         where: { id: org.subscriptionId },
         data: {
-          status: "CANCELLED",
+          status: "EXPIRED",
           endDate: now,
         },
       });
