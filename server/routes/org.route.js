@@ -24,6 +24,9 @@ const {
   getOrgAttendance,
   getOrgAttendanceSettings,
   updateOrgAttendanceSettings,
+  getOrgUserAttendanceLogs,
+  downloadOrgUserAttendancePdf,
+  downloadOrgUserAttendanceExcel,
 } = require("../controllers/org-attendance.controller");
 const {
   getOrgRegistrationRequests,
@@ -67,6 +70,9 @@ router.get("/notifications", getOrgNotifications);
 router.get("/users", getOrgUsers);
 router.get("/users/:userId", getOrgUserById);
 router.get("/users/:userId/profile-pdf", downloadOrgUserProfilePdf);
+router.get("/users/:userId/attendance/logs", getOrgUserAttendanceLogs);
+router.get("/users/:userId/attendance/pdf", downloadOrgUserAttendancePdf);
+router.get("/users/:userId/attendance/excel", downloadOrgUserAttendanceExcel);
 router.post("/users", createOrgUser);
 router.patch("/users/:userId", patchOrgUser);
 router.patch("/users/:userId/status", updateOrgUserStatus);

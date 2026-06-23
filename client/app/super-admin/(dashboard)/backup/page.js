@@ -81,7 +81,7 @@ export default function BackupPage() {
         <div className="lg:col-span-3">
           <div className="rounded-3xl border border-white/8 bg-white/4 p-6 backdrop-blur-sm">
             <h2 className="mb-5 text-sm font-black uppercase tracking-widest text-slate-400">
-              What's included in the backup
+              What&apos;s included in the backup
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {TABLE_INFO.map(({ icon: Icon, label, desc }) => (
@@ -103,7 +103,8 @@ export default function BackupPage() {
               <div className="flex items-start gap-3">
                 <AlertTriangle size={16} className="mt-0.5 flex-shrink-0 text-amber-400" />
                 <p className="text-xs leading-relaxed text-amber-300">
-                  The backup contains sensitive data including hashed passwords, emails, and financial records.
+                  A comprehensive database backup contains all critical system data, including user records, 
+                  attendance logs, settings, and organizations. The backup contains sensitive data including hashed passwords, emails, and financial records.
                   Store the file securely and do not share it.
                 </p>
               </div>

@@ -10,6 +10,18 @@ const {
 } = require("../services/access.service");
 const { normalizeCoordinatesInput } = require("../services/location.service");
 const {
+const asyncHandler = require("express-async-handler");
+const prisma = require("../lib/prisma");
+
+const {
+  ensureOrganizationId,
+  parseLimit,
+} = require("../services/common.service");
+const {
+  assertPermission,
+} = require("../services/access.service");
+const { normalizeCoordinatesInput } = require("../services/location.service");
+const {
   buildAttendanceWhere,
   buildAttendanceSummary,
   mapAttendanceRecord,
@@ -18,6 +30,59 @@ const {
   attendanceRecordSelect,
 } = require("../services/prisma-selects.service");
 const { PERMISSION_KEYS } = require("../constants/permissions");
+const xlsx = require("xlsx");
+const { buildGenericTablePdf } = require("../utils/pdf-report");
+const { buildUserAttendancePayload } = require("../services/attendance-query.service");
+const { normalizeQueryValue } = require("../services/common.service");
+
+const buildExportWorkbookBuffer = ({
+  title,
+  subtitleLines = [],
+  sheetName,
+  columns = [],
+  rows = [],
+}) => {
+  const normalizedColumns = Array.isArray(columns) ? columns.filter((column) => column?.label) : [];
+  const normalizedRows = Array.isArray(rows) ? rows : [];
+  const infoLines = subtitleLines.map((line) => normalizeQueryValue(line)).filter(Boolean);
+  const sheetData = [
+    [normalizeQueryValue(title) || "Records"],
+    ...infoLines.map((line) => [line]),
+    [],
+    normalizedColumns.map((column) => column.label),
+    ...normalizedRows.map((row) =>
+      normalizedColumns.map((column) => {
+        const value = row?.[column.key];
+        return value === null || value === undefined || value === "" ? "-" : String(value);
+      })
+    ),
+  ];
+
+  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
+  const lastColumnIndex = Math.max(normalizedColumns.length - 1, 0);
+  const lastColumnLabel = xlsx.utils.encode_col(lastColumnIndex);
+  const headerRowNumber = infoLines.length + 3;
+
+  worksheet["!cols"] = normalizedColumns.map((column) => ({
+    wch: Math.max(12, Math.round(Number(column.width || 84) / 4.5)),
+  }));
+  worksheet["!merges"] = Array.from({ length: infoLines.length + 1 }, (_, index) => ({
+    s: { r: index, c: 0 },
+    e: { r: index, c: lastColumnIndex },
+  }));
+  worksheet["!autofilter"] = {
+    ref: `A${headerRowNumber}:${lastColumnLabel}${headerRowNumber}`,
+  };
+
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, String(sheetName || "Data").slice(0, 31));
+
+  return xlsx.write(workbook, {
+    type: "buffer",
+    bookType: "xlsx",
+    compression: true,
+  });
+};
 
 const ATTENDANCE_TIME_PATTERN = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
@@ -186,4 +251,157 @@ exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
     success: true,
     message: "Attendance settings updated successfully",
   });
+});
+
+exports.getOrgUserAttendanceLogs = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  
+  const userId = Number(req.params.userId);
+  const payload = await buildUserAttendancePayload({
+    userId,
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+  res.status(200).json({ success: true, ...payload });
+});
+
+exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  
+  const userId = Number(req.params.userId);
+  const payload = await buildUserAttendancePayload({
+    userId,
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+
+  const toPdfTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const subtitleLines = [
+    `User: ${payload.user.name} (${payload.user.email})`,
+    `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const summaryCards = payload.summary.map(s => ({
+    label: s.label,
+    value: s.value,
+  }));
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "DETAILED USER ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40, align: "left" },
+      { key: "date", label: "Date", width: 90 },
+      { key: "status", label: "Status", width: 80, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 110, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 110, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
+      { key: "geoValid", label: "Geo Valid", width: 70, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => {
+      let geoValid = "Yes";
+      if (item.punchInValid === false || item.punchOutValid === false) {
+        geoValid = "No";
+      } else if (item.punchInValid == null && item.punchOutValid == null) {
+        geoValid = "-";
+      }
+
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+        geoValid,
+      };
+    }),
+    size: "A4",
+  });
+
+  const safeName = String(payload.user.name || "user").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  
+  const userId = Number(req.params.userId);
+  const payload = await buildUserAttendancePayload({
+    userId,
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+
+  const subtitleLines = [
+    `User: ${payload.user.name} (${payload.user.email})`,
+    `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+    `Generated At: ${new Date().toLocaleString("en-IN")}`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "User Detailed Attendance Logs",
+    subtitleLines,
+    sheetName: "Daily Logs",
+    columns: [
+      { key: "entryNo", label: "No.", width: 42 },
+      { key: "date", label: "Date", width: 80 },
+      { key: "status", label: "Status", width: 68 },
+      { key: "punchIn", label: "Punch In Time", width: 120 },
+      { key: "punchOut", label: "Punch Out Time", width: 120 },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 88 },
+      { key: "geoValid", label: "Geo Valid", width: 64 },
+    ],
+    rows: payload.items.map((item, index) => {
+      let geoValid = "Yes";
+      if (item.punchInValid === false || item.punchOutValid === false) {
+        geoValid = "No";
+      } else if (item.punchInValid == null && item.punchOutValid == null) {
+        geoValid = "-";
+      }
+
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? new Date(item.punchInAt).toLocaleString("en-IN") : "-",
+        punchOut: item.punchOutAt ? new Date(item.punchOutAt).toLocaleString("en-IN") : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+        geoValid,
+      };
+    }),
+  });
+
+  const safeName = String(payload.user.name || "user").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
 });

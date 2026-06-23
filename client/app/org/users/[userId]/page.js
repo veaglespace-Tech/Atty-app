@@ -17,6 +17,9 @@ import {
   useDownloadOrgUserProfilePdfMutation,
   useGetOrgUserByIdQuery,
   usePatchOrgUserMutation,
+  useGetOrgUserAttendanceLogsQuery,
+  useDownloadOrgUserAttendancePdfMutation,
+  useDownloadOrgUserAttendanceExcelMutation,
 } from "@/services/api/orgApi";
 import {
   PERMISSION_GROUPS,
@@ -71,6 +74,18 @@ const toDateTimeLabel = (value, fallback = "-") => {
   });
 };
 
+const toTimeLabel = (value, fallback = "-") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+
+  return date.toLocaleString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 const toPhoneLabel = (countryCode, number) => {
   const code = String(countryCode || "").trim();
   const mobile = String(number || "").trim();
@@ -107,6 +122,21 @@ export default function OrgUserDetailPage() {
     permissions: [],
   });
 
+  const [period, setPeriod] = useState("monthly");
+  const [customRange, setCustomRange] = useState({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0],
+    to: new Date().toISOString().split("T")[0],
+  });
+
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams({ period });
+    if (period === "custom") {
+      params.set("from", customRange.from);
+      params.set("to", customRange.to);
+    }
+    return params.toString();
+  }, [period, customRange]);
+
   const {
     data: userData,
     isLoading,
@@ -117,6 +147,14 @@ export default function OrgUserDetailPage() {
   const [patchUserMutation] = usePatchOrgUserMutation();
   const [downloadOrgUserProfilePdf, { isLoading: downloadingProfilePdf }] =
     useDownloadOrgUserProfilePdfMutation();
+    
+  const { data: logsData, isLoading: loadingLogs, isFetching: fetchingLogs } = useGetOrgUserAttendanceLogsQuery(
+    { userId, params: queryString },
+    { skip: !Number.isFinite(userId) || userId <= 0 }
+  );
+  
+  const [downloadPdfMutation, { isLoading: downloadingPdf }] = useDownloadOrgUserAttendancePdfMutation();
+  const [downloadExcelMutation, { isLoading: downloadingExcel }] = useDownloadOrgUserAttendanceExcelMutation();
 
   const user = userData?.item || null;
   const organization = user?.organization || null;
@@ -275,6 +313,38 @@ export default function OrgUserDetailPage() {
       setMessage("User details PDF downloaded successfully");
     } catch (downloadError) {
       setError(getErrorMessage(downloadError, "Failed to download user details PDF"));
+    }
+  };
+
+  const handleDownloadLogsPdf = async () => {
+    try {
+      const blob = await downloadPdfMutation({ userId, params: queryString }).unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance-logs-${userId}-${period}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download PDF"));
+    }
+  };
+
+  const handleDownloadLogsExcel = async () => {
+    try {
+      const blob = await downloadExcelMutation({ userId, params: queryString }).unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance-logs-${userId}-${period}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download Excel"));
     }
   };
 
@@ -569,6 +639,104 @@ export default function OrgUserDetailPage() {
             Update Permissions
           </button>
         </div>
+      </div>
+
+      <div className="light-glow-card-static space-y-6 rounded-[1.9rem] p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Detailed Attendance Logs</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500">View and export day-by-day punch records</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="dashboard-field-control py-2 text-sm"
+            >
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="custom">Custom</option>
+            </select>
+            {period === "custom" && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customRange.from}
+                  onChange={(e) => setCustomRange((prev) => ({ ...prev, from: e.target.value }))}
+                  className="dashboard-field-control py-2 text-sm"
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="date"
+                  value={customRange.to}
+                  onChange={(e) => setCustomRange((prev) => ({ ...prev, to: e.target.value }))}
+                  className="dashboard-field-control py-2 text-sm"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-5">
+          <button
+            type="button"
+            onClick={handleDownloadLogsPdf}
+            disabled={downloadingPdf || loadingLogs || fetchingLogs || !logsData?.items?.length}
+            className="brand-btn brand-btn-soft brand-btn-sm"
+          >
+            {downloadingPdf ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            Download PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadLogsExcel}
+            disabled={downloadingExcel || loadingLogs || fetchingLogs || !logsData?.items?.length}
+            className="brand-btn brand-btn-soft brand-btn-sm"
+          >
+            {downloadingExcel ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            Download Excel
+          </button>
+        </div>
+
+        {loadingLogs || fetchingLogs ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-slate-500">
+            <Loader2 className="animate-spin" size={18} />
+            <span className="text-sm font-semibold">Loading logs...</span>
+          </div>
+        ) : logsData?.items?.length ? (
+          <div className="overflow-x-auto rounded-[1.4rem] border border-slate-200 bg-white">
+            <table className="w-full min-w-[600px] text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Date</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Punch In</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Punch Out</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Hours</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {logsData.items.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3 font-semibold text-slate-800">{log.date}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700">
+                        {log.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center text-slate-600">{toTimeLabel(log.punchInAt)}</td>
+                    <td className="px-4 py-3 text-center text-slate-600">{toTimeLabel(log.punchOutAt)}</td>
+                    <td className="px-4 py-3 text-center text-slate-600">{Number(log.workedHours).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500">
+            No attendance records found for this period.
+          </div>
+        )}
       </div>
     </section>
   );

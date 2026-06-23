@@ -165,6 +165,24 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgAttendance"],
     }),
+    getOrgUserAttendanceLogs: builder.query({
+      query: ({ userId, params = "" }) => `/org/users/${userId}/attendance/logs${params ? `?${params}` : ""}`,
+      providesTags: (result, error, { userId }) => [{ type: "OrgUserAttendance", id: userId }],
+    }),
+    downloadOrgUserAttendancePdf: builder.mutation({
+      query: ({ userId, params = "" }) => ({
+        url: `/org/users/${userId}/attendance/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadOrgUserAttendanceExcel: builder.mutation({
+      query: ({ userId, params = "" }) => ({
+        url: `/org/users/${userId}/attendance/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -193,6 +211,9 @@ export const {
   useGetOrgAttendanceQuery,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
+  useGetOrgUserAttendanceLogsQuery,
+  useDownloadOrgUserAttendancePdfMutation,
+  useDownloadOrgUserAttendanceExcelMutation,
   useGetOrgRegistrationRequestsQuery,
   useAcceptRegistrationRequestMutation,
   useRejectRegistrationRequestMutation,
