@@ -2954,3 +2954,578 @@ exports.deleteSuperAdminPost = asyncHandler(async (req, res) => {
 
   res.status(200).json({ success: true, message: "Post deleted successfully" });
 });
+
+// HELPER: Build Platform Attendance Payload
+const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, orgId, search }) => {
+  const { dateKey, todayKey, monthWindow, toDateKey, minutesToHoursValue } = require("../services/common.service");
+  
+  const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"]);
+  const CUSTOM_REPORT_MIN_DAYS = 1;
+  const CUSTOM_REPORT_MAX_DAYS = 364;
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+  
+  const normalizedPeriod = REPORT_PERIODS.has(String(period || "").trim().toLowerCase())
+    ? String(period || "").trim().toLowerCase()
+    : "monthly";
+
+  let rangeFrom, rangeTo, periodLabel;
+  const now = new Date();
+  const today = todayKey();
+
+  if (normalizedPeriod === "daily") {
+    rangeFrom = today;
+    rangeTo = today;
+    periodLabel = "Daily";
+  } else if (normalizedPeriod === "weekly") {
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    rangeFrom = dateKey(from);
+    rangeTo = today;
+    periodLabel = "Weekly";
+  } else if (normalizedPeriod === "custom") {
+    rangeFrom = toDateKey(fromInput);
+    rangeTo = toDateKey(toInput);
+    if (!rangeFrom || !rangeTo) {
+      const err = new Error("Custom reports require both from and to dates.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (rangeFrom > rangeTo) {
+      const err = new Error("From date cannot be after to date.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (rangeTo > today) {
+      const err = new Error("Custom report range cannot extend into future dates.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const fromDateObj = new Date(`${rangeFrom}T00:00:00.000Z`);
+    const toDateObj = new Date(`${rangeTo}T00:00:00.000Z`);
+    const customDays = Math.floor((toDateObj.getTime() - fromDateObj.getTime()) / DAY_IN_MS) + 1;
+    if (customDays < CUSTOM_REPORT_MIN_DAYS || customDays > CUSTOM_REPORT_MAX_DAYS) {
+      const err = new Error(`Custom report range must stay between ${CUSTOM_REPORT_MIN_DAYS} and ${CUSTOM_REPORT_MAX_DAYS} days.`);
+      err.statusCode = 400;
+      throw err;
+    }
+    periodLabel = "Custom";
+  } else {
+    const window = monthWindow(now);
+    rangeFrom = window.from;
+    rangeTo = today;
+    periodLabel = "Monthly";
+  }
+
+  const userWhere = {
+    deletedAt: null,
+    role: { not: "SUPER_ADMIN" },
+  };
+  if (orgId) {
+    userWhere.orgId = orgId;
+  }
+  const searchStr = String(search || "").trim();
+  if (searchStr) {
+    userWhere.OR = [
+      { name: { contains: searchStr } },
+      { email: { contains: searchStr } },
+    ];
+  }
+
+  const users = await prisma.user.findMany({
+    where: userWhere,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      orgId: true,
+      organization: {
+        select: {
+          name: true,
+          organizationCode: true,
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const userIds = users.map((u) => u.id);
+
+  const groupedRows = await prisma.attendance.groupBy({
+    by: ["userId", "status"],
+    where: {
+      deletedAt: null,
+      userId: { in: userIds },
+      date: { gte: rangeFrom, lte: rangeTo },
+    },
+    _count: { _all: true },
+    _sum: { totalMinutesWorked: true },
+  });
+
+  const userSummaryMap = new Map();
+  for (const row of groupedRows) {
+    const uid = Number(row.userId);
+    const status = String(row.status || "").toUpperCase();
+    const count = Number(row._count?._all || 0);
+    const workedMinutes = Number(row._sum?.totalMinutesWorked || 0);
+
+    const current = userSummaryMap.get(uid) || {
+      presentDays: 0,
+      halfDays: 0,
+      absentDays: 0,
+      workedMinutes: 0,
+    };
+
+    if (status === "PRESENT") current.presentDays += count;
+    else if (status === "HALF_DAY") current.halfDays += count;
+    else if (status === "ABSENT") current.absentDays += count;
+
+    current.workedMinutes += workedMinutes;
+    userSummaryMap.set(uid, current);
+  }
+
+  const items = users.map((user) => {
+    const summary = userSummaryMap.get(user.id) || {
+      presentDays: 0,
+      halfDays: 0,
+      absentDays: 0,
+      workedMinutes: 0,
+    };
+
+    return {
+      id: user.id,
+      member: user.name || "Unknown",
+      email: user.email || "-",
+      role: user.role || "MEMBER",
+      orgName: user.organization?.name || "-",
+      orgCode: user.organization?.organizationCode || "-",
+      presentDays: summary.presentDays,
+      halfDays: summary.halfDays,
+      absentDays: summary.absentDays,
+      workedHours: minutesToHoursValue(summary.workedMinutes),
+    };
+  });
+
+  const totalUsers = items.length;
+  let totalPresentDays = 0;
+  let totalHalfDays = 0;
+  let totalAbsentDays = 0;
+  let totalWorkedHours = 0;
+
+  for (const item of items) {
+    totalPresentDays += item.presentDays;
+    totalHalfDays += item.halfDays;
+    totalAbsentDays += item.absentDays;
+    totalWorkedHours += item.workedHours;
+  }
+
+  let appliedFiltersLabel = "";
+  if (orgId) {
+    const orgObj = await prisma.organization.findUnique({ where: { id: orgId }, select: { name: true } });
+    appliedFiltersLabel += `Org: ${orgObj?.name || `ID ${orgId}`}`;
+  }
+  if (searchStr) {
+    appliedFiltersLabel += (appliedFiltersLabel ? " | " : "") + `Search: "${searchStr}"`;
+  }
+
+  return {
+    summary: [
+      { label: "Members", value: totalUsers },
+      { label: "Present Days", value: totalPresentDays },
+      { label: "Half Days", value: totalHalfDays },
+      { label: "Absent Days", value: totalAbsentDays },
+      { label: "Worked Hrs", value: Number(totalWorkedHours.toFixed(2)) },
+    ],
+    items,
+    meta: {
+      from: rangeFrom,
+      to: rangeTo,
+      period: normalizedPeriod,
+      periodLabel,
+      appliedFiltersLabel,
+    },
+  };
+};
+
+// HELPER: Build Single User Attendance Payload
+const buildSuperAdminUserAttendancePayload = async ({ userId, period, fromInput, toInput }) => {
+  const { dateKey, todayKey, monthWindow, toDateKey, minutesToHoursValue } = require("../services/common.service");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId, deletedAt: null },
+    include: {
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          organizationCode: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"]);
+  const CUSTOM_REPORT_MIN_DAYS = 1;
+  const CUSTOM_REPORT_MAX_DAYS = 364;
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+  
+  const normalizedPeriod = REPORT_PERIODS.has(String(period || "").trim().toLowerCase())
+    ? String(period || "").trim().toLowerCase()
+    : "monthly";
+
+  let rangeFrom, rangeTo, periodLabel;
+  const now = new Date();
+  const today = todayKey();
+
+  if (normalizedPeriod === "daily") {
+    rangeFrom = today;
+    rangeTo = today;
+    periodLabel = "Daily";
+  } else if (normalizedPeriod === "weekly") {
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    rangeFrom = dateKey(from);
+    rangeTo = today;
+    periodLabel = "Weekly";
+  } else if (normalizedPeriod === "custom") {
+    rangeFrom = toDateKey(fromInput);
+    rangeTo = toDateKey(toInput);
+    if (!rangeFrom || !rangeTo) {
+      const err = new Error("Custom reports require both from and to dates.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (rangeFrom > rangeTo) {
+      const err = new Error("From date cannot be after to date.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (rangeTo > today) {
+      const err = new Error("Custom report range cannot extend into future dates.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const fromDateObj = new Date(`${rangeFrom}T00:00:00.000Z`);
+    const toDateObj = new Date(`${rangeTo}T00:00:00.000Z`);
+    const customDays = Math.floor((toDateObj.getTime() - fromDateObj.getTime()) / DAY_IN_MS) + 1;
+    if (customDays < CUSTOM_REPORT_MIN_DAYS || customDays > CUSTOM_REPORT_MAX_DAYS) {
+      const err = new Error(`Custom report range must stay between ${CUSTOM_REPORT_MIN_DAYS} and ${CUSTOM_REPORT_MAX_DAYS} days.`);
+      err.statusCode = 400;
+      throw err;
+    }
+    periodLabel = "Custom";
+  } else {
+    const window = monthWindow(now);
+    rangeFrom = window.from;
+    rangeTo = today;
+    periodLabel = "Monthly";
+  }
+
+  const logs = await prisma.attendance.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      date: { gte: rangeFrom, lte: rangeTo },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  const totalRecords = logs.length;
+  const presentDays = logs.filter(l => l.status === "PRESENT").length;
+  const halfDays = logs.filter(l => l.status === "HALF_DAY").length;
+  const absentDays = logs.filter(l => l.status === "ABSENT").length;
+  const totalWorkedMinutes = logs.reduce((sum, l) => sum + Number(l.totalMinutesWorked || 0), 0);
+  const workedHours = minutesToHoursValue(totalWorkedMinutes);
+
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      orgName: user.organization?.name || "-",
+      orgCode: user.organization?.organizationCode || "-",
+    },
+    summary: [
+      { label: "Total Logs", value: totalRecords },
+      { label: "Present Days", value: presentDays },
+      { label: "Half Days", value: halfDays },
+      { label: "Absent Days", value: absentDays },
+      { label: "Worked Hrs", value: Number(workedHours.toFixed(2)) },
+    ],
+    items: logs.map(log => ({
+      id: log.id,
+      date: log.date,
+      status: log.status,
+      punchInAt: log.punchInAt,
+      punchOutAt: log.punchOutAt,
+      workedHours: minutesToHoursValue(log.totalMinutesWorked || 0),
+      punchInValid: log.isPunchInValid,
+      punchOutValid: log.isPunchOutValid,
+      punchInLocationMeta: log.punchInLocationMeta,
+      punchOutLocationMeta: log.punchOutLocationMeta,
+      punchInSelfieUrl: log.punchInSelfieUrl,
+      punchOutSelfieUrl: log.punchOutSelfieUrl,
+    })),
+    meta: {
+      from: rangeFrom,
+      to: rangeTo,
+      period: normalizedPeriod,
+      periodLabel,
+    },
+  };
+};
+
+// GET /super-admin/attendance/reports
+exports.getSuperAdminAttendanceReports = asyncHandler(async (req, res) => {
+  const payload = await buildSuperAdminAttendancePayload({
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+    orgId: req.query.orgId ? Number(req.query.orgId) : null,
+    search: req.query.search,
+  });
+  res.status(200).json({ success: true, ...payload });
+});
+
+// GET /super-admin/attendance/reports/pdf
+exports.downloadSuperAdminAttendanceReportsPdf = asyncHandler(async (req, res) => {
+  const payload = await buildSuperAdminAttendancePayload({
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+    orgId: req.query.orgId ? Number(req.query.orgId) : null,
+    search: req.query.search,
+  });
+
+  const subtitleLines = [
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+    payload.meta.appliedFiltersLabel ? `Filters: ${payload.meta.appliedFiltersLabel}` : "Filters: None",
+    `Members: ${payload.items.length} | Present Days: ${payload.summary.find(s => s.label === "Present Days")?.value || 0} | Worked Hrs: ${payload.summary.find(s => s.label === "Worked Hrs")?.value || 0}`,
+  ];
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "PLATFORM USER ATTENDANCE SUMMARY",
+    subtitleLines,
+    summaryCards: [],
+    columns: [
+      { key: "entryNo", label: "No.", width: 40, align: "left" },
+      { key: "member", label: "Member", width: 130 },
+      { key: "email", label: "Email", width: 160 },
+      { key: "orgNameCode", label: "Organization", width: 180 },
+      { key: "roleLabel", label: "Role", width: 90 },
+      { key: "presentDays", label: "Present", width: 60, align: "center" },
+      { key: "halfDays", label: "Half Day", width: 60, align: "center" },
+      { key: "absentDays", label: "Absent", width: 60, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => ({
+      ...item,
+      entryNo: String(index + 1).padStart(3, "0"),
+      orgNameCode: `${item.orgName} (${item.orgCode})`,
+      roleLabel: item.role,
+      workedHoursLabel: item.workedHours.toFixed(2),
+    })),
+    size: "A3",
+  });
+
+  const filename = `super-admin-attendance-report-${payload.meta.period}-${payload.meta.from}-to-${payload.meta.to}.pdf`;
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+// GET /super-admin/attendance/reports/excel
+exports.downloadSuperAdminAttendanceReportsExcel = asyncHandler(async (req, res) => {
+  const payload = await buildSuperAdminAttendancePayload({
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+    orgId: req.query.orgId ? Number(req.query.orgId) : null,
+    search: req.query.search,
+  });
+
+  const subtitleLines = [
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+    payload.meta.appliedFiltersLabel ? `Filters: ${payload.meta.appliedFiltersLabel}` : "Filters: None",
+    `Generated At: ${new Date().toLocaleString("en-IN")}`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "Platform User Attendance Summary",
+    subtitleLines,
+    sheetName: "Attendance Summary",
+    columns: [
+      { key: "entryNo", label: "No.", width: 42 },
+      { key: "member", label: "Member Name", width: 120 },
+      { key: "email", label: "Email", width: 132 },
+      { key: "orgName", label: "Organization", width: 120 },
+      { key: "orgCode", label: "Org Code", width: 68 },
+      { key: "role", label: "Role", width: 88 },
+      { key: "presentDays", label: "Present Days", width: 64 },
+      { key: "halfDays", label: "Half Days", width: 64 },
+      { key: "absentDays", label: "Absent Days", width: 64 },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 88 },
+    ],
+    rows: payload.items.map((item, index) => ({
+      ...item,
+      entryNo: String(index + 1).padStart(3, "0"),
+      workedHoursLabel: item.workedHours.toFixed(2),
+    })),
+  });
+
+  const filename = `super-admin-attendance-report-${payload.meta.period}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
+});
+
+// GET /super-admin/attendance/users/:userId/logs
+exports.getSuperAdminUserAttendanceLogs = asyncHandler(async (req, res) => {
+  const userId = Number(req.params.userId);
+  const payload = await buildSuperAdminUserAttendancePayload({
+    userId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+  res.status(200).json({ success: true, ...payload });
+});
+
+// GET /super-admin/attendance/users/:userId/pdf
+exports.downloadSuperAdminUserAttendancePdf = asyncHandler(async (req, res) => {
+  const userId = Number(req.params.userId);
+  const payload = await buildSuperAdminUserAttendancePayload({
+    userId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+
+  const toPdfTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const subtitleLines = [
+    `User: ${payload.user.name} (${payload.user.email})`,
+    `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const summaryCards = payload.summary.map(s => ({
+    label: s.label,
+    value: s.value,
+  }));
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "DETAILED USER ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40, align: "left" },
+      { key: "date", label: "Date", width: 90 },
+      { key: "status", label: "Status", width: 80, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 110, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 110, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
+      { key: "geoValid", label: "Geo Valid", width: 70, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => {
+      let geoValid = "Yes";
+      if (item.punchInValid === false || item.punchOutValid === false) {
+        geoValid = "No";
+      } else if (item.punchInValid == null && item.punchOutValid == null) {
+        geoValid = "-";
+      }
+
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+        geoValid,
+      };
+    }),
+    size: "A4",
+  });
+
+  const safeName = String(payload.user.name || "user").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+// GET /super-admin/attendance/users/:userId/excel
+exports.downloadSuperAdminUserAttendanceExcel = asyncHandler(async (req, res) => {
+  const userId = Number(req.params.userId);
+  const payload = await buildSuperAdminUserAttendancePayload({
+    userId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+
+  const subtitleLines = [
+    `User: ${payload.user.name} (${payload.user.email})`,
+    `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+    `Generated At: ${new Date().toLocaleString("en-IN")}`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "User Detailed Attendance Logs",
+    subtitleLines,
+    sheetName: "Daily Logs",
+    columns: [
+      { key: "entryNo", label: "No.", width: 42 },
+      { key: "date", label: "Date", width: 80 },
+      { key: "status", label: "Status", width: 68 },
+      { key: "punchIn", label: "Punch In Time", width: 120 },
+      { key: "punchOut", label: "Punch Out Time", width: 120 },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 88 },
+      { key: "geoValid", label: "Geo Valid", width: 64 },
+    ],
+    rows: payload.items.map((item, index) => {
+      let geoValid = "Yes";
+      if (item.punchInValid === false || item.punchOutValid === false) {
+        geoValid = "No";
+      } else if (item.punchInValid == null && item.punchOutValid == null) {
+        geoValid = "-";
+      }
+
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? new Date(item.punchInAt).toLocaleString("en-IN") : "-",
+        punchOut: item.punchOutAt ? new Date(item.punchOutAt).toLocaleString("en-IN") : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+        geoValid,
+      };
+    }),
+  });
+
+  const safeName = String(payload.user.name || "user").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
+});

@@ -262,6 +262,40 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: ["SAPosts", "SADashboard"],
     }),
+    getSuperAdminAttendanceReports: builder.query({
+      query: (params = "") => `/super-admin/attendance/reports${params ? `?${params}` : ""}`,
+    }),
+    downloadSuperAdminAttendanceReportsPdf: builder.mutation({
+      query: (params = "") => ({
+        url: `/super-admin/attendance/reports/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadSuperAdminAttendanceReportsExcel: builder.mutation({
+      query: (params = "") => ({
+        url: `/super-admin/attendance/reports/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    getSuperAdminUserAttendanceLogs: builder.query({
+      query: ({ userId, params = "" }) => `/super-admin/attendance/users/${userId}/logs${params ? `?${params}` : ""}`,
+    }),
+    downloadSuperAdminUserAttendancePdf: builder.mutation({
+      query: ({ userId, params = "" }) => ({
+        url: `/super-admin/attendance/users/${userId}/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadSuperAdminUserAttendanceExcel: builder.mutation({
+      query: ({ userId, params = "" }) => ({
+        url: `/super-admin/attendance/users/${userId}/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -307,4 +341,10 @@ export const {
   useCreateSuperAdminPostMutation,
   useUpdateSuperAdminPostMutation,
   useDeleteSuperAdminPostMutation,
+  useGetSuperAdminAttendanceReportsQuery,
+  useDownloadSuperAdminAttendanceReportsPdfMutation,
+  useDownloadSuperAdminAttendanceReportsExcelMutation,
+  useGetSuperAdminUserAttendanceLogsQuery,
+  useDownloadSuperAdminUserAttendancePdfMutation,
+  useDownloadSuperAdminUserAttendanceExcelMutation,
 } = superAdminApi;

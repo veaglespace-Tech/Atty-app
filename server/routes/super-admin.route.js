@@ -33,6 +33,12 @@ const {
   createSuperAdminPost,
   updateSuperAdminPost,
   deleteSuperAdminPost,
+  getSuperAdminAttendanceReports,
+  downloadSuperAdminAttendanceReportsPdf,
+  downloadSuperAdminAttendanceReportsExcel,
+  getSuperAdminUserAttendanceLogs,
+  downloadSuperAdminUserAttendancePdf,
+  downloadSuperAdminUserAttendanceExcel,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -58,6 +64,14 @@ router.use(userProtected, allowRoles("SUPER_ADMIN"));
 router.get("/dashboard", getSuperAdminDashboard);
 router.get("/dashboard/pdf", downloadSuperAdminDashboardPdf);
 router.get("/dashboard/excel", downloadSuperAdminDashboardExcel);
+
+// Super Admin Attendance & Reports Routes
+router.get("/attendance/reports", getSuperAdminAttendanceReports);
+router.get("/attendance/reports/pdf", downloadSuperAdminAttendanceReportsPdf);
+router.get("/attendance/reports/excel", downloadSuperAdminAttendanceReportsExcel);
+router.get("/attendance/users/:userId/logs", getSuperAdminUserAttendanceLogs);
+router.get("/attendance/users/:userId/pdf", downloadSuperAdminUserAttendancePdf);
+router.get("/attendance/users/:userId/excel", downloadSuperAdminUserAttendanceExcel);
 router.get("/organizations", getSuperAdminOrganizations);
 router.post("/organizations", createSuperAdminOrganization);
 router.get("/organizations/pdf", downloadSuperAdminOrganizationsPdf);
