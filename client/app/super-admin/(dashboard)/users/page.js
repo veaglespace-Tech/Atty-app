@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Loader2, RefreshCcw, Search } from "lucide-react";
+import { ArrowRight, Download, Loader2, RefreshCcw, Search } from "lucide-react";
 
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import useLocalPagination from "@/hooks/useLocalPagination";
-import { useGetAllSuperAdminUsersQuery } from "@/services/api/superAdminApi";
+import { useExportAllSuperAdminUsersExcelMutation, useGetAllSuperAdminUsersQuery } from "@/services/api/superAdminApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { ROLES, formatRoleLabel } from "@/utils/roles";
 
@@ -28,8 +28,10 @@ function MetricCard({ label, value }) {
 
 export default function SuperAdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   const { data, isLoading, isFetching, refetch } = useGetAllSuperAdminUsersQuery();
+  const [exportAllUsersExcel] = useExportAllSuperAdminUsersExcelMutation();
 
   const users = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
   const loading = isLoading || isFetching;
@@ -75,6 +77,23 @@ export default function SuperAdminUsersPage() {
   const activeUsersCount = users.filter((u) => u.isActive).length;
   const superAdminsCount = users.filter((u) => u.role === ROLES.SUPER_ADMIN).length;
 
+  const handleExcelDownload = async () => {
+    try {
+      setDownloading(true);
+      const blob = await exportAllUsersExcel().unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "all-users-org-wise.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // toast handled by api middleware
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <section className="space-y-6">
       <div className={`${panelClassName} mobile-compact-panel relative z-20`}>
@@ -111,6 +130,16 @@ export default function SuperAdminUsersPage() {
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
                 Refresh
+              </button>
+              <button
+                type="button"
+                id="btn-export-all-users-excel"
+                onClick={handleExcelDownload}
+                disabled={downloading || isLoading || users.length === 0}
+                className="brand-btn brand-btn-secondary brand-btn-md"
+              >
+                {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                Export Excel
               </button>
             </div>
           </div>
