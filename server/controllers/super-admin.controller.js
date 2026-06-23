@@ -2307,9 +2307,9 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
   const newExpiry = new Date(baseDate.getTime() + days * DAY_IN_MS);
 
   const result = await prisma.$transaction(async (tx) => {
-    if (isUpgrade && org.subscriptionId) {
-      await tx.subscription.update({
-        where: { id: org.subscriptionId },
+    if (isUpgrade) {
+      await tx.subscription.updateMany({
+        where: { orgId: org.id, status: "ACTIVE" },
         data: {
           status: "EXPIRED",
           endDate: now,
