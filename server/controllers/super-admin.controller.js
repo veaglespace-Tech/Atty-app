@@ -2331,7 +2331,7 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
         paymentGateway: "ADMIN_BYPASS",
         paymentOrderId: `EXTEND_${Date.now()}`,
         createdById: Number(req.user.id),
-        activeKey: `ORG_EXT_${org.id}_${Date.now()}`,
+        activeKey: `ORG_${org.id}`,
       },
     });
 
