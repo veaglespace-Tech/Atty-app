@@ -231,7 +231,12 @@ function RegisterFormContent() {
             <input
               type="text"
               {...register("referralCode")}
-              className={`${fieldClassName} !pl-12 ${errors.referralCode ? errorFieldClassName : normalFieldClassName}`}
+              readOnly={!!refParam}
+              className={`${fieldClassName} !pl-12 ${
+                errors.referralCode
+                  ? errorFieldClassName
+                  : normalFieldClassName
+              } ${refParam ? "cursor-not-allowed select-none opacity-70" : ""}`}
             />
           </Field>
 
