@@ -11,6 +11,7 @@ const navItems = [
   { label: "Posts", href: "/super-admin/posts" },
   { label: "Payments", href: "/super-admin/payments" },
   { label: "Analytics", href: "/super-admin/analytics" },
+  { label: "Backup", href: "/super-admin/backup" },
 ];
 
 export default function SuperAdminLayout({ children }) {

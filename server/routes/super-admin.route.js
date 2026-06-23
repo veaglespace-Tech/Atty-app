@@ -39,6 +39,7 @@ const {
   getSuperAdminUserAttendanceLogs,
   downloadSuperAdminUserAttendancePdf,
   downloadSuperAdminUserAttendanceExcel,
+  generateDatabaseBackup,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -117,5 +118,8 @@ router.patch("/permissions/:id", updatePermission);
 router.delete("/permissions/:id", deletePermission);
 router.get("/roles/permissions", getRolePermissions);
 router.post("/roles/permissions", updateRolePermissions);
+
+// Database Backup
+router.get("/backup/download", generateDatabaseBackup);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const archiver = require("archiver");
 const prisma = require("../lib/prisma");
 const {
   parseBoolean,
@@ -3528,4 +3529,112 @@ exports.downloadSuperAdminUserAttendanceExcel = asyncHandler(async (req, res) =>
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.status(200).send(excelBuffer);
+});
+
+// ─── Database Backup ──────────────────────────────────────────────────────────
+
+exports.generateDatabaseBackup = asyncHandler(async (req, res) => {
+  // Fetch all tables in parallel
+  const [
+    users,
+    organizations,
+    organizationMembers,
+    teams,
+    teamMembers,
+    attendance,
+    subscriptions,
+    renewalIntents,
+    payments,
+    plans,
+    posts,
+    registrationRequests,
+    contactInquiries,
+    freeTrialClaims,
+    archiveOrgs,
+    archiveUsers,
+    permissions,
+    rolePermissions,
+    supportTickets,
+    systemSettings,
+    verificationSessions,
+  ] = await Promise.all([
+    prisma.user.findMany(),
+    prisma.organization.findMany(),
+    prisma.organizationMember.findMany(),
+    prisma.team.findMany(),
+    prisma.teamMember.findMany(),
+    prisma.attendance.findMany(),
+    prisma.subscription.findMany(),
+    prisma.subscriptionRenewalIntent.findMany(),
+    prisma.payment.findMany(),
+    prisma.plan.findMany(),
+    prisma.post.findMany(),
+    prisma.registrationRequest.findMany(),
+    prisma.contactInquiry.findMany(),
+    prisma.freeTrialClaim.findMany(),
+    prisma.archiveOrg.findMany(),
+    prisma.archiveUser.findMany(),
+    prisma.permission.findMany(),
+    prisma.rolePermission.findMany(),
+    prisma.supportTicket.findMany(),
+    prisma.systemSetting.findMany(),
+    prisma.verificationSession.findMany(),
+  ]);
+
+  const tables = {
+    users,
+    organizations,
+    organization_members: organizationMembers,
+    teams,
+    team_members: teamMembers,
+    attendance,
+    subscriptions,
+    subscription_renewal_intents: renewalIntents,
+    payments,
+    plans,
+    posts,
+    registration_requests: registrationRequests,
+    contact_inquiries: contactInquiries,
+    free_trial_claims: freeTrialClaims,
+    archive_orgs: archiveOrgs,
+    archive_users: archiveUsers,
+    permissions,
+    role_permissions: rolePermissions,
+    support_tickets: supportTickets,
+    system_settings: systemSettings,
+    verification_sessions: verificationSessions,
+  };
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const zipFilename = `db-backup-${timestamp}.zip`;
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${zipFilename}"`);
+
+  const archive = archiver("zip", { zlib: { level: 9 } });
+
+  archive.on("error", (err) => {
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Backup generation failed", error: err.message });
+    }
+  });
+
+  archive.pipe(res);
+
+  // Append a meta manifest file
+  const meta = {
+    generatedAt: new Date().toISOString(),
+    tables: Object.keys(tables),
+    rowCounts: Object.fromEntries(
+      Object.entries(tables).map(([name, rows]) => [name, rows.length])
+    ),
+  };
+  archive.append(JSON.stringify(meta, null, 2), { name: "backup_manifest.json" });
+
+  // Append each table as a JSON file
+  for (const [tableName, rows] of Object.entries(tables)) {
+    archive.append(JSON.stringify(rows, null, 2), { name: `${tableName}.json` });
+  }
+
+  await archive.finalize();
 });

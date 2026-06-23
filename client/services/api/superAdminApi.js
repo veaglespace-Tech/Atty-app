@@ -296,6 +296,13 @@ export const superAdminApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    downloadDatabaseBackup: builder.mutation({
+      query: () => ({
+        url: "/super-admin/backup/download",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -347,4 +354,5 @@ export const {
   useGetSuperAdminUserAttendanceLogsQuery,
   useDownloadSuperAdminUserAttendancePdfMutation,
   useDownloadSuperAdminUserAttendanceExcelMutation,
+  useDownloadDatabaseBackupMutation,
 } = superAdminApi;
