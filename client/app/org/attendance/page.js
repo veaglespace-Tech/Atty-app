@@ -131,7 +131,7 @@ const getDefaultCustomRange = () => ({
   to: todayKey(),
 });
 
-const toQueryString = ({ period, from, to, status }) => {
+const toQueryString = ({ period, from, to, status, search }) => {
   const params = new URLSearchParams({
     period,
   });
@@ -143,6 +143,10 @@ const toQueryString = ({ period, from, to, status }) => {
 
   if (status && status !== "ALL") {
     params.set("status", status);
+  }
+
+  if (search) {
+    params.set("search", search);
   }
 
   return params.toString();
