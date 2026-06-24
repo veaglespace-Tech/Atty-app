@@ -8,7 +8,7 @@ export default function PublicLayout({ children }) {
       <footer id="dashboard-footer" className="border-t border-slate-200/80 bg-white/70 py-5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/70">
         <div className="mx-auto flex w-full max-w-[1540px] flex-row items-center justify-between px-4 md:px-8">
           <div className="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 sm:text-sm">
-            All Rights Reserved &copy;{" "}
+            All Rights Reserved &copy; 2026{" "}
             <a
               href={companyWebsiteUrl}
               target="_blank"

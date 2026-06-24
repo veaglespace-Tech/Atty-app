@@ -137,9 +137,9 @@ function DetailCard({ icon: Icon, label, value }) {
   );
 }
 
-function PreferenceCard({ icon: Icon, title, value, children }) {
+function PreferenceCard({ icon: Icon, title, value, children, className }) {
   return (
-    <div className="brand-panel-soft rounded-[1.5rem] p-5">
+    <div className={cn("brand-panel-soft rounded-[1.5rem] p-5 flex flex-col h-full", className)}>
       <div className="flex items-start gap-3">
         <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
           <Icon size={18} />
@@ -149,9 +149,9 @@ function PreferenceCard({ icon: Icon, title, value, children }) {
             {title}
           </p>
           <p className="brand-copy-sm mt-1">{value}</p>
-          {children ? <div className="mt-4">{children}</div> : null}
         </div>
       </div>
+      {children ? <div className="mt-4 flex-1 flex flex-col justify-end">{children}</div> : null}
     </div>
   );
 }
@@ -830,7 +830,7 @@ export default function WorkspaceSettingsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="flex flex-col gap-4">
         <div className="light-glow-card-static rounded-[1.75rem] p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1096,11 +1096,12 @@ export default function WorkspaceSettingsPage() {
           </form>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid gap-4 lg:grid-cols-2">
           <PreferenceCard
             icon={LockKeyhole}
             title="Security"
             value="Your account is protected by role-based access and secure sessions."
+            className="h-full"
           >
             <div className="space-y-3">
               <button
@@ -1119,7 +1120,7 @@ export default function WorkspaceSettingsPage() {
             </div>
           </PreferenceCard>
 
-          <div className="light-glow-card-static rounded-[1.75rem] p-6">
+          <div className="light-glow-card-static rounded-[1.75rem] p-6 h-full">
             <h3 className="brand-kicker">Workspace Details</h3>
             <div className="mt-4 grid gap-4">
               <div className="brand-panel-soft rounded-[1.5rem] p-5">
@@ -1145,7 +1146,7 @@ export default function WorkspaceSettingsPage() {
           </div>
 
           {canManageLocationSettings && (
-            <div className="space-y-4">
+            <div className="space-y-4 lg:col-span-2">
               <LocationSettings />
               <TimeSettings />
             </div>
