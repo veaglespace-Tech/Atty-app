@@ -93,6 +93,23 @@ const toMinutesFromTime = (hhmm) => {
 };
 
 exports.getOrgAttendance = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+
+  const payload = await buildOrgAttendancePayload({
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+    status: req.query.status,
+  });
+
+  res.status(200).json({ success: true, ...payload });
+});
+
+exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
