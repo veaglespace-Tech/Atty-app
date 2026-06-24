@@ -799,7 +799,6 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     orgId,
     isActive: true,
     deletedAt: null,
-    type: "NOTIFICATION",
   };
 
   const [posts, total, unreadCount] = await Promise.all([
@@ -811,6 +810,8 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
         id: true,
         title: true,
         content: true,
+        type: true,
+        metadata: true,
         createdAt: true,
         author: {
           select: {
@@ -836,6 +837,8 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     id: String(post.id),
     title: post.title,
     message: post.content,
+    type: post.type,
+    metadata: post.metadata,
     createdAt: post.createdAt,
     authorName: post.author?.name || "Admin",
     source: "POST",
@@ -867,12 +870,13 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
       orgId,
       isActive: true,
       deletedAt: null,
-      type: "NOTIFICATION",
     },
     select: {
       id: true,
       title: true,
       content: true,
+      type: true,
+      metadata: true,
       createdAt: true,
       author: {
         select: {
@@ -893,6 +897,8 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
       id: String(post.id),
       title: post.title,
       message: post.content,
+      type: post.type,
+      metadata: post.metadata,
       createdAt: post.createdAt,
       authorName: post.author?.name || "Admin",
     },
@@ -908,7 +914,6 @@ exports.markNotificationAsRead = asyncHandler(async (req, res) => {
     where: {
       id: Number(id),
       orgId,
-      type: "NOTIFICATION",
     }
   });
 

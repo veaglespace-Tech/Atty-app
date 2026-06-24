@@ -2,9 +2,17 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Loader2, Megaphone } from "lucide-react";
+import { ArrowLeft, Calendar, Loader2, Megaphone, FileText, BarChart2, Trophy } from "lucide-react";
 import { useGetOrgNotificationByIdQuery, useMarkNotificationAsReadMutation } from "@/services/api/orgApi";
 import Link from "next/link";
+
+const POST_TYPES = {
+  NOTIFICATION: { label: "Notification", icon: Megaphone, color: "text-blue-600 border-blue-100 bg-blue-50 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300" },
+  ARTICLE: { label: "Article", icon: FileText, color: "text-emerald-600 border-emerald-100 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300" },
+  NEWS: { label: "News", icon: Megaphone, color: "text-sky-600 border-sky-100 bg-sky-50 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300" },
+  POLL: { label: "Poll", icon: BarChart2, color: "text-amber-600 border-amber-100 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300" },
+  TOURNAMENT_CARD: { label: "Tournament Card", icon: Trophy, color: "text-rose-600 border-rose-100 bg-rose-50 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300" },
+};
 
 export default function NotificationDetailPage() {
   const { id } = useParams();
@@ -57,10 +65,16 @@ export default function NotificationDetailPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl dark:border-slate-800 dark:bg-slate-950/75">
         <div className="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900/50">
           <div className="mb-4 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300">
-              <Megaphone size={14} />
-              Notification
-            </span>
+            {(() => {
+              const config = POST_TYPES[notification.type] || POST_TYPES.NOTIFICATION;
+              const Icon = config.icon;
+              return (
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${config.color}`}>
+                  <Icon size={14} />
+                  {config.label}
+                </span>
+              );
+            })()}
             <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
               <Calendar size={14} />
               {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

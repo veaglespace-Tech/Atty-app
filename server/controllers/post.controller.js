@@ -228,6 +228,10 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
     where.type = normalizedType;
   }
 
+  if (req.query.authorId) {
+    where.authorId = Number(req.query.authorId);
+  }
+
   const [items, total] = await Promise.all([
     prisma.post.findMany({
       where,

@@ -23,6 +23,7 @@ import {
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import { getErrorMessage } from "@/utils/formValidation";
 import useLocalPagination from "@/hooks/useLocalPagination";
+import { useAuth } from "@/hooks/useAuth";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { PostForm } from "./_components/PostForm";
 import { PostCard } from "./_components/PostCard";
@@ -52,7 +53,8 @@ export default function OrgPostsPage() {
     metadata: { options: ["", ""] },
   });
 
-  const { data: postsData, isLoading, refetch, isFetching } = useGetOrgPostsQuery();
+  const { user } = useAuth();
+  const { data: postsData, isLoading, refetch, isFetching } = useGetOrgPostsQuery({ authorId: user?.id }, { skip: !user?.id });
   const [createPost] = useCreatePostMutation();
   const [updatePost] = useUpdatePostMutation();
   const [voteOnPost] = useVoteOnPostMutation();
