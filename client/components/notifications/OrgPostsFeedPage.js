@@ -156,7 +156,7 @@ export default function OrgPostsFeedPage({
             return (
               <div
                 key={post.id}
-                className={`group rounded-2xl border ${post.isRead ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/75 hover:border-slate-300 dark:hover:border-slate-700" : "border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-800"} p-4 shadow-sm transition-all duration-300 hover:shadow-md sm:rounded-3xl sm:p-6`}
+                className={`relative group rounded-2xl border ${post.isRead ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/75 hover:border-slate-300 dark:hover:border-slate-700" : "border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-800"} p-4 shadow-sm transition-all duration-300 hover:shadow-md sm:rounded-3xl sm:p-6`}
               >
                 <div className="flex items-start justify-between gap-3 sm:gap-4">
                   <div className="flex-1">
@@ -173,7 +173,7 @@ export default function OrgPostsFeedPage({
                       </span>
                     </div>
 
-                    <Link href={`/org/notifications/${post.id}`}>
+                    <Link href={`/org/notifications/${post.id}`} className="before:absolute before:inset-0 before:z-10 focus:outline-none">
                       <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
                         {post.title}
                       </h2>
@@ -184,7 +184,7 @@ export default function OrgPostsFeedPage({
                     </div>
 
                     {post.metadata?.attachment && (
-                      <div className="mt-4">
+                      <div className="mt-4 relative z-20">
                         {post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (post.metadata.attachment.resourceType === "image" && post.metadata.attachment.format !== "pdf" && !post.metadata.attachment.url?.match(/\.pdf/i)) ? (
                           <div 
                             className="relative h-48 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
@@ -228,16 +228,18 @@ export default function OrgPostsFeedPage({
                     )}
 
                     {post.type === "POLL" && post.metadata?.options ? (
-                      <PollOptionsPanel
-                        post={post}
-                        onVote={handleVote}
-                        isVoting={activeVoteId === post.id}
-                      />
+                      <div className="relative z-20 mt-4">
+                        <PollOptionsPanel
+                          post={post}
+                          onVote={handleVote}
+                          isVoting={activeVoteId === post.id}
+                        />
+                      </div>
                     ) : null}
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:mt-8 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+                <div className="relative z-20 mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:mt-8 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 sm:text-sm dark:text-slate-500">
                     <User size={14} />
                     <span>Posted by {post.author?.name || "Admin"}</span>
