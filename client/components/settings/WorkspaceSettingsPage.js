@@ -918,7 +918,7 @@ export default function WorkspaceSettingsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
+              <div className="md:col-span-1">
                 <label htmlFor="settings-name" className={labelClassName}>
                   Full Name
                 </label>
@@ -937,7 +937,7 @@ export default function WorkspaceSettingsPage() {
                 ) : null}
               </div>
 
-              <div className="md:col-span-2">
+              <div className="md:col-span-1">
                 <label htmlFor="settings-email" className={labelClassName}>
                   Email Address
                 </label>
@@ -975,7 +975,7 @@ export default function WorkspaceSettingsPage() {
                 countryCodeError={errors.mobileCountryCode?.message}
                 phoneError={errors.mobile?.message}
                 helpText="Select the country code, then enter your mobile number."
-                containerClassName="md:col-span-2"
+                containerClassName="md:col-span-1"
                 labelClassName={labelClassName}
               />
               <input type="hidden" {...register("mobileCountryCode")} />
@@ -1000,7 +1000,7 @@ export default function WorkspaceSettingsPage() {
                 ) : null}
               </div>
 
-              <div className="md:col-span-1">
+              <div className="md:col-span-2">
                 <label htmlFor="settings-currentAddress" className={labelClassName}>
                   Full Address
                 </label>
