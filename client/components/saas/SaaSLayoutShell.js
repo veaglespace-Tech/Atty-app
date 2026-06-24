@@ -120,7 +120,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const { data: requestsData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !hasRequestsNavItem });
 
   const badgeCounts = useMemo(() => ({
-    Notifications: notificationsData?.meta?.total || 0,
+    Notifications: notificationsData?.meta?.unreadCount || 0,
     Requests: requestsData?.items?.length || 0,
   }), [notificationsData, requestsData]);
 

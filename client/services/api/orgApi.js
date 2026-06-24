@@ -60,6 +60,17 @@ export const orgApi = createApi({
       query: (limit = 100) => `/org/notifications?limit=${limit}`,
       providesTags: ["OrgNotifications"],
     }),
+    getOrgNotificationById: builder.query({
+      query: (id) => `/org/notifications/${id}`,
+      providesTags: (result, error, id) => [{ type: "OrgNotifications", id }],
+    }),
+    markNotificationAsRead: builder.mutation({
+      query: (id) => ({
+        url: `/org/notifications/${id}/read`,
+        method: "POST",
+      }),
+      invalidatesTags: ["OrgNotifications"],
+    }),
     getOrgUsers: builder.query({
       query: (limit = 1600) => `/org/users?limit=${limit}`,
       providesTags: ["OrgUsers"],
@@ -201,6 +212,8 @@ export const {
   useDownloadOrgReportExcelMutation,
   useGetOrgSubscriptionQuery,
   useGetOrgNotificationsQuery,
+  useGetOrgNotificationByIdQuery,
+  useMarkNotificationAsReadMutation,
   useGetOrgUsersQuery,
   useGetOrgUserByIdQuery,
   useDownloadOrgUserProfilePdfMutation,

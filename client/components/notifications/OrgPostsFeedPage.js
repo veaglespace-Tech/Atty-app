@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   BarChart2,
   Calendar,
@@ -11,9 +12,9 @@ import {
   User,
 } from "lucide-react";
 import {
-  useGetOrgPostsQuery,
   useVoteOnPostMutation,
 } from "@/services/api/postApi";
+import { useGetOrgNotificationsQuery } from "@/services/api/orgApi";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import PollOptionsPanel from "@/components/posts/PollOptionsPanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
@@ -53,7 +54,7 @@ export default function OrgPostsFeedPage({
 }) {
   const [activeVoteId, setActiveVoteId] = useState(null);
   const [voteError, setVoteError] = useState("");
-  const { data: postsData, isLoading, refetch, isFetching } = useGetOrgPostsQuery();
+  const { data: postsData, isLoading, refetch, isFetching } = useGetOrgNotificationsQuery(500);
   const [voteOnPost] = useVoteOnPostMutation();
   const posts = useMemo(() => postsData?.items || [], [postsData]);
   const {
@@ -130,7 +131,7 @@ export default function OrgPostsFeedPage({
             return (
               <div
                 key={post.id}
-                className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md sm:rounded-3xl sm:p-6 dark:border-slate-800 dark:bg-slate-950/75 dark:hover:border-slate-700"
+                className={`group rounded-2xl border ${post.isRead ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/75 hover:border-slate-300 dark:hover:border-slate-700" : "border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-800"} p-4 shadow-sm transition-all duration-300 hover:shadow-md sm:rounded-3xl sm:p-6`}
               >
                 <div className="flex items-start justify-between gap-3 sm:gap-4">
                   <div className="flex-1">
@@ -143,16 +144,18 @@ export default function OrgPostsFeedPage({
                       </span>
                       <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 sm:text-xs dark:text-slate-500">
                         <Calendar size={12} />
-                        {new Date(post.createdAt).toLocaleDateString()}
+                        {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
 
-                    <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
-                      {post.title}
-                    </h2>
+                    <Link href={`/org/notifications/${post.id}`}>
+                      <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
+                        {post.title}
+                      </h2>
+                    </Link>
 
-                    <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300">
-                      {post.content}
+                    <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300 line-clamp-3">
+                      {post.message || post.content}
                     </div>
 
                     {post.type === "POLL" && post.metadata?.options ? (

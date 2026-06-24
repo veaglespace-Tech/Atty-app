@@ -792,6 +792,7 @@ exports.deleteOrgUser = asyncHandler(async (req, res) => {
 
 exports.getOrgNotifications = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
+  const userId = req.user.id;
   const limit = parseLimit(req.query.limit, 100, 500);
 
   const where = {
@@ -801,7 +802,7 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     type: "NOTIFICATION",
   };
 
-  const [posts, total] = await Promise.all([
+  const [posts, total, unreadCount] = await Promise.all([
     prisma.post.findMany({
       where,
       orderBy: [{ createdAt: "desc" }],
@@ -816,9 +817,19 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
             name: true,
           },
         },
+        reads: {
+          where: { userId },
+          select: { id: true }
+        }
       },
     }),
     prisma.post.count({ where }),
+    prisma.post.count({ 
+      where: {
+        ...where,
+        reads: { none: { userId } }
+      }
+    })
   ]);
 
   const items = posts.map((post) => ({
@@ -828,19 +839,103 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     createdAt: post.createdAt,
     authorName: post.author?.name || "Admin",
     source: "POST",
+    isRead: post.reads && post.reads.length > 0
   }));
 
   res.status(200).json({
     success: true,
     summary: [
       toSummaryItem("Total Notifications", total),
-      toSummaryItem("Unread Notifications", total),
+      toSummaryItem("Unread Notifications", unreadCount),
     ],
     items,
     meta: {
       limit,
       total,
+      unreadCount
     },
+  });
+});
+
+exports.getOrgNotificationById = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const { id } = req.params;
+
+  const post = await prisma.post.findFirst({
+    where: {
+      id: Number(id),
+      orgId,
+      isActive: true,
+      deletedAt: null,
+      type: "NOTIFICATION",
+    },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      createdAt: true,
+      author: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Notification not found");
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      id: String(post.id),
+      title: post.title,
+      message: post.content,
+      createdAt: post.createdAt,
+      authorName: post.author?.name || "Admin",
+    },
+  });
+});
+
+exports.markNotificationAsRead = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const userId = req.user.id;
+  const { id } = req.params;
+
+  const post = await prisma.post.findFirst({
+    where: {
+      id: Number(id),
+      orgId,
+      type: "NOTIFICATION",
+    }
+  });
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Notification not found");
+  }
+
+  await prisma.userNotificationRead.upsert({
+    where: {
+      userId_notificationId: {
+        userId,
+        notificationId: Number(id)
+      }
+    },
+    update: {
+      readAt: new Date()
+    },
+    create: {
+      userId,
+      notificationId: Number(id)
+    }
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Marked as read",
   });
 });
 

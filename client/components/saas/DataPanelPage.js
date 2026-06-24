@@ -1351,7 +1351,8 @@ export default function DataPanelPage({
   const [selectedRecord, setSelectedRecord] = useState(null);
   const isDashboardEndpoint = String(endpoint || "").endsWith("/dashboard");
   const isSuperAdminEndpoint = String(endpoint || "").startsWith("/super-admin/");
-  const effectiveTitle = isDashboardEndpoint ? `${firstName} Dashboard` : title;
+  const displayPrefix = user?.organization?.name || firstName;
+  const effectiveTitle = isDashboardEndpoint ? `${displayPrefix} Dashboard` : title;
   const heroKicker = getHeroKicker({ isDashboardEndpoint, isSuperAdminEndpoint });
   const heroDescription = getHeroDescription({
     description,
