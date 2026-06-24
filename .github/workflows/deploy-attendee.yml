@@ -46,8 +46,6 @@ jobs:
             set +a
 
             npm install
-            npx prisma generate
-            npx prisma migrate deploy
 
             # restart backend
             NODE_ENV=production pm2 restart attendee-server --update-env || NODE_ENV=production pm2 start npm --name "attendee-server" -- start
