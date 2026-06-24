@@ -109,8 +109,8 @@ const buildAttendanceWhere = ({
   if (search && String(search).trim().length > 0) {
     where.user = {
       OR: [
-        { name: { contains: String(search).trim(), mode: "insensitive" } },
-        { email: { contains: String(search).trim(), mode: "insensitive" } },
+        { name: { contains: String(search).trim() } },
+        { email: { contains: String(search).trim() } },
       ],
     };
   }
