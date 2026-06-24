@@ -168,18 +168,27 @@ export default function OrgPostsFeedPage({
                         {config.label}
                       </span>
                       <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 sm:text-xs dark:text-slate-500">
-                        <Calendar size={12} />
-                        {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
+                      <Calendar size={12} />
+                      {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
 
-                    <Link href={`/org/notifications/${post.id}`} className="before:absolute before:inset-0 before:z-10 focus:outline-none">
-                      <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
-                        {post.title}
-                      </h2>
-                    </Link>
+                  <Link 
+                    href={
+                      typeof window !== "undefined" && window.location.pathname.startsWith("/member") 
+                        ? `/member/notifications/${post.id}` 
+                        : (typeof window !== "undefined" && window.location.pathname.startsWith("/team-leader") 
+                          ? `/team-leader/notifications/${post.id}` 
+                          : `/org/notifications/${post.id}`)
+                    } 
+                    className="before:absolute before:inset-0 before:z-10 focus:outline-none"
+                  >
+                    <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
+                      {post.title}
+                    </h2>
+                  </Link>
 
-                    <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300 line-clamp-3">
+                  <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300 line-clamp-3">
                       {post.message || post.content}
                     </div>
 
