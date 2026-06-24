@@ -329,7 +329,6 @@ export default function SuperAdminPostsPage() {
         votes: count,
         percentage: totalVotes ? Math.round((count / totalVotes) * 100) : 0,
       };
-      };
     });
   };
 
