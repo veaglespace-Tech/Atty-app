@@ -218,9 +218,6 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
 
   const users = await prisma.user.findMany({
     where: {
-      ...(Number.isFinite(currentUserId) && currentUserId > 0
-        ? { id: { not: currentUserId } }
-        : {}),
       memberships: {
         some: {
           orgId,

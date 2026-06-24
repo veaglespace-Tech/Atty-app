@@ -30,6 +30,8 @@ const {
   getOrgUserAttendanceLogs,
   downloadOrgUserAttendancePdf,
   downloadOrgUserAttendanceExcel,
+  downloadOrgAttendancePdf,
+  downloadOrgAttendanceExcel,
 } = require("../controllers/org-attendance.controller");
 const {
   getOrgRegistrationRequests,
@@ -97,6 +99,8 @@ router.patch("/teams/:teamId", patchOrgTeam);
 router.delete("/teams/:teamId", deleteOrgTeam);
 
 router.get("/attendance", getOrgAttendance);
+router.get("/attendance/pdf", downloadOrgAttendancePdf);
+router.get("/attendance/excel", downloadOrgAttendanceExcel);
 router.get("/attendance/settings", getOrgAttendanceSettings);
 router.patch("/attendance/settings", updateOrgAttendanceSettings);
 

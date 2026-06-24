@@ -51,6 +51,9 @@ export default function OrgPostsPage() {
     content: "",
     type: "NOTIFICATION",
     metadata: { options: ["", ""] },
+    attachmentDataUrl: undefined,
+    attachmentName: "",
+    attachmentAllowDownload: true,
   });
 
   const { user } = useAuthSession();
@@ -86,8 +89,8 @@ export default function OrgPostsPage() {
   });
 
   const onInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const resetForm = () => {
@@ -96,6 +99,9 @@ export default function OrgPostsPage() {
       content: "",
       type: "NOTIFICATION",
       metadata: { options: ["", ""] },
+      attachmentDataUrl: undefined,
+      attachmentName: "",
+      attachmentAllowDownload: true,
     });
     setEditingId(null);
     setCreateOpen(false);
@@ -136,6 +142,9 @@ export default function OrgPostsPage() {
       content: post.content,
       type: post.type,
       metadata: post.metadata || { options: ["", ""] },
+      attachmentDataUrl: undefined, // Initializing to undefined means no change to attachment
+      attachmentName: post.metadata?.attachment?.name || "",
+      attachmentAllowDownload: post.metadata?.attachment?.allowDownload ?? true,
     });
     setEditingId(post.id);
     setCreateOpen(true);

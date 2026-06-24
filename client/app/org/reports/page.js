@@ -105,7 +105,7 @@ export default function OrgReportsPage() {
   const downloadMenuRef = useRef(null)
   const [selectedMemberReport, setSelectedMemberReport] = useState(null)
 
-  const { data: attendanceData, isLoading: attendanceLoading } = useGetOrgAttendanceQuery(2000, {
+  const { data: attendanceData, isLoading: attendanceLoading } = useGetOrgAttendanceQuery("limit=2000", {
     skip: !selectedMemberReport,
   })
 

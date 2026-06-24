@@ -10,7 +10,7 @@ const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
 
-router.use(userProtected, checkActiveSubscription, allowRoles("MEMBER"));
+router.use(userProtected, checkActiveSubscription, allowRoles("MEMBER", "TEAM_LEADER", "SUB_ADMIN", "ORG_ADMIN"));
 
 router.get("/dashboard", getMemberDashboard);
 router.get("/attendance", getMemberAttendance);

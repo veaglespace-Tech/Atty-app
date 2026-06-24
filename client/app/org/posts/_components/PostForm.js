@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Edit2, Plus, Loader2, Trash2 } from "lucide-react";
+import { X, Edit2, Plus, Loader2, Trash2, Paperclip, FileText, Image as ImageIcon } from "lucide-react";
 
 export function PostForm({
   form,
@@ -38,6 +38,41 @@ export function PostForm({
       ...prev,
       metadata: { ...prev.metadata, options: newOptions },
     }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size should not exceed 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setForm((prev) => ({
+        ...prev,
+        attachmentDataUrl: reader.result,
+        attachmentName: file.name,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeAttachment = () => {
+    setForm((prev) => ({
+      ...prev,
+      attachmentDataUrl: "", // Use empty string to signal removal
+      attachmentName: "",
+    }));
+  };
+
+  const getExistingAttachmentName = () => {
+    if (form.attachmentName) return form.attachmentName;
+    if (form.metadata?.attachment?.name) return form.metadata.attachment.name;
+    if (form.metadata?.attachment?.url) return "Existing Attachment";
+    return null;
   };
 
   return (
@@ -139,6 +174,53 @@ export function PostForm({
             </button>
           </div>
         )}
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-black uppercase tracking-widest text-slate-500 ml-1">
+            Attachment (Optional)
+          </label>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">
+                <Paperclip size={16} />
+                Attach File
+                <input type="file" className="hidden" onChange={handleFileChange} />
+              </label>
+              
+              {(form.attachmentDataUrl !== "" && getExistingAttachmentName()) && (
+                <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5 text-sm text-blue-700">
+                  {form.attachmentName?.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                    <ImageIcon size={16} className="text-blue-500" />
+                  ) : (
+                    <FileText size={16} className="text-blue-500" />
+                  )}
+                  <span className="font-medium truncate max-w-[200px]">
+                    {getExistingAttachmentName()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeAttachment}
+                    className="text-blue-400 hover:text-blue-600 transition ml-2"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+            {(form.attachmentDataUrl !== "" && getExistingAttachmentName()) && (
+              <label className="flex items-center gap-2 cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  name="attachmentAllowDownload"
+                  checked={form.attachmentAllowDownload ?? true}
+                  onChange={onInputChange}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                <span className="text-xs font-bold text-slate-600">Allow users to download this attachment</span>
+              </label>
+            )}
+          </div>
+        </div>
 
         <div className="flex justify-end pt-2">
           <button

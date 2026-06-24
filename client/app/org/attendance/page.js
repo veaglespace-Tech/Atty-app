@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X } from "lucide-react";
+import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X, Download, FileBox, FileText, ChevronDown } from "lucide-react";
 import { addNotification } from "@/store/slices/notificationSlice";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetOrgAttendanceQuery,
+  useDownloadOrgAttendanceExcelMutation,
+  useDownloadOrgAttendancePdfMutation,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
   useGetOrgTeamsQuery,
@@ -18,6 +20,7 @@ import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { PERMISSIONS, normalizeRole, ROLES, hasPermission, formatRoleLabel } from "@/utils/roles";
 import { formatHoursValue } from "@/utils/time";
+import { getDateKey, getTodayDateKey } from "@/utils/date";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -100,6 +103,78 @@ const detectLocation = () =>
     );
   });
 
+
+const PERIOD_OPTIONS = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "custom", label: "Custom" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "All Statuses" },
+  { value: "PRESENT", label: "Present" },
+  { value: "ABSENT", label: "Absent" },
+  { value: "HALF_DAY", label: "Half Day" },
+];
+
+const todayKey = getTodayDateKey;
+
+const daysAgoKey = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() - Number(days || 0));
+  return getDateKey(date);
+};
+
+const getDefaultCustomRange = () => ({
+  from: daysAgoKey(89),
+  to: todayKey(),
+});
+
+const toQueryString = ({ period, from, to, status, search }) => {
+  const params = new URLSearchParams({
+    period,
+  });
+
+  if (period === "custom") {
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+  }
+
+  if (status && status !== "ALL") {
+    params.set("status", status);
+  }
+
+  if (search) {
+    params.set("search", search);
+  }
+
+  return params.toString();
+};
+
+const getInclusiveDaySpan = (from, to) => {
+  const fromDate = new Date(`${from}T00:00:00.000Z`);
+  const toDate = new Date(`${to}T00:00:00.000Z`);
+  const diffInMs = toDate.getTime() - fromDate.getTime();
+  return Math.floor(diffInMs / (24 * 60 * 60 * 1000)) + 1;
+};
+
+const getCustomRangeError = ({ period, from, to, minDays, maxDays }) => {
+  if (period !== "custom") return "";
+  if (!from || !to) return "Select both From and To dates for a custom report.";
+  if (from > to) return "From date cannot be after To date.";
+
+  const today = todayKey();
+  if (to > today) return "Custom report range cannot extend into future dates.";
+
+  const span = getInclusiveDaySpan(from, to);
+  if (span < minDays || span > maxDays) {
+    return `Custom range must stay between ${minDays} and ${maxDays} days.`;
+  }
+
+  return "";
+};
+
 export default function OrgAttendancePage() {
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
@@ -123,12 +198,60 @@ export default function OrgAttendancePage() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
+
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [debouncedMemberSearch, setDebouncedMemberSearch] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedMemberSearch(memberSearchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [memberSearchQuery]);
+
+  const [period, setPeriod] = useState("monthly");
+  const [customRange, setCustomRange] = useState(getDefaultCustomRange);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [downloadError, setDownloadError] = useState("");
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = require('react').useRef(null);
+  
+  const rangeRules = useMemo(() => ({ minDays: 1, maxDays: 364 }), []);
+  
+  const customRangeError = useMemo(
+    () =>
+      getCustomRangeError({
+        period,
+        from: customRange.from,
+        to: customRange.to,
+        minDays: rangeRules.minDays,
+        maxDays: rangeRules.maxDays,
+      }),
+    [customRange.from, customRange.to, period, rangeRules.maxDays, rangeRules.minDays]
+  );
+
+  const queryString = useMemo(
+    () =>
+      toQueryString({
+        period,
+        from: customRange.from,
+        to: customRange.to,
+        status: statusFilter,
+        search: debouncedMemberSearch,
+      }),
+    [customRange.from, customRange.to, period, statusFilter, debouncedMemberSearch]
+  );
+  
+  const [downloadOrgAttendancePdf, { isLoading: downloadingPdf }] = useDownloadOrgAttendancePdfMutation();
+  const [downloadOrgAttendanceExcel, { isLoading: downloadingExcel }] = useDownloadOrgAttendanceExcelMutation();
+
+
   const {
     data: attendanceData,
     isLoading: attendanceLoading,
     isFetching: attendanceFetching,
     refetch: refetchAttendance,
-  } = useGetOrgAttendanceQuery(DASHBOARD_FETCH_LIMITS.ORG_ATTENDANCE);
+  } = useGetOrgAttendanceQuery(queryString, { skip: period === "custom" && Boolean(customRangeError) });
 
   const {
     data: settingsData,
@@ -357,6 +480,53 @@ export default function OrgAttendancePage() {
     }
   };
 
+
+  const onDownloadPdf = async () => {
+    try {
+      setDownloadError("");
+      const blob = await downloadOrgAttendancePdf(queryString).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `attendance-report-${period}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setDownloadError(getErrorMessage(err, "Failed to download PDF."));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      setDownloadError("");
+      const blob = await downloadOrgAttendanceExcel(queryString).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `attendance-report-${period}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setDownloadError(getErrorMessage(err, "Failed to download Excel."));
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const loading =
     attendanceLoading ||
     attendanceFetching ||
@@ -387,6 +557,169 @@ export default function OrgAttendancePage() {
         </div>
 
 
+
+        
+        
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-6">
+          {/* Status Filter */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              Filter by Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="dashboard-field-control dashboard-select-control mt-2 w-full"
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* User Search */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              Search Member
+            </label>
+            <div className="relative mt-2">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={memberSearchQuery}
+                onChange={(e) => {
+                  setMemberSearchQuery(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Name or email..."
+                className="dashboard-field-control w-full pl-9 pr-3 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Date range Period selection */}
+          <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div className="flex-1 w-full">
+              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                Report Period
+              </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PERIOD_OPTIONS.map((option) => {
+                  const active = period === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setPeriod(option.value);
+                        setPage(1);
+                      }}
+                      className={`rounded-lg border px-3 py-2 text-xs font-black uppercase tracking-wide transition ${
+                        active
+                          ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                          : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="relative" ref={downloadMenuRef}>
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                disabled={loading || Boolean(customRangeError) || downloadingPdf || downloadingExcel}
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto mt-2 sm:mt-0"
+              >
+                {(downloadingPdf || downloadingExcel) ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export
+                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showDownloadMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                  <button
+                    onClick={onDownloadPdf}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                  >
+                    <FileBox size={16} />
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={onDownloadExcel}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                  >
+                    <FileText size={16} />
+                    Download Excel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {period === "custom" ? (
+          <div className="mt-4 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white/80 dark:border-slate-800 dark:bg-slate-950/40 p-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="custom-from"
+                className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
+              >
+                From Date
+              </label>
+              <input
+                id="custom-from"
+                name="from"
+                type="date"
+                value={customRange.from}
+                onChange={(e) =>
+                  setCustomRange((p) => ({ ...p, from: e.target.value }))
+                }
+                max={todayKey()}
+                className="dashboard-field-control mt-2 w-full"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="custom-to"
+                className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
+              >
+                To Date
+              </label>
+              <input
+                id="custom-to"
+                name="to"
+                type="date"
+                value={customRange.to}
+                max={todayKey()}
+                onChange={(e) =>
+                  setCustomRange((p) => ({ ...p, to: e.target.value }))
+                }
+                className="dashboard-field-control mt-2 w-full"
+              />
+            </div>
+          </div>
+        ) : null}
+        {customRangeError && (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            {customRangeError}
+          </p>
+        )}
+        {downloadError && (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            {downloadError}
+          </p>
+        )}
 
         {message ? (
           <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>

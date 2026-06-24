@@ -10,6 +10,7 @@ import {
   Megaphone,
   Trophy,
   User,
+  Paperclip,
 } from "lucide-react";
 import {
   useVoteOnPostMutation,
@@ -157,6 +158,50 @@ export default function OrgPostsFeedPage({
                     <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300 line-clamp-3">
                       {post.message || post.content}
                     </div>
+
+                    {post.metadata?.attachment && (
+                      <div className="mt-4">
+                        {post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (post.metadata.attachment.resourceType === "image" && post.metadata.attachment.format !== "pdf" && !post.metadata.attachment.url?.match(/\.pdf/i)) ? (
+                          <div 
+                            className="relative h-48 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                            onContextMenu={(e) => post.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
+                          >
+                            <img 
+                              src={post.metadata.attachment.url} 
+                              alt={post.metadata.attachment.name || "Attachment"} 
+                              className={`h-full w-full object-cover ${post.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+                            />
+                          </div>
+                        ) : (
+                          post.metadata.attachment.allowDownload !== false ? (
+                            <a 
+                              href={post.metadata.attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <Paperclip size={18} className="text-blue-500 dark:text-blue-400" />
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <p className="truncate text-xs font-bold text-slate-700 dark:text-slate-300">{post.metadata.attachment.name || "Attached File"}</p>
+                                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Click to view/download</p>
+                              </div>
+                            </a>
+                          ) : (
+                            <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 opacity-80">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <Paperclip size={18} className="text-slate-400" />
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <p className="truncate text-xs font-bold text-slate-500">{post.metadata.attachment.name || "Attached File"}</p>
+                                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
 
                     {post.type === "POLL" && post.metadata?.options ? (
                       <PollOptionsPanel

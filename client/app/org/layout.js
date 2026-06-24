@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@/utils/roles";
 
 const navItems = [
   { label: "Dashboard", href: "/org/dashboard" },
+  { label: "My Attendance", href: "/org/my-attendance" },
   { label: "Notifications", href: "/org/notifications", permission: PERMISSIONS.USERS_STATUS_UPDATE },
   { label: "Requests", href: "/org/registration-requests", permission: PERMISSIONS.USERS_STATUS_UPDATE },
   { label: "Users", href: "/org/users", permission: PERMISSIONS.USERS_CREATE },

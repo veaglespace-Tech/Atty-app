@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -161,8 +161,22 @@ export const orgApi = createApi({
       invalidatesTags: ["OrgTeams"],
     }),
     getOrgAttendance: builder.query({
-      query: (limit = 2000) => `/org/attendance?limit=${limit}`,
+      query: (params = "") => `/org/attendance${params ? `?${params}` : ""}`,
       providesTags: ["OrgAttendance"],
+    }),
+    downloadOrgAttendancePdf: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/attendance/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadOrgAttendanceExcel: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/attendance/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
     }),
     getOrgAttendanceSettings: builder.query({
       query: () => "/org/attendance/settings",
@@ -229,6 +243,8 @@ export const {
   usePatchOrgTeamMutation,
   useDeleteOrgTeamMutation,
   useGetOrgAttendanceQuery,
+  useDownloadOrgAttendancePdfMutation,
+  useDownloadOrgAttendanceExcelMutation,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
   useGetOrgUserAttendanceLogsQuery,

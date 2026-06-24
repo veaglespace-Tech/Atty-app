@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Paperclip } from "lucide-react";
 import PollOptionsPanel from "@/components/posts/PollOptionsPanel";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +38,50 @@ export function PostCard({ post, types, onEdit, onDelete, onVote, isVoting }) {
           {post.content}
         </p>
       </div>
+
+      {post.metadata?.attachment && (
+        <div className="mt-3">
+          {post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (post.metadata.attachment.resourceType === "image" && post.metadata.attachment.format !== "pdf" && !post.metadata.attachment.url?.match(/\.pdf/i)) ? (
+            <div 
+              className="relative h-48 w-full overflow-hidden rounded-xl border border-slate-200"
+              onContextMenu={(e) => post.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
+            >
+              <img 
+                src={post.metadata.attachment.url} 
+                alt={post.metadata.attachment.name || "Attachment"} 
+                className={`h-full w-full object-cover ${post.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+              />
+            </div>
+          ) : (
+            post.metadata.attachment.allowDownload !== false ? (
+              <a 
+                href={post.metadata.attachment.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 hover:bg-slate-100 transition-colors"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
+                  <Paperclip size={18} className="text-blue-500" />
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-bold text-slate-700">{post.metadata.attachment.name || "Attached File"}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Click to view/download</p>
+                </div>
+              </a>
+            ) : (
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 opacity-80">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
+                  <Paperclip size={18} className="text-slate-400" />
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-bold text-slate-500">{post.metadata.attachment.name || "Attached File"}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      )}
 
       {post.type === "POLL" && post.metadata?.options && (
         <PollOptionsPanel post={post} onVote={onVote} isVoting={isVoting} />

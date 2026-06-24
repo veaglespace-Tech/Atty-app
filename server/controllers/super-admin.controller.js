@@ -2307,18 +2307,23 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
   const newExpiry = new Date(baseDate.getTime() + days * DAY_IN_MS);
 
   const result = await prisma.$transaction(async (tx) => {
+    // Release the unique activeKey from any previous subscription
+    await tx.subscription.updateMany({
+      where: { orgId: org.id, activeKey: `ORG_${org.id}` },
+      data: { activeKey: null },
+    });
+
     if (isUpgrade) {
       await tx.subscription.updateMany({
         where: { orgId: org.id, status: "ACTIVE" },
         data: {
           status: "EXPIRED",
           endDate: now,
-          activeKey: null,
         },
       });
     }
 
-    const newSubActiveKey = isUpgrade ? `ORG_${org.id}` : null;
+    const newSubActiveKey = `ORG_${org.id}`;
 
     // Create a new subscription record for the extension
     const newSub = await tx.subscription.create({

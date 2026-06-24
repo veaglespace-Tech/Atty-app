@@ -9,6 +9,7 @@ const {
   parseOffset,
   truncateText,
 } = require("../services/common.service");
+const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/cloudinary-image.service");
 
 const POST_TYPES = new Set([
   "NOTIFICATION",
@@ -185,6 +186,26 @@ exports.createPost = asyncHandler(async (req, res) => {
     nextMetadata = preparedPoll.metadata;
   }
 
+  if (req.body.attachmentDataUrl) {
+    try {
+      const uploadResult = await uploadFileDataUrl({
+        dataUrl: req.body.attachmentDataUrl,
+        folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+      });
+      nextMetadata.attachment = {
+        url: uploadResult.url,
+        publicId: uploadResult.publicId,
+        format: uploadResult.format,
+        resourceType: uploadResult.resourceType,
+        name: req.body.attachmentName || "Attachment",
+        allowDownload: req.body.attachmentAllowDownload !== false, // default true
+      };
+    } catch (err) {
+      res.status(400);
+      throw new Error("Failed to upload attachment: " + err.message);
+    }
+  }
+
   const post = await prisma.post.create({
     data: {
       title: normalizedTitle,
@@ -314,6 +335,50 @@ exports.updatePost = asyncHandler(async (req, res) => {
     nextMetadata = {};
   }
 
+  // Handle attachment changes
+  if (req.body.attachmentDataUrl !== undefined) {
+    // If a new attachment is provided or the existing one is removed
+    if (!req.body.attachmentDataUrl) {
+      // Remove attachment
+      if (nextMetadata.attachment?.publicId) {
+        await deleteCloudinaryFile(nextMetadata.attachment.publicId, nextMetadata.attachment.resourceType);
+      }
+      delete nextMetadata.attachment;
+    } else if (req.body.attachmentDataUrl.startsWith("data:")) {
+      // Upload new attachment
+      try {
+        const uploadResult = await uploadFileDataUrl({
+          dataUrl: req.body.attachmentDataUrl,
+          folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+        });
+        
+        // Delete old attachment if it exists
+        if (nextMetadata.attachment?.publicId) {
+          await deleteCloudinaryFile(nextMetadata.attachment.publicId, nextMetadata.attachment.resourceType);
+        }
+
+        nextMetadata.attachment = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId,
+          format: uploadResult.format,
+          resourceType: uploadResult.resourceType,
+          name: req.body.attachmentName || "Attachment",
+          allowDownload: req.body.attachmentAllowDownload !== false,
+        };
+      } catch (err) {
+        res.status(400);
+        throw new Error("Failed to upload attachment: " + err.message);
+      }
+    }
+  }
+
+  // Handle allowDownload toggle without re-uploading
+  if (req.body.attachmentDataUrl === undefined && req.body.attachmentAllowDownload !== undefined) {
+    if (nextMetadata.attachment) {
+      nextMetadata.attachment.allowDownload = req.body.attachmentAllowDownload;
+    }
+  }
+
   const updated = await prisma.post.update({
     where: { id: Number(id) },
     data: {
@@ -418,6 +483,12 @@ exports.deletePost = asyncHandler(async (req, res) => {
   if (!existing || existing.orgId !== orgId) {
     res.status(404);
     throw new Error("Post not found");
+  }
+
+  // Delete attachment if it exists
+  const existingMetadata = toSafeObject(existing.metadata);
+  if (existingMetadata.attachment?.publicId) {
+    await deleteCloudinaryFile(existingMetadata.attachment.publicId, existingMetadata.attachment.resourceType);
   }
 
   await prisma.post.update({

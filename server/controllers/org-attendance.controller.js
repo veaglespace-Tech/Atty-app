@@ -13,6 +13,7 @@ const {
   buildAttendanceWhere,
   buildAttendanceSummary,
   mapAttendanceRecord,
+  buildOrgAttendancePayload,
 } = require("../services/attendance-query.service");
 const {
   attendanceRecordSelect,
@@ -47,33 +48,17 @@ const toMinutesFromTime = (hhmm) => {
 exports.getOrgAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
-  const limit = parseLimit(req.query.limit, 400, 2500);
 
-  const where = buildAttendanceWhere({
+  const payload = await buildOrgAttendancePayload({
     orgId,
-    date: req.query.date,
-    from: req.query.from,
-    to: req.query.to,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
     status: req.query.status,
+    search: req.query.search,
   });
 
-  const records = await prisma.attendance.findMany({
-    where,
-    select: attendanceRecordSelect,
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    take: limit,
-  });
-
-  const items = records.map(mapAttendanceRecord);
-  res.status(200).json({
-    success: true,
-    items,
-    summary: buildAttendanceSummary(items),
-    meta: {
-      limit,
-      total: items.length,
-    },
-  });
+  res.status(200).json({ success: true, ...payload });
 });
 
 exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
@@ -340,6 +325,136 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
   });
 
   const safeName = String(payload.user.name || "user").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
+});
+
+exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  
+  const payload = await buildOrgAttendancePayload({
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+    status: req.query.status,
+    search: req.query.search,
+  });
+
+  const toPdfTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const subtitleLines = [
+    `Organization: ${payload.organization.name} (${payload.organization.organizationCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const summaryCards = payload.summary.map(s => ({
+    label: s.label,
+    value: s.value,
+  }));
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "ORGANIZATION ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40, align: "left" },
+      { key: "user", label: "Member", width: 100 },
+      { key: "date", label: "Date", width: 80 },
+      { key: "status", label: "Status", width: 70, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 90, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 90, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 70, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => {
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        user: item.member?.name || "-",
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+      };
+    }),
+    size: "A4",
+  });
+
+  const safeName = String(payload.organization.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  
+  const payload = await buildOrgAttendancePayload({
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+    status: req.query.status,
+    search: req.query.search,
+  });
+
+  const subtitleLines = [
+    `Organization: ${payload.organization.name} (${payload.organization.organizationCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const summaryCards = payload.summary.map(s => ({
+    label: s.label,
+    value: s.value,
+  }));
+
+  const excelBuffer = await buildExportWorkbookBuffer({
+    title: "ORGANIZATION ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40 },
+      { key: "user", label: "Member", width: 120 },
+      { key: "date", label: "Date", width: 90 },
+      { key: "status", label: "Status", width: 80 },
+      { key: "punchIn", label: "Punch In", width: 110 },
+      { key: "punchOut", label: "Punch Out", width: 110 },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 90 },
+      { key: "punchInLocation", label: "Punch In Location", width: 200 },
+      { key: "punchOutLocation", label: "Punch Out Location", width: 200 },
+    ],
+    rows: payload.items.map((item, index) => {
+      return {
+        entryNo: String(index + 1),
+        user: item.member?.name || "-",
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+        punchInLocation: item.punchInLocationMeta?.displayText || item.punchInLocationMeta?.areaLabel || "-",
+        punchOutLocation: item.punchOutLocationMeta?.displayText || item.punchOutLocationMeta?.areaLabel || "-",
+      };
+    }),
+  });
+
+  const safeName = String(payload.organization.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
   const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

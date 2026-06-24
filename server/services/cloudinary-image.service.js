@@ -158,8 +158,105 @@ const deleteCloudinaryImage = async (publicId) => {
   }
 };
 
+const parseFileDataUrl = ({
+  value,
+  maxBytes,
+  invalidMessage = "Upload a valid file.",
+  emptyMessage = "Selected file is empty.",
+  tooLargeMessage = "Selected file is too large.",
+  errorFactory = createImageUploadError,
+}) => {
+  const normalizedValue = String(value || "").trim();
+  const match = normalizedValue.match(/^data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,([a-zA-Z0-9+/=\s]+)$/);
+
+  if (!match) {
+    throw errorFactory(invalidMessage, 400);
+  }
+
+  const [, mimeType, base64Data] = match;
+  const normalizedBase64 = base64Data.replace(/\s+/g, "");
+  const buffer = Buffer.from(normalizedBase64, "base64");
+
+  if (!buffer.length) {
+    throw errorFactory(emptyMessage, 400);
+  }
+
+  if (Number.isFinite(maxBytes) && maxBytes > 0 && buffer.length > maxBytes) {
+    throw errorFactory(tooLargeMessage, 400);
+  }
+
+  return {
+    mimeType,
+    dataUrl: `data:${mimeType};base64,${normalizedBase64}`,
+  };
+};
+
+const uploadFileDataUrl = async ({
+  dataUrl,
+  folder,
+  publicId,
+  maxBytes,
+  missingConfigMessage,
+  invalidMessage,
+  emptyMessage,
+  tooLargeMessage,
+  uploadFailureMessage = "Failed to upload file.",
+  errorFactory = createImageUploadError,
+}) => {
+  ensureCloudinaryConfigured({
+    missingConfigMessage,
+    errorFactory,
+  });
+
+  const parsed = parseFileDataUrl({
+    value: dataUrl,
+    maxBytes,
+    invalidMessage,
+    emptyMessage,
+    tooLargeMessage,
+    errorFactory,
+  });
+
+  try {
+    const result = await cloudinary.uploader.upload(parsed.dataUrl, {
+      folder,
+      public_id: publicId,
+      resource_type: "auto",
+      overwrite: true,
+      invalidate: true,
+    });
+
+    return {
+      url: result.secure_url || result.url || null,
+      publicId: result.public_id || null,
+      format: result.format || parsed.mimeType,
+      resourceType: result.resource_type,
+    };
+  } catch (error) {
+    throw errorFactory(error?.message || uploadFailureMessage, 502);
+  }
+};
+
+const deleteCloudinaryFile = async (publicId, resourceType = "auto") => {
+  const normalizedPublicId = String(publicId || "").trim();
+  if (!normalizedPublicId || !hasCloudinaryConfig()) return;
+
+  ensureCloudinaryConfigured();
+
+  try {
+    await cloudinary.uploader.destroy(normalizedPublicId, {
+      resource_type: resourceType,
+      invalidate: true,
+    });
+  } catch (error) {
+    console.error("Failed to delete file from Cloudinary:", error?.message || error);
+  }
+};
+
 module.exports = {
   createImageUploadError,
   uploadImageDataUrl,
   deleteCloudinaryImage,
+  uploadFileDataUrl,
+  deleteCloudinaryFile,
 };
