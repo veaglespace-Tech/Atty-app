@@ -264,10 +264,111 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
   };
 };
 
+const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, status }) => {
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+
+  if (!org) {
+    const err = new Error("Organization not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"]);
+  const CUSTOM_REPORT_MIN_DAYS = 1;
+  const CUSTOM_REPORT_MAX_DAYS = 364;
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+  
+  const normalizedPeriod = REPORT_PERIODS.has(String(period || "").trim().toLowerCase())
+    ? String(period || "").trim().toLowerCase()
+    : "monthly";
+
+  let rangeFrom, rangeTo, periodLabel;
+  const now = new Date();
+  const today = todayKey();
+
+  if (normalizedPeriod === "daily") {
+    rangeFrom = today;
+    rangeTo = today;
+    periodLabel = "Daily";
+  } else if (normalizedPeriod === "weekly") {
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    rangeFrom = dateKey(from);
+    rangeTo = today;
+    periodLabel = "Weekly";
+  } else if (normalizedPeriod === "custom") {
+    rangeFrom = toDateKey(fromInput);
+    rangeTo = toDateKey(toInput);
+    if (!rangeFrom || !rangeTo) {
+      const err = new Error("Custom reports require both from and to dates.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (rangeFrom > rangeTo) {
+      const err = new Error("From date cannot be after to date.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (rangeTo > today) {
+      const err = new Error("Custom report range cannot extend into future dates.");
+      err.statusCode = 400;
+      throw err;
+    }
+    const fromDateObj = new Date(`${rangeFrom}T00:00:00.000Z`);
+    const toDateObj = new Date(`${rangeTo}T00:00:00.000Z`);
+    const customDays = Math.floor((toDateObj.getTime() - fromDateObj.getTime()) / DAY_IN_MS) + 1;
+    if (customDays < CUSTOM_REPORT_MIN_DAYS || customDays > CUSTOM_REPORT_MAX_DAYS) {
+      const err = new Error(`Custom report range must stay between ${CUSTOM_REPORT_MIN_DAYS} and ${CUSTOM_REPORT_MAX_DAYS} days.`);
+      err.statusCode = 400;
+      throw err;
+    }
+    periodLabel = "Custom";
+  } else {
+    const window = monthWindow(now);
+    rangeFrom = window.from;
+    rangeTo = today;
+    periodLabel = "Monthly";
+  }
+
+  const where = buildAttendanceWhere({
+    orgId,
+    from: rangeFrom,
+    to: rangeTo,
+    status,
+  });
+
+  const records = await prisma.attendance.findMany({
+    where,
+    select: attendanceRecordSelect,
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    take: 2500,
+  });
+
+  const items = records.map(mapAttendanceRecord);
+  const summary = buildAttendanceSummary(items);
+
+  return {
+    organization: org,
+    summary,
+    items,
+    meta: {
+      period: normalizedPeriod,
+      periodLabel,
+      from: rangeFrom,
+      to: rangeTo,
+      total: items.length,
+    },
+  };
+};
+
 module.exports = {
+  attendanceRecordSelect,
   mapAttendanceRecord,
   buildAttendanceDateWhere,
   buildAttendanceWhere,
   buildAttendanceSummary,
   buildUserAttendancePayload,
+  buildOrgAttendancePayload,
 };

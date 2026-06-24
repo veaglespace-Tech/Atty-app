@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X } from "lucide-react";
+import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X, Download, FileBox, FileText, ChevronDown } from "lucide-react";
 import { addNotification } from "@/store/slices/notificationSlice";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetOrgAttendanceQuery,
+  useDownloadOrgAttendanceExcelMutation,
+  useDownloadOrgAttendancePdfMutation,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
   useGetOrgTeamsQuery,
@@ -18,6 +20,7 @@ import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { PERMISSIONS, normalizeRole, ROLES, hasPermission, formatRoleLabel } from "@/utils/roles";
 import { formatHoursValue } from "@/utils/time";
+import { getDateKey, getTodayDateKey } from "@/utils/date";
 import {
   getErrorMessage,
   validateAttendanceSettingsForm,
@@ -100,6 +103,74 @@ const detectLocation = () =>
     );
   });
 
+
+const PERIOD_OPTIONS = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "custom", label: "Custom" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "All Statuses" },
+  { value: "PRESENT", label: "Present" },
+  { value: "ABSENT", label: "Absent" },
+  { value: "HALF_DAY", label: "Half Day" },
+];
+
+const todayKey = getTodayDateKey;
+
+const daysAgoKey = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() - Number(days || 0));
+  return getDateKey(date);
+};
+
+const getDefaultCustomRange = () => ({
+  from: daysAgoKey(89),
+  to: todayKey(),
+});
+
+const toQueryString = ({ period, from, to, status }) => {
+  const params = new URLSearchParams({
+    period,
+  });
+
+  if (period === "custom") {
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+  }
+
+  if (status && status !== "ALL") {
+    params.set("status", status);
+  }
+
+  return params.toString();
+};
+
+const getInclusiveDaySpan = (from, to) => {
+  const fromDate = new Date(`${from}T00:00:00.000Z`);
+  const toDate = new Date(`${to}T00:00:00.000Z`);
+  const diffInMs = toDate.getTime() - fromDate.getTime();
+  return Math.floor(diffInMs / (24 * 60 * 60 * 1000)) + 1;
+};
+
+const getCustomRangeError = ({ period, from, to, minDays, maxDays }) => {
+  if (period !== "custom") return "";
+  if (!from || !to) return "Select both From and To dates for a custom report.";
+  if (from > to) return "From date cannot be after To date.";
+
+  const today = todayKey();
+  if (to > today) return "Custom report range cannot extend into future dates.";
+
+  const span = getInclusiveDaySpan(from, to);
+  if (span < minDays || span > maxDays) {
+    return `Custom range must stay between ${minDays} and ${maxDays} days.`;
+  }
+
+  return "";
+};
+
 export default function OrgAttendancePage() {
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
@@ -123,12 +194,48 @@ export default function OrgAttendancePage() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
+  const [period, setPeriod] = useState("monthly");
+  const [customRange, setCustomRange] = useState(getDefaultCustomRange);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [downloadError, setDownloadError] = useState("");
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = require('react').useRef(null);
+  
+  const rangeRules = useMemo(() => ({ minDays: 1, maxDays: 364 }), []);
+  
+  const customRangeError = useMemo(
+    () =>
+      getCustomRangeError({
+        period,
+        from: customRange.from,
+        to: customRange.to,
+        minDays: rangeRules.minDays,
+        maxDays: rangeRules.maxDays,
+      }),
+    [customRange.from, customRange.to, period, rangeRules.maxDays, rangeRules.minDays]
+  );
+
+  const queryString = useMemo(
+    () =>
+      toQueryString({
+        period,
+        from: customRange.from,
+        to: customRange.to,
+        status: statusFilter,
+      }),
+    [customRange.from, customRange.to, period, statusFilter]
+  );
+  
+  const [downloadOrgAttendancePdf, { isLoading: downloadingPdf }] = useDownloadOrgAttendancePdfMutation();
+  const [downloadOrgAttendanceExcel, { isLoading: downloadingExcel }] = useDownloadOrgAttendanceExcelMutation();
+
+
   const {
     data: attendanceData,
     isLoading: attendanceLoading,
     isFetching: attendanceFetching,
     refetch: refetchAttendance,
-  } = useGetOrgAttendanceQuery(DASHBOARD_FETCH_LIMITS.ORG_ATTENDANCE);
+  } = useGetOrgAttendanceQuery(queryString, { skip: period === "custom" && Boolean(customRangeError) });
 
   const {
     data: settingsData,
@@ -357,6 +464,53 @@ export default function OrgAttendancePage() {
     }
   };
 
+
+  const onDownloadPdf = async () => {
+    try {
+      setDownloadError("");
+      const blob = await downloadOrgAttendancePdf(queryString).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `attendance-report-${period}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setDownloadError(getErrorMessage(err, "Failed to download PDF."));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      setDownloadError("");
+      const blob = await downloadOrgAttendanceExcel(queryString).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `attendance-report-${period}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setDownloadError(getErrorMessage(err, "Failed to download Excel."));
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const loading =
     attendanceLoading ||
     attendanceFetching ||
@@ -387,6 +541,122 @@ export default function OrgAttendancePage() {
         </div>
 
 
+
+        
+        <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Period
+              </label>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="brand-input min-w-[140px]"
+              >
+                {PERIOD_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="brand-input min-w-[140px]"
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {period === "custom" && (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    From
+                  </label>
+                  <input
+                    type="date"
+                    value={customRange.from}
+                    onChange={(e) =>
+                      setCustomRange((p) => ({ ...p, from: e.target.value }))
+                    }
+                    className="brand-input min-w-[140px]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    To
+                  </label>
+                  <input
+                    type="date"
+                    value={customRange.to}
+                    max={todayKey()}
+                    onChange={(e) =>
+                      setCustomRange((p) => ({ ...p, to: e.target.value }))
+                    }
+                    className="brand-input min-w-[140px]"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative" ref={downloadMenuRef}>
+            <button
+              onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+              disabled={loading || Boolean(customRangeError) || downloadingPdf || downloadingExcel}
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+            >
+              {(downloadingPdf || downloadingExcel) ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              Export
+              <ChevronDown size={14} className="ml-1 opacity-60" />
+            </button>
+
+            {showDownloadMenu && (
+              <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                <button
+                  onClick={onDownloadPdf}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                >
+                  <FileBox size={16} />
+                  Download PDF
+                </button>
+                <button
+                  onClick={onDownloadExcel}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                >
+                  <FileText size={16} />
+                  Download Excel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        {customRangeError && (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            {customRangeError}
+          </p>
+        )}
+        {downloadError && (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            {downloadError}
+          </p>
+        )}
 
         {message ? (
           <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>
