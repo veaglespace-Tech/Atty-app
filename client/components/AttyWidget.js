@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { MessageSquareText, SendHorizontal, X } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import {
@@ -338,7 +339,9 @@ export default function AttyWidget() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
   const bottomRef = useRef(null);
+  const pathname = usePathname();
 
   const resolvedTheme = mounted && isDarkMode ? "dark" : "light";
   const theme = CHAT_THEME[resolvedTheme];
@@ -353,6 +356,33 @@ export default function AttyWidget() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatLoading, showForm]);
+
+  useEffect(() => {
+    let observer;
+    let timeoutId;
+
+    const attachObserver = () => {
+      const footer = document.getElementById("dashboard-footer");
+      if (!footer) {
+        timeoutId = setTimeout(attachObserver, 1000);
+        return;
+      }
+      
+      observer = new IntersectionObserver(
+        ([entry]) => setIsFooterVisible(entry.isIntersecting),
+        { threshold: 0.1 }
+      );
+      
+      observer.observe(footer);
+    };
+
+    attachObserver();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (observer) observer.disconnect();
+    };
+  }, [pathname]);
 
   const addMsg = (role, content, extra = {}, options = {}) =>
     setMessages((prev) => {
@@ -610,7 +640,9 @@ export default function AttyWidget() {
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className={`fixed bottom-4 right-4 z-[80] flex items-center justify-center transition-all hover:scale-105 active:scale-95 sm:bottom-5 sm:right-5 ${theme.fab}`}
+          className={`fixed bottom-4 right-4 z-[80] flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 sm:bottom-5 sm:right-5 ${theme.fab} ${
+            isFooterVisible ? "pointer-events-none translate-y-24 opacity-0" : "translate-y-0 opacity-100"
+          }`}
           aria-label="Open Atty support"
         >
           <div className="relative flex items-center justify-center">

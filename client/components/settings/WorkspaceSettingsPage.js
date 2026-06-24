@@ -70,14 +70,16 @@ const settingsSchema = z.object({
   email: z
     .string()
     .trim()
+    .min(1, "Email is required")
     .email("Enter a valid email address"),
   mobileCountryCode: z
     .string()
     .trim()
-    .refine((value) => !value || /^\+\d{1,3}$/.test(value), "Use format like +91"),
+    .refine((value) => value && /^\+\d{1,3}$/.test(value), "Country code is required"),
   mobile: z
     .string()
     .trim()
+    .min(1, "Mobile number is required")
     .refine(
       (value) => !value || toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
       "Enter a valid mobile number"
@@ -86,6 +88,8 @@ const settingsSchema = z.object({
       (value) => !value || toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
       "Mobile number is too long"
     ),
+  emergencyContact: z.string().trim().min(1, "Emergency mobile is required"),
+  currentAddress: z.string().trim().min(1, "Full address is required"),
 });
 
 const labelClassName = "brand-kicker mb-1.5 ml-1 block";
@@ -93,7 +97,7 @@ const inputClassName =
   "w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 shadow-[0_18px_40px_rgba(30,112,209,0.10)] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50 dark:focus:border-blue-400 dark:focus:ring-blue-500/10";
 const errorInputClassName =
   "border-rose-400 bg-rose-50/80 focus:border-rose-500 focus:ring-rose-500/10";
-const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_PROFILE_IMAGE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_PROFILE_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -109,8 +113,10 @@ const formatValue = (value, fallback = "-") => {
 const getFormDefaults = (user) => ({
   name: user?.name || "",
   email: user?.email || "",
-  mobileCountryCode: user?.mobileCountryCode || "",
-  mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode),
+  mobileCountryCode: user?.mobileCountryCode || "+91",
+  mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode) || "",
+  emergencyContact: user?.emergencyContact || "",
+  currentAddress: user?.currentAddress || "",
 });
 
 function DetailCard({ icon: Icon, label, value }) {
@@ -546,6 +552,35 @@ export default function WorkspaceSettingsPage() {
   const hasPendingProfileImageChange = Boolean(profileImageDataUrl) || removeProfileImage;
   const canSubmit = isDirty || hasPendingProfileImageChange;
 
+  const completionState = useMemo(() => {
+    if (!user) return { percentage: 0, missing: [] };
+    
+    const fields = [
+      { key: "name", label: "Full Name" },
+      { key: "email", label: "Email Address" },
+      { key: "mobile", label: "Mobile Number" },
+      { key: "emergencyContact", label: "Emergency Contact" },
+      { key: "currentAddress", label: "Current Address" },
+      { key: "profileImageUrl", label: "Profile Image" },
+    ];
+    
+    let filled = 0;
+    const missing = [];
+    
+    for (const field of fields) {
+      if (user[field.key]) {
+        filled++;
+      } else {
+        missing.push(field.label);
+      }
+    }
+    
+    return {
+      percentage: Math.round((filled / fields.length) * 100),
+      missing,
+    };
+  }, [user]);
+
   const detailCards = useMemo(
     () => [
       { icon: User, label: "Full Name", value: formatValue(previewName) },
@@ -639,6 +674,9 @@ export default function WorkspaceSettingsPage() {
       payload.mobileCountryCode = nextMobileCountryCode || user?.mobileCountryCode || "";
     }
 
+    payload.emergencyContact = values.emergencyContact;
+    payload.currentAddress = values.currentAddress;
+
     if (profileImageDataUrl) {
       payload.profileImageDataUrl = profileImageDataUrl;
     } else if (removeProfileImage) {
@@ -726,22 +764,57 @@ export default function WorkspaceSettingsPage() {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 pb-24">
       <div className="light-glow-card-static rounded-[1.75rem] p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <UserAvatar
-              src={previewProfileImageUrl}
-              name={previewName}
-              className="h-16 w-16 rounded-[1.75rem] text-2xl"
-              sizes="64px"
-            />
-            <div>
+            <div className="relative flex items-center justify-center shrink-0 h-20 w-20">
+              <svg className="absolute inset-0 h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  className="text-slate-100 dark:text-slate-800/50"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  strokeLinecap="round"
+                  strokeDasharray="289.02"
+                  strokeDashoffset={289.02 - (completionState.percentage / 100) * 289.02}
+                  className="text-orange-500 transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="relative z-10 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-white dark:bg-slate-950">
+                <UserAvatar
+                  src={previewProfileImageUrl}
+                  name={previewName}
+                  className="h-16 w-16 !rounded-full text-2xl"
+                  sizes="64px"
+                />
+              </div>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border-[3px] border-white dark:border-slate-950 bg-orange-500 px-2 py-0.5 text-[10px] font-black tracking-widest text-white shadow-sm z-20">
+                {completionState.percentage}%
+              </div>
+            </div>
+            <div className="mt-1">
               <p className="brand-kicker">Account Settings</p>
-              <h2 className="brand-section-title mt-2">{previewName}</h2>
-              <p className="brand-copy-sm mt-2">
+              <h2 className="brand-section-title mt-1.5">{previewName}</h2>
+              <p className="brand-copy-sm mt-1.5">
                 Edit your profile details and keep your workspace preferences in sync.
               </p>
+              {completionState.missing.length > 0 && (
+                <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-400">
+                  Missing fields: {completionState.missing.join(", ")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -761,13 +834,15 @@ export default function WorkspaceSettingsPage() {
         <div className="light-glow-card-static rounded-[1.75rem] p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="brand-kicker">Editable Profile</h3>
+              <h3 className="brand-kicker flex items-center gap-2">
+                Editable Profile
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black tracking-widest uppercase", canSubmit ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400")}>
+                  {canSubmit ? "Unsaved Changes" : "Up to Date"}
+                </span>
+              </h3>
               <p className="brand-copy-sm mt-2">
                 Update your personal details here. Changes appear across the dashboard right away.
               </p>
-            </div>
-            <div className="brand-chip px-3 py-1">
-              {canSubmit ? "Unsaved Changes" : "Up to Date"}
             </div>
           </div>
 
@@ -830,7 +905,7 @@ export default function WorkspaceSettingsPage() {
                         ? "New profile photo is ready. Save changes to publish it."
                         : previewProfileImageUrl
                           ? "This profile photo appears anywhere your account avatar is shown."
-                          : "Supported formats: JPG, PNG, WEBP, GIF. Maximum size: 2 MB."}
+                          : "Supported formats: JPG, PNG, WEBP, GIF. Maximum size: 10 MB."}
                   </p>
 
                   {profileImageError ? (
@@ -905,6 +980,44 @@ export default function WorkspaceSettingsPage() {
               />
               <input type="hidden" {...register("mobileCountryCode")} />
               <input type="hidden" {...register("mobile")} />
+
+              <div className="md:col-span-1">
+                <label htmlFor="settings-emergencyContact" className={labelClassName}>
+                  Emergency Contact
+                </label>
+                <input
+                  id="settings-emergencyContact"
+                  type="text"
+                  placeholder="E.g., +91 9876543210"
+                  aria-invalid={errors.emergencyContact ? "true" : "false"}
+                  className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")}
+                  {...register("emergencyContact")}
+                />
+                {errors.emergencyContact ? (
+                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
+                    {errors.emergencyContact.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="md:col-span-1">
+                <label htmlFor="settings-currentAddress" className={labelClassName}>
+                  Full Address
+                </label>
+                <input
+                  id="settings-currentAddress"
+                  type="text"
+                  placeholder="Enter your full address"
+                  aria-invalid={errors.currentAddress ? "true" : "false"}
+                  className={cn(inputClassName, errors.currentAddress ? errorInputClassName : "")}
+                  {...register("currentAddress")}
+                />
+                {errors.currentAddress ? (
+                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
+                    {errors.currentAddress.message}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             <div className="brand-panel-soft grid gap-4 rounded-[1.5rem] p-4">
@@ -984,20 +1097,6 @@ export default function WorkspaceSettingsPage() {
         </div>
 
         <div className="space-y-4">
-          <PreferenceCard
-            icon={SlidersHorizontal}
-            title="Appearance"
-            value="Choose the theme that feels best for your workspace."
-          >
-            <ThemeToggle showLabel className="w-full justify-center" />
-          </PreferenceCard>
-
-          <PreferenceCard
-            icon={Bell}
-            title="Notifications"
-            value="Workspace activity alerts stay enabled for important updates."
-          />
-
           <PreferenceCard
             icon={LockKeyhole}
             title="Security"

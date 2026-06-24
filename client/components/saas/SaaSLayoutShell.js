@@ -24,6 +24,7 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { logout } from "@/store/slices/authSlice";
+
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
 import { useUserSignOutMutation } from "@/services/api/authApi";
@@ -204,9 +205,9 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   }
 
   return (
-    <div className="dashboard-theme flex min-h-screen bg-background transition-colors duration-300 dark:text-slate-100">
-      <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(30,112,209,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 lg:flex">
-        <div className="light-glow-card-static rounded-[2rem] p-5">
+    <div className="dashboard-theme flex h-screen overflow-hidden bg-background transition-colors duration-300 dark:text-slate-100">
+      <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(30,112,209,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 lg:flex">
+        <div className="light-glow-card-static rounded-[2rem] p-5 shrink-0">
           <DashboardBrandBlock />
         </div>
 
@@ -256,8 +257,8 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/88 px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200/80 bg-white/88 px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
           <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
@@ -367,10 +368,12 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
           </div>
         ) : null}
 
-        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 shrink-0 p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-[1540px]">{children}</div>
         </main>
-        <DashboardFooter />
+        <div className="shrink-0">
+          <DashboardFooter />
+        </div>
       </div>
     </div>
   );

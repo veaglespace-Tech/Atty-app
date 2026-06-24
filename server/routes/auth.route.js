@@ -110,11 +110,13 @@ const updateMeSchema = z
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.string().trim().min(4, "Mobile number is too short").optional(),
     mobileCountryCode: z.string().trim().min(1, "Country code is required").optional(),
+    emergencyContact: z.string().trim().optional(),
+    currentAddress: z.string().trim().optional(),
     profileImageDataUrl: z
       .string()
       .trim()
       .min(1, "Profile image is required")
-      .max(4_500_000, "Profile image is too large")
+      .max(14_000_000, "Profile image is too large")
       .optional(),
     removeProfileImage: z.boolean().optional(),
   })

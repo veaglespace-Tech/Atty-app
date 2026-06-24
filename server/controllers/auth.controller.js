@@ -1456,6 +1456,15 @@ exports.updateMe = asyncHandler(async (req, res) => {
     requestBody,
     "removeProfileImage"
   );
+  const hasEmergencyContact = Object.prototype.hasOwnProperty.call(requestBody, "emergencyContact");
+  const hasCurrentAddress = Object.prototype.hasOwnProperty.call(requestBody, "currentAddress");
+
+  if (hasEmergencyContact) {
+    payload.emergencyContact = requestBody.emergencyContact;
+  }
+  if (hasCurrentAddress) {
+    payload.currentAddress = requestBody.currentAddress;
+  }
 
   if (hasName) {
     const name = truncateText(requestBody.name, 120);

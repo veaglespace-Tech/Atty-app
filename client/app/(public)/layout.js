@@ -5,9 +5,9 @@ export default function PublicLayout({ children }) {
     <div className="w-full overflow-x-clip">
       {children}
 
-      <footer className="border-t border-slate-200/80 bg-white/70 py-5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/70">
-        <div className="site-container text-center">
-          <p className="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 sm:text-sm">
+      <footer id="dashboard-footer" className="border-t border-slate-200/80 bg-white/70 py-5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/70">
+        <div className="mx-auto flex w-full max-w-[1540px] flex-row items-center justify-between px-4 md:px-8">
+          <div className="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 sm:text-sm">
             All Rights Reserved &copy;{" "}
             <a
               href={companyWebsiteUrl}
@@ -17,8 +17,8 @@ export default function PublicLayout({ children }) {
             >
               Veagle Space Technology Pvt. Ltd.
             </a>
-          </p>
-          <p className="mt-1 text-[11px] font-medium tracking-wide text-slate-500 dark:text-slate-400 sm:text-xs">
+          </div>
+          <div className="text-[11px] font-medium tracking-wide text-slate-500 dark:text-slate-400 sm:text-xs">
             Designed &amp; Developed by{" "}
             <a
               href={companyWebsiteUrl}
@@ -28,7 +28,7 @@ export default function PublicLayout({ children }) {
             >
               Veagle Space Technology Pvt. Ltd.
             </a>
-          </p>
+          </div>
         </div>
       </footer>
     </div>

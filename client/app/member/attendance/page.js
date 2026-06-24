@@ -2,15 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle, Filter } from "lucide-react";
 import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
+import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import useLocalPagination from "@/hooks/useLocalPagination";
-import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
+import { 
+  useGetMemberAttendanceQuery, 
+  useGetMemberDashboardQuery,
+  useDownloadMemberAttendancePdfMutation,
+  useDownloadMemberAttendanceExcelMutation
+} from "@/services/api/memberApi";
 import { usePunchInMutation, usePunchOutMutation } from "@/services/api/attendanceApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { getTodayDateKey } from "@/utils/date";
+import { getDateKey, getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
 import { addNotification } from "@/store/slices/notificationSlice";
@@ -66,6 +72,31 @@ export default function MemberAttendancePage() {
   const [actionLoading, setActionLoading] = useState("");
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [message, setMessage] = useState("");
+  const [filterType, setFilterType] = useState("ALL");
+  const [customRange, setCustomRange] = useState({ from: "", to: "" });
+
+  const attendanceQueryParams = useMemo(() => {
+    const today = new Date();
+    if (filterType === "DAILY") {
+      const dateStr = getTodayDateKey();
+      return { from: dateStr, to: dateStr, limit: 100 };
+    }
+    if (filterType === "WEEKLY") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 6);
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+    }
+    if (filterType === "MONTHLY") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 29);
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+    }
+    if (filterType === "CUSTOM") {
+      return { from: customRange.from || undefined, to: customRange.to || undefined, limit: 100 };
+    }
+    return { limit: DASHBOARD_FETCH_LIMITS.MEMBER_ATTENDANCE };
+  }, [filterType, customRange]);
+
   const {
     data: dashboardData,
     isLoading: dashboardLoading,
@@ -77,9 +108,11 @@ export default function MemberAttendancePage() {
     isLoading: attendanceLoading,
     isFetching: attendanceFetching,
     refetch: refetchAttendance,
-  } = useGetMemberAttendanceQuery(DASHBOARD_FETCH_LIMITS.MEMBER_ATTENDANCE, { skip: !user });
+  } = useGetMemberAttendanceQuery(attendanceQueryParams, { skip: !user });
   const [punchInMutation] = usePunchInMutation();
   const [punchOutMutation] = usePunchOutMutation();
+  const [downloadPdfMutation, { isLoading: downloadingPdf }] = useDownloadMemberAttendancePdfMutation();
+  const [downloadExcelMutation, { isLoading: downloadingExcel }] = useDownloadMemberAttendanceExcelMutation();
 
   const records = useMemo(
     () => (Array.isArray(attendanceData?.items) ? attendanceData.items : []),
@@ -123,6 +156,60 @@ export default function MemberAttendancePage() {
           })
         );
       }
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      let params = "";
+      if (attendanceQueryParams.from) {
+        params += `?from=${attendanceQueryParams.from}&to=${attendanceQueryParams.to}&period=${filterType}`;
+      } else {
+        params += `?period=${filterType}`;
+      }
+      const blob = await downloadPdfMutation(params).unwrap();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance-logs-${filterType.toLowerCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      dispatch(
+        addNotification({
+          type: "error",
+          message: err?.data?.message || err?.error || err?.message || "Failed to download PDF",
+        })
+      );
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    try {
+      let params = "";
+      if (attendanceQueryParams.from) {
+        params += `?from=${attendanceQueryParams.from}&to=${attendanceQueryParams.to}&period=${filterType}`;
+      } else {
+        params += `?period=${filterType}`;
+      }
+      const blob = await downloadExcelMutation(params).unwrap();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance-logs-${filterType.toLowerCase()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      dispatch(
+        addNotification({
+          type: "error",
+          message: err?.data?.message || err?.error || err?.message || "Failed to download Excel",
+        })
+      );
     }
   };
 
@@ -184,7 +271,7 @@ export default function MemberAttendancePage() {
   const canPunchOut = Boolean(todayRecord?.punchInAt) && !todayRecord?.punchOutAt;
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 pb-24">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
@@ -285,7 +372,48 @@ export default function MemberAttendancePage() {
       </div>
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance History</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Attendance History</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex items-center">
+              <Filter className="absolute left-3 text-slate-400" size={14} />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="block w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm font-semibold text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                <option value="ALL">All Records</option>
+                <option value="DAILY">Daily</option>
+                <option value="WEEKLY">Weekly</option>
+                <option value="MONTHLY">Monthly</option>
+                <option value="CUSTOM">Custom Date</option>
+              </select>
+            </div>
+            {filterType === "CUSTOM" && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customRange.from}
+                  onChange={(e) => setCustomRange((prev) => ({ ...prev, from: e.target.value }))}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+                <span className="text-slate-400 text-sm">to</span>
+                <input
+                  type="date"
+                  value={customRange.to}
+                  onChange={(e) => setCustomRange((prev) => ({ ...prev, to: e.target.value }))}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            )}
+            
+            <DownloadMenuButton
+              onDownloadPdf={handleDownloadPdf}
+              onDownloadExcel={handleDownloadExcel}
+              isDownloading={downloadingPdf || downloadingExcel}
+            />
+          </div>
+        </div>
 
         {loading ? (
           <div className="py-10 flex items-center justify-center gap-2 text-slate-500">

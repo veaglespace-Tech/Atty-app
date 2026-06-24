@@ -11,11 +11,41 @@ export const memberApi = createApi({
       providesTags: ["MemberDashboard"],
     }),
     getMemberAttendance: builder.query({
-      query: (limit = 180) => `/member/attendance?limit=${limit}`,
+      query: (params) => {
+        let url = `/member/attendance?`;
+        if (typeof params === 'number') {
+          url += `limit=${params}`;
+        } else if (params) {
+          if (params.limit) url += `limit=${params.limit}&`;
+          if (params.from) url += `from=${params.from}&`;
+          if (params.to) url += `to=${params.to}&`;
+        } else {
+          url += `limit=180`;
+        }
+        return url.endsWith('&') || url.endsWith('?') ? url.slice(0, -1) : url;
+      },
       providesTags: ["MemberAttendance"],
+    }),
+    downloadMemberAttendancePdf: builder.mutation({
+      query: (params) => ({
+        url: `/member/attendance/pdf${params || ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadMemberAttendanceExcel: builder.mutation({
+      query: (params) => ({
+        url: `/member/attendance/excel${params || ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
     }),
   }),
 });
 
-export const { useGetMemberDashboardQuery, useGetMemberAttendanceQuery } = memberApi;
-
+export const { 
+  useGetMemberDashboardQuery, 
+  useGetMemberAttendanceQuery,
+  useDownloadMemberAttendancePdfMutation,
+  useDownloadMemberAttendanceExcelMutation
+} = memberApi;
