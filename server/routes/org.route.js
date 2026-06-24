@@ -13,6 +13,7 @@ const {
   getOrgNotifications,
   getOrgNotificationById,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
   downloadOrgUsersExcel,
 } = require("../controllers/org-user.controller");
 const {
@@ -71,6 +72,7 @@ router.get("/reports/pdf", downloadOrgReportsPdf);
 router.get("/reports/excel", downloadOrgReportsExcel);
 
 router.get("/notifications", getOrgNotifications);
+router.post("/notifications/read-all", markAllNotificationsAsRead);
 router.get("/notifications/:id", getOrgNotificationById);
 router.post("/notifications/:id/read", markNotificationAsRead);
 

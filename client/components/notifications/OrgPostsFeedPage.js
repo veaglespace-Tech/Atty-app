@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   BarChart2,
@@ -15,7 +15,10 @@ import {
 import {
   useVoteOnPostMutation,
 } from "@/services/api/postApi";
-import { useGetOrgNotificationsQuery } from "@/services/api/orgApi";
+import {
+  useGetOrgNotificationsQuery,
+  useMarkAllNotificationsAsReadMutation,
+} from "@/services/api/orgApi";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import PollOptionsPanel from "@/components/posts/PollOptionsPanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
@@ -71,6 +74,15 @@ export default function OrgPostsFeedPage({
     initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.POSTS[0],
     dependencies: [posts.length],
   });
+
+  const [markAllAsRead] = useMarkAllNotificationsAsReadMutation();
+
+  useEffect(() => {
+    const unreadCount = postsData?.summary?.find(s => s.label === "Unread Notifications")?.value || 0;
+    if (unreadCount > 0) {
+      markAllAsRead().catch(() => {});
+    }
+  }, [postsData, markAllAsRead]);
 
   const handleVote = async (postId, optionIndex) => {
     try {

@@ -71,6 +71,13 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgNotifications"],
     }),
+    markAllNotificationsAsRead: builder.mutation({
+      query: () => ({
+        url: "/org/notifications/read-all",
+        method: "POST",
+      }),
+      invalidatesTags: ["OrgNotifications"],
+    }),
     getOrgUsers: builder.query({
       query: (limit = 1600) => `/org/users?limit=${limit}`,
       providesTags: ["OrgUsers"],

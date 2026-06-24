@@ -941,6 +941,37 @@ exports.markNotificationAsRead = asyncHandler(async (req, res) => {
   });
 });
 
+exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const userId = req.user.id;
+
+  const unreadPosts = await prisma.post.findMany({
+    where: {
+      orgId,
+      isActive: true,
+      deletedAt: null,
+      reads: { none: { userId } }
+    },
+    select: { id: true }
+  });
+
+  if (unreadPosts.length > 0) {
+    await prisma.userNotificationRead.createMany({
+      data: unreadPosts.map(post => ({
+        userId,
+        notificationId: post.id,
+        readAt: new Date()
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "All notifications marked as read",
+  });
+});
+
 exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   const xlsx = require("xlsx");
   const orgId = ensureOrganizationId(req, res);
