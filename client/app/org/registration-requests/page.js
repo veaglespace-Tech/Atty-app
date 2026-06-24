@@ -47,6 +47,8 @@ export default function RegistrationRequestsPage() {
   const [rejectNote, setRejectNote] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedRequests, setSelectedRequests] = useState([]);
+  const [isBulkActionBusy, setIsBulkActionBusy] = useState(false);
 
   const {
     data,
@@ -87,6 +89,7 @@ export default function RegistrationRequestsPage() {
       setMessage("");
       await acceptRequest(requestId).unwrap();
       setMessage("User approved and registered successfully.");
+      setSelectedRequests(prev => prev.filter(id => id !== requestId));
       await refetch();
     } catch (mutationError) {
       setError(getErrorMessage(mutationError, "Failed to approve request"));
@@ -104,11 +107,66 @@ export default function RegistrationRequestsPage() {
       setMessage("Registration request rejected and archived.");
       setRejectNoteId(null);
       setRejectNote("");
+      setSelectedRequests(prev => prev.filter(id => id !== requestId));
       await refetch();
     } catch (mutationError) {
       setError(getErrorMessage(mutationError, "Failed to reject request"));
     } finally {
       setActionId("");
+    }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedRequests(items.map(item => item.id));
+    } else {
+      setSelectedRequests([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    setSelectedRequests(prev => 
+      prev.includes(id) ? prev.filter(reqId => reqId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkAccept = async () => {
+    try {
+      setIsBulkActionBusy(true);
+      setError("");
+      setMessage("");
+      
+      const promises = selectedRequests.map(id => acceptRequest(id).unwrap());
+      await Promise.all(promises);
+      
+      setMessage(`${selectedRequests.length} users approved and registered successfully.`);
+      setSelectedRequests([]);
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to approve some requests"));
+      await refetch(); 
+    } finally {
+      setIsBulkActionBusy(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    try {
+      setIsBulkActionBusy(true);
+      setError("");
+      setMessage("");
+      
+      const promises = selectedRequests.map(id => rejectRequest({ requestId: id, note: "Rejected by administrator in bulk" }).unwrap());
+      await Promise.all(promises);
+      
+      setMessage(`${selectedRequests.length} registration requests rejected.`);
+      setSelectedRequests([]);
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to reject some requests"));
+      await refetch();
+    } finally {
+      setIsBulkActionBusy(false);
     }
   };
 
@@ -185,6 +243,45 @@ export default function RegistrationRequestsPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          {items.length > 0 && (
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRequests.length === items.length && items.length > 0}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+                />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Select All</span>
+              </label>
+              
+              {selectedRequests.length > 0 && (
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="mr-2 hidden text-xs font-medium text-slate-500 sm:inline">{selectedRequests.length} selected</span>
+                  <button
+                    type="button"
+                    onClick={handleBulkAccept}
+                    disabled={isBulkActionBusy || loading}
+                    className="brand-btn brand-btn-soft brand-btn-sm"
+                  >
+                    {isBulkActionBusy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    <span className="hidden sm:inline">Approve Selected</span>
+                    <span className="sm:hidden">Approve</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkReject}
+                    disabled={isBulkActionBusy || loading}
+                    className="brand-btn brand-btn-danger brand-btn-sm"
+                  >
+                    {isBulkActionBusy ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                    <span className="hidden sm:inline">Reject Selected</span>
+                    <span className="sm:hidden">Reject</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedItems.map((item) => {
             const busy = String(actionId) === String(item.id);
@@ -198,8 +295,18 @@ export default function RegistrationRequestsPage() {
                 {/* Accent bar */}
                 <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 opacity-60 transition-opacity group-hover:opacity-100" />
 
+                {/* Checkbox for individual selection */}
+                <div className="absolute right-4 top-4 z-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedRequests.includes(item.id)}
+                    onChange={() => handleSelectOne(item.id)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+                  />
+                </div>
+
                 {/* Name & Date */}
-                <div className="mb-4 mt-1">
+                <div className="mb-4 mt-1 pr-6">
                   <p className="text-base font-bold text-slate-900 dark:text-white">
                     {item.name || "Unknown"}
                   </p>
