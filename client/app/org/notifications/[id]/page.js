@@ -14,6 +14,26 @@ const POST_TYPES = {
   TOURNAMENT_CARD: { label: "Tournament Card", icon: Trophy, color: "text-rose-600 border-rose-100 bg-rose-50 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300" },
 };
 
+const handleFileDownload = async (e, url, filename) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download failed:", error);
+    window.open(url, '_blank');
+  }
+};
+
 export default function NotificationDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -129,6 +149,7 @@ export default function NotificationDetailPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-xl transition-transform hover:scale-105 active:scale-95"
+                        onClick={(e) => handleFileDownload(e, notification.metadata.attachment.url, notification.metadata.attachment.name || "attachment.jpg")}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                         Download Image
@@ -165,7 +186,7 @@ export default function NotificationDetailPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => handleFileDownload(e, notification.metadata.attachment.url, notification.metadata.attachment.name || "attachment")}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                         Download
