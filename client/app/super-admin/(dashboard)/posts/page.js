@@ -16,8 +16,10 @@ import {
   Edit2,
   Building2,
   X,
-  Calendar,
   User,
+  Paperclip,
+  Image as ImageIcon,
+  Download,
 } from "lucide-react";
 import {
   useGetSuperAdminPostsQuery,
@@ -58,6 +60,9 @@ export default function SuperAdminPostsPage() {
     type: "NOTIFICATION",
     metadata: { options: ["", ""] },
     orgId: "",
+    attachmentDataUrl: undefined,
+    attachmentName: "",
+    attachmentAllowDownload: true,
   });
   const [selectedOrgForm, setSelectedOrgForm] = useState(null);
 
@@ -112,8 +117,8 @@ export default function SuperAdminPostsPage() {
   });
 
   const onInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const onPollOptionChange = (index, value) => {
@@ -151,6 +156,9 @@ export default function SuperAdminPostsPage() {
       type: "NOTIFICATION",
       metadata: { options: ["", ""] },
       orgId: "",
+      attachmentDataUrl: undefined,
+      attachmentName: "",
+      attachmentAllowDownload: true,
     });
     setSelectedOrgForm(null);
     setShowAddForm(false);
@@ -176,6 +184,9 @@ export default function SuperAdminPostsPage() {
         content: form.content.trim(),
         type: form.type,
         orgId: Number(form.orgId),
+        attachmentDataUrl: form.attachmentDataUrl,
+        attachmentName: form.attachmentName,
+        attachmentAllowDownload: form.attachmentAllowDownload,
       };
 
       if (form.type === "POLL") {
@@ -222,6 +233,9 @@ export default function SuperAdminPostsPage() {
       metadata: post.metadata || { options: ["", ""] },
       orgId: String(post.orgId),
       isActive: post.isActive,
+      attachmentDataUrl: undefined,
+      attachmentName: post.metadata?.attachment?.name || "",
+      attachmentAllowDownload: post.metadata?.attachment?.allowDownload ?? true,
     });
     setSelectedOrgForm(post.organization);
   };
@@ -235,6 +249,9 @@ export default function SuperAdminPostsPage() {
         content: form.content.trim(),
         type: form.type,
         isActive: form.isActive,
+        attachmentDataUrl: form.attachmentDataUrl,
+        attachmentName: form.attachmentName,
+        attachmentAllowDownload: form.attachmentAllowDownload,
       };
 
       if (form.type === "POLL") {
@@ -312,7 +329,43 @@ export default function SuperAdminPostsPage() {
         votes: count,
         percentage: totalVotes ? Math.round((count / totalVotes) * 100) : 0,
       };
+      };
     });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size should not exceed 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setForm((prev) => ({
+        ...prev,
+        attachmentDataUrl: reader.result,
+        attachmentName: file.name,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeAttachment = () => {
+    setForm((prev) => ({
+      ...prev,
+      attachmentDataUrl: "",
+      attachmentName: "",
+    }));
+  };
+
+  const getExistingAttachmentName = () => {
+    if (form.attachmentName) return form.attachmentName;
+    if (form.metadata?.attachment?.name) return form.metadata.attachment.name;
+    if (form.metadata?.attachment?.url) return "Existing Attachment";
+    return null;
   };
 
   const loading = isLoading || isFetching;
@@ -466,6 +519,51 @@ export default function SuperAdminPostsPage() {
                           {post.content}
                         </p>
                       </div>
+
+                      {/* Attachment Section */}
+                      {post.metadata?.attachment && (
+                        <div className="mt-4">
+                          {post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (post.metadata.attachment.resourceType === "image" && post.metadata.attachment.format !== "pdf" && !post.metadata.attachment.url?.match(/\.pdf/i)) ? (
+                            <div 
+                              className="relative h-40 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                              onContextMenu={(e) => post.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
+                            >
+                              <img 
+                                src={post.metadata.attachment.url} 
+                                alt={post.metadata.attachment.name || "Attachment"} 
+                                className={`h-full w-full object-cover ${post.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+                              />
+                            </div>
+                          ) : (
+                            post.metadata.attachment.allowDownload !== false ? (
+                              <a 
+                                href={post.metadata.attachment.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                                  <Paperclip size={18} className="text-blue-500 dark:text-blue-400" />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                  <p className="truncate text-xs font-bold text-slate-700 dark:text-slate-300">{post.metadata.attachment.name || "Attached File"}</p>
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Click to view/download</p>
+                                </div>
+                              </a>
+                            ) : (
+                              <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 opacity-80">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                                  <Paperclip size={18} className="text-slate-400" />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                  <p className="truncate text-xs font-bold text-slate-500">{post.metadata.attachment.name || "Attached File"}</p>
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
 
                       {/* Poll View */}
                       {post.type === "POLL" && pollResults.length > 0 && (
@@ -654,6 +752,54 @@ export default function SuperAdminPostsPage() {
                   className="w-full p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#111] text-sm font-bold outline-none transition focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none"
                   required
                 />
+              </div>
+
+              {/* Attachment Area */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                  Attachment (Optional)
+                </label>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#111] px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition">
+                      <Paperclip size={16} />
+                      Attach File
+                      <input type="file" className="hidden" onChange={handleFileChange} />
+                    </label>
+                    
+                    {(form.attachmentDataUrl !== "" && getExistingAttachmentName()) && (
+                      <div className="flex items-center gap-2 rounded-xl border border-blue-100 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 text-sm text-blue-700 dark:text-blue-400">
+                        {form.attachmentName?.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                          <ImageIcon size={16} className="text-blue-500" />
+                        ) : (
+                          <FileText size={16} className="text-blue-500" />
+                        )}
+                        <span className="font-bold truncate max-w-[200px]">
+                          {getExistingAttachmentName()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeAttachment}
+                          className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition ml-2"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {(form.attachmentDataUrl !== "" && getExistingAttachmentName()) && (
+                    <label className="flex items-center gap-2 cursor-pointer mt-1">
+                      <input
+                        type="checkbox"
+                        name="attachmentAllowDownload"
+                        checked={form.attachmentAllowDownload ?? true}
+                        onChange={onInputChange}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 dark:border-slate-700 dark:bg-slate-900"
+                      />
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Allow users to download this attachment</span>
+                    </label>
+                  )}
+                </div>
               </div>
 
               {/* Poll Options (If POLL type selected) */}

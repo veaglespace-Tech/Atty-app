@@ -130,7 +130,7 @@ const buildAttendanceSummary = (records = []) => {
 const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, toInput }) => {
   const userWhere = { id: userId, deletedAt: null };
   if (orgId) {
-    userWhere.organizationId = orgId;
+    userWhere.orgId = orgId;
   }
 
   const user = await prisma.user.findFirst({
