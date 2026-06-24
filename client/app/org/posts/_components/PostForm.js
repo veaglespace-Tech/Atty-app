@@ -44,20 +44,56 @@ export function PostForm({
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File size should not exceed 10MB");
-      return;
-    }
+    if (file.type.startsWith("image/")) {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        const MAX_DIM = 1200;
+        
+        if (width > height && width > MAX_DIM) {
+          height *= MAX_DIM / width;
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width *= MAX_DIM / height;
+          height = MAX_DIM;
+        }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({
-        ...prev,
-        attachmentDataUrl: reader.result,
-        attachmentName: file.name,
-      }));
-    };
-    reader.readAsDataURL(file);
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress the image to JPEG with 0.8 quality
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        
+        if (dataUrl.length > 5 * 1024 * 1024) {
+          alert("Image is too large even after compression. Please choose a smaller image.");
+          return;
+        }
+
+        setForm((prev) => ({
+          ...prev,
+          attachmentDataUrl: dataUrl,
+          attachmentName: file.name,
+        }));
+      };
+    } else {
+      if (file.size > 4 * 1024 * 1024) {
+        alert("Document size should not exceed 4MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm((prev) => ({
+          ...prev,
+          attachmentDataUrl: reader.result,
+          attachmentName: file.name,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeAttachment = () => {
