@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Loader2, Megaphone, FileText, BarChart2, Trophy } from "lucide-react";
+import { ArrowLeft, Calendar, Loader2, Megaphone, FileText, BarChart2, Trophy, Paperclip } from "lucide-react";
 import { useGetOrgNotificationByIdQuery, useMarkNotificationAsReadMutation } from "@/services/api/orgApi";
 import Link from "next/link";
 
@@ -108,6 +108,50 @@ export default function NotificationDetailPage() {
               {notification.message}
             </p>
           </div>
+
+          {notification.metadata?.attachment && (
+            <div className="mt-8">
+              {notification.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (notification.metadata.attachment.resourceType === "image" && notification.metadata.attachment.format !== "pdf" && !notification.metadata.attachment.url?.match(/\.pdf/i)) ? (
+                <div 
+                  className="relative w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                  onContextMenu={(e) => notification.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
+                >
+                  <img 
+                    src={notification.metadata.attachment.url} 
+                    alt={notification.metadata.attachment.name || "Attachment"} 
+                    className={`w-full h-auto max-h-[600px] object-contain bg-slate-50 dark:bg-slate-900/50 ${notification.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+                  />
+                </div>
+              ) : (
+                notification.metadata.attachment.allowDownload !== false ? (
+                  <a 
+                    href={notification.metadata.attachment.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                      <Paperclip size={20} className="text-blue-500 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="truncate text-sm font-bold text-slate-700 dark:text-slate-300">{notification.metadata.attachment.name || "Attached File"}</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Click to view/download</p>
+                    </div>
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 opacity-80">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                      <Paperclip size={20} className="text-slate-400" />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="truncate text-sm font-bold text-slate-500">{notification.metadata.attachment.name || "Attached File"}</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
