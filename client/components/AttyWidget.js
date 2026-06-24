@@ -455,7 +455,7 @@ export default function AttyWidget() {
     <>
       {open ? (
         <div
-          className={`fixed bottom-20 left-1/2 z-[80] flex min-w-0 w-[calc(100vw-1.5rem)] max-w-[24rem] -translate-x-1/2 max-h-[min(70dvh,36rem)] flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-5 sm:left-auto sm:right-4 sm:w-[22rem] sm:max-w-[calc(100vw-1.5rem)] sm:max-h-[calc(100dvh-6.75rem)] sm:translate-x-0 sm:rounded-[2rem] md:w-[23.5rem] lg:w-[25rem] 2xl:w-[26rem] ${widgetModeClass} ${theme.panel}`}
+          className={`fixed bottom-20 right-3 z-[80] flex min-w-0 w-[calc(100vw-1.5rem)] max-w-[24rem] max-h-[min(70dvh,36rem)] flex-col overflow-hidden rounded-[1.75rem] border shadow-xl overscroll-contain sm:bottom-5 sm:right-4 sm:w-[22rem] sm:max-w-[calc(100vw-1.5rem)] sm:max-h-[calc(100dvh-6.75rem)] sm:rounded-[2rem] md:w-[23.5rem] lg:w-[25rem] 2xl:w-[26rem] ${widgetModeClass} ${theme.panel}`}
         >
           <div
             className={`relative flex flex-shrink-0 items-start gap-2.5 overflow-hidden px-3.5 py-3.5 sm:items-center sm:gap-3 sm:px-4 sm:py-4 ${theme.header}`}

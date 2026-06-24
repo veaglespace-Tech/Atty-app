@@ -789,7 +789,7 @@ exports.deleteOrgUser = asyncHandler(async (req, res) => {
 
 exports.getOrgNotifications = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  const userId = req.user.id;
+  const userId = Number(req.user.id);
   const limit = parseLimit(req.query.limit, 100, 500);
 
   const where = {
@@ -904,8 +904,8 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
 
 exports.markNotificationAsRead = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  const userId = req.user.id;
   const { id } = req.params;
+  const userId = Number(req.user.id);
 
   const post = await prisma.post.findFirst({
     where: {
@@ -943,7 +943,7 @@ exports.markNotificationAsRead = asyncHandler(async (req, res) => {
 
 exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  const userId = req.user.id;
+  const userId = Number(req.user.id);
 
   const unreadPosts = await prisma.post.findMany({
     where: {

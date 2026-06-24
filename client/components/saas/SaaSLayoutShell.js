@@ -206,7 +206,19 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
   return (
     <div className="dashboard-theme flex h-screen overflow-hidden bg-background transition-colors duration-300 dark:text-slate-100">
-      <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 bg-white/88 px-5 py-5 shadow-[0_28px_90px_rgba(30,112,209,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/88 dark:shadow-black/25 lg:flex">
+      {mobileNavOpen ? (
+        <div
+          onClick={() => setMobileNavPath(null)}
+          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm lg:hidden"
+        />
+      ) : null}
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white/92 px-4 py-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800 dark:bg-slate-950/92 dark:shadow-black/30 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
         <div className="light-glow-card-static rounded-[2rem] p-5 shrink-0">
           <DashboardBrandBlock />
         </div>
@@ -220,6 +232,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setMobileNavPath(null)}
                 className={cn(
                   "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5",
                   active ? "brand-nav-item-active" : "brand-nav-item"
@@ -246,6 +259,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         <div className="light-glow-card-static mt-6 rounded-[1.75rem] p-3">
           <Link
             href={settingsHref}
+            onClick={() => setMobileNavPath(null)}
             className={cn(
               "brand-btn brand-btn-md w-full rounded-[1.25rem]",
               settingsActive ? "brand-btn-primary" : "brand-btn-secondary"
@@ -317,56 +331,6 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
             </div>
           </div>
         </header>
-
-        {mobileNavOpen ? (
-          <div className="max-h-[calc(100vh-4.5rem)] overflow-y-auto border-b border-slate-200/80 bg-white/92 px-3 py-3 shadow-[0_12px_32px_rgba(30,112,209,0.10)] dark:border-slate-800 dark:bg-slate-950 sm:px-4 sm:py-4 lg:hidden">
-            <div className="space-y-2">
-              {resolvedNavItems.map((item) => {
-                const active = pathname === item.href;
-                const Icon = item.Icon;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileNavPath(null)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-2xl px-4 py-3",
-                      active ? "brand-nav-item-active" : "brand-nav-item"
-                    )}
-                  >
-                    <div className="relative">
-                      <span className="brand-nav-icon flex h-10 w-10 items-center justify-center rounded-2xl">
-                        <Icon size={18} />
-                      </span>
-                      {badgeCounts[item.label] > 0 ? (
-                        <span className="absolute -right-1 -top-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-950">
-                          {badgeCounts[item.label] > 99 ? "99+" : badgeCounts[item.label]}
-                        </span>
-                      ) : null}
-                    </div>
-                    <span className="text-sm font-semibold tracking-[0.01em]">{item.label}</span>
-                  </Link>
-                );
-              })}
-
-              <Link
-                href={settingsHref}
-                onClick={() => setMobileNavPath(null)}
-                className={cn(
-                  "flex items-center gap-3 rounded-2xl px-4 py-3",
-                  settingsActive ? "brand-nav-item-active" : "brand-nav-item"
-                )}
-              >
-                <span className="brand-nav-icon flex h-10 w-10 items-center justify-center rounded-2xl">
-                  <Settings size={18} />
-                </span>
-                <span className="text-sm font-semibold tracking-[0.01em]">Settings</span>
-              </Link>
-            </div>
-
-          </div>
-        ) : null}
 
         <main className="min-w-0 flex-1 shrink-0 p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-[1540px]">{children}</div>

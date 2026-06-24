@@ -69,8 +69,7 @@
     width: 100%;
     max-width: 100%;
     overflow-x: clip;
-    scrollbar-width: thin;
-    scrollbar-color: rgb(var(--brand-blue) / 0.72) rgb(var(--brand-surface-soft) / 0.92);
+    scrollbar-width: none;
   }
 
   html.dark {
@@ -79,8 +78,8 @@
   }
 
   body {
-    -ms-overflow-style: auto;
-    scrollbar-width: thin;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   .dark body {
@@ -92,7 +91,7 @@
 
   * {
     box-sizing: border-box;
-    scrollbar-color: inherit;
+    scrollbar-width: none;
   }
 
   img,
@@ -114,40 +113,11 @@
   html::-webkit-scrollbar,
   body::-webkit-scrollbar,
   *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-    display: block;
+    width: 0px;
+    height: 0px;
+    display: none;
   }
 
-  html::-webkit-scrollbar-track,
-  body::-webkit-scrollbar-track,
-  *::-webkit-scrollbar-track {
-    background: rgb(var(--brand-surface-soft) / 0.84);
-  }
-
-  html::-webkit-scrollbar-thumb,
-  body::-webkit-scrollbar-thumb,
-  *::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--brand-cyan) / 0.94),
-      rgb(var(--brand-blue) / 0.96),
-      rgb(var(--brand-royal) / 0.98)
-    );
-    border-radius: 999px;
-    border: 2px solid rgb(var(--brand-surface-soft) / 0.84);
-  }
-
-  html::-webkit-scrollbar-thumb:hover,
-  body::-webkit-scrollbar-thumb:hover,
-  *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--brand-sky) / 0.98),
-      rgb(var(--brand-blue) / 0.98),
-      rgb(var(--brand-deep) / 0.98)
-    );
-  }
 
   h1,
   h2,
@@ -169,38 +139,6 @@
     color: rgb(var(--foreground));
   }
 
-  .dark html {
-    scrollbar-color: rgb(var(--brand-cyan) / 0.76) rgb(var(--brand-ink) / 0.92);
-  }
-
-  .dark html::-webkit-scrollbar-track,
-  .dark body::-webkit-scrollbar-track,
-  .dark *::-webkit-scrollbar-track {
-    background: rgb(var(--brand-ink) / 0.94);
-  }
-
-  .dark html::-webkit-scrollbar-thumb,
-  .dark body::-webkit-scrollbar-thumb,
-  .dark *::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--brand-cyan) / 0.92),
-      rgb(var(--brand-blue) / 0.94),
-      rgb(var(--brand-deep) / 0.96)
-    );
-    border-color: rgb(var(--brand-ink) / 0.94);
-  }
-
-  .dark html::-webkit-scrollbar-thumb:hover,
-  .dark body::-webkit-scrollbar-thumb:hover,
-  .dark *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--brand-cyan) / 0.98),
-      rgb(var(--brand-sky) / 0.98),
-      rgb(var(--brand-blue) / 0.98)
-    );
-  }
 }
 
 @layer components {
