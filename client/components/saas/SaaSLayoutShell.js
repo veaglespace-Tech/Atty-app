@@ -72,7 +72,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const { user, token, loading, hydrated } = useAuthSession();
-  const [mobileNavPath, setMobileNavPath] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userSignOut] = useUserSignOutMutation();
   const loginPath = sectionRoot === "/super-admin" ? "/super-admin/login" : "/login";
   const currentRole = user?.currentRole;
@@ -129,7 +129,10 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const roleBadgeTheme = getRoleBadgeTheme(currentRole);
   const settingsHref = sectionRoot ? `${sectionRoot}/settings` : "/settings";
   const settingsActive = pathname === settingsHref;
-  const mobileNavOpen = mobileNavPath === pathname;
+  // Auto-close mobile nav on route change
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
   const prefetchedRoutes = useMemo(
     () => [...resolvedNavItems.map((item) => item.href), settingsHref],
     [resolvedNavItems, settingsHref]
@@ -189,7 +192,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     }
 
     dispatch(logout());
-    setMobileNavPath(null);
+    setMobileNavOpen(false);
     router.replace(currentRole === ROLES.SUPER_ADMIN ? "/super-admin/login" : "/login");
   };
 
@@ -208,7 +211,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     <div className="dashboard-theme flex h-screen overflow-hidden bg-background transition-colors duration-300 dark:text-slate-100">
       {mobileNavOpen ? (
         <div
-          onClick={() => setMobileNavPath(null)}
+          onClick={() => setMobileNavOpen(false)}
           className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm lg:hidden"
         />
       ) : null}
@@ -232,7 +235,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileNavPath(null)}
+                onClick={() => setMobileNavOpen(false)}
                 className={cn(
                   "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5",
                   active ? "brand-nav-item-active" : "brand-nav-item"
@@ -277,9 +280,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
-                onClick={() =>
-                  setMobileNavPath((currentPath) => (currentPath === pathname ? null : pathname))
-                }
+                onClick={() => setMobileNavOpen((prev) => !prev)}
                 className="brand-btn brand-btn-secondary brand-btn-sm rounded-2xl px-3 py-2 lg:hidden"
                 aria-label={mobileNavOpen ? "Close section menu" : "Open section menu"}
               >
