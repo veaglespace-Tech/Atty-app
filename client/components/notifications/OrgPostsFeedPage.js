@@ -196,29 +196,48 @@ export default function OrgPostsFeedPage({
                       <div className="mt-4 relative z-20">
                         {post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (post.metadata.attachment.resourceType === "image" && post.metadata.attachment.format !== "pdf" && !post.metadata.attachment.url?.match(/\.pdf/i)) ? (
                           <div 
-                            className="relative h-48 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                            className="relative group/image h-48 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
                             onContextMenu={(e) => post.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
                           >
                             <img 
                               src={post.metadata.attachment.url} 
                               alt={post.metadata.attachment.name || "Attachment"} 
-                              className={`h-full w-full object-cover ${post.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+                              className={`h-full w-full object-cover transition-transform duration-500 group-hover/image:scale-105 ${post.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
                             />
+                            {post.metadata.attachment.allowDownload !== false && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover/image:opacity-100">
+                                <a
+                                  href={post.metadata.attachment.url}
+                                  download={post.metadata.attachment.name || "attachment.jpg"}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-xl transition-transform hover:scale-105 active:scale-95"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                  Download Image
+                                </a>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           post.metadata.attachment.allowDownload !== false ? (
                             <a 
                               href={post.metadata.attachment.url} 
+                              download={post.metadata.attachment.name || "attachment"}
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
-                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <Paperclip size={18} className="text-blue-500 dark:text-blue-400" />
                               </div>
-                              <div className="flex-1 overflow-hidden">
+                              <div className="flex-1 min-w-0">
                                 <p className="truncate text-xs font-bold text-slate-700 dark:text-slate-300">{post.metadata.attachment.name || "Attached File"}</p>
-                                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Click to view/download</p>
+                                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mt-0.5">Click to download</p>
+                              </div>
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-blue-900/50 dark:text-blue-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                               </div>
                             </a>
                           ) : (
