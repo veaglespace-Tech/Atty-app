@@ -76,12 +76,16 @@ const buildAttendanceWhere = ({
   status,
   userIds,
   teamIds,
+  search,
 }) => {
   const where = {
-    orgId: Number(orgId),
     deletedAt: null,
     date: buildAttendanceDateWhere({ date, from, to }),
   };
+
+  if (orgId) {
+    where.orgId = Number(orgId);
+  }
 
   const normalizedStatus = String(status || "")
     .trim()
@@ -99,6 +103,15 @@ const buildAttendanceWhere = ({
   if (Array.isArray(teamIds) && teamIds.length > 0) {
     where.teamId = {
       in: teamIds.map(Number),
+    };
+  }
+
+  if (search && String(search).trim().length > 0) {
+    where.user = {
+      OR: [
+        { name: { contains: String(search).trim(), mode: "insensitive" } },
+        { email: { contains: String(search).trim(), mode: "insensitive" } },
+      ],
     };
   }
 
@@ -265,7 +278,7 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
   };
 };
 
-const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, status }) => {
+const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, status, search }) => {
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
   });
@@ -338,6 +351,7 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     from: rangeFrom,
     to: rangeTo,
     status,
+    search,
   });
 
   const records = await prisma.attendance.findMany({

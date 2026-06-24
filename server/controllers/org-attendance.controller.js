@@ -102,6 +102,7 @@ exports.getOrgAttendance = asyncHandler(async (req, res) => {
     fromInput: req.query.from,
     toInput: req.query.to,
     status: req.query.status,
+    search: req.query.search,
   });
 
   res.status(200).json({ success: true, ...payload });
@@ -388,6 +389,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
     fromInput: req.query.from,
     toInput: req.query.to,
     status: req.query.status,
+    search: req.query.search,
   });
 
   const toPdfTime = (value) => {
@@ -456,6 +458,7 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
     fromInput: req.query.from,
     toInput: req.query.to,
     status: req.query.status,
+    search: req.query.search,
   });
 
   const subtitleLines = [
