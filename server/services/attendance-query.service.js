@@ -1,5 +1,6 @@
 const { minutesToHoursValue, todayKey, toDateKey, toSummaryItem, monthWindow, dateKey } = require("./common.service");
 const { resolveAttendanceLateMinutes } = require("./attendance-time.service");
+const { attendanceRecordSelect } = require("./prisma-selects.service");
 const { resolveUserRole } = require("../utils/membership");
 const prisma = require("../lib/prisma");
 
