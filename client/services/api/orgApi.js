@@ -235,6 +235,7 @@ export const {
   useGetOrgNotificationsQuery,
   useGetOrgNotificationByIdQuery,
   useMarkNotificationAsReadMutation,
+  useMarkAllNotificationsAsReadMutation,
   useGetOrgUsersQuery,
   useGetOrgUserByIdQuery,
   useDownloadOrgUserProfilePdfMutation,
