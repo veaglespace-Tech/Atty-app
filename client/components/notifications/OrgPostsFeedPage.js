@@ -77,12 +77,13 @@ export default function OrgPostsFeedPage({
 
   const [markAllAsRead] = useMarkAllNotificationsAsReadMutation();
 
-  useEffect(() => {
-    const unreadCount = postsData?.summary?.find(s => s.label === "Unread Notifications")?.value || 0;
-    if (unreadCount > 0) {
-      markAllAsRead().catch(() => {});
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead().unwrap();
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
     }
-  }, [postsData, markAllAsRead]);
+  };
 
   const handleVote = async (postId, optionIndex) => {
     try {
@@ -110,9 +111,20 @@ export default function OrgPostsFeedPage({
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 pb-8 sm:space-y-6 sm:pb-10 lg:space-y-8 lg:pb-12">
       <header className="relative overflow-hidden rounded-2xl bg-slate-900 p-5 text-white shadow-xl sm:rounded-3xl sm:p-7 lg:p-8">
-        <div className="relative z-10">
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm font-medium text-slate-300 sm:text-base">{description}</p>
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{title}</h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium text-slate-300 sm:text-base">{description}</p>
+          </div>
+          {posts.some(p => !p.isRead) && (
+            <button
+              type="button"
+              onClick={handleMarkAllAsRead}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-white/20 active:scale-95"
+            >
+              Mark all as read
+            </button>
+          )}
         </div>
         <div className="pointer-events-none absolute -right-3 -top-3 opacity-10 sm:right-0 sm:top-0 sm:p-6">
           <Megaphone size={88} className="sm:h-[120px] sm:w-[120px]" />
