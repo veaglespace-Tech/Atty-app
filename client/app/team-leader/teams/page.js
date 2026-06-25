@@ -641,6 +641,16 @@ export default function TeamLeaderTeamsPage() {
           )}
 
           <div className="grid gap-3 lg:col-span-2 lg:grid-cols-3">
+             <input
+              name="latitude"
+              type="number"
+              step="any"
+              value={form.latitude}
+              onChange={onInputChange}
+              placeholder="Latitude"
+              className="dashboard-field-control"
+              disabled={!canCreateTeams}
+            />
           <input
             name="longitude"
             type="number"
@@ -651,16 +661,6 @@ export default function TeamLeaderTeamsPage() {
             className="dashboard-field-control"
             disabled={!canCreateTeams}
           />
-            <input
-              name="latitude"
-              type="number"
-              step="any"
-              value={form.latitude}
-              onChange={onInputChange}
-              placeholder="Latitude"
-              className="dashboard-field-control"
-              disabled={!canCreateTeams}
-            />
             <button
               type="button"
               onClick={onUseCurrentLocation}

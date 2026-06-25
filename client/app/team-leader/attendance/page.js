@@ -540,22 +540,22 @@ export default function TeamLeaderAttendancePage() {
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input
-              name="longitude"
-              type="number"
-              step="any"
-              value={settings.longitude}
-              onChange={onSettingsChange}
-              placeholder="Longitude"
-              className="dashboard-field-control"
-              disabled={!canManageAttendanceSettings}
-            />
-            <input
               name="latitude"
               type="number"
               step="any"
               value={settings.latitude}
               onChange={onSettingsChange}
               placeholder="Latitude"
+              className="dashboard-field-control"
+              disabled={!canManageAttendanceSettings}
+            />
+            <input
+              name="longitude"
+              type="number"
+              step="any"
+              value={settings.longitude}
+              onChange={onSettingsChange}
+              placeholder="Longitude"
               className="dashboard-field-control"
               disabled={!canManageAttendanceSettings}
             />
