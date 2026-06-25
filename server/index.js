@@ -104,12 +104,12 @@ app.options("*", cors(corsOptions));
 app.use("/api", apiRateLimiter);
 app.use(
   express.json({
-    limit: getEnv("JSON_BODY_LIMIT", "50mb"),
+    limit: getEnv("JSON_BODY_LIMIT", "10mb"),
   }),
 );
 app.use(
   express.urlencoded({ 
-    limit: getEnv("JSON_BODY_LIMIT", "50mb"), 
+    limit: getEnv("JSON_BODY_LIMIT", "10mb"), 
     extended: true 
   })
 );
