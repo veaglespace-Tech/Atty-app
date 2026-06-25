@@ -130,23 +130,23 @@ export default function OrgPostsFeedPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 pb-8 sm:space-y-6 sm:pb-10 lg:space-y-8 lg:pb-12">
-      <header className="relative overflow-hidden rounded-2xl bg-slate-900 p-5 text-white shadow-xl sm:rounded-3xl sm:p-7 lg:p-8">
+      <header className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 p-5 border border-slate-200 dark:border-slate-800 shadow-sm sm:rounded-3xl sm:p-7 lg:p-8">
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{title}</h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium text-slate-300 sm:text-base">{description}</p>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">{title}</h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium text-slate-500 dark:text-slate-300 sm:text-base">{description}</p>
           </div>
           {posts.some(p => !p.isRead) && (
             <button
               type="button"
               onClick={handleMarkAllAsRead}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-white/20 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-white/10 px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-white transition-all hover:bg-slate-200 dark:hover:bg-white/20 active:scale-95"
             >
               Mark all as read
             </button>
           )}
         </div>
-        <div className="pointer-events-none absolute -right-3 -top-3 opacity-10 sm:right-0 sm:top-0 sm:p-6">
+        <div className="pointer-events-none absolute -right-3 -top-3 opacity-30 text-slate-200 dark:text-white dark:opacity-10 sm:right-0 sm:top-0 sm:p-6">
           <Megaphone size={88} className="sm:h-[120px] sm:w-[120px]" />
         </div>
       </header>
