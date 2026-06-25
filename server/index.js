@@ -104,10 +104,15 @@ app.options("*", cors(corsOptions));
 app.use("/api", apiRateLimiter);
 app.use(
   express.json({
-    limit: getEnv("JSON_BODY_LIMIT", "6mb"),
+    limit: getEnv("JSON_BODY_LIMIT", "50mb"),
   }),
 );
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  express.urlencoded({ 
+    limit: getEnv("JSON_BODY_LIMIT", "50mb"), 
+    extended: true 
+  })
+);
 app.use(cookieParser());
 app.use("/api/auth/login", loginRateLimiter);
 
