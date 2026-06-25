@@ -816,7 +816,10 @@ export default function WorkspaceSettingsPage() {
                   strokeLinecap="round"
                   strokeDasharray="289.02"
                   strokeDashoffset={289.02 - (completionState.percentage / 100) * 289.02}
-                  className="text-orange-500 transition-all duration-1000 ease-out"
+                  className={cn(
+                    "transition-all duration-1000 ease-out",
+                    completionState.percentage === 100 ? "text-blue-500" : "text-orange-500"
+                  )}
                 />
               </svg>
               <div className="relative z-10 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-white dark:bg-slate-950">
