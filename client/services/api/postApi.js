@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { buildBaseQuery } from "./baseApi";
+import { orgApi } from "./orgApi";
 
 export const postApi = createApi({
   reducerPath: "postApi",
@@ -35,7 +36,15 @@ export const postApi = createApi({
         method: "POST",
         body: { optionIndex },
       }),
-      invalidatesTags: ["Posts", "OrgNotifications"],
+      invalidatesTags: ["Posts"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(orgApi.util.invalidateTags(["OrgNotifications"]));
+        } catch {
+          // vote failed, no need to invalidate
+        }
+      },
     }),
     deletePost: builder.mutation({
       query: (id) => ({
@@ -54,3 +63,4 @@ export const {
   useVoteOnPostMutation,
   useDeletePostMutation,
 } = postApi;
+
