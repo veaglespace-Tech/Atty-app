@@ -57,7 +57,7 @@ import {
 } from "@/utils/formValidation";
 import { getCurrentCoordinates } from "@/utils/location";
 
-const settingsSchema = z.object({
+const getSettingsSchema = (isAdmin) => z.object({
   name: z
     .string()
     .trim()
@@ -88,7 +88,7 @@ const settingsSchema = z.object({
       (value) => !value || toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
       "Mobile number is too long"
     ),
-  emergencyContact: z.string().trim().min(1, "Emergency mobile is required"),
+  emergencyContact: isAdmin ? z.string().trim().optional() : z.string().trim().min(1, "Emergency mobile is required"),
   currentAddress: z.string().trim().min(1, "Full address is required"),
 });
 
@@ -533,7 +533,7 @@ export default function WorkspaceSettingsPage() {
     setValue,
     formState: { errors, isDirty },
   } = useForm({
-    resolver: zodResolver(settingsSchema),
+    resolver: zodResolver(getSettingsSchema(isSuperAdmin || effectiveRole === ROLES.ORG_ADMIN)),
     mode: "onChange",
     defaultValues: getFormDefaults(user),
   });
@@ -562,7 +562,9 @@ export default function WorkspaceSettingsPage() {
       { key: "name", label: "Full Name" },
       { key: "email", label: "Email Address" },
       { key: "mobile", label: "Mobile Number" },
-      { key: "emergencyContact", label: "Emergency Contact" },
+      ...(!(isSuperAdmin || effectiveRole === ROLES.ORG_ADMIN)
+        ? [{ key: "emergencyContact", label: "Emergency Contact" }]
+        : []),
       { key: "currentAddress", label: "Current Address" },
       { key: "profileImageUrl", label: "Profile Image" },
     ];
@@ -1005,24 +1007,26 @@ export default function WorkspaceSettingsPage() {
               <input type="hidden" {...register("mobileCountryCode")} />
               <input type="hidden" {...register("mobile")} />
 
-              <div className="md:col-span-1">
-                <label htmlFor="settings-emergencyContact" className={labelClassName}>
-                  Emergency Contact
-                </label>
-                <input
-                  id="settings-emergencyContact"
-                  type="text"
-                  placeholder="E.g., +91 9876543210"
-                  aria-invalid={errors.emergencyContact ? "true" : "false"}
-                  className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")}
-                  {...register("emergencyContact")}
-                />
-                {errors.emergencyContact ? (
-                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
-                    {errors.emergencyContact.message}
-                  </p>
-                ) : null}
-              </div>
+              {!(isSuperAdmin || effectiveRole === ROLES.ORG_ADMIN) && (
+                <div className="md:col-span-1">
+                  <label htmlFor="settings-emergencyContact" className={labelClassName}>
+                    Emergency Contact
+                  </label>
+                  <input
+                    id="settings-emergencyContact"
+                    type="text"
+                    placeholder="E.g., +91 9876543210"
+                    aria-invalid={errors.emergencyContact ? "true" : "false"}
+                    className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")}
+                    {...register("emergencyContact")}
+                  />
+                  {errors.emergencyContact ? (
+                    <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
+                      {errors.emergencyContact.message}
+                    </p>
+                  ) : null}
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 <label htmlFor="settings-currentAddress" className={labelClassName}>
