@@ -288,8 +288,12 @@ export default function TeamLeaderAttendancePage() {
   };
 
   const onSettingsChange = (event) => {
-    const { name, value } = event.target;
-    setSettings((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = event.target;
+    let newValue = value;
+    if (type === "number" && newValue !== "") {
+      newValue = String(Number(newValue));
+    }
+    setSettings((prev) => ({ ...prev, [name]: newValue }));
   };
 
   const onUseCurrentLocation = async () => {

@@ -221,8 +221,12 @@ export default function TeamLeaderTeamsPage() {
   }, [canAssignMembers, canCreateTeams, refetchTeams, refetchUsers]);
 
   const onInputChange = (event) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = event.target;
+    let newValue = value;
+    if (type === "number" && newValue !== "") {
+      newValue = String(Number(newValue));
+    }
+    setForm((prev) => ({ ...prev, [name]: newValue }));
   };
 
   const toggleLeader = (leaderId) => {

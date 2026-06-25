@@ -203,10 +203,14 @@ export default function OrganizationDetailPage() {
   }, [item]);
 
   const onChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value, type } = event.target;
+    let newValue = value;
+    if (type === "number" && newValue !== "") {
+      newValue = String(Number(newValue));
+    }
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: newValue,
     }));
   };
 
