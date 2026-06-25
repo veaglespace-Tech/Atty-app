@@ -610,12 +610,32 @@ export default function WorkspaceSettingsPage() {
     setProfileImageError("");
   };
 
-  const readFileAsDataUrl = (file) =>
+  const compressImage = (file) =>
     new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("Failed to read the selected image."));
-      reader.readAsDataURL(file);
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        const MAX_DIM = 1200;
+        
+        if (width > height && width > MAX_DIM) {
+          height *= MAX_DIM / width;
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width *= MAX_DIM / height;
+          height = MAX_DIM;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Failed to read the selected image."));
     });
 
   const onProfileImageSelected = async (event) => {
@@ -629,13 +649,14 @@ export default function WorkspaceSettingsPage() {
       return;
     }
 
-    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
-      setProfileImageError("Profile image must be 2 MB or smaller.");
-      return;
-    }
-
     try {
-      const nextDataUrl = await readFileAsDataUrl(file);
+      const nextDataUrl = await compressImage(file);
+      
+      if (nextDataUrl.length > 5 * 1024 * 1024) {
+        setProfileImageError("Image is too large even after compression. Please choose a smaller image.");
+        return;
+      }
+
       setProfileImageDataUrl(nextDataUrl);
       setRemoveProfileImage(false);
       setProfileImageError("");
