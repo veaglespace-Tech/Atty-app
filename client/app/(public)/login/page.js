@@ -52,10 +52,7 @@ export default function LoginPage() {
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const currentRole = user?.currentRole;
   const [userSignIn, { error: apiError }] = useUserSignInMutation();
-  const [editableFields, setEditableFields] = React.useState({
-    email: false,
-    password: false,
-  });
+
 
   const {
     control,
@@ -92,11 +89,7 @@ export default function LoginPage() {
     router.replace(nextPath);
   }, [currentRole, hydrated, redirectPath, router, token, user?.dashboardPath]);
 
-  const unlockField = (fieldName) => () => {
-    setEditableFields((current) =>
-      current[fieldName] ? current : { ...current, [fieldName]: true }
-    );
-  };
+
 
   const onSubmit = async (values) => {
     try {
@@ -171,8 +164,6 @@ export default function LoginPage() {
                     className={`${authFieldClassName} !pl-12 ${errors.email ? authFieldErrorClassName : authFieldNormalClassName}`}
                     {...register("email")}
                     {...autofillGuardEmailProps}
-                    readOnly={!editableFields.email}
-                    onFocus={unlockField("email")}
                   />
                 </div>
                 {errors.email ? (
@@ -200,8 +191,6 @@ export default function LoginPage() {
                   className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
                   {...register("password")}
                   {...autofillGuardPasswordProps}
-                  readOnly={!editableFields.password}
-                  onFocus={unlockField("password")}
                 />
                 {errors.password ? (
                   <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">

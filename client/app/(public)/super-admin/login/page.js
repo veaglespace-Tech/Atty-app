@@ -47,10 +47,7 @@ export default function SuperAdminLoginPage() {
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const currentRole = user?.currentRole;
   const [adminSignin, { error: apiError }] = useAdminSigninMutation();
-  const [editableFields, setEditableFields] = React.useState({
-    email: false,
-    password: false,
-  });
+
 
   const {
     control,
@@ -83,11 +80,7 @@ export default function SuperAdminLoginPage() {
     }
   }, [currentRole, hydrated, redirectPath, router, token, user?.dashboardPath]);
 
-  const unlockField = (fieldName) => () => {
-    setEditableFields((current) =>
-      current[fieldName] ? current : { ...current, [fieldName]: true }
-    );
-  };
+
 
   const onSubmit = async (values) => {
     try {
@@ -159,12 +152,10 @@ export default function SuperAdminLoginPage() {
                   </span>
                   <input
                     type="email"
-                    placeholder="admin@veagle.com"
+                    placeholder="super@admin.com"
                     className={`${authFieldClassName} !pl-12 ${errors.email ? authFieldErrorClassName : authFieldNormalClassName}`}
                     {...register("email")}
                     {...autofillGuardEmailProps}
-                    readOnly={!editableFields.email}
-                    onFocus={unlockField("email")}
                   />
                 </div>
                 {errors.email ? (
@@ -188,12 +179,10 @@ export default function SuperAdminLoginPage() {
                 </div>
                 <PasswordInput
                   icon={Lock}
-                  placeholder="Enter your password"
+                  placeholder="Super secret password"
                   className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
                   {...register("password")}
                   {...autofillGuardPasswordProps}
-                  readOnly={!editableFields.password}
-                  onFocus={unlockField("password")}
                 />
                 {errors.password ? (
                   <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
