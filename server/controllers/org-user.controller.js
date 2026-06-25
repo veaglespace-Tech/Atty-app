@@ -39,6 +39,56 @@ const { createOrganizationMembership } = require("../services/organization-membe
 const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
 const { buildUserHallTicketPdf } = require("../utils/user-profile-pdf");
 
+// ── Poll helpers (mirrors post.controller.js logic) ──
+const _toSafeObj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+
+const _normalizePollOptions = (opts = []) =>
+  (Array.isArray(opts) ? opts : [])
+    .map((o) => (typeof o === "string" ? o.trim() : o == null ? "" : String(o).trim()))
+    .filter(Boolean);
+
+const _normalizePollVotes = (votes = {}, count = 0) => {
+  const safe = _toSafeObj(votes);
+  return Object.entries(safe).reduce((acc, [uid, idx]) => {
+    const i = Number(idx);
+    if (Number.isInteger(i) && i >= 0 && i < count) acc[String(uid)] = i;
+    return acc;
+  }, {});
+};
+
+const _serializePollForNotification = (post, currentUserId) => {
+  if (!post || post.type !== "POLL") return post;
+
+  const meta = _toSafeObj(post.metadata);
+  const options = _normalizePollOptions(meta.options);
+  const votes = _normalizePollVotes(meta.votes, options.length);
+  const totalVotes = Object.keys(votes).length;
+  const voteCounts = Object.values(votes).reduce((acc, idx) => {
+    acc[idx] = (acc[idx] || 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    ...post,
+    metadata: { ...meta, options, votes },
+    poll: {
+      totalVotes,
+      selectedOptionIndex: Object.prototype.hasOwnProperty.call(votes, String(currentUserId))
+        ? votes[String(currentUserId)]
+        : null,
+      results: options.map((option, index) => {
+        const count = voteCounts[index] || 0;
+        return {
+          index,
+          option,
+          votes: count,
+          percentage: totalVotes ? Math.round((count / totalVotes) * 100) : 0,
+        };
+      }),
+    },
+  };
+};
+
 const USER_STATUS = new Set(["APPROVED", "PENDING", "REJECTED"]);
 const ORG_PROFILE_SELECT = {
   id: true,
@@ -830,17 +880,21 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     })
   ]);
 
-  const items = posts.map((post) => ({
-    id: String(post.id),
-    title: post.title,
-    message: post.content,
-    type: post.type,
-    metadata: post.metadata,
-    createdAt: post.createdAt,
-    authorName: post.author?.name || "Admin",
-    source: "POST",
-    isRead: post.reads && post.reads.length > 0
-  }));
+  const items = posts.map((post) => {
+    const serialized = _serializePollForNotification(post, userId);
+    return {
+      id: String(post.id),
+      title: post.title,
+      message: post.content,
+      type: post.type,
+      metadata: serialized.metadata,
+      poll: serialized.poll || undefined,
+      createdAt: post.createdAt,
+      authorName: post.author?.name || "Admin",
+      source: "POST",
+      isRead: post.reads && post.reads.length > 0,
+    };
+  });
 
   res.status(200).json({
     success: true,
@@ -888,6 +942,9 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
     throw new Error("Notification not found");
   }
 
+  const userId = Number(req.user.id);
+  const serialized = _serializePollForNotification(post, userId);
+
   res.status(200).json({
     success: true,
     data: {
@@ -895,7 +952,8 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
       title: post.title,
       message: post.content,
       type: post.type,
-      metadata: post.metadata,
+      metadata: serialized.metadata,
+      poll: serialized.poll || undefined,
       createdAt: post.createdAt,
       authorName: post.author?.name || "Admin",
     },
