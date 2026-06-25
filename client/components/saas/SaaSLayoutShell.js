@@ -213,7 +213,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   }
 
   return (
-    <div className="dashboard-theme flex h-screen overflow-hidden bg-background transition-colors duration-300 dark:text-slate-100">
+    <div className="dashboard-theme flex h-screen overflow-hidden bg-slate-50 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
       {mobileNavOpen ? (
         <div
           onClick={() => setMobileNavOpen(false)}
@@ -223,7 +223,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white/92 px-4 py-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800 dark:bg-slate-950/92 dark:shadow-black/30 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white px-4 py-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800 dark:bg-slate-950/92 dark:shadow-black/30 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
           mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
@@ -280,7 +280,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200/80 bg-white/88 px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
+        <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200/80 bg-white px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
           <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
@@ -298,7 +298,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
             </div>
 
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <div className="brand-panel-soft hidden min-w-[320px] max-w-[420px] rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] lg:block">
+              <div className="brand-panel-soft hidden min-w-[320px] max-w-[420px] rounded-[1.5rem] border border-slate-200/80 bg-white px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] lg:block">
                 <div className="flex items-center gap-3">
                   <UserAvatar
                     src={user?.profileImageUrl}
