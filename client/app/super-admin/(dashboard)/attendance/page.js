@@ -353,7 +353,7 @@ export default function SuperAdminAttendanceReportsPage() {
   if (selectedUserReport) {
     return (
       <section className="space-y-6">
-        <div className="light-glow-card-static rounded-[1.9rem] p-6 relative overflow-hidden">
+        <div className="light-glow-card-static rounded-[1.9rem] p-6 relative z-20 overflow-visible">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_32%)]" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -560,7 +560,7 @@ export default function SuperAdminAttendanceReportsPage() {
   // MAIN REPORTS VIEW (All Platform Users)
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static rounded-[1.9rem] p-6 relative overflow-hidden">
+      <div className="light-glow-card-static rounded-[1.9rem] p-6 relative z-20 overflow-visible">
         <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>

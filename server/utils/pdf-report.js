@@ -348,15 +348,24 @@ const resolveGenericColumns = (doc, columns = []) => {
   }));
 
   const requestedWidth = normalizedColumns.reduce((sum, column) => sum + Number(column.width || 0), 0);
-  if (requestedWidth <= pageWidth || requestedWidth <= 0) {
+  if (requestedWidth <= 0) {
     return normalizedColumns;
   }
 
   const scale = pageWidth / requestedWidth;
-  return normalizedColumns.map((column) => ({
-    ...column,
-    width: Math.max(36, Math.floor(Number(column.width || 0) * scale)),
-  }));
+  let totalCalculatedWidth = 0;
+  return normalizedColumns.map((column, index) => {
+    let width = Math.max(36, Math.floor(Number(column.width || 0) * scale));
+    if (index === normalizedColumns.length - 1) {
+      width = Math.max(36, Math.floor(pageWidth - totalCalculatedWidth));
+    } else {
+      totalCalculatedWidth += width;
+    }
+    return {
+      ...column,
+      width,
+    };
+  });
 };
 
 const drawGenericTableHeader = (doc, columns, startY) => {

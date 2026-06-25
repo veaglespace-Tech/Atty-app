@@ -175,6 +175,8 @@ const formatHoursValue = (value, options = {}) => {
   return safeValue.toFixed(decimals);
 };
 
+const normalizeQueryValue = (value) => String(value || "").trim();
+
 module.exports = {
   clamp,
   parsePositiveInt,
@@ -196,4 +198,5 @@ module.exports = {
   formatDate,
   minutesToHoursValue,
   formatHoursValue,
+  normalizeQueryValue,
 };

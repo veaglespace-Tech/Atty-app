@@ -386,7 +386,7 @@ export default function OrgReportsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel relative z-20 overflow-visible rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">
