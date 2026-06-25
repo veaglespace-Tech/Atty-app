@@ -16,7 +16,8 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          timeout: 180s
+          timeout: 300s
+          command_timeout: 10m
 
           script: |
             set -e
@@ -73,10 +74,14 @@ jobs:
             echo "===== FRONTEND CLEAN BUILD ====="
             cd ../client || exit 1
 
-            # 🔥 FULL CLEAN (your requirement)
+            # 🔥 FULL CLEAN
             rm -rf .next node_modules
+            npm cache clean --force
 
             npm install
+
+            # verify critical dependency
+            test -d node_modules/@vladmandic/face-api || (echo "❌ Missing @vladmandic/face-api" && npm install @vladmandic/face-api)
 
             NODE_ENV=production npm run build
 
