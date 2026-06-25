@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { MessageSquareText, SendHorizontal, X } from "lucide-react";
+import { Bot, SendHorizontal, X } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   useAskAttyMutation,
@@ -646,7 +646,7 @@ export default function AttyWidget() {
           aria-label="Open Atty support"
         >
           <div className="relative flex items-center justify-center">
-            <MessageSquareText className="h-5 w-5" />
+            <Bot className="h-5 w-5" />
             <span className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white/70 dark:ring-slate-950/70" />
           </div>
         </button>

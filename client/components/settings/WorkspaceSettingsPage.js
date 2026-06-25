@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Bell,
+  BadgeCheck,
   Building2,
   Check,
   Clock,
@@ -826,9 +827,15 @@ export default function WorkspaceSettingsPage() {
                   sizes="64px"
                 />
               </div>
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border-[3px] border-white dark:border-slate-950 bg-orange-500 px-2 py-0.5 text-[10px] font-black tracking-widest text-white shadow-sm z-20">
-                {completionState.percentage}%
-              </div>
+              {completionState.percentage === 100 ? (
+                <div className="absolute -bottom-1 -right-1 z-20 flex items-center justify-center rounded-full bg-white dark:bg-slate-950 p-[2px]">
+                  <BadgeCheck className="h-6 w-6 text-white fill-blue-500" />
+                </div>
+              ) : (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 rounded-full border-[3px] border-white bg-orange-500 px-2 py-0.5 text-[10px] font-black tracking-widest text-white shadow-sm dark:border-slate-950">
+                  {completionState.percentage}%
+                </div>
+              )}
             </div>
             <div className="mt-1">
               <p className="brand-kicker">Account Settings</p>
