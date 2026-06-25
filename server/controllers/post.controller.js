@@ -187,7 +187,30 @@ exports.createPost = asyncHandler(async (req, res) => {
     nextMetadata = preparedPoll.metadata;
   }
 
-  if (req.body.attachmentDataUrl) {
+  if (req.body.attachments && Array.isArray(req.body.attachments)) {
+    nextMetadata.attachments = [];
+    for (const file of req.body.attachments) {
+      if (file.dataUrl) {
+        try {
+          const uploadResult = await uploadFileDataUrl({
+            dataUrl: file.dataUrl,
+            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+          });
+          nextMetadata.attachments.push({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            format: uploadResult.format,
+            resourceType: uploadResult.resourceType,
+            name: file.name || "Attachment",
+            allowDownload: file.allowDownload !== false,
+          });
+        } catch (err) {
+          res.status(400);
+          throw new Error("Failed to upload attachment: " + err.message);
+        }
+      }
+    }
+  } else if (req.body.attachmentDataUrl) {
     try {
       const uploadResult = await uploadFileDataUrl({
         dataUrl: req.body.attachmentDataUrl,
@@ -337,7 +360,43 @@ exports.updatePost = asyncHandler(async (req, res) => {
   }
 
   // Handle attachment changes
-  if (req.body.attachmentDataUrl !== undefined) {
+  if (req.body.attachments && Array.isArray(req.body.attachments)) {
+    const incomingPublicIds = req.body.attachments.map(a => a.publicId).filter(Boolean);
+    const existingAttachments = nextMetadata.attachments || (nextMetadata.attachment ? [nextMetadata.attachment] : []);
+    
+    for (const ext of existingAttachments) {
+      if (ext.publicId && !incomingPublicIds.includes(ext.publicId)) {
+        await deleteCloudinaryFile(ext.publicId, ext.resourceType).catch(e => console.error(e));
+      }
+    }
+
+    delete nextMetadata.attachment;
+    nextMetadata.attachments = [];
+
+    for (const file of req.body.attachments) {
+      if (file.dataUrl && file.dataUrl.startsWith("data:")) {
+        try {
+          const uploadResult = await uploadFileDataUrl({
+            dataUrl: file.dataUrl,
+            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+          });
+          nextMetadata.attachments.push({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            format: uploadResult.format,
+            resourceType: uploadResult.resourceType,
+            name: file.name || "Attachment",
+            allowDownload: file.allowDownload !== false,
+          });
+        } catch (err) {
+          res.status(400);
+          throw new Error("Failed to upload attachment: " + err.message);
+        }
+      } else {
+        nextMetadata.attachments.push(file);
+      }
+    }
+  } else if (req.body.attachmentDataUrl !== undefined) {
     // If a new attachment is provided or the existing one is removed
     if (!req.body.attachmentDataUrl) {
       // Remove attachment

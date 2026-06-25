@@ -51,9 +51,7 @@ export default function OrgPostsPage() {
     content: "",
     type: "NOTIFICATION",
     metadata: { options: ["", ""] },
-    attachmentDataUrl: undefined,
-    attachmentName: "",
-    attachmentAllowDownload: true,
+    attachments: [],
   });
 
   const { user } = useAuthSession();
@@ -99,9 +97,7 @@ export default function OrgPostsPage() {
       content: "",
       type: "NOTIFICATION",
       metadata: { options: ["", ""] },
-      attachmentDataUrl: undefined,
-      attachmentName: "",
-      attachmentAllowDownload: true,
+      attachments: [],
     });
     setEditingId(null);
     setCreateOpen(false);
@@ -142,9 +138,7 @@ export default function OrgPostsPage() {
       content: post.content,
       type: post.type,
       metadata: post.metadata || { options: ["", ""] },
-      attachmentDataUrl: undefined, // Initializing to undefined means no change to attachment
-      attachmentName: post.metadata?.attachment?.name || "",
-      attachmentAllowDownload: post.metadata?.attachment?.allowDownload ?? true,
+      attachments: post.metadata?.attachments || (post.metadata?.attachment ? [post.metadata.attachment] : []),
     });
     setEditingId(post.id);
     setCreateOpen(true);

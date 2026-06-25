@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const { buildUserAttendancePayload } = require("../services/attendance-query.service");
 const archiver = require("archiver");
 const prisma = require("../lib/prisma");
+const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/cloudinary-image.service");
 const {
   parseBoolean,
   parseId,
@@ -2926,6 +2927,47 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
     nextMetadata = poll.metadata;
   }
 
+  if (req.body.attachments && Array.isArray(req.body.attachments)) {
+    nextMetadata.attachments = [];
+    for (const file of req.body.attachments) {
+      if (file.dataUrl) {
+        try {
+          const uploadResult = await uploadFileDataUrl({
+            dataUrl: file.dataUrl,
+            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+          });
+          nextMetadata.attachments.push({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            format: uploadResult.format,
+            resourceType: uploadResult.resourceType,
+            name: file.name || "Attachment",
+            allowDownload: file.allowDownload !== false,
+          });
+        } catch (err) {
+          res.status(400); throw new Error("Failed to upload attachment: " + err.message);
+        }
+      }
+    }
+  } else if (req.body.attachmentDataUrl) {
+    try {
+      const uploadResult = await uploadFileDataUrl({
+        dataUrl: req.body.attachmentDataUrl,
+        folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+      });
+      nextMetadata.attachment = {
+        url: uploadResult.url,
+        publicId: uploadResult.publicId,
+        format: uploadResult.format,
+        resourceType: uploadResult.resourceType,
+        name: req.body.attachmentName || "Attachment",
+        allowDownload: req.body.attachmentAllowDownload !== false,
+      };
+    } catch (err) {
+      res.status(400); throw new Error("Failed to upload attachment: " + err.message);
+    }
+  }
+
   const post = await prisma.post.create({
     data: {
       title: normalizedTitle, content: normalizedContent,
@@ -2961,6 +3003,71 @@ exports.updateSuperAdminPost = asyncHandler(async (req, res) => {
     );
     if (poll.error) { res.status(400); throw new Error(poll.error); }
     nextMeta = poll.metadata;
+  }
+
+  // Handle attachment changes
+  if (req.body.attachments && Array.isArray(req.body.attachments)) {
+    const incomingPublicIds = req.body.attachments.map(a => a.publicId).filter(Boolean);
+    const existingAttachments = nextMeta.attachments || (nextMeta.attachment ? [nextMeta.attachment] : []);
+    
+    for (const ext of existingAttachments) {
+      if (ext.publicId && !incomingPublicIds.includes(ext.publicId)) {
+        await deleteCloudinaryFile(ext.publicId, ext.resourceType).catch(e => console.error(e));
+      }
+    }
+
+    delete nextMeta.attachment;
+    nextMeta.attachments = [];
+
+    for (const file of req.body.attachments) {
+      if (file.dataUrl && file.dataUrl.startsWith("data:")) {
+        try {
+          const uploadResult = await uploadFileDataUrl({
+            dataUrl: file.dataUrl,
+            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+          });
+          nextMeta.attachments.push({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            format: uploadResult.format,
+            resourceType: uploadResult.resourceType,
+            name: file.name || "Attachment",
+            allowDownload: file.allowDownload !== false,
+          });
+        } catch (err) {
+          res.status(400); throw new Error("Failed to upload attachment: " + err.message);
+        }
+      } else {
+        nextMeta.attachments.push(file);
+      }
+    }
+  } else if (req.body.attachmentDataUrl !== undefined) {
+    if (!req.body.attachmentDataUrl) {
+      if (nextMeta.attachment?.publicId) {
+        await deleteCloudinaryFile(nextMeta.attachment.publicId, nextMeta.attachment.resourceType).catch(e => console.error(e));
+      }
+      delete nextMeta.attachment;
+    } else if (req.body.attachmentDataUrl.startsWith("data:")) {
+      try {
+        const uploadResult = await uploadFileDataUrl({
+          dataUrl: req.body.attachmentDataUrl,
+          folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+        });
+        if (nextMeta.attachment?.publicId) {
+          await deleteCloudinaryFile(nextMeta.attachment.publicId, nextMeta.attachment.resourceType).catch(e => console.error(e));
+        }
+        nextMeta.attachment = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId,
+          format: uploadResult.format,
+          resourceType: uploadResult.resourceType,
+          name: req.body.attachmentName || "Attachment",
+          allowDownload: req.body.attachmentAllowDownload !== false,
+        };
+      } catch (err) {
+        res.status(400); throw new Error("Failed to upload attachment: " + err.message);
+      }
+    }
   }
 
   const updated = await prisma.post.update({

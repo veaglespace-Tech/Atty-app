@@ -41,74 +41,74 @@ export function PostForm({
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
-    if (file.type.startsWith("image/")) {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let { width, height } = img;
-        const MAX_DIM = 1200;
-        
-        if (width > height && width > MAX_DIM) {
-          height *= MAX_DIM / width;
-          width = MAX_DIM;
-        } else if (height > MAX_DIM) {
-          width *= MAX_DIM / height;
-          height = MAX_DIM;
-        }
+    files.forEach(file => {
+      if (file.type.startsWith("image/")) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let { width, height } = img;
+          const MAX_DIM = 1200;
+          
+          if (width > height && width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          } else if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Compress the image to JPEG with 0.8 quality
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-        
-        if (dataUrl.length > 5 * 1024 * 1024) {
-          alert("Image is too large even after compression. Please choose a smaller image.");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress the image to JPEG with 0.8 quality
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+          
+          if (dataUrl.length > 5 * 1024 * 1024) {
+            alert("Image is too large even after compression. Please choose a smaller image.");
+            return;
+          }
+
+          setForm((prev) => ({
+            ...prev,
+            attachments: [...(prev.attachments || []), { dataUrl, name: file.name, allowDownload: true }]
+          }));
+        };
+      } else {
+        if (file.size > 4 * 1024 * 1024) {
+          alert("Document size should not exceed 4MB");
           return;
         }
-
-        setForm((prev) => ({
-          ...prev,
-          attachmentDataUrl: dataUrl,
-          attachmentName: file.name,
-        }));
-      };
-    } else {
-      if (file.size > 4 * 1024 * 1024) {
-        alert("Document size should not exceed 4MB");
-        return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setForm((prev) => ({
+            ...prev,
+            attachments: [...(prev.attachments || []), { dataUrl: reader.result, name: file.name, allowDownload: true }]
+          }));
+        };
+        reader.readAsDataURL(file);
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prev) => ({
-          ...prev,
-          attachmentDataUrl: reader.result,
-          attachmentName: file.name,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+    });
+    e.target.value = null;
   };
 
-  const removeAttachment = () => {
+  const removeAttachment = (index) => {
     setForm((prev) => ({
       ...prev,
-      attachmentDataUrl: "", // Use empty string to signal removal
-      attachmentName: "",
+      attachments: (prev.attachments || []).filter((_, i) => i !== index),
     }));
   };
 
-  const getExistingAttachmentName = () => {
-    if (form.attachmentName) return form.attachmentName;
-    if (form.metadata?.attachment?.name) return form.metadata.attachment.name;
-    if (form.metadata?.attachment?.url) return "Existing Attachment";
-    return null;
+  const toggleAttachmentDownload = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      attachments: prev.attachments.map((att, i) => i === index ? { ...att, allowDownload: !att.allowDownload } : att)
+    }));
   };
 
   return (
@@ -219,41 +219,46 @@ export function PostForm({
             <div className="flex items-center gap-3">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">
                 <Paperclip size={16} />
-                Attach File
-                <input type="file" className="hidden" onChange={handleFileChange} />
+                Attach Files
+                <input type="file" multiple className="hidden" onChange={handleFileChange} />
               </label>
-              
-              {(form.attachmentDataUrl !== "" && getExistingAttachmentName()) && (
-                <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5 text-sm text-blue-700">
-                  {form.attachmentName?.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                    <ImageIcon size={16} className="text-blue-500" />
-                  ) : (
-                    <FileText size={16} className="text-blue-500" />
-                  )}
-                  <span className="font-medium truncate max-w-[200px]">
-                    {getExistingAttachmentName()}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={removeAttachment}
-                    className="text-blue-400 hover:text-blue-600 transition ml-2"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              )}
             </div>
-            {(form.attachmentDataUrl !== "" && getExistingAttachmentName()) && (
-              <label className="flex items-center gap-2 cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  name="attachmentAllowDownload"
-                  checked={form.attachmentAllowDownload ?? true}
-                  onChange={onInputChange}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                />
-                <span className="text-xs font-bold text-slate-600">Allow users to download this attachment</span>
-              </label>
+            
+            {form.attachments && form.attachments.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                {form.attachments.map((att, idx) => (
+                  <div key={idx} className="flex flex-col gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 truncate">
+                        {att.name?.match(/\.(jpeg|jpg|gif|png|webp)$/i) || att.url?.match(/\.(jpeg|jpg|gif|png|webp)$/i) || (att.dataUrl && att.dataUrl.startsWith("data:image")) ? (
+                          <ImageIcon size={16} className="text-blue-500 flex-shrink-0" />
+                        ) : (
+                          <FileText size={16} className="text-blue-500 flex-shrink-0" />
+                        )}
+                        <span className="font-medium truncate max-w-[150px]">
+                          {att.name || "Attachment"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(idx)}
+                        className="text-blue-400 hover:text-blue-600 transition p-1"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer border-t border-blue-100/50 pt-2">
+                      <input
+                        type="checkbox"
+                        checked={att.allowDownload !== false}
+                        onChange={() => toggleAttachmentDownload(idx)}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                      />
+                      <span className="text-[10px] font-bold text-slate-600">Allow download</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
