@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, Loader2, Megaphone, FileText, BarChart2, Trophy, Paperclip } from "lucide-react";
 import { useGetOrgNotificationByIdQuery, useMarkNotificationAsReadMutation } from "@/services/api/orgApi";
+import { useVoteOnPostMutation } from "@/services/api/postApi";
+import PollOptionsPanel from "@/components/posts/PollOptionsPanel";
 import Link from "next/link";
 
 const POST_TYPES = {
@@ -37,8 +39,10 @@ const handleFileDownload = async (e, url, filename) => {
 export default function NotificationDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { data, isLoading } = useGetOrgNotificationByIdQuery(id);
+  const { data, isLoading, refetch } = useGetOrgNotificationByIdQuery(id);
   const [markAsRead] = useMarkNotificationAsReadMutation();
+  const [voteOnPost] = useVoteOnPostMutation();
+  const [activeVoteId, setActiveVoteId] = useState(null);
 
   const notification = data?.data;
 
@@ -47,6 +51,18 @@ export default function NotificationDetailPage() {
       markAsRead(id);
     }
   }, [id, markAsRead]);
+
+  const handleVote = async (postId, optionIndex) => {
+    try {
+      setActiveVoteId(postId);
+      await voteOnPost({ id: postId, optionIndex }).unwrap();
+      refetch();
+    } catch (error) {
+      console.error("Vote failed:", error);
+    } finally {
+      setActiveVoteId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -128,6 +144,16 @@ export default function NotificationDetailPage() {
               {notification.message}
             </p>
           </div>
+
+          {notification.type === "POLL" && notification.metadata?.options && (
+            <div className="mt-6">
+              <PollOptionsPanel
+                post={notification}
+                onVote={handleVote}
+                isVoting={activeVoteId === notification.id}
+              />
+            </div>
+          )}
 
           {notification.metadata?.attachment && (
             <div className="mt-8">
