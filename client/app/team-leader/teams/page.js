@@ -74,6 +74,10 @@ const detectLocation = () =>
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (position.coords.accuracy > 150) {
+          reject(new Error(`Location accuracy is too low (${Math.round(position.coords.accuracy)}m). Please turn on GPS and go near a window or outside.`));
+          return;
+        }
         resolve({
           longitude: Number(position.coords.longitude.toFixed(6)),
           latitude: Number(position.coords.latitude.toFixed(6)),

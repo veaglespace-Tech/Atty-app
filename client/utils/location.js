@@ -44,7 +44,17 @@ const mapGeolocationError = (error) => {
 
 const requestCurrentPosition = (options) =>
   new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (position.coords.accuracy > 150) {
+          reject(new Error(`Location accuracy is too low (${Math.round(position.coords.accuracy)}m). Please turn on GPS and go near a window or outside.`));
+        } else {
+          resolve(position);
+        }
+      },
+      reject,
+      options
+    );
   });
 
 const coordinatesFromPosition = (position) => [
