@@ -108,8 +108,8 @@ const updateMeSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required").max(120, "Name is too long").optional(),
     email: z.string().trim().email("Enter a valid email address").optional(),
-    mobile: z.string().trim().min(4, "Mobile number is too short").optional(),
-    mobileCountryCode: z.string().trim().min(1, "Country code is required").optional(),
+    mobile: z.union([z.string().trim().min(4, "Mobile number is too short"), z.literal("")]).optional(),
+    mobileCountryCode: z.union([z.string().trim().min(1, "Country code is required"), z.literal("")]).optional(),
     emergencyContact: z.string().trim().optional(),
     currentAddress: z.string().trim().optional(),
     profileImageDataUrl: z
