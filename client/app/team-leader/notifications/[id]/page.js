@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, Loader2, Megaphone, FileText, BarChart2, Trophy, Paperclip } from "lucide-react";
 import { useGetOrgNotificationByIdQuery, useMarkNotificationAsReadMutation } from "@/services/api/orgApi";
