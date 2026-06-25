@@ -584,7 +584,7 @@ export default function WorkspaceSettingsPage() {
       percentage: Math.round((filled / fields.length) * 100),
       missing,
     };
-  }, [user]);
+  }, [user, effectiveRole, isSuperAdmin]);
 
   const detailCards = useMemo(
     () => [
