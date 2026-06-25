@@ -292,12 +292,23 @@ export default function OrgPostsFeedPage({
                     )}
 
                     {post.type === "POLL" && post.metadata?.options ? (
-                      <div className="relative z-20 mt-4">
-                        <PollOptionsPanel
-                          post={post}
-                          onVote={handleVote}
-                          isVoting={activeVoteId === post.id}
-                        />
+                      <div className="relative z-20 mt-4 rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <BarChart2 size={16} className="text-amber-600 dark:text-amber-400" />
+                            <span className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                              {post.metadata.options.length} options
+                            </span>
+                            {post.poll?.totalVotes > 0 && (
+                              <span className="text-xs font-semibold text-amber-500 dark:text-amber-400">
+                                · {post.poll.totalVotes} vote{post.poll.totalVotes === 1 ? "" : "s"}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                            {post.poll?.selectedOptionIndex != null ? "✓ Voted" : "Tap to vote →"}
+                          </span>
+                        </div>
                       </div>
                     ) : null}
                   </div>
