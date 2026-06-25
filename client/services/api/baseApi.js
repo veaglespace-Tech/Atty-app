@@ -126,14 +126,49 @@ const handleUnauthorizedSession = (api, args) => {
 
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
   const result = await rawBaseQuery(args, api, extraOptions);
-  const statusCode = Number(result?.error?.status || 0);
 
-  if (statusCode === 402) {
-    redirectForExpiredSubscription(api);
-  }
+  if (result?.error) {
+    const statusCode = Number(result.error.status || result.error.originalStatus || 0);
 
-  if (statusCode === 401 || (statusCode === 403 && shouldForceLogoutForForbidden(result?.error))) {
-    handleUnauthorizedSession(api, args);
+    if (statusCode === 402) {
+      redirectForExpiredSubscription(api);
+    }
+
+    if (statusCode === 401 || (statusCode === 403 && shouldForceLogoutForForbidden(result.error))) {
+      handleUnauthorizedSession(api, args);
+    }
+
+    // Sanitize non-JSON or cryptic errors into user-friendly messages
+    let customMessage = "";
+    if (result.error.status === "FETCH_ERROR") {
+      customMessage = "Network error. Please check your internet connection.";
+    } else if (result.error.status === "PARSING_ERROR" || String(result.error.error).includes("SyntaxError")) {
+      if (statusCode === 413) {
+        customMessage = "The uploaded file or request is too large.";
+      } else if (statusCode >= 500) {
+        customMessage = "An unexpected server error occurred. Please try again later.";
+      } else {
+        customMessage = "The server returned an unexpected response. Please try again later.";
+      }
+    } else if (statusCode >= 500 && !result.error.data?.message) {
+      customMessage = "An unexpected server error occurred. Please try again later.";
+    } else if (statusCode === 413 && !result.error.data?.message) {
+      customMessage = "The uploaded file or request is too large.";
+    }
+
+    if (customMessage) {
+      result.error = {
+        ...result.error,
+        message: customMessage,
+        data: {
+          ...(typeof result.error.data === "object" ? result.error.data : {}),
+          message: customMessage,
+        },
+      };
+    } else if (result.error.data?.message) {
+      // Ensure error.message exists if error.data.message exists
+      result.error.message = result.error.data.message;
+    }
   }
 
   return result;
