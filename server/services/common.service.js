@@ -177,6 +177,17 @@ const formatHoursValue = (value, options = {}) => {
 
 const normalizeQueryValue = (value) => String(value || "").trim();
 
+const toPdfTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
 module.exports = {
   clamp,
   parsePositiveInt,
@@ -199,4 +210,5 @@ module.exports = {
   minutesToHoursValue,
   formatHoursValue,
   normalizeQueryValue,
+  toPdfTime,
 };

@@ -22,7 +22,7 @@ const { PERMISSION_KEYS } = require("../constants/permissions");
 const xlsx = require("xlsx");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const { buildUserAttendancePayload } = require("../services/attendance-query.service");
-const { normalizeQueryValue } = require("../services/common.service");
+const { normalizeQueryValue, toPdfTime } = require("../services/common.service");
 
 const { buildExportWorkbookBuffer } = require("../utils/excel-report");
 
@@ -207,16 +207,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
     toInput: req.query.to,
   });
 
-  const toPdfTime = (value) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
+
 
   const subtitleLines = [
     `User: ${payload.user.name} (${payload.user.email})`,
@@ -345,16 +336,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
     search: req.query.search,
   });
 
-  const toPdfTime = (value) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
+
 
   const subtitleLines = [
     `Organization: ${payload.organization.name} (${payload.organization.organizationCode})`,

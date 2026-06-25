@@ -9,6 +9,7 @@ const {
   toSummaryItem,
   truncateText,
   normalizeStatus,
+  toPdfTime,
 } = require("../services/common.service");
 const { filterVisiblePlans } = require("../services/plan.service");
 const { archiveOrganization, restoreOrganizationFromArchive } = require("../services/archive.service");
@@ -3305,16 +3306,7 @@ exports.downloadSuperAdminUserAttendancePdf = asyncHandler(async (req, res) => {
     toInput: req.query.to,
   });
 
-  const toPdfTime = (value) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
+
 
   const subtitleLines = [
     `User: ${payload.user.name} (${payload.user.email})`,

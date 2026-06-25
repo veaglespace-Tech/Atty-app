@@ -319,12 +319,11 @@ export default function OrgAttendancePage() {
   };
 
   const onSettingsChange = (event) => {
-    const { name, value, type } = event.target;
-    let newValue = value;
-    if (type === "number" && newValue !== "") {
-      newValue = String(Number(newValue));
+    let value = event.target.value;
+    if (event.target.name === "attendanceRadius") {
+      value = value.replace(/^0+(?=\d)/, "");
     }
-    setSettings((prev) => ({ ...prev, [name]: newValue }));
+    setSettings((prev) => ({ ...prev, [event.target.name]: value }));
   };
 
   const onTeamChange = (event) => {

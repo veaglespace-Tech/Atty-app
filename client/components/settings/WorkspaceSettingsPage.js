@@ -257,7 +257,10 @@ function LocationSettings() {
           <input
             type="number"
             value={radius}
-            onChange={(e) => setDraftRadius(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) => {
+              const val = e.target.value.replace(/^0+(?=\d)/, "");
+              setDraftRadius(val === "" ? "" : Number(val));
+            }}
             className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
             min="5"
             max="1000"
@@ -305,8 +308,8 @@ function LocationSettings() {
               <input
                 type="number"
                 step="any"
-                value={latitude !== null ? latitude : ""}
-                onChange={(e) => setDraftLatitude(e.target.value === "" ? "" : Number(e.target.value))}
+                value={latitude}
+                onChange={(e) => setDraftLatitude(Number(e.target.value))}
                 className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
               />
             </div>
@@ -315,8 +318,8 @@ function LocationSettings() {
               <input
                 type="number"
                 step="any"
-                value={longitude !== null ? longitude : ""}
-                onChange={(e) => setDraftLongitude(e.target.value === "" ? "" : Number(e.target.value))}
+                value={longitude}
+                onChange={(e) => setDraftLongitude(Number(e.target.value))}
                 className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
               />
             </div>
@@ -474,7 +477,7 @@ function TimeSettings() {
           <input
             type="number"
             value={graceMinutes}
-            onChange={(e) => setDraftGraceMinutes(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) => setDraftGraceMinutes(Number(e.target.value))}
             className="w-full rounded-[1.25rem] border border-slate-200 bg-white/92 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/70 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-50"
             min="0"
             max="180"

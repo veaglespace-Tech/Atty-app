@@ -221,12 +221,11 @@ export default function TeamLeaderTeamsPage() {
   }, [canAssignMembers, canCreateTeams, refetchTeams, refetchUsers]);
 
   const onInputChange = (event) => {
-    const { name, value, type } = event.target;
-    let newValue = value;
-    if (type === "number" && newValue !== "") {
-      newValue = String(Number(newValue));
+    let value = event.target.value;
+    if (event.target.name === "attendanceRadius") {
+      value = value.replace(/^0+(?=\d)/, "");
     }
-    setForm((prev) => ({ ...prev, [name]: newValue }));
+    setForm((prev) => ({ ...prev, [event.target.name]: value }));
   };
 
   const toggleLeader = (leaderId) => {
