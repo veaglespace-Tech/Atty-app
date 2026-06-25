@@ -10,7 +10,7 @@
     --font-body: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     --font-display: "Space Grotesk", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-    --background: 242 246 251;
+    --background: 255 255 255;
     --foreground: 15 23 42;
 
     --primary: 37 99 235;
@@ -57,10 +57,7 @@
     max-width: 100%;
     overflow-x: clip;
     background-color: rgb(var(--background));
-    background-image:
-      radial-gradient(circle at 12% 0%, rgb(var(--brand-blue) / 0.08), transparent 28%),
-      radial-gradient(circle at 88% 4%, rgb(var(--brand-sky) / 0.06), transparent 24%),
-      linear-gradient(180deg, rgb(252 253 255), rgb(var(--background)));
+    background-image: none;
   }
 
   html {
