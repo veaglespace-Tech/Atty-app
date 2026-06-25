@@ -279,7 +279,7 @@ model Plan {
 
 model Post {
   id           Int          @id @default(autoincrement())
-  orgId        Int
+  orgId        Int?
   authorId     Int
   title        String
   content      String       @db.Text
@@ -290,7 +290,7 @@ model Post {
   updatedAt    DateTime     @updatedAt
   deletedAt    DateTime?
   author       User         @relation("PostAuthor", fields: [authorId], references: [id], map: "posts_authorId_fkey")
-  organization Organization @relation(fields: [orgId], references: [id], map: "posts_orgId_fkey")
+  organization Organization? @relation(fields: [orgId], references: [id], map: "posts_orgId_fkey")
   reads        UserNotificationRead[]
 
   @@index([authorId], map: "posts_authorId_idx")

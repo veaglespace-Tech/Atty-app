@@ -317,7 +317,7 @@ export default function OrgPostsFeedPage({
                 <div className="relative z-20 mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:mt-8 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 sm:text-sm dark:text-slate-500">
                     <User size={14} />
-                    <span>Posted by {post.author?.name || "Admin"}</span>
+                    <span>Posted by {post.author?.role === 'SUPER_ADMIN' ? 'Super Admin' : (post.author?.name || "System")}</span>
                   </div>
 
                   <button

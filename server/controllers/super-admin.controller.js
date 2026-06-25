@@ -2905,6 +2905,11 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
   const { title, content, type, metadata, orgId } = req.body;
 
   if (!orgId) { res.status(400); throw new Error("orgId is required"); }
+
+  const orgIdValue = orgId === "ALL" ? null : Number(orgId);
+  if (orgId !== "ALL" && isNaN(orgIdValue)) {
+    res.status(400); throw new Error("Invalid orgId");
+  }
   const normalizedType = normSaPostType(type, "NOTIFICATION");
   if (!normalizedType) { res.status(400); throw new Error("Invalid post type"); }
 
@@ -2925,7 +2930,7 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
     data: {
       title: normalizedTitle, content: normalizedContent,
       type: normalizedType, metadata: nextMetadata,
-      orgId: Number(orgId), authorId: req.user.id,
+      orgId: orgIdValue, authorId: req.user.id,
     },
     include: { author: { select: { name: true } }, organization: { select: { id: true, name: true } } },
   });

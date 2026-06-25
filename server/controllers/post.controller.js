@@ -23,6 +23,7 @@ const POST_INCLUDE = {
   author: {
     select: {
       name: true,
+      role: true,
       memberships: {
         select: {
           orgId: true,
@@ -235,7 +236,7 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
   const safeOffset = parseOffset(offset, 0, 10000);
 
   const where = {
-    orgId,
+    OR: [{ orgId: Number(orgId) }, { orgId: null }],
     isActive: true,
     deletedAt: null,
   };

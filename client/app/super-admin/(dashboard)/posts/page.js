@@ -173,7 +173,7 @@ export default function SuperAdminPostsPage() {
         addNotification({
           type: "error",
           title: "Validation Error",
-          message: "Please select an organization for the post.",
+          message: "Please select an organization or choose 'All Organizations'.",
         })
       );
       return;
@@ -184,7 +184,7 @@ export default function SuperAdminPostsPage() {
         title: form.title.trim(),
         content: form.content.trim(),
         type: form.type,
-        orgId: Number(form.orgId),
+        orgId: form.orgId === "ALL" ? "ALL" : Number(form.orgId),
         attachmentDataUrl: form.attachmentDataUrl,
         attachmentName: form.attachmentName,
         attachmentAllowDownload: form.attachmentAllowDownload,
@@ -232,7 +232,7 @@ export default function SuperAdminPostsPage() {
       content: post.content,
       type: post.type,
       metadata: post.metadata || { options: ["", ""] },
-      orgId: String(post.orgId),
+      orgId: post.orgId === null ? "ALL" : String(post.orgId),
       isActive: post.isActive,
       attachmentDataUrl: undefined,
       attachmentName: post.metadata?.attachment?.name || "",
@@ -250,6 +250,7 @@ export default function SuperAdminPostsPage() {
         content: form.content.trim(),
         type: form.type,
         isActive: form.isActive,
+        orgId: form.orgId === "ALL" ? "ALL" : Number(form.orgId),
         attachmentDataUrl: form.attachmentDataUrl,
         attachmentName: form.attachmentName,
         attachmentAllowDownload: form.attachmentAllowDownload,
@@ -682,15 +683,28 @@ export default function SuperAdminPostsPage() {
 
             <form onSubmit={editingPost ? handleUpdateSubmit : handleCreateSubmit} className="mt-6 space-y-5">
               <div className="grid gap-5 sm:grid-cols-2">
-                {/* Organization Selection (only creation, or read-only on edit) */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Target Organization</label>
-                  {editingPost ? (
-                    <div className="flex items-center gap-2 h-12 px-4 bg-slate-100 dark:bg-[#111] border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-500">
-                      <Building2 size={16} />
-                      <span>{selectedOrgForm?.name || "Global"}</span>
-                    </div>
-                  ) : (
+                {/* Organization Selection */}
+                <div className="space-y-1.5 flex-1 min-w-[200px]">
+                  <div className="flex items-center justify-between px-1 mb-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Organization</label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={form.orgId === "ALL"}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setForm((prev) => ({ ...prev, orgId: "ALL" }));
+                            setSelectedOrgForm(null);
+                          } else {
+                            setForm((prev) => ({ ...prev, orgId: "" }));
+                          }
+                        }}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                      />
+                      <span className="text-[10px] font-black uppercase text-blue-600 tracking-wider">All Organizations</span>
+                    </label>
+                  </div>
+                  {form.orgId !== "ALL" && (
                     <OrganizationLookupField
                       selectedOrganization={selectedOrgForm}
                       onSelect={(org) => {
@@ -706,6 +720,11 @@ export default function SuperAdminPostsPage() {
                       normalFieldClassName="border border-slate-200 dark:border-slate-800"
                       containerClassName="relative"
                     />
+                  )}
+                  {editingPost && form.orgId !== "ALL" && (
+                    <div className="text-[10px] font-bold text-amber-500 mt-1">
+                      Organization locked during edit
+                    </div>
                   )}
                 </div>
 
