@@ -35,7 +35,7 @@ export const postApi = createApi({
         method: "POST",
         body: { optionIndex },
       }),
-      invalidatesTags: ["Posts"],
+      invalidatesTags: ["Posts", "OrgNotifications"],
     }),
     deletePost: builder.mutation({
       query: (id) => ({
