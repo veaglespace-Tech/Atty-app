@@ -92,24 +92,11 @@ export const getCurrentCoordinates = async () => {
   try {
     const position = await requestCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 20000,
         maximumAge: 0,
     });
     return coordinatesFromPosition(position);
   } catch (error) {
-    if (error?.code === 1) {
-      throw new Error(mapGeolocationError(error));
-    }
-
-    try {
-      const fallbackPosition = await requestCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 25000,
-        maximumAge: 60000,
-      });
-      return coordinatesFromPosition(fallbackPosition);
-    } catch (fallbackError) {
-      throw new Error(mapGeolocationError(fallbackError || error));
-    }
+    throw new Error(mapGeolocationError(error));
   }
 };
