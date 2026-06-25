@@ -478,7 +478,9 @@ export default function OrgUserDetailPage() {
           <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
           <DetailTile label="Email" value={toDisplayText(user.email)} />
           <DetailTile label="Mobile" value={userMobileLabel} />
-          <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
+          {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+            <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
+          )}
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(joiningDate)} />

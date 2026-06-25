@@ -352,7 +352,9 @@ export default function SuperAdminUserDetailStandalonePage() {
           <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
           <DetailTile label="Email" value={toDisplayText(user.email)} />
           <DetailTile label="Mobile" value={userMobileLabel} />
-          <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
+          {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+            <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
+          )}
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(user.createdAt)} />
@@ -422,14 +424,16 @@ export default function SuperAdminUserDetailStandalonePage() {
               inputClassName="py-2 text-sm font-medium text-slate-800 dark:bg-slate-900 dark:text-white"
             />
 
-            <div className="space-y-2 sm:col-span-2">
-              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Emergency Contact</label>
-              <input
-                value={form.emergencyContact}
-                onChange={(event) => setForm((prev) => ({ ...prev, emergencyContact: event.target.value }))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-            </div>
+            {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+              <div className="space-y-2 sm:col-span-2">
+                <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Emergency Contact</label>
+                <input
+                  value={form.emergencyContact}
+                  onChange={(event) => setForm((prev) => ({ ...prev, emergencyContact: event.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+            )}
 
             <div className="space-y-2 sm:col-span-2">
               <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Current Address</label>
