@@ -824,23 +824,23 @@ export default function OrgAttendancePage() {
           </button>
 
           <input
-            name="longitude"
-            type="number"
-            step="any"
-            value={settings.longitude}
-            onChange={onSettingsChange}
-            placeholder="Longitude"
-            disabled={!settings.teamId && !canSetWorkspaceLocation}
-            className="dashboard-field-control"
-          />
-
-          <input
             name="latitude"
             type="number"
             step="any"
             value={settings.latitude}
             onChange={onSettingsChange}
             placeholder="Latitude"
+            disabled={!settings.teamId && !canSetWorkspaceLocation}
+            className="dashboard-field-control"
+          />
+
+          <input
+            name="longitude"
+            type="number"
+            step="any"
+            value={settings.longitude}
+            onChange={onSettingsChange}
+            placeholder="Longitude"
             disabled={!settings.teamId && !canSetWorkspaceLocation}
             className="dashboard-field-control"
           />
