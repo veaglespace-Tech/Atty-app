@@ -35,8 +35,6 @@ jobs:
             # ================= BACKEND =================
             echo "===== BACKEND ====="
             cd server || exit 1
-            npx prisma generate
-            npx prisma migrate deploy
 
             if [ ! -f .env ]; then
               echo "❌ Missing server/.env"
