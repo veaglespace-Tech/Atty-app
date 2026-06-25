@@ -73,6 +73,14 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const dispatch = useDispatch();
   const { user, token, loading, hydrated } = useAuthSession();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  // Auto-close mobile nav on route change
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileNavOpen(false);
+  }
+
   const [userSignOut] = useUserSignOutMutation();
   const loginPath = sectionRoot === "/super-admin" ? "/super-admin/login" : "/login";
   const currentRole = user?.currentRole;
@@ -129,10 +137,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const roleBadgeTheme = getRoleBadgeTheme(currentRole);
   const settingsHref = sectionRoot ? `${sectionRoot}/settings` : "/settings";
   const settingsActive = pathname === settingsHref;
-  // Auto-close mobile nav on route change
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [pathname]);
+
   const prefetchedRoutes = useMemo(
     () => [...resolvedNavItems.map((item) => item.href), settingsHref],
     [resolvedNavItems, settingsHref]

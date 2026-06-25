@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, Loader2, RefreshCcw, ShieldCheck, X } from "lucide-react";
+import * as faceapi from "@vladmandic/face-api";
 
 const PREVIEW_SIZE = 640;
 
@@ -40,6 +41,19 @@ export default function AttendanceFaceCaptureModal({
   const [cameraLoading, setCameraLoading] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [capturedImage, setCapturedImage] = useState("");
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        setModelsLoaded(true);
+      } catch (err) {
+        console.error("Failed to load face detection models", err);
+      }
+    };
+    loadModels();
+  }, []);
 
   const stopStream = () => {
     if (streamRef.current) {
@@ -143,9 +157,33 @@ export default function AttendanceFaceCaptureModal({
     };
   }, [open]);
 
-  const captureSelfie = () => {
+  const captureSelfie = async () => {
     if (!videoRef.current) {
       setCameraError("Camera preview is not ready yet.");
+      return;
+    }
+
+    if (!modelsLoaded) {
+      setCameraError("Face detection models are still loading. Please wait...");
+      return;
+    }
+
+    try {
+      setCameraLoading(true);
+      const detections = await faceapi.detectAllFaces(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions()
+      );
+      
+      if (detections.length === 0) {
+        setCameraError("No face detected. Please ensure your face is clearly visible.");
+        setCameraLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Face detection error:", err);
+      setCameraError("Face detection failed. Please try again.");
+      setCameraLoading(false);
       return;
     }
 
@@ -184,6 +222,7 @@ export default function AttendanceFaceCaptureModal({
 
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.82));
     setCameraError("");
+    setCameraLoading(false);
     stopStream();
   };
 
