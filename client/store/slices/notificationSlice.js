@@ -10,11 +10,11 @@ const notificationSlice = createSlice({
       reducer: (state, action) => {
         state.items = [action.payload, ...state.items].slice(0, 4);
       },
-      prepare: ({ type = "error", title = "Something went wrong", message }) => ({
+      prepare: ({ type = "error", title, message }) => ({
         payload: {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           type,
-          title,
+          title: title || (type === "success" ? "Success" : "Something went wrong"),
           message,
         },
       }),
