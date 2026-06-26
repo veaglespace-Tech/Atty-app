@@ -448,9 +448,9 @@ exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
 
-  const logId = req.params.id;
+  const logId = Number(req.params.id);
 
-  const log = await prisma.attendanceLog.findFirst({
+  const log = await prisma.attendance.findFirst({
     where: {
       id: logId,
       organizationId: orgId,
