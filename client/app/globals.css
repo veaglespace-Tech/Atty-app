@@ -621,7 +621,6 @@
 
   .brand-nav-icon {
     background: rgb(var(--brand-surface-soft) / 0.88);
-    color: rgb(100 116 139);
     box-shadow:
       0 10px 22px rgb(var(--brand-blue) / 0.06),
       0 6px 16px rgb(var(--brand-ink) / 0.04);

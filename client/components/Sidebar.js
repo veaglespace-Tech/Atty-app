@@ -27,28 +27,28 @@ const MENU_ITEMS = [
     Icon: LayoutDashboard,
     href: "/dashboard",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
-    colorClass: "text-blue-500",
+    colorClass: "text-blue-500 dark:text-blue-400",
   },
   {
     label: "Attendance",
     Icon: CalendarCheck,
     href: "/dashboard/attendance",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
-    colorClass: "text-indigo-500",
+    colorClass: "text-indigo-500 dark:text-indigo-400",
   },
   {
     label: "Employees",
     Icon: Users,
     href: "/dashboard/employees",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN],
-    colorClass: "text-cyan-500",
+    colorClass: "text-cyan-500 dark:text-cyan-400",
   },
   {
     label: "Reports",
     Icon: BarChart3,
     href: "/dashboard/reports",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER],
-    colorClass: "text-emerald-500",
+    colorClass: "text-purple-500 dark:text-purple-400",
   },
   {
     label: "Posts",
@@ -56,14 +56,14 @@ const MENU_ITEMS = [
     href: "/dashboard/posts",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
     permission: PERMISSIONS.POST_CREATE,
-    colorClass: "text-purple-500",
+    colorClass: "text-sky-500 dark:text-sky-400",
   },
   {
     label: "Billing",
     Icon: CreditCard,
     href: "/dashboard/billing",
     roles: [ROLES.ADMIN],
-    colorClass: "text-rose-500",
+    colorClass: "text-violet-500 dark:text-violet-400",
   },
 ];
 
@@ -169,7 +169,7 @@ export default function Sidebar() {
               settingsActive ? "brand-btn-primary" : "brand-btn-secondary"
             )}
           >
-            <Settings size={18} className={settingsActive ? "" : "text-amber-500"} />
+            <Settings size={18} className={settingsActive ? "" : "text-slate-500 dark:text-slate-400"} />
             Settings
           </Link>
         </div>

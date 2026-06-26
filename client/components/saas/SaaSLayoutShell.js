@@ -67,6 +67,28 @@ function getNavIcon(label) {
   return ShieldCheck;
 }
 
+function getNavColor(label) {
+  const normalized = String(label || "").toLowerCase();
+
+  if (normalized.includes("dashboard")) return "text-blue-500 dark:text-blue-400";
+  if (normalized.includes("attendance")) return "text-indigo-500 dark:text-indigo-400";
+  if (normalized.includes("report") || normalized.includes("analytic")) return "text-purple-500 dark:text-purple-400";
+  if (normalized.includes("notification")) return "text-sky-500 dark:text-sky-400";
+  if (normalized.includes("request")) return "text-rose-500 dark:text-rose-400";
+  if (normalized.includes("team")) return "text-cyan-500 dark:text-cyan-400";
+  if (normalized.includes("user") || normalized.includes("employee")) return "text-cyan-500 dark:text-cyan-400";
+  if (
+    normalized.includes("subscription") ||
+    normalized.includes("payment") ||
+    normalized.includes("plan") ||
+    normalized.includes("billing")
+  ) {
+    return "text-violet-500 dark:text-violet-400";
+  }
+  if (normalized.includes("organization")) return "text-blue-600 dark:text-blue-400";
+  return "text-slate-500 dark:text-slate-400";
+}
+
 export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -118,6 +140,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       visibleNavItems.map((item) => ({
         ...item,
         Icon: getNavIcon(item.label),
+        colorClass: getNavColor(item.label),
       })),
     [visibleNavItems]
   );
@@ -252,7 +275,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               >
                 <div className="relative">
                   <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl">
-                    <Icon size={20} />
+                    <Icon size={20} className={active ? "" : item.colorClass} />
                   </span>
                   {badgeCounts[item.label] > 0 ? (
                     <span className="absolute -right-1 -top-1 flex min-w-[20px] h-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-950">
@@ -277,7 +300,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               settingsActive ? "brand-btn-primary" : "brand-btn-secondary"
             )}
           >
-            <Settings size={18} />
+            <Settings size={18} className={settingsActive ? "" : "text-slate-500 dark:text-slate-400"} />
             Settings
           </Link>
         </div>
