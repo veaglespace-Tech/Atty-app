@@ -39,7 +39,7 @@ export default function SuperAdminNotificationDetailPage() {
   const router = useRouter();
   
   // Fetch posts from API/cache
-  const { data, isLoading } = useGetSuperAdminPostsQuery({ limit: 1000, type: "NOTIFICATION" });
+  const { data, isLoading } = useGetSuperAdminPostsQuery({ limit: 1000 });
   
   const notification = useMemo(() => {
     return data?.items?.find((p) => p.id === Number(id));

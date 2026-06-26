@@ -86,7 +86,7 @@ export default function SuperAdminNotificationsPage() {
     isLoading,
     isFetching,
     refetch,
-  } = useGetSuperAdminPostsQuery({ limit: 1000, type: "NOTIFICATION" });
+  } = useGetSuperAdminPostsQuery({ limit: 1000 });
 
   const posts = useMemo(() => postsData?.items || [], [postsData]);
 
