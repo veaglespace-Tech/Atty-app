@@ -24,6 +24,7 @@ import {
 import {
   PERMISSION_GROUPS,
   PERMISSIONS,
+  ROLES,
   formatPermissionLabel,
   formatRoleLabel,
   getAssignablePermissionsByRole,
