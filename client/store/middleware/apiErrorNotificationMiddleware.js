@@ -44,7 +44,11 @@ const shouldNotify = (action) => {
   if (action?.meta?.aborted || action?.meta?.condition) return false;
 
   // Only RTK Query actions have endpoint metadata here; this keeps the toast focused on API failures.
-  return Boolean(action?.meta?.arg?.endpointName);
+  const endpointName = action?.meta?.arg?.endpointName;
+  if (!endpointName) return false;
+  if (endpointName === "getMe") return false;
+
+  return true;
 };
 
 export const apiErrorNotificationMiddleware = () => (next) => (action) => {
