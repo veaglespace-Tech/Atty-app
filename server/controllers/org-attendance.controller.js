@@ -443,8 +443,7 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.status(200).send(excelBuffer);
 });
- 
- 
+
 exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);

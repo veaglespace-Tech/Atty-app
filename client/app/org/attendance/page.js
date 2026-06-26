@@ -972,8 +972,6 @@ export default function OrgAttendancePage() {
           </div>
         )}
       </div>
-
-      </div>
     </section>
   );
 }
