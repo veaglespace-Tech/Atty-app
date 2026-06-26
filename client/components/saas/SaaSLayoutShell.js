@@ -122,8 +122,9 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     [visibleNavItems]
   );
 
-  const hasNotificationsNavItem = visibleNavItems.some((item) => item.label === "Notifications");
-  const hasRequestsNavItem = visibleNavItems.some((item) => item.label === "Requests");
+  const isSuperAdmin = currentRole === ROLES.SUPER_ADMIN;
+  const hasNotificationsNavItem = !isSuperAdmin && visibleNavItems.some((item) => item.label === "Notifications");
+  const hasRequestsNavItem = !isSuperAdmin && visibleNavItems.some((item) => item.label === "Requests");
 
   const { data: notificationsData } = useGetOrgNotificationsQuery(1, { skip: !hasNotificationsNavItem });
   const { data: requestsData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !hasRequestsNavItem });
