@@ -340,10 +340,11 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
       prisma.attendance.findMany({
         where: {
           orgId,
+          date: today,
           deletedAt: null,
         },
         select: attendanceRecordSelect,
-        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ createdAt: "desc" }],
         take: limit,
       }),
     ])
