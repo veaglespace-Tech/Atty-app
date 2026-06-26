@@ -27,24 +27,28 @@ const MENU_ITEMS = [
     Icon: LayoutDashboard,
     href: "/dashboard",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
+    colorClass: "text-blue-500",
   },
   {
     label: "Attendance",
     Icon: CalendarCheck,
     href: "/dashboard/attendance",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
+    colorClass: "text-indigo-500",
   },
   {
     label: "Employees",
     Icon: Users,
     href: "/dashboard/employees",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN],
+    colorClass: "text-cyan-500",
   },
   {
     label: "Reports",
     Icon: BarChart3,
     href: "/dashboard/reports",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER],
+    colorClass: "text-emerald-500",
   },
   {
     label: "Posts",
@@ -52,12 +56,14 @@ const MENU_ITEMS = [
     href: "/dashboard/posts",
     roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
     permission: PERMISSIONS.POST_CREATE,
+    colorClass: "text-purple-500",
   },
   {
     label: "Billing",
     Icon: CreditCard,
     href: "/dashboard/billing",
     roles: [ROLES.ADMIN],
+    colorClass: "text-rose-500",
   },
 ];
 
@@ -143,7 +149,7 @@ export default function Sidebar() {
                 )}
               >
                 <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl">
-                  <Icon size={20} />
+                  <Icon size={20} className={isActive ? "" : item.colorClass} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold tracking-[0.01em]">{item.label}</p>
@@ -163,7 +169,7 @@ export default function Sidebar() {
               settingsActive ? "brand-btn-primary" : "brand-btn-secondary"
             )}
           >
-            <Settings size={18} />
+            <Settings size={18} className={settingsActive ? "" : "text-amber-500"} />
             Settings
           </Link>
         </div>
