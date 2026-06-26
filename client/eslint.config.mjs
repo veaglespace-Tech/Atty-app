@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
     rules: {
+      "@next/next/no-img-element": "off",
       "no-restricted-syntax": [
         "warn",
         {

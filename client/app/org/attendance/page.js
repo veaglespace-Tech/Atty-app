@@ -532,7 +532,7 @@ export default function OrgAttendancePage() {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [downloadMenuRef]);
 
   const loading =
     attendanceLoading ||
