@@ -306,7 +306,7 @@ const buildOrganizationPdfReportData = async ({ orgId, rangeFrom, rangeTo }) => 
 
 exports.getOrgDashboard = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  const limit = parseLimit(req.query.limit, 12, 100)
+  const limit = parseLimit(req.query.limit, 50, 500)
   const today = todayKey()
 
   const [organization, totalUsers, totalTeams, presentToday, recentAttendance] =
