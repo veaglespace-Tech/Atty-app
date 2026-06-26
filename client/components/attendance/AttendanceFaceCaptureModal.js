@@ -39,6 +39,7 @@ export default function AttendanceFaceCaptureModal({
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [cameraLoading, setCameraLoading] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [capturedImage, setCapturedImage] = useState("");
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -169,21 +170,21 @@ export default function AttendanceFaceCaptureModal({
     }
 
     try {
-      setCameraLoading(true);
+      setIsCapturing(true);
       const detections = await faceapi.detectAllFaces(
         videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
+        new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 })
       );
       
       if (detections.length === 0) {
         setCameraError("No face detected. Please ensure your face is clearly visible.");
-        setCameraLoading(false);
+        setIsCapturing(false);
         return;
       }
     } catch (err) {
       console.error("Face detection error:", err);
       setCameraError("Face detection failed. Please try again.");
-      setCameraLoading(false);
+      setIsCapturing(false);
       return;
     }
 
@@ -222,7 +223,7 @@ export default function AttendanceFaceCaptureModal({
 
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.82));
     setCameraError("");
-    setCameraLoading(false);
+    setIsCapturing(false);
     stopStream();
   };
 
@@ -311,7 +312,7 @@ export default function AttendanceFaceCaptureModal({
               <button
                 type="button"
                 onClick={startCamera}
-                disabled={cameraLoading || isSubmitting}
+                disabled={cameraLoading || isCapturing || isSubmitting}
                 className="brand-btn brand-btn-secondary brand-btn-md"
               >
                 {cameraLoading ? (
@@ -324,10 +325,10 @@ export default function AttendanceFaceCaptureModal({
               <button
                 type="button"
                 onClick={captureSelfie}
-                disabled={cameraLoading || isSubmitting || Boolean(cameraError)}
+                disabled={cameraLoading || isCapturing || isSubmitting || Boolean(cameraError)}
                 className="brand-btn brand-btn-primary brand-btn-md"
               >
-                {cameraLoading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+                {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                 Capture Selfie
               </button>
             </>

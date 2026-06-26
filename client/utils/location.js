@@ -103,7 +103,7 @@ export const getCurrentCoordinates = async () => {
     const position = await requestCurrentPosition({
         enableHighAccuracy: true,
         timeout: 20000,
-        maximumAge: 0,
+        maximumAge: 30000,
     });
     return coordinatesFromPosition(position);
   } catch (error) {
