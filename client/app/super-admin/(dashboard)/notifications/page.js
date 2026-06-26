@@ -145,7 +145,7 @@ export default function SuperAdminNotificationsPage() {
       </div>
 
       {/* Filter panel */}
-      <div className={`${panelClassName} relative overflow-hidden`}>
+      <div className={`${panelClassName} relative`}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end">
           <div className="flex-1 space-y-1.5 min-w-[280px]">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
