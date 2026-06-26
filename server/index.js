@@ -1,26 +1,18 @@
 require("./config/load-env")();
-const Sentry = require("@sentry/node");
 const express = require("express");
 const compression = require("compression");
 const cors = require("cors");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const { ensureEnv } = require("./config/env");
+const { initSentry } = require("./config/sentry");
+const { corsOptions } = require("./config/cors");
+const { apiRateLimiter, loginRateLimiter } = require("./config/rateLimit");
 
-const getEnv = (key, fallback = "") => (process.env[key] || fallback).trim();
 const runtimeEnv = ensureEnv();
 const PORT = runtimeEnv.port;
-const sentryDsn = getEnv("SENTRY_DSN");
-const sentryEnabled = Boolean(sentryDsn);
-if (sentryEnabled) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: getEnv("NODE_ENV", "development"),
-    tracesSampleRate: Number(getEnv("SENTRY_TRACES_SAMPLE_RATE", "0")) || 0,
-    integrations: [Sentry.expressIntegration()],
-  });
-}
+
+const { sentryEnabled, Sentry } = initSentry();
 
 const prisma = require("./lib/prisma");
 const {
@@ -31,67 +23,6 @@ const app = express();
 
 // Trust Nginx/Cloudflare proxy
 app.set("trust proxy", 1);
-
-const envAllowedOrigins = [process.env.CLIENT_URL, process.env.CLIENT_ORIGINS]
-  .filter(Boolean)
-  .join(",")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-const allowedOrigins = new Set([
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-
-  "https://atty.veaglespace.com",
-  "http://atty.veaglespace.com",
-
-  "https://test.payu.in",
-  "https://secure.payu.in",
-
-  ...envAllowedOrigins,
-]);
-
-const localOriginPattern =
-  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow if no origin (server-to-server, curl, etc.)
-    if (!origin) return callback(null, true);
-
-    // Allow null origin (often set by browsers during cross-origin POST redirects)
-    if (origin === "null") return callback(null, true);
-
-    if (allowedOrigins.has(origin) || localOriginPattern.test(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-  credentials: true,
-};
-
-const apiRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 120,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    message: "Too many requests, please try again later.",
-  },
-});
-const loginRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: runtimeEnv.loginRateLimitMax,
-  skipSuccessfulRequests: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    message: "Too many login attempts, please try again after 15 minutes.",
-  },
-});
 
 app.use(helmet());
 app.use(
@@ -104,12 +35,12 @@ app.options("*", cors(corsOptions));
 app.use("/api", apiRateLimiter);
 app.use(
   express.json({
-    limit: getEnv("JSON_BODY_LIMIT", "10mb"),
+    limit: process.env.JSON_BODY_LIMIT || "10mb",
   }),
 );
 app.use(
   express.urlencoded({ 
-    limit: getEnv("JSON_BODY_LIMIT", "10mb"), 
+    limit: process.env.JSON_BODY_LIMIT || "10mb", 
     extended: true 
   })
 );

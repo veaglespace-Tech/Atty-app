@@ -16,7 +16,12 @@ import {
   usePunchInMutation,
   usePunchOutMutation,
 } from "@/services/api/attendanceApi";
-import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
+import dynamic from "next/dynamic";
+
+const AttendanceFaceCaptureModal = dynamic(
+  () => import("@/components/attendance/AttendanceFaceCaptureModal"),
+  { ssr: false }
+);
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import { getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";

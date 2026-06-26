@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle, Filter } from "lucide-react";
-import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
+import dynamic from "next/dynamic";
+
+const AttendanceFaceCaptureModal = dynamic(
+  () => import("@/components/attendance/AttendanceFaceCaptureModal"),
+  { ssr: false }
+);
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
