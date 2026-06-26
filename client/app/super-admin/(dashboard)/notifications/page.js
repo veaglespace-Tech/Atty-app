@@ -241,9 +241,14 @@ export default function SuperAdminNotificationsPage() {
                         </span>
                       </div>
 
-                      <h2 className="text-lg font-black text-slate-900 sm:text-xl dark:text-white">
-                        {post.title}
-                      </h2>
+                      <Link 
+                        href={`/super-admin/notifications/${post.id}`} 
+                        className="before:absolute before:inset-0 before:z-10 focus:outline-none"
+                      >
+                        <h2 className="text-lg font-black text-slate-900 transition-colors group-hover:text-blue-600 sm:text-xl dark:text-white dark:group-hover:text-blue-300">
+                          {post.title}
+                        </h2>
+                      </Link>
 
                       <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300">
                         {post.content}
