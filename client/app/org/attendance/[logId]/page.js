@@ -67,7 +67,7 @@ export default function OrgAttendanceLogDetailPage() {
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <p className="text-lg font-semibold text-slate-800">Log Not Found</p>
         <p className="mt-2 text-sm text-slate-500">
-          The attendance log you are looking for does not exist or you don't have permission to view it.
+          The attendance log you are looking for does not exist or you don&apos;t have permission to view it.
         </p>
         <button
           onClick={() => router.back()}
