@@ -319,12 +319,14 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
         where: {
           orgId,
           deletedAt: null,
+          isActive: true,
         },
       }),
       prisma.team.count({
         where: {
           orgId,
           deletedAt: null,
+          isActive: true,
         },
       }),
       prisma.attendance.count({
@@ -332,7 +334,7 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
           orgId,
           date: today,
           deletedAt: null,
-          status: "PRESENT",
+          status: { in: ["PRESENT", "HALF_DAY"] },
         },
       }),
       prisma.attendance.findMany({

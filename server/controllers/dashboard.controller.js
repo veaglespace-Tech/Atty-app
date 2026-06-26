@@ -54,6 +54,7 @@ exports.getStats = asyncHandler(async (req, res) => {
           orgId,
           date: todayKey(),
           deletedAt: null,
+          status: { in: ["PRESENT", "HALF_DAY"] },
         },
       }),
     ]);
