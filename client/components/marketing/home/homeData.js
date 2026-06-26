@@ -24,8 +24,8 @@ export const FEATURE_CARDS = [
 export const SPOTLIGHT_TAGS = ["Attendance", "Teams", "Reports", "Role Based"];
 
 export const SPOTLIGHT_STATS = [
-  { value: "10M+", label: "Check-ins" },
-  { value: "500+", label: "Organizations" },
+  { value: "50K+", label: "Check-ins" },
+  { value: "100+", label: "Organizations" },
   { value: "99.9%", label: "Uptime" },
   { value: "24/7", label: "Support" },
 ];
