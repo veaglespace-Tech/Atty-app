@@ -453,7 +453,7 @@ exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
   const log = await prisma.attendance.findFirst({
     where: {
       id: logId,
-      organizationId: orgId,
+      orgId: orgId,
     },
     select: attendanceRecordSelect,
   });
