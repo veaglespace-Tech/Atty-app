@@ -27,7 +27,7 @@ const isSecureLocationContext = () => {
 
 const mapGeolocationError = (error) => {
   if (!error || typeof error.code !== "number") {
-    return GEOLOCATION_UNAVAILABLE_MESSAGE;
+    return error?.message || GEOLOCATION_UNAVAILABLE_MESSAGE;
   }
 
   switch (error.code) {
@@ -52,7 +52,9 @@ const requestCurrentPosition = (options) =>
           resolve(position);
         }
       },
-      reject,
+      (error) => {
+        reject(error);
+      },
       options
     );
   });
@@ -92,11 +94,6 @@ export const getCurrentCoordinates = async () => {
 
   if (!isSecureLocationContext()) {
     throw new Error(GEOLOCATION_INSECURE_MESSAGE);
-  }
-
-  const permissionState = await getGeolocationPermissionState();
-  if (permissionState === "denied") {
-    throw new Error(GEOLOCATION_DENIED_MESSAGE);
   }
 
   try {
