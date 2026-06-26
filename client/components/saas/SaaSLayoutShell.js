@@ -122,9 +122,12 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
     [visibleNavItems]
   );
 
-  const isSuperAdmin = currentRole === ROLES.SUPER_ADMIN;
-  const hasNotificationsNavItem = !isSuperAdmin && visibleNavItems.some((item) => item.label === "Notifications");
-  const hasRequestsNavItem = !isSuperAdmin && visibleNavItems.some((item) => item.label === "Requests");
+  const isSuperAdminRole = currentRole === ROLES.SUPER_ADMIN;
+  const isSuperAdminLayout = sectionRoot === "/super-admin";
+  const shouldSkipOrgQueries = isSuperAdminRole || isSuperAdminLayout || !user;
+
+  const hasNotificationsNavItem = !shouldSkipOrgQueries && visibleNavItems.some((item) => item.label === "Notifications");
+  const hasRequestsNavItem = !shouldSkipOrgQueries && visibleNavItems.some((item) => item.label === "Requests");
 
   const { data: notificationsData } = useGetOrgNotificationsQuery(1, { skip: !hasNotificationsNavItem });
   const { data: requestsData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !hasRequestsNavItem });
