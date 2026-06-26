@@ -26,6 +26,7 @@ const {
 } = require("../controllers/org-team.controller");
 const {
   getOrgAttendance,
+  getOrgAttendanceLogById,
   getOrgAttendanceSettings,
   updateOrgAttendanceSettings,
   getOrgUserAttendanceLogs,
@@ -105,5 +106,6 @@ router.get("/attendance/pdf", downloadOrgAttendancePdf);
 router.get("/attendance/excel", downloadOrgAttendanceExcel);
 router.get("/attendance/settings", getOrgAttendanceSettings);
 router.patch("/attendance/settings", updateOrgAttendanceSettings);
+router.get("/attendance/:id", getOrgAttendanceLogById);
 
 module.exports = router;

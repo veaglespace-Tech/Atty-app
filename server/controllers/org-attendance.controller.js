@@ -443,3 +443,25 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.status(200).send(excelBuffer);
 });
+ 
+ 
+exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+
+  const logId = req.params.id;
+
+  const log = await prisma.attendanceLog.findFirst({
+    where: {
+      id: logId,
+      organizationId: orgId,
+    },
+    select: attendanceRecordSelect,
+  });
+
+  if (!log) {
+    return res.status(404).json({ success: false, message: "Attendance log not found" });
+  }
+
+  res.status(200).json({ success: true, item: mapAttendanceRecord(log) });
+});

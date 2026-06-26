@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
-import AttendanceDetailModal from "@/components/attendance/AttendanceDetailModal";
 import {
   useDownloadOrgUserProfilePdfMutation,
   useGetOrgUserByIdQuery,
@@ -125,7 +124,6 @@ export default function OrgUserDetailPage() {
   });
 
   const [period, setPeriod] = useState("monthly");
-  const [selectedRecord, setSelectedRecord] = useState(null);
   const [customRange, setCustomRange] = useState({
     from: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0],
     to: new Date().toISOString().split("T")[0],
@@ -724,7 +722,7 @@ export default function OrgUserDetailPage() {
                 {logsData.items.map((log) => (
                   <tr
                     key={log.id}
-                    onClick={() => setSelectedRecord({ ...log, member: user?.name || user?.email || "User", role: user?.role })}
+                    onClick={() => router.push(`/org/attendance/${log.id}`)}
                     className="cursor-pointer transition hover:bg-slate-50/50 dark:hover:bg-slate-900/60"
                   >
                     <td className="px-4 py-3 font-semibold text-slate-800">{log.date}</td>
@@ -747,8 +745,6 @@ export default function OrgUserDetailPage() {
           </div>
         )}
       </div>
-
-      <AttendanceDetailModal selectedRecord={selectedRecord} onClose={() => setSelectedRecord(null)} />
     </section>
   );
 }

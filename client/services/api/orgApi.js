@@ -185,6 +185,10 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    getOrgAttendanceLogById: builder.query({
+      query: (id) => `/org/attendance/${id}`,
+      providesTags: (result, error, id) => [{ type: "OrgAttendance", id }],
+    }),
     getOrgAttendanceSettings: builder.query({
       query: () => "/org/attendance/settings",
       providesTags: ["OrgAttendance"],
@@ -251,6 +255,7 @@ export const {
   usePatchOrgTeamMutation,
   useDeleteOrgTeamMutation,
   useGetOrgAttendanceQuery,
+  useGetOrgAttendanceLogByIdQuery,
   useDownloadOrgAttendancePdfMutation,
   useDownloadOrgAttendanceExcelMutation,
   useGetOrgAttendanceSettingsQuery,
