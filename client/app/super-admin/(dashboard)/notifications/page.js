@@ -250,7 +250,7 @@ export default function SuperAdminNotificationsPage() {
                         </h2>
                       </Link>
 
-                      <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300">
+                      <div className="mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-600 sm:mt-4 sm:text-base dark:text-slate-300 line-clamp-3">
                         {post.content}
                       </div>
 
