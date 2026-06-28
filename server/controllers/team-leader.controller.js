@@ -788,13 +788,18 @@ exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
     });
   }
 
+  const targetTeamId = req.query.teamId ? Number(req.query.teamId) : null;
+  const filteredTeamIds = targetTeamId && accessibleTeamIds.includes(targetTeamId) 
+    ? [targetTeamId] 
+    : accessibleTeamIds;
+
   const where = buildAttendanceWhere({
     orgId,
     date: req.query.date,
     from: req.query.from,
     to: req.query.to,
     status: req.query.status,
-    teamIds: accessibleTeamIds,
+    teamIds: filteredTeamIds,
   });
 
   const records = await prisma.attendance.findMany({
@@ -832,6 +837,11 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
     role: resolveUserRole(req.user, orgId),
   });
 
+  const targetTeamId = req.query.teamId ? Number(req.query.teamId) : null;
+  const filteredTeamIds = targetTeamId && accessibleTeamIds.includes(targetTeamId) 
+    ? [targetTeamId] 
+    : accessibleTeamIds;
+
   if (accessibleTeamIds.length === 0) {
     return res.status(200).json({
       success: true,
@@ -855,7 +865,7 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
     orgId,
     rangeFrom,
     rangeTo,
-    teamIds: accessibleTeamIds,
+    teamIds: filteredTeamIds,
   });
 
   res.status(200).json({
@@ -865,7 +875,7 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
     meta: {
       from: rangeFrom,
       to: rangeTo,
-      teamCount: accessibleTeamIds.length,
+      teamCount: filteredTeamIds.length,
     },
   });
 });
@@ -1093,7 +1103,12 @@ exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
     role: resolveUserRole(req.user, orgId),
   });
 
-  if (accessibleTeamIds.length === 0) {
+  const targetTeamId = req.query.teamId ? Number(req.query.teamId) : null;
+  const filteredTeamIds = targetTeamId && accessibleTeamIds.includes(targetTeamId) 
+    ? [targetTeamId] 
+    : accessibleTeamIds;
+
+  if (filteredTeamIds.length === 0) {
     res.status(400);
     throw new Error("No teams assigned to this account.");
   }
@@ -1107,7 +1122,7 @@ exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
       orgId,
       rangeFrom: range.from,
       rangeTo: range.to,
-      teamIds: accessibleTeamIds,
+      teamIds: filteredTeamIds,
     }),
   ]);
 
@@ -1142,7 +1157,12 @@ exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
     role: resolveUserRole(req.user, orgId),
   });
 
-  if (accessibleTeamIds.length === 0) {
+  const targetTeamId = req.query.teamId ? Number(req.query.teamId) : null;
+  const filteredTeamIds = targetTeamId && accessibleTeamIds.includes(targetTeamId) 
+    ? [targetTeamId] 
+    : accessibleTeamIds;
+
+  if (filteredTeamIds.length === 0) {
     res.status(400);
     throw new Error("No teams assigned to this account.");
   }
@@ -1156,7 +1176,7 @@ exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
       orgId,
       rangeFrom: range.from,
       rangeTo: range.to,
-      teamIds: accessibleTeamIds,
+      teamIds: filteredTeamIds,
     }),
   ]);
 

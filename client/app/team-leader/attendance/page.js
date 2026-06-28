@@ -124,7 +124,12 @@ export default function TeamLeaderAttendancePage() {
   const [patchTeamMutation] = usePatchTeamLeaderTeamMutation();
 
   const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
-  const currentTeam = useMemo(() => teams[0] || null, [teams]);
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const currentTeam = useMemo(() => {
+    if (!teams.length) return null;
+    if (selectedTeamId) return teams.find(t => String(t.id) === String(selectedTeamId)) || teams[0];
+    return teams[0];
+  }, [teams, selectedTeamId]);
 
   useEffect(() => {
     if (currentTeam) {
@@ -134,6 +139,12 @@ export default function TeamLeaderAttendancePage() {
         attendanceRadius: String(currentTeam.attendanceRadius || 25),
         longitude: lon,
         latitude: lat,
+      });
+      
+      setQueryString((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("teamId", currentTeam.id);
+        return params.toString();
       });
     }
   }, [currentTeam]);
@@ -233,6 +244,9 @@ export default function TeamLeaderAttendancePage() {
     const params = new URLSearchParams({
       limit: String(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_ATTENDANCE),
     });
+    if (currentTeam?.id) {
+      params.set("teamId", currentTeam.id);
+    }
     if (inputFilters.status && inputFilters.status !== "ALL") {
       params.set("status", inputFilters.status);
     }
@@ -425,9 +439,26 @@ export default function TeamLeaderAttendancePage() {
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Track your team attendance logs, punch timings, and geo-validation status.
             </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Team: {meta?.teamName || "-"}
-            </p>
+            {teams.length > 1 ? (
+              <div className="mt-4 max-w-xs">
+                <label className="mb-1 block text-xs font-semibold text-slate-500">Select Team</label>
+                <select
+                  className="dashboard-field-control"
+                  value={selectedTeamId || currentTeam?.id || ""}
+                  onChange={(e) => setSelectedTeamId(e.target.value)}
+                >
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Team: {meta?.teamName || "-"}
+              </p>
+            )}
           </div>
 
           <button
