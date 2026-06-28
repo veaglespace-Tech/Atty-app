@@ -98,6 +98,7 @@ export default function TeamLeaderAttendancePage() {
   const [filters, setFilters] = useState({
     ...DEFAULT_FILTERS,
   });
+  const [error, setError] = useState("");
   const [queryString, setQueryString] = useState(
     `limit=${DASHBOARD_FETCH_LIMITS.TEAM_LEADER_ATTENDANCE}`
   );
