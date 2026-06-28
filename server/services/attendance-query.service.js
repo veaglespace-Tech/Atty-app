@@ -65,7 +65,7 @@ const buildAttendanceDateWhere = ({ date, from, to }) => {
     };
   }
 
-  return todayKey();
+  return undefined;
 };
 
 const buildAttendanceWhere = ({

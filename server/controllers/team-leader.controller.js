@@ -842,6 +842,12 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
     ? [targetTeamId] 
     : accessibleTeamIds;
 
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    include: { plan: true },
+  });
+  const accessMeta = getReportAccessMeta(org);
+
   if (accessibleTeamIds.length === 0) {
     return res.status(200).json({
       success: true,
@@ -855,6 +861,7 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
       meta: {
         from,
         to,
+        ...accessMeta,
       },
     });
   }
@@ -876,11 +883,12 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
       from: rangeFrom,
       to: rangeTo,
       teamCount: filteredTeamIds.length,
+      ...accessMeta,
     },
   });
 });
 
-const getReportAccessMeta = (organization = null) => {
+function getReportAccessMeta(organization = null) {
   const plan = organization?.plan || null;
   const restricted = isFreePlan({
     plan,
@@ -895,15 +903,15 @@ const getReportAccessMeta = (organization = null) => {
       ? "Report downloads are available only on paid plans."
       : "",
   };
-};
+}
 
-const assertReportDownloadAccess = ({ organization, res }) => {
+function assertReportDownloadAccess({ organization, res }) {
   const accessMeta = getReportAccessMeta(organization);
   if (accessMeta.canDownload) return accessMeta;
 
   res.status(403);
   throw new Error(accessMeta.downloadRestrictedReason);
-};
+}
 
 const resolveTeamLeaderReportRange = (req) => {
   const to = todayKey();
