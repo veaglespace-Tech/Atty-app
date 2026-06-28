@@ -732,11 +732,7 @@ export default function TeamLeaderAttendancePage() {
               />
             </label>
 
-            <div className="flex flex-col justify-end gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <p className="mobile-hide-helper text-xs text-slate-500">
-                Search updates the visible list instantly. Status and date filters load matching team records.
-              </p>
-
+            <div className="flex flex-col justify-end gap-3 sm:flex-row sm:items-end sm:justify-end">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="submit"
