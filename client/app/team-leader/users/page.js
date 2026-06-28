@@ -187,10 +187,10 @@ export default function TeamLeaderUsersPage() {
   return (
     <section className="space-y-6">
       <div className={sectionCardClassName}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">My Team Members</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900 dark:text-white">My Team Members</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600 dark:text-slate-400">
               Users belonging to your team(s) only.
             </p>
             {usersData?.summary ? (
@@ -205,12 +205,12 @@ export default function TeamLeaderUsersPage() {
             ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             {canCreateUser ? (
               <button
                 type="button"
                 onClick={() => setCreateOpen((prev) => !prev)}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
               >
                 <UserPlus size={15} />
                 Add User
@@ -222,7 +222,7 @@ export default function TeamLeaderUsersPage() {
               type="button"
               onClick={refetch}
               disabled={isLoading || isFetching}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {isLoading || isFetching ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               Refresh

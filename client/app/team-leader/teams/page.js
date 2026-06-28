@@ -384,7 +384,7 @@ export default function TeamLeaderTeamsPage() {
               Manage teams, assign members, and control team geofence based on your granted permissions.
             </p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             {canCreateTeams ? (
               <button
                 type="button"

@@ -186,7 +186,7 @@ const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
 
   return {
     summary: [
-      toSummaryItem("Today Status", todayRecord?.status || "NO_RECORD"),
+      toSummaryItem("Today Status", todayRecord?.status || "No Records"),
       toSummaryItem("Present This Month", presentCount + halfDayCount),
       toSummaryItem("Absent This Month", absentCount),
       toSummaryItem("Worked Hrs This Month", workedHours),

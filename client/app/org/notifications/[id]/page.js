@@ -84,7 +84,7 @@ export default function NotificationDetailPage() {
           <p className="mt-1 mb-6 text-sm text-slate-500 sm:text-base dark:text-slate-400">
             It may have been deleted or you do not have access.
           </p>
-          <button onClick={() => router.back()} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+          <button onClick={() => router.back()} className="brand-btn brand-btn-primary brand-btn-md">
             Go Back
           </button>
         </div>

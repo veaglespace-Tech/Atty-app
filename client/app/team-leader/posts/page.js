@@ -173,23 +173,23 @@ export default function TeamLeaderPostsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Posts & Announcements</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Posts & Announcements</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Create posts for your team or the whole organization.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => {
                 if (createOpen && editingId) resetForm();
                 else setCreateOpen(!createOpen);
               }}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               <Plus size={15} />
               {editingId ? "Cancel Edit" : "Create Post"}
@@ -200,7 +200,7 @@ export default function TeamLeaderPostsPage() {
               type="button"
               onClick={refetch}
               disabled={isLoading || isFetching}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {isLoading || isFetching ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               Refresh

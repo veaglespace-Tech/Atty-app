@@ -116,7 +116,7 @@ export default function MyAttendancePanel({
     () => records.find((record) => String(record.date) === todayKey()) || null,
     [records]
   );
-  const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "NO_RECORD";
+  const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "No Records";
   const recentRecords = useMemo(() => records.slice(0, 5), [records]);
 
   const runExternalRefresh = async () => {
@@ -255,7 +255,7 @@ export default function MyAttendancePanel({
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Snapshot label="Date" value={todayRecord?.date || todayKey()} />
-          <Snapshot label="Today Status" value={String(todayStatusValue).replaceAll("_", " ")} />
+          <Snapshot label="Today Status" value={todayStatusValue} />
           <Snapshot label="Punch In" value={formatDateTime(todayRecord?.punchInAt)} />
           <Snapshot label="Punch Out" value={formatDateTime(todayRecord?.punchOutAt)} />
         </div>
@@ -264,9 +264,9 @@ export default function MyAttendancePanel({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Today Status"
-          value={String(todayStatusValue).replaceAll("_", " ")}
+          value={todayStatusValue}
           icon={<UserCheck size={16} />}
-          valueClassName={todayStatusValue === "NO_RECORD" ? "text-xl" : undefined}
+          valueClassName={todayStatusValue === "No Records" ? "text-xl" : undefined}
         />
         <MetricCard
           label="Present This Month"

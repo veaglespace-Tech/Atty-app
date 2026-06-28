@@ -49,11 +49,11 @@ export default function TeamLeaderDashboardPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-6 shadow-lg shadow-slate-200/30 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-black/20">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{`${firstName}'s Dashboard`}</h2>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900 dark:text-white">{`${firstName}'s Dashboard`}</h2>
+            <p className="mobile-hide-copy mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Team: {meta?.teamName || "Not Assigned"}
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function TeamLeaderDashboardPage() {
             type="button"
             onClick={fetchDashboard}
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-slate-100 hover:text-blue-600 disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:bg-slate-800 dark:hover:text-blue-200 sm:w-auto"
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto shrink-0"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
             Refresh

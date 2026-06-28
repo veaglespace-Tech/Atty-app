@@ -16,7 +16,7 @@ const ensureSummaryEntry = (summary, label, fallbackValue) => {
 const patchTodaySummary = (summary, nextStatus) => {
   if (!Array.isArray(summary)) return;
 
-  const todayStatus = ensureSummaryEntry(summary, "Today Status", "NO_RECORD");
+  const todayStatus = ensureSummaryEntry(summary, "Today Status", "No Records");
   todayStatus.value = nextStatus;
 };
 

@@ -170,16 +170,16 @@ export default function OrgPostsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Organization Posts</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Organization Posts</h2>
+            <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Create and manage notifications, polls, and articles for your organization members.
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => {
