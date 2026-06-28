@@ -85,27 +85,27 @@ export default function OrgAttendanceLogDetailPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 transition hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-200"
         >
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h2 className="text-2xl font-black text-slate-900">Attendance Details</h2>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Attendance Details</h2>
           <p className="mt-1 text-sm font-semibold text-slate-500">
             Detailed punch log and verification
           </p>
         </div>
       </div>
 
-      <div className="light-glow-card-static rounded-[2rem] p-6 sm:p-8 bg-white border border-slate-100/50 shadow-sm">
+      <div className="light-glow-card-static rounded-[2rem] p-6 sm:p-8 bg-white dark:bg-[#0a0f1c] border border-slate-100/50 dark:border-slate-800/50 shadow-sm">
         <div className="space-y-6">
           {/* Member Profile info */}
-          <div className="flex items-center gap-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700 font-bold text-xl">
+          <div className="flex items-center gap-4 bg-slate-50/80 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold text-xl">
               {record.member?.name?.[0] || record.member?.email?.[0] || "M"}
             </div>
             <div>
-              <h4 className="text-base font-black text-slate-900">{record.member?.name || record.member?.email}</h4>
+              <h4 className="text-base font-black text-slate-900 dark:text-white">{record.member?.name || record.member?.email}</h4>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
                 {formatRoleLabel(record.member?.role)}
               </p>
@@ -116,35 +116,35 @@ export default function OrgAttendanceLogDetailPage() {
             {/* Date & Status */}
             <div className="dashboard-detail-tile">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Date</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800">{record.date}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{record.date}</p>
             </div>
             <div className="dashboard-detail-tile">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
-              <p className="mt-1 text-sm font-black text-slate-800 uppercase tracking-wider">{record.status}</p>
+              <p className="mt-1 text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">{record.status}</p>
             </div>
 
             {/* Geo Validation & Worked Hours */}
             <div className="dashboard-detail-tile">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Geo Valid</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800">{formatGeoStatus(record)}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{formatGeoStatus(record)}</p>
             </div>
             <div className="dashboard-detail-tile">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800">{formatWorkedHours(record)}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{formatWorkedHours(record)}</p>
             </div>
           </div>
 
           {/* Punch In Info */}
-          <div className="border border-slate-100 bg-slate-50/40 rounded-2xl p-5 space-y-3">
+          <div className="border border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/30 rounded-2xl p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Punch In Details</h5>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Time</p>
-                <p className="text-sm font-semibold text-slate-800">{formatDate(record.punchInAt)}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{formatDate(record.punchInAt)}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Location</p>
-                <p className="text-sm font-semibold text-slate-800 truncate" title={formatLocation(record)}>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate" title={formatLocation(record)}>
                   {formatLocation(record)}
                 </p>
               </div>
@@ -152,16 +152,16 @@ export default function OrgAttendanceLogDetailPage() {
           </div>
 
           {/* Punch Out Info */}
-          <div className="border border-slate-100 bg-slate-50/40 rounded-2xl p-5 space-y-3">
+          <div className="border border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/30 rounded-2xl p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Punch Out Details</h5>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Time</p>
-                <p className="text-sm font-semibold text-slate-800">{formatDate(record.punchOutAt)}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{formatDate(record.punchOutAt)}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Location</p>
-                <p className="text-sm font-semibold text-slate-800 truncate" title={record.punchOutLocationMeta?.displayText || record.punchOutLocationMeta?.areaLabel || formatCoordinates(record.punchOutCoordinates)}>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate" title={record.punchOutLocationMeta?.displayText || record.punchOutLocationMeta?.areaLabel || formatCoordinates(record.punchOutCoordinates)}>
                   {record.punchOutLocationMeta?.displayText || record.punchOutLocationMeta?.areaLabel || formatCoordinates(record.punchOutCoordinates)}
                 </p>
               </div>
@@ -169,7 +169,7 @@ export default function OrgAttendanceLogDetailPage() {
           </div>
 
           {/* Selfie Proof */}
-          <div className="border border-slate-100 bg-slate-50/40 rounded-2xl p-5 space-y-3">
+          <div className="border border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/30 rounded-2xl p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Selfie Verification</h5>
             <AttendanceSelfieProofLinks
               punchInSelfieUrl={record.punchInSelfieUrl}
