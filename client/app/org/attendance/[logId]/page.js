@@ -135,7 +135,7 @@ export default function OrgAttendanceLogDetailPage() {
           </div>
 
           {/* Punch In Info */}
-          <div className="border border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/30 rounded-2xl p-5 space-y-3">
+          <div className="dashboard-detail-tile p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Punch In Details</h5>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
@@ -152,7 +152,7 @@ export default function OrgAttendanceLogDetailPage() {
           </div>
 
           {/* Punch Out Info */}
-          <div className="border border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/30 rounded-2xl p-5 space-y-3">
+          <div className="dashboard-detail-tile p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Punch Out Details</h5>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
@@ -169,7 +169,7 @@ export default function OrgAttendanceLogDetailPage() {
           </div>
 
           {/* Selfie Proof */}
-          <div className="border border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/30 rounded-2xl p-5 space-y-3">
+          <div className="dashboard-detail-tile p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Selfie Verification</h5>
             <AttendanceSelfieProofLinks
               punchInSelfieUrl={record.punchInSelfieUrl}
