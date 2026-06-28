@@ -13,7 +13,7 @@ export default function PasswordInput({
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       {Icon ? (
         <span
           className={`absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600 ${iconClassName}`}

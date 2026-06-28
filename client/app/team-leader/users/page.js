@@ -245,7 +245,7 @@ export default function TeamLeaderUsersPage() {
               value={form.name}
               onChange={onInputChange}
               placeholder="Full name"
-              className={`${fieldClassName} dashboard-select-control`}
+              className={fieldClassName}
               required
             />
             <input
@@ -254,7 +254,7 @@ export default function TeamLeaderUsersPage() {
               value={form.email}
               onChange={onInputChange}
               placeholder="Email"
-              className={`${fieldClassName} dashboard-select-control`}
+              className={fieldClassName}
               required
             />
             <div className="sm:col-span-2 xl:col-span-3">

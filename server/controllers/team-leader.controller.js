@@ -28,6 +28,7 @@ const {
   buildAttendanceWhere,
   buildAttendanceSummary,
   mapAttendanceRecord,
+  augmentWithAbsentees,
 } = require("../services/attendance-query.service");
 const { buildAttendanceReport } = require("../services/report-query.service");
 const {
@@ -810,10 +811,20 @@ exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
     take: limit,
   });
 
-  const items = records.map(mapAttendanceRecord);
+  const existingItems = records.map(mapAttendanceRecord);
+  const items = await augmentWithAbsentees({
+    orgId,
+    teamIds: filteredTeamIds,
+    date: req.query.date,
+    from: req.query.from,
+    to: req.query.to,
+    status: req.query.status,
+    existingItems,
+  });
+
   res.status(200).json({
     success: true,
-    items,
+    items: items.slice(0, limit),
     summary: buildAttendanceSummary(items),
     meta: {
       teamName: accessibleTeams[0]?.name || null,

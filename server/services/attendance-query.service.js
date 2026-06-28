@@ -361,13 +361,22 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     take: 2500,
   });
 
-  const items = records.map(mapAttendanceRecord);
+  const existingItems = records.map(mapAttendanceRecord);
+  const items = await augmentWithAbsentees({
+    orgId,
+    teamIds: [],
+    from: rangeFrom,
+    to: rangeTo,
+    status,
+    existingItems,
+  });
+  
   const summary = buildAttendanceSummary(items);
 
   return {
     organization: org,
     summary,
-    items,
+    items: items.slice(0, 2500),
     meta: {
       period: normalizedPeriod,
       periodLabel,
@@ -378,6 +387,126 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
   };
 };
 
+const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, existingItems }) => {
+  const { todayKey } = require('./common.service');
+  const { resolveUserRole } = require('../utils/membership');
+  const prisma = require('../lib/prisma');
+
+  const dates = [];
+  let currentStr = '';
+  let endStr = '';
+
+  if (date) {
+    currentStr = date;
+    endStr = date;
+  } else if (from || to) {
+    currentStr = from || '2000-01-01';
+    endStr = to || todayKey();
+  } else {
+    currentStr = todayKey();
+    endStr = todayKey();
+  }
+
+  const current = new Date(currentStr + 'T00:00:00.000Z');
+  const end = new Date(endStr + 'T00:00:00.000Z');
+  const today = new Date(todayKey() + 'T00:00:00.000Z');
+
+  if (end > today) end.setTime(today.getTime());
+
+  let days = 0;
+  while (current <= end && days < 31) {
+    dates.push(current.toISOString().split('T')[0]);
+    current.setDate(current.getDate() + 1);
+    days++;
+  }
+
+  const usersWhere = { orgId, deletedAt: null };
+  if (teamIds && teamIds.length > 0) {
+    usersWhere.teamMembers = { some: { teamId: { in: teamIds.map(Number) } } };
+  }
+
+  const users = await prisma.user.findMany({
+    where: usersWhere,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      orgMemberships: {
+        where: { orgId },
+        select: { role: true }
+      },
+      teamMembers: {
+        where: teamIds && teamIds.length > 0 ? { teamId: { in: teamIds.map(Number) } } : undefined,
+        select: { team: { select: { id: true, name: true } } },
+        take: 1
+      }
+    }
+  });
+
+  const existingMap = new Set();
+  for (const item of existingItems) {
+    existingMap.add(item.user.id + '_' + item.date);
+  }
+
+  const absentItems = [];
+  const statusFilter = String(status || '').toUpperCase();
+
+  if (statusFilter && statusFilter !== 'ALL' && statusFilter !== 'ABSENT') {
+    return existingItems;
+  }
+
+  for (const d of dates) {
+    for (const u of users) {
+      if (!existingMap.has(u.id + '_' + d)) {
+        const team = u.teamMembers[0]?.team;
+        absentItems.push({
+          id: 'absent_' + u.id + '_' + d,
+          date: d,
+          userId: u.id,
+          user: {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+          },
+          role: resolveUserRole(u, orgId) || 'MEMBER',
+          status: 'ABSENT',
+          punchInAt: null,
+          punchOutAt: null,
+          workedMinutes: 0,
+          workedHours: '0h 0m',
+          lateMinutes: 0,
+          punchInValid: false,
+          punchOutValid: false,
+          punchInDistanceMeters: null,
+          punchOutDistanceMeters: null,
+          punchInCoordinates: null,
+          punchOutCoordinates: null,
+          punchInLocationMeta: null,
+          punchOutLocationMeta: null,
+          punchInSelfieUrl: null,
+          punchOutSelfieUrl: null,
+          teamId: team?.id || null,
+          teamName: team?.name || null,
+        });
+      }
+    }
+  }
+
+  let finalItems = existingItems;
+  if (statusFilter === 'ABSENT') {
+    finalItems = finalItems.filter(item => item.status === 'ABSENT');
+  }
+
+  const combined = [...finalItems, ...absentItems];
+  combined.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return (a.user.name || '').localeCompare(b.user.name || '');
+  });
+
+  return combined;
+};
+
 module.exports = {
   attendanceRecordSelect,
   mapAttendanceRecord,
@@ -386,4 +515,5 @@ module.exports = {
   buildAttendanceSummary,
   buildUserAttendancePayload,
   buildOrgAttendancePayload,
+  augmentWithAbsentees,
 };
