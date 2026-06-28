@@ -862,38 +862,68 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     deletedAt: null,
   };
 
-  const [posts, total, unreadCount] = await Promise.all([
-    prisma.post.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }],
-      take: limit,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        type: true,
-        metadata: true,
-        createdAt: true,
-        author: {
-          select: {
-            name: true,
-            role: true,
+  // Gracefully handle missing user_notification_read table (P2022)
+  let posts, total, unreadCount;
+  try {
+    [posts, total, unreadCount] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }],
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          type: true,
+          metadata: true,
+          createdAt: true,
+          author: {
+            select: {
+              name: true,
+              role: true,
+            },
           },
+          reads: {
+            where: { userId },
+            select: { id: true }
+          }
         },
-        reads: {
-          where: { userId },
-          select: { id: true }
+      }),
+      prisma.post.count({ where }),
+      prisma.post.count({ 
+        where: {
+          ...where,
+          reads: { none: { userId } }
         }
-      },
-    }),
-    prisma.post.count({ where }),
-    prisma.post.count({ 
-      where: {
-        ...where,
-        reads: { none: { userId } }
-      }
-    })
-  ]);
+      })
+    ]);
+  } catch (dbErr) {
+    // Fallback: fetch posts without reads relation if table is missing
+    if (dbErr?.code === "P2022" || String(dbErr?.message || "").toLowerCase().includes("does not exist")) {
+      const [rawPosts, rawTotal] = await Promise.all([
+        prisma.post.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }],
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            type: true,
+            metadata: true,
+            createdAt: true,
+            author: { select: { name: true, role: true } },
+          },
+        }),
+        prisma.post.count({ where }),
+      ]);
+      posts = rawPosts.map(p => ({ ...p, reads: [] }));
+      total = rawTotal;
+      unreadCount = rawTotal;
+    } else {
+      throw dbErr;
+    }
+  }
 
   const items = posts.map((post) => {
     const serialized = _serializePollForNotification(post, userId);
@@ -992,21 +1022,28 @@ exports.markNotificationAsRead = asyncHandler(async (req, res) => {
     throw new Error("Notification not found");
   }
 
-  await prisma.userNotificationRead.upsert({
-    where: {
-      userId_notificationId: {
+  try {
+    await prisma.userNotificationRead.upsert({
+      where: {
+        userId_notificationId: {
+          userId,
+          notificationId: Number(id)
+        }
+      },
+      update: {
+        readAt: new Date()
+      },
+      create: {
         userId,
         notificationId: Number(id)
       }
-    },
-    update: {
-      readAt: new Date()
-    },
-    create: {
-      userId,
-      notificationId: Number(id)
+    });
+  } catch (dbErr) {
+    // If table doesn't exist yet, silently ignore - migration pending
+    if (!(dbErr?.code === "P2022" || String(dbErr?.message || "").toLowerCase().includes("does not exist"))) {
+      throw dbErr;
     }
-  });
+  }
 
   res.status(200).json({
     success: true,
@@ -1018,25 +1055,32 @@ exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const userId = Number(req.user.id);
 
-  const unreadPosts = await prisma.post.findMany({
-    where: {
-      OR: [{ orgId }, { orgId: null }],
-      isActive: true,
-      deletedAt: null,
-      reads: { none: { userId } }
-    },
-    select: { id: true }
-  });
-
-  if (unreadPosts.length > 0) {
-    await prisma.userNotificationRead.createMany({
-      data: unreadPosts.map(post => ({
-        userId,
-        notificationId: post.id,
-        readAt: new Date()
-      })),
-      skipDuplicates: true,
+  try {
+    const unreadPosts = await prisma.post.findMany({
+      where: {
+        OR: [{ orgId }, { orgId: null }],
+        isActive: true,
+        deletedAt: null,
+        reads: { none: { userId } }
+      },
+      select: { id: true }
     });
+
+    if (unreadPosts.length > 0) {
+      await prisma.userNotificationRead.createMany({
+        data: unreadPosts.map(post => ({
+          userId,
+          notificationId: post.id,
+          readAt: new Date()
+        })),
+        skipDuplicates: true,
+      });
+    }
+  } catch (dbErr) {
+    // If table doesn't exist yet, silently ignore - migration pending
+    if (!(dbErr?.code === "P2022" || String(dbErr?.message || "").toLowerCase().includes("does not exist"))) {
+      throw dbErr;
+    }
   }
 
   res.status(200).json({
