@@ -432,7 +432,7 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
       name: true,
       email: true,
       role: true,
-      orgMemberships: {
+      memberships: {
         where: { orgId },
         select: { role: true }
       },
