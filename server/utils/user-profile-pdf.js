@@ -109,7 +109,7 @@ const drawPhotoFrame = ({ doc, imageBuffer, x, y, width, height, userName }) => 
   if (imageBuffer) {
     try {
       doc.image(imageBuffer, x + 4, y + 4, {
-        fit: [width - 8, height - 8],
+        cover: [width - 8, height - 8],
         align: "center",
         valign: "center",
       });
@@ -166,7 +166,7 @@ const buildUserHallTicketPdf = async ({
     doc.roundedRect(startX + pageWidth - 104, headerY, 104, 92, 14).fill(COLORS.headerAccent);
     doc.restore();
 
-    doc.fillColor(COLORS.white).font("Helvetica-Bold").fontSize(20).text("USER PROFILE HALL TICKET", startX + 16, headerY + 16);
+    doc.fillColor(COLORS.white).font("Helvetica-Bold").fontSize(20).text(`${normalizeText(user.name, "USER").toUpperCase()} - PROFILE`, startX + 16, headerY + 16);
     doc.font("Helvetica").fontSize(9).text(
       `Organization: ${normalizeText(organization.name)} | Code: ${normalizeText(organization.organizationCode)}`,
       startX + 16,
@@ -174,12 +174,12 @@ const buildUserHallTicketPdf = async ({
       { width: pageWidth - 132 }
     );
 
-    const hallTicketId = `ATTY-${normalizeText(organization.organizationCode, "ORG")}-${normalizeText(user.id, "0")}`;
-    doc.font("Helvetica-Bold").fontSize(10).text(`Hall Ticket ID`, startX + pageWidth - 94, headerY + 14, {
+    const profileId = `ATTY-${normalizeText(organization.organizationCode, "ORG")}-${normalizeText(user.id, "0")}`;
+    doc.font("Helvetica-Bold").fontSize(10).text(`User Details ID`, startX + pageWidth - 94, headerY + 14, {
       width: 84,
       align: "center",
     });
-    doc.font("Helvetica").fontSize(9).text(hallTicketId, startX + pageWidth - 96, headerY + 34, {
+    doc.font("Helvetica").fontSize(9).text(profileId, startX + pageWidth - 96, headerY + 34, {
       width: 88,
       align: "center",
     });

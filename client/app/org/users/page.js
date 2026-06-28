@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, Download, Loader2, Plus, RefreshCcw, Search, UserPlus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Loader2, Plus, RefreshCcw, Search, UserPlus, X, LockKeyhole } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PasswordInput from "@/components/PasswordInput";
 import useLocalPagination from "@/hooks/useLocalPagination";
+import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import {
   useCreateOrgUserMutation,
   useDownloadOrgUsersExcelMutation,
+  useDownloadOrgUsersPdfMutation,
   useGetOrgUsersQuery,
 } from "@/services/api/orgApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
@@ -49,11 +51,13 @@ const summaryMapFromArray = (summary) => {
 export default function OrgUsersPage() {
   const router = useRouter();
   const authUser = useSelector((state) => state.auth.user);
+  const isFreePlan = authUser?.organization?.plan?.code === "FREE_7D_TRIAL" || authUser?.organization?.planCode === "FREE_7D_TRIAL";
   const [submitting, setSubmitting] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -80,6 +84,7 @@ export default function OrgUsersPage() {
     createUserMutation,
   ] = useCreateOrgUserMutation();
   const [downloadUsersExcelMutation] = useDownloadOrgUsersExcelMutation();
+  const [downloadUsersPdfMutation] = useDownloadOrgUsersPdfMutation();
   const manageableRoleOptions = useMemo(
     () => getManagedRoleOptions(authUser?.currentRole),
     [authUser?.currentRole]
@@ -238,9 +243,26 @@ export default function OrgUsersPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloadingPdf(true);
+      const blob = await downloadUsersPdfMutation().unwrap();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "users.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Failed to download PDF file. Please try again.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <section className="space-y-6">
-      <div className={`${sectionCardClassName} mobile-compact-panel`}>
+      <div className={`${sectionCardClassName} mobile-compact-panel relative z-50`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="mobile-compact-title text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Users</h2>
@@ -249,7 +271,7 @@ export default function OrgUsersPage() {
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => setCreateOpen((prev) => !prev)}
@@ -270,16 +292,29 @@ export default function OrgUsersPage() {
               Refresh
             </button>
 
-            <button
-              type="button"
-              id="btn-download-users-excel"
-              onClick={handleDownloadExcel}
-              disabled={downloading || isLoading}
-              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-            >
-              {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Export Excel
-            </button>
+            {!isFreePlan ? (
+              <DownloadMenuButton
+                label={
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Download size={15} />
+                    Export
+                    <ChevronDown size={14} className="opacity-70" />
+                  </span>
+                }
+                onDownloadExcel={handleDownloadExcel}
+                onDownloadPdf={handleDownloadPdf}
+                downloadingExcel={downloading}
+                downloadingPdf={downloadingPdf}
+                disabled={isLoading}
+                align="right"
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+              />
+            ) : (
+              <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 w-full sm:w-auto mt-2 sm:mt-0">
+                <LockKeyhole size={16} />
+                Download locked on free plan.
+              </div>
+            )}
           </div>
         </div>
 

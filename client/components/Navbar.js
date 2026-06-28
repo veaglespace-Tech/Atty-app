@@ -89,6 +89,7 @@ export default function Navbar() {
                     src="/logo1-clean.webp"
                     alt="Veagle logo mark"
                     fill
+                    priority
                     sizes="(max-width: 768px) 40px, 48px"
                     className="brand-logo-mark h-full w-full object-contain"
                   />

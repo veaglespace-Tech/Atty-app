@@ -199,15 +199,17 @@ export default function MyAttendancePage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={fetchAttendance}
-            disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
-          </button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={fetchAttendance}
+              disabled={loading}
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

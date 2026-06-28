@@ -226,6 +226,13 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    downloadOrgUsersPdf: builder.mutation({
+      query: () => ({
+        url: "/org/users/pdf",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -267,4 +274,5 @@ export const {
   useAcceptRegistrationRequestMutation,
   useRejectRegistrationRequestMutation,
   useDownloadOrgUsersExcelMutation,
+  useDownloadOrgUsersPdfMutation,
 } = orgApi;

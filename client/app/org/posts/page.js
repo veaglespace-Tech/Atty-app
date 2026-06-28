@@ -179,14 +179,14 @@ export default function OrgPostsPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => {
                 if (createOpen && editingId) resetForm();
                 else setCreateOpen(!createOpen);
               }}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               <Plus size={15} />
               {editingId ? "Cancel Edit" : "Create Post"}
@@ -197,7 +197,7 @@ export default function OrgPostsPage() {
               type="button"
               onClick={refetch}
               disabled={isLoading || isFetching}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {isLoading || isFetching ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               Refresh

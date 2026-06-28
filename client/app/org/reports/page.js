@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSelector } from "react-redux"
 import {
   ChevronDown,
   Download,
@@ -102,8 +103,12 @@ export default function OrgReportsPage() {
   const [customRange, setCustomRange] = useState(getDefaultCustomRange)
   const [downloadError, setDownloadError] = useState("")
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const downloadMenuRef = useRef(null)
   const [selectedMemberReport, setSelectedMemberReport] = useState(null)
+  
+  const authUser = useSelector((state) => state.auth.user)
+  const isFreePlan = authUser?.organization?.plan?.code === "FREE_7D_TRIAL" || authUser?.organization?.planCode === "FREE_7D_TRIAL"
 
   const { data: attendanceData, isLoading: attendanceLoading } = useGetOrgAttendanceQuery("limit=2000", {
     skip: !selectedMemberReport,
@@ -166,15 +171,16 @@ export default function OrgReportsPage() {
   const meta = data?.meta || {}
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary])
 
-  const canDownload = Boolean(meta?.canDownload)
-  const planName = meta?.planName || "TRIAL"
-  const planCode = meta?.planCode || ""
-  const downloadRestrictedReason =
-    meta?.downloadRestrictedReason || "Report downloads are available only on paid plans."
+  const canDownload = Boolean(meta?.canDownload) && !isFreePlan
+  const planName = meta?.planName || authUser?.organization?.plan?.name || "TRIAL"
+  const planCode = meta?.planCode || authUser?.organization?.plan?.code || ""
+  const downloadRestrictedReason = isFreePlan 
+    ? "Download locked on free plan." 
+    : meta?.downloadRestrictedReason || "Report downloads are available only on paid plans."
   const loading = isLoading || isFetching
   const visibleItems = customRangeError ? [] : items
   const visibleSummaryMap = customRangeError ? new Map() : summaryMap
-  const downloadDisabled = loading || Boolean(customRangeError) || downloading || downloadingExcel
+  const downloadDisabled = loading || Boolean(customRangeError) || downloading || downloadingExcel || !canDownload
   const {
     page,
     pageSize,
@@ -398,7 +404,7 @@ export default function OrgReportsPage() {
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => {
@@ -413,7 +419,7 @@ export default function OrgReportsPage() {
               Refresh
             </button>
 
-            {canDownload ? (
+            {canDownload && !isFreePlan ? (
               <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
                 <button
                   type="button"
@@ -467,33 +473,67 @@ export default function OrgReportsPage() {
                   </div>
                 )}
               </div>
-            ) : meta?.planName ? (
+            ) : (
               <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
                 <LockKeyhole size={16} />
                 Download locked on free plan.
               </div>
-            ) : null}
+            )}
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {PERIOD_OPTIONS.map((option) => {
-            const active = period === option.value
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onPeriodChange(option.value)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-wide transition ${
-                  active
-                    ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50"
-                }`}
-              >
-                {option.label}
-              </button>
-            )
-          })}
+        <div className="mt-4 flex items-center justify-start gap-4">
+          <button
+            type="button"
+            onClick={() => onPeriodChange("custom")}
+            className={`rounded-lg border px-4 py-2 text-sm font-black uppercase tracking-wide transition ${
+              period === "custom"
+                ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            }`}
+          >
+            Custom
+          </button>
+
+          <div className="relative z-40">
+            <button
+              type="button"
+              onClick={() => setShowPeriodMenu((prev) => !prev)}
+              className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-black uppercase tracking-wide transition ${
+                period !== "custom"
+                  ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              }`}
+            >
+              {period !== "custom" 
+                ? PERIOD_OPTIONS.find((o) => o.value === period)?.label || "Monthly"
+                : "Standard Periods"}
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${showPeriodMenu ? "rotate-180" : ""}`}
+              />
+            </button>
+            
+            {showPeriodMenu && (
+              <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                {PERIOD_OPTIONS.filter((o) => o.value !== "custom").map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onPeriodChange(option.value)
+                      setShowPeriodMenu(false)
+                    }}
+                    className={`flex w-full items-center justify-start px-4 py-3 text-left text-sm font-bold uppercase transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                      period === option.value ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {period === "custom" ? (

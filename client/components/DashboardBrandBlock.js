@@ -22,6 +22,7 @@ export default function DashboardBrandBlock() {
               alt="Veagle logo mark"
               width={80}
               height={80}
+              priority
               unoptimized
               className="brand-logo-mark h-full w-full object-contain"
             />

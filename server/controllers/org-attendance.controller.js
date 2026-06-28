@@ -364,7 +364,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
     rows: payload.items.map((item, index) => {
       return {
         entryNo: String(index + 1).padStart(3, "0"),
-        user: item.member?.name || "-",
+        user: item.member || "-",
         date: item.date,
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
@@ -424,7 +424,7 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
     rows: payload.items.map((item, index) => {
       return {
         entryNo: String(index + 1),
-        user: item.member?.name || "-",
+        user: item.member || "-",
         date: item.date,
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",

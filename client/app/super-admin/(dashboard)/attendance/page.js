@@ -107,6 +107,7 @@ export default function SuperAdminAttendanceReportsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [downloadError, setDownloadError] = useState("")
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const [showPeriodMenu, setShowPeriodMenu] = useState(false)
   const [showUserDownloadMenu, setShowUserDownloadMenu] = useState(false)
   const downloadMenuRef = useRef(null)
   const userDownloadMenuRef = useRef(null)
@@ -692,27 +693,62 @@ export default function SuperAdminAttendanceReportsPage() {
             <label className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               Report Period
             </label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {PERIOD_OPTIONS.map((option) => {
-                const active = period === option.value
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      onPeriodChange(option.value)
-                      setPage(1)
-                    }}
-                    className={`rounded-lg border px-3 py-2 text-xs font-black uppercase tracking-wide transition ${
-                      active
-                        ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onPeriodChange("custom")
+                  setPage(1)
+                }}
+                className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
+                  period === "custom"
+                    ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                Custom
+              </button>
+
+              <div className="relative z-40">
+                <button
+                  type="button"
+                  onClick={() => setShowPeriodMenu((prev) => !prev)}
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
+                    period !== "custom"
+                      ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {period !== "custom" 
+                    ? PERIOD_OPTIONS.find((o) => o.value === period)?.label || "Monthly"
+                    : "Standard Periods"}
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${showPeriodMenu ? "rotate-180" : ""}`}
+                  />
+                </button>
+                
+                {showPeriodMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                    {PERIOD_OPTIONS.filter((o) => o.value !== "custom").map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          onPeriodChange(option.value)
+                          setPage(1)
+                          setShowPeriodMenu(false)
+                        }}
+                        className={`flex w-full items-center justify-start px-4 py-3 text-left text-xs font-bold uppercase transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                          period === option.value ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

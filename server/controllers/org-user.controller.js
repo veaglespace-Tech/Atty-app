@@ -38,6 +38,7 @@ const { archiveUser, restoreUserFromArchive } = require("../services/archive.ser
 const { createOrganizationMembership } = require("../services/organization-member.service");
 const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
 const { buildUserHallTicketPdf } = require("../utils/user-profile-pdf");
+const { buildGenericTablePdf } = require("../utils/pdf-report");
 
 // ── Poll helpers (mirrors post.controller.js logic) ──
 const _toSafeObj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
@@ -1029,6 +1030,81 @@ exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
     success: true,
     message: "All notifications marked as read",
   });
+});
+
+exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertAnyPermission(
+    res,
+    req.user,
+    [PERMISSION_KEYS.USERS_CREATE, PERMISSION_KEYS.TEAM_VIEW],
+    orgId
+  );
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true },
+  });
+
+  const users = await prisma.user.findMany({
+    where: {
+      memberships: { some: { orgId } },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      mobileCountryCode: true,
+      role: true,
+      status: true,
+      isActive: true,
+      createdAt: true,
+    },
+    orderBy: [{ name: "asc" }],
+    take: 5000,
+  });
+
+  const orgName = organization?.name || "Organization";
+  const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+  const columns = [
+    { key: "index", label: "No.", width: 30, align: "center" },
+    { key: "name", label: "Name", width: 120 },
+    { key: "email", label: "Email", width: 140 },
+    { key: "mobile", label: "Contact No.", width: 90 },
+    { key: "role", label: "Role", width: 70 },
+    { key: "status", label: "Status", width: 60, align: "center" },
+    { key: "active", label: "Active", width: 50, align: "center" },
+    { key: "joinedAt", label: "Joined At", width: 70, align: "center" },
+  ];
+
+  const rows = users.map((user, index) => ({
+    index: index + 1,
+    name: user.name || "-",
+    email: user.email || "-",
+    mobile: user.mobile || "-",
+    role: user.role || "-",
+    status: user.status || "-",
+    active: user.isActive ? "Yes" : "No",
+    joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+  }));
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: `${orgName} — User Directory`,
+    subtitleLines: [`Organization Code: ${organization?.organizationCode || "-"}`],
+    columns,
+    rows,
+    summaryCards: [
+      { label: "Total Users", value: users.length },
+      { label: "Active Users", value: users.filter((u) => u.isActive).length },
+    ],
+  });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${safeName}-users.pdf"`);
+  res.status(200).send(pdfBuffer);
 });
 
 exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {

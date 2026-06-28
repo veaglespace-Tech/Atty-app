@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X, Download, FileBox, FileText, ChevronDown } from "lucide-react";
+import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X, Download, FileBox, FileText, ChevronDown, LockKeyhole } from "lucide-react";
 import { addNotification } from "@/store/slices/notificationSlice";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import PaginationControls from "@/components/dashboard/PaginationControls";
@@ -184,6 +184,7 @@ export default function OrgAttendancePage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
+  const isFreePlan = authUser?.organization?.plan?.code === "FREE_7D_TRIAL" || authUser?.organization?.planCode === "FREE_7D_TRIAL";
   const currentRole = authUser?.currentRole;
   const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
   const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
@@ -216,6 +217,7 @@ export default function OrgAttendancePage() {
   }, [memberSearchQuery]);
 
   const [period, setPeriod] = useState("monthly");
+  const [showPeriodMenu, setShowPeriodMenu] = useState(false);
   const [customRange, setCustomRange] = useState(getDefaultCustomRange);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [downloadError, setDownloadError] = useState("");
@@ -554,15 +556,59 @@ export default function OrgAttendancePage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={refreshData}
-            disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
-          </button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={refreshData}
+              disabled={loading}
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+              Refresh
+            </button>
+            
+            {!isFreePlan ? (
+              <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
+                <button
+                  onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                  disabled={loading || Boolean(customRangeError) || downloadingPdf || downloadingExcel}
+                  className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+                >
+                  {(downloadingPdf || downloadingExcel) ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Download size={16} />
+                  )}
+                  Export
+                  <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showDownloadMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                    <button
+                      onClick={onDownloadPdf}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                    >
+                      <FileBox size={16} />
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={onDownloadExcel}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                    >
+                      <FileText size={16} />
+                      Download Excel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 w-full sm:w-auto">
+                <LockKeyhole size={16} />
+                Download locked on free plan.
+              </div>
+            )}
+          </div>
         </div>
 
 
@@ -616,63 +662,63 @@ export default function OrgAttendancePage() {
               <label className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                 Report Period
               </label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {PERIOD_OPTIONS.map((option) => {
-                  const active = period === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        setPeriod(option.value);
-                        setPage(1);
-                      }}
-                      className={`rounded-lg border px-3 py-2 text-xs font-black uppercase tracking-wide transition ${
-                        active
-                          ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                          : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              <div className="mt-2 flex items-center justify-start gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPeriod("custom");
+                    setPage(1);
+                  }}
+                  className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
+                    period === "custom"
+                      ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  Custom
+                </button>
 
-            <div className="relative" ref={downloadMenuRef}>
-              <button
-                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                disabled={loading || Boolean(customRangeError) || downloadingPdf || downloadingExcel}
-                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto mt-2 sm:mt-0"
-              >
-                {(downloadingPdf || downloadingExcel) ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Download size={16} />
-                )}
-                Export
-                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showDownloadMenu && (
-                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                <div className="relative z-40">
                   <button
-                    onClick={onDownloadPdf}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                    type="button"
+                    onClick={() => setShowPeriodMenu((prev) => !prev)}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
+                      period !== "custom"
+                        ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    }`}
                   >
-                    <FileBox size={16} />
-                    Download PDF
+                    {period !== "custom" 
+                      ? PERIOD_OPTIONS.find((o) => o.value === period)?.label || "Monthly"
+                      : "Standard Periods"}
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform ${showPeriodMenu ? "rotate-180" : ""}`}
+                    />
                   </button>
-                  <button
-                    onClick={onDownloadExcel}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
-                  >
-                    <FileText size={16} />
-                    Download Excel
-                  </button>
+                  
+                  {showPeriodMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                      {PERIOD_OPTIONS.filter((o) => o.value !== "custom").map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setPeriod(option.value);
+                            setPage(1);
+                            setShowPeriodMenu(false);
+                          }}
+                          className={`flex w-full items-center justify-start px-4 py-3 text-left text-xs font-bold uppercase transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                            period === option.value ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
