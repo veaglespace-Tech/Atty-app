@@ -439,26 +439,9 @@ export default function TeamLeaderAttendancePage() {
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Track your team attendance logs, punch timings, and geo-validation status.
             </p>
-            {teams.length > 1 ? (
-              <div className="mt-4 max-w-xs">
-                <label className="mb-1 block text-xs font-semibold text-slate-500">Select Team</label>
-                <select
-                  className="dashboard-field-control"
-                  value={selectedTeamId || currentTeam?.id || ""}
-                  onChange={(e) => setSelectedTeamId(e.target.value)}
-                >
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Team: {meta?.teamName || "-"}
-              </p>
-            )}
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Team: {meta?.teamName || "-"}
+            </p>
           </div>
 
           <button
@@ -654,6 +637,23 @@ export default function TeamLeaderAttendancePage() {
           onSubmit={onApplyFilters}
           className="dashboard-filter-shell mt-5"
         >
+          {teams.length > 1 ? (
+            <div className="mb-3">
+              <label className="space-y-2 block max-w-xs">
+                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Team</span>
+                <select
+                  className="dashboard-field-control dashboard-select-control w-full"
+                  value={selectedTeamId || currentTeam?.id || ""}
+                  onChange={(e) => setSelectedTeamId(e.target.value)}
+                >
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
+
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_220px_180px]">
             <label className="space-y-2">
               <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
@@ -741,7 +741,7 @@ export default function TeamLeaderAttendancePage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+                  className="brand-btn brand-btn-primary brand-btn-md whitespace-nowrap w-full sm:w-auto"
                 >
                   <Filter size={16} />
                   Apply Filters
