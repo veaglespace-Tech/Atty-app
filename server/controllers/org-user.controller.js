@@ -110,6 +110,7 @@ const ensureOrgTargetUser = async ({
   res,
   targetUserId,
   allowSelf = false,
+  checkRoleScope = true,
   select = userManagementSelect,
 }) => {
   const orgId = ensureOrganizationId(req, res);
@@ -144,7 +145,9 @@ const ensureOrgTargetUser = async ({
     throw new Error("User membership not found in this organization");
   }
 
-  assertRoleScope(res, req.user, targetRole, orgId);
+  if (checkRoleScope) {
+    assertRoleScope(res, req.user, targetRole, orgId);
+  }
   return { orgId, user, membership, targetRole };
 };
 
@@ -304,6 +307,7 @@ exports.getOrgUserById = asyncHandler(async (req, res) => {
     res,
     targetUserId: req.params.userId,
     allowSelf: true,
+    checkRoleScope: false,
     select: userProfileSelect,
   });
 
@@ -338,6 +342,7 @@ exports.downloadOrgUserProfilePdf = asyncHandler(async (req, res) => {
     res,
     targetUserId: req.params.userId,
     allowSelf: true,
+    checkRoleScope: false,
     select: userProfileSelect,
   });
 
