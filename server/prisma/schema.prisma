@@ -280,6 +280,7 @@ model Plan {
 model Post {
   id           Int          @id @default(autoincrement())
   orgId        Int?
+  teamId       Int?
   authorId     Int
   title        String
   content      String       @db.Text
@@ -291,10 +292,12 @@ model Post {
   deletedAt    DateTime?
   author       User         @relation("PostAuthor", fields: [authorId], references: [id], map: "posts_authorId_fkey")
   organization Organization? @relation(fields: [orgId], references: [id], map: "posts_orgId_fkey")
+  team         Team?        @relation("PostTeam", fields: [teamId], references: [id], map: "posts_teamId_fkey")
   reads        UserNotificationRead[]
 
   @@index([authorId], map: "posts_authorId_idx")
   @@index([orgId, isActive], map: "posts_orgId_isActive_idx")
+  @@index([teamId], map: "posts_teamId_idx")
   @@index([type], map: "posts_type_idx")
   @@map("post")
 }
@@ -444,6 +447,7 @@ model Team {
   updatedAt        DateTime     @updatedAt
   deletedAt        DateTime?
   attendances      Attendance[]
+  posts            Post[]       @relation("PostTeam")
   createdBy        User         @relation("TeamCreatedBy", fields: [createdById], references: [id], map: "Team_createdById_fkey")
   leader           User?        @relation("TeamLeader", fields: [leaderId], references: [id], map: "Team_leaderId_fkey")
   organization     Organization @relation(fields: [orgId], references: [id], map: "Team_orgId_fkey")

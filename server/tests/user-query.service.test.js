@@ -32,26 +32,4 @@ describe("user management role mapping", () => {
     expect(mapUserForManagement(user, 9).role).toBe("SUB_ADMIN");
   });
 
-  it("infers team leader from team-leader permission set when membership role is member", () => {
-    const user = {
-      id: 22,
-      name: "Lead User",
-      email: "lead@example.com",
-      mobile: "+919888888888",
-      status: "APPROVED",
-      isActive: true,
-      role: "MEMBER",
-      permissions: ["TEAM_VIEW", "ATTENDANCE_VIEW", "REPORTS_VIEW"],
-      memberships: [
-        {
-          orgId: 9,
-          role: "MEMBER",
-          isActive: true,
-        },
-      ],
-    };
-
-    expect(inferManagedUserRole(user, "MEMBER", user.permissions)).toBe("TEAM_LEADER");
-    expect(mapUserForManagement(user, 9).role).toBe("TEAM_LEADER");
-  });
 });

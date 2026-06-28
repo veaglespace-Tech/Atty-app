@@ -154,9 +154,9 @@ const serializePost = (post, currentUserId) => {
 
 // @desc    Create a new post
 // @route   POST /api/posts
-// @access  Org Admin
+// @access  Org member with POST_CREATE permission
 exports.createPost = asyncHandler(async (req, res) => {
-  const { title, content, type, metadata } = req.body;
+  const { title, content, type, metadata, teamId } = req.body;
   const orgId = resolveOrganizationId(req.user);
   assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
   const normalizedType = normalizePostType(type, "NOTIFICATION");
@@ -172,6 +172,23 @@ exports.createPost = asyncHandler(async (req, res) => {
   if (!normalizedType) {
     res.status(400);
     throw new Error("Invalid post type");
+  }
+
+  // Validate teamId if provided - must belong to this org
+  let resolvedTeamId = null;
+  if (teamId) {
+    const parsedTeamId = Number(teamId);
+    if (Number.isFinite(parsedTeamId) && parsedTeamId > 0) {
+      const team = await prisma.team.findFirst({
+        where: { id: parsedTeamId, orgId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!team) {
+        res.status(404);
+        throw new Error("Team not found in this organization");
+      }
+      resolvedTeamId = parsedTeamId;
+    }
   }
 
   let nextMetadata = toSafeObject(metadata);
@@ -222,7 +239,7 @@ exports.createPost = asyncHandler(async (req, res) => {
         format: uploadResult.format,
         resourceType: uploadResult.resourceType,
         name: req.body.attachmentName || "Attachment",
-        allowDownload: req.body.attachmentAllowDownload !== false, // default true
+        allowDownload: req.body.attachmentAllowDownload !== false,
       };
     } catch (err) {
       res.status(400);
@@ -237,6 +254,7 @@ exports.createPost = asyncHandler(async (req, res) => {
       type: normalizedType,
       metadata: nextMetadata,
       orgId,
+      teamId: resolvedTeamId,
       authorId: req.user.id,
     },
     include: POST_INCLUDE,
@@ -254,14 +272,44 @@ exports.createPost = asyncHandler(async (req, res) => {
 // @access  Org Member
 exports.getOrgPosts = asyncHandler(async (req, res) => {
   const orgId = resolveOrganizationId(req.user);
+  const userId = Number(req.user.id);
   const { type, limit = 20, offset = 0 } = req.query;
   const safeLimit = parseLimit(limit, 20, 100);
   const safeOffset = parseOffset(offset, 0, 10000);
+  const userRole = resolveUserRole(req.user, orgId);
+
+  // For Team Leader and Member, show only:
+  //   - Global org-wide posts (teamId IS NULL)
+  //   - Posts scoped to a team the user is a member/leader of
+  let teamFilter = null;
+  if (userRole === "TEAM_LEADER" || userRole === "MEMBER") {
+    const userTeams = await prisma.team.findMany({
+      where: {
+        orgId,
+        deletedAt: null,
+        OR: [
+          { leaderId: userId },
+          { createdById: userId },
+          { members: { some: { userId } } },
+        ],
+      },
+      select: { id: true },
+    });
+    const teamIds = userTeams.map((t) => t.id);
+    // Show global (org-wide, no teamId) posts + posts for their teams
+    teamFilter = {
+      OR: [
+        { teamId: null },
+        { teamId: { in: teamIds } },
+      ],
+    };
+  }
 
   const where = {
     OR: [{ orgId: Number(orgId) }, { orgId: null }],
     isActive: true,
     deletedAt: null,
+    ...(teamFilter || {}),
   };
 
   if (type) {

@@ -92,9 +92,9 @@ router.patch("/users/:userId/status", updateOrgUserStatus);
 router.patch("/users/:userId/active", toggleOrgUserActive);
 router.delete("/users/:userId", deleteOrgUser);
 
-router.get("/registration-requests", allowRoles("ORG_ADMIN", "SUB_ADMIN"), getOrgRegistrationRequests);
-router.patch("/registration-requests/:id/accept", allowRoles("ORG_ADMIN", "SUB_ADMIN"), acceptRegistrationRequest);
-router.patch("/registration-requests/:id/reject", allowRoles("ORG_ADMIN", "SUB_ADMIN"), rejectRegistrationRequest);
+router.get("/registration-requests", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), getOrgRegistrationRequests);
+router.patch("/registration-requests/:id/accept", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), acceptRegistrationRequest);
+router.patch("/registration-requests/:id/reject", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), rejectRegistrationRequest);
 
 router.get("/teams", getOrgTeams);
 router.get("/teams/:teamId", getOrgTeamById);

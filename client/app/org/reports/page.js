@@ -23,6 +23,8 @@ import {
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits"
 import { getDateKey, getTodayDateKey } from "@/utils/date"
 import { formatHoursValue } from "@/utils/time"
+import { useSelector } from "react-redux"
+import { hasPermission, PERMISSIONS } from "@/utils/roles"
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
@@ -171,12 +173,14 @@ export default function OrgReportsPage() {
   const meta = data?.meta || {}
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary])
 
-  const canDownload = Boolean(meta?.canDownload) && !isFreePlan
+  const canDownload = Boolean(meta?.canDownload) && !isFreePlan && hasPermission(authUser, PERMISSIONS.REPORTS_DOWNLOAD)
   const planName = meta?.planName || authUser?.organization?.plan?.name || "TRIAL"
   const planCode = meta?.planCode || authUser?.organization?.plan?.code || ""
   const downloadRestrictedReason = isFreePlan 
     ? "Download locked on free plan." 
-    : meta?.downloadRestrictedReason || "Report downloads are available only on paid plans."
+    : !hasPermission(authUser, PERMISSIONS.REPORTS_DOWNLOAD)
+      ? "You do not have permission to download reports."
+      : (meta?.downloadRestrictedReason || "Report downloads are available only on paid plans.")
   const loading = isLoading || isFetching
   const visibleItems = customRangeError ? [] : items
   const visibleSummaryMap = customRangeError ? new Map() : summaryMap

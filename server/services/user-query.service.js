@@ -40,14 +40,7 @@ const inferManagedUserRole = (user, resolvedRole, resolvedPermissions = []) => {
     return "SUB_ADMIN";
   }
 
-  const teamLeaderDefaults = ROLE_DEFAULT_PERMISSIONS.TEAM_LEADER || [];
-  const matchesTeamLeaderRole =
-    teamLeaderDefaults.length > 0 &&
-    teamLeaderDefaults.every((permission) => permissionSet.has(permission));
 
-  if (matchesTeamLeaderRole) {
-    return "TEAM_LEADER";
-  }
 
   return "MEMBER";
 };

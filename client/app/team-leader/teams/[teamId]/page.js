@@ -20,17 +20,17 @@ import {
   X,
 } from "lucide-react";
 import {
-  useDeleteOrgTeamMutation,
-  useGetOrgTeamByIdQuery,
-  useGetOrgUsersQuery,
-  usePatchOrgTeamMutation,
-} from "@/services/api/orgApi";
+  useDeleteTeamLeaderTeamMutation,
+  useGetTeamLeaderTeamByIdQuery,
+  useGetTeamLeaderUsersQuery,
+  usePatchTeamLeaderTeamMutation,
+} from "@/services/api/teamLeaderApi";
 import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
 
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback;
 
-export default function OrgTeamDetailPage() {
+export default function TeamLeaderTeamDetailPage() {
   const params = useParams();
   const router = useRouter();
   const authUser = useSelector((state) => state.auth.user);
@@ -65,14 +65,17 @@ export default function OrgTeamDetailPage() {
     isLoading: teamLoading,
     isFetching: teamFetching,
     refetch: refetchTeam,
-  } = useGetOrgTeamByIdQuery(teamId, { skip: !Number.isFinite(teamId) || teamId <= 0 });
+  } = useGetTeamLeaderTeamByIdQuery(teamId, { skip: !Number.isFinite(teamId) || teamId <= 0 });
 
-  const { data: usersData, isLoading: usersLoading } = useGetOrgUsersQuery(500, {
-    skip: !canAssignMembers,
-  });
+  const { data: usersData, isLoading: usersLoading } = useGetTeamLeaderUsersQuery(
+    { limit: 500, assignable: true },
+    {
+      skip: !canAssignMembers,
+    }
+  );
 
-  const [patchTeamMutation] = usePatchOrgTeamMutation();
-  const [deleteTeamMutation] = useDeleteOrgTeamMutation();
+  const [patchTeamMutation] = usePatchTeamLeaderTeamMutation();
+  const [deleteTeamMutation] = useDeleteTeamLeaderTeamMutation();
 
   const team = teamData?.item || null;
   const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
@@ -343,7 +346,7 @@ export default function OrgTeamDetailPage() {
       </div>
 
       <div className="light-glow-card-static rounded-[1.7rem] p-2 mt-8">
-        <div className={`grid gap-2 sm:grid-cols-${canAssignMembers ? "3" : "1"}`}>
+        <div className={`grid gap-2 sm:grid-cols-${canAssignMembers ? "2" : "1"}`}>
           <button
             type="button"
             onClick={() => setActiveTab("DETAILS")}
@@ -356,18 +359,6 @@ export default function OrgTeamDetailPage() {
           </button>
           
           {canAssignMembers && (
-            <>
-              <button
-                type="button"
-                onClick={() => setActiveTab("LEADER")}
-                className={`brand-btn brand-btn-md justify-center rounded-[1.25rem] ${
-                  activeTab === "LEADER" ? "brand-btn-primary" : "brand-btn-secondary"
-                }`}
-              >
-                <User size={16} />
-                Team Leader
-              </button>
-              
               <button
                 type="button"
                 onClick={() => setActiveTab("MEMBERS")}
@@ -378,7 +369,6 @@ export default function OrgTeamDetailPage() {
                 <Users size={16} />
                 Team Members
               </button>
-            </>
           )}
         </div>
       </div>
@@ -445,78 +435,6 @@ export default function OrgTeamDetailPage() {
           >
             {savingBasics ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             Save Details
-          </button>
-        </div>
-        )}
-
-        {activeTab === "LEADER" && canAssignMembers && (
-        <div className="max-w-2xl space-y-6 pt-2">
-          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Leader</h3>
-
-          <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
-            <input
-              value={leaderSearch}
-              onFocus={() => setLeaderOpen(true)}
-              onChange={(event) => {
-                setLeaderOpen(true);
-                setLeaderSearch(event.target.value);
-              }}
-              placeholder="Search leader"
-              className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
-            />
-            <button
-              type="button"
-              onClick={() => setLeaderOpen((prev) => !prev)}
-              className="absolute right-2 top-2 text-slate-500"
-            >
-              {leaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-          </div>
-
-          {selectedLeader ? (
-            <div className="rounded-lg bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700">
-              Selected Leader: {selectedLeader.name}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">No leader selected</div>
-          )}
-
-          {leaderOpen ? (
-            <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1">
-              {filteredLeaders.map((leader) => {
-                const active = String(form.leaderId) === String(leader.id);
-                return (
-                  <button
-                    key={leader.id}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => toggleLeader(leader.id)}
-                    className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
-                      active
-                        ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                        : "border-slate-300 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
-                    }`}
-                  >
-                    <span>{leader.name}</span>
-                    <span className="ml-2 text-xs opacity-80">{formatRoleLabel(leader.role)}</span>
-                  </button>
-                );
-              })}
-              {filteredLeaders.length === 0 ? (
-                <p className="px-2 py-2 text-xs font-semibold text-slate-500">No leader found</p>
-              ) : null}
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={saveLeader}
-            disabled={savingLeader || teamFetching}
-            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
-          >
-            {savingLeader ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
-            Update Leader
           </button>
         </div>
         )}

@@ -411,7 +411,7 @@ exports.getOrgReports = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId)
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -452,7 +452,7 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId)
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,

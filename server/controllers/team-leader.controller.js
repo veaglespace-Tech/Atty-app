@@ -13,6 +13,7 @@ const {
   uniqueNumberList,
   todayKey,
   truncateText,
+  formatHoursValue,
 } = require("../services/common.service");
 const { assertPermission, assertRoleScope } = require("../services/access.service");
 const { normalizeCoordinatesInput } = require("../services/location.service");
@@ -33,8 +34,12 @@ const {
   userManagementSelect,
   attendanceRecordSelect,
   teamListSelect,
+  teamDetailSelect,
+  organizationSubscriptionSelect,
 } = require("../services/prisma-selects.service");
-const { assertWithinPlanTeamLimit } = require("../services/organization-plan.service");
+const { assertWithinPlanTeamLimit, isFreePlan } = require("../services/organization-plan.service");
+const { buildAttendanceDetailedPdf } = require("../utils/pdf-report");
+const xlsx = require("xlsx");
 
 const MODULES = [
   {
@@ -289,6 +294,7 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
         teamId: {
           in: accessibleTeamIds,
         },
+        date: today,
         deletedAt: null,
       },
       select: attendanceRecordSelect,
@@ -358,22 +364,85 @@ exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getTeamLeaderTeamById = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const teamId = Number(req.params.teamId);
+  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+
+  const accessibleTeamIds = await getAccessibleTeamIds({
+    orgId,
+    userId: Number(req.user.id),
+    role: resolveUserRole(req.user, orgId),
+  });
+
+  if (!accessibleTeamIds.includes(teamId)) {
+    res.status(403);
+    throw new Error("Access denied or team not found");
+  }
+
+  const fullTeam = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: teamDetailSelect,
+  });
+
+  res.status(200).json({
+    success: true,
+    item: mapTeamRecord(fullTeam, true),
+  });
+});
+
 exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  const isForAssignment = req.query.assignable === 'true';
+  
+  if (isForAssignment) {
+    assertPermission(res, req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId);
+  } else {
+    assertPermission(res, req.user, PERMISSION_KEYS.USERS_VIEW, orgId);
+  }
+
   const limit = parseLimit(req.query.limit, 500, 2000);
+  const userId = Number(req.user.id);
+
+  let whereClause = {
+    deletedAt: null,
+    isActive: true,
+    memberships: {
+      some: {
+        orgId,
+        isActive: true,
+      },
+    },
+  };
+
+  if (!isForAssignment) {
+    // Normal view: Get only teams this team leader is associated with
+    const accessibleTeamIds = await getAccessibleTeamIds({
+      orgId,
+      userId,
+      role: resolveUserRole(req.user, orgId),
+    });
+
+    if (accessibleTeamIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        items: [],
+        summary: [
+          toSummaryItem("Total Users", 0),
+          toSummaryItem("Active", 0),
+        ],
+        meta: { total: 0, limit },
+      });
+    }
+
+    whereClause.OR = [
+      { teamMemberships: { some: { teamId: { in: accessibleTeamIds } } } },
+      { teamsLed: { some: { id: { in: accessibleTeamIds }, deletedAt: null } } },
+    ];
+  }
 
   const users = await prisma.user.findMany({
-    where: {
-      memberships: {
-        some: {
-          orgId,
-          isActive: true,
-        },
-      },
-      deletedAt: null,
-      isActive: true,
-    },
+    where: whereClause,
     select: userManagementSelect,
     orderBy: [{ name: "asc" }, { createdAt: "asc" }],
     take: limit,
@@ -381,7 +450,9 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
 
   const items = users
     .map((user) => mapUserForManagement(user, orgId))
-    .filter((user) => user.role !== "SUPER_ADMIN");
+    .filter((user) => user.role !== "SUPER_ADMIN" && user.role !== "ORG_ADMIN");
+
+
   res.status(200).json({
     success: true,
     items,
@@ -797,4 +868,313 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
       teamCount: accessibleTeamIds.length,
     },
   });
+});
+
+const getReportAccessMeta = (organization = null) => {
+  const plan = organization?.plan || null;
+  const restricted = isFreePlan({
+    plan,
+    subscriptionStatus: organization?.subscriptionStatus || "",
+  });
+
+  return {
+    planName: plan?.name || "TRIAL",
+    planCode: plan?.code || "",
+    canDownload: !restricted,
+    downloadRestrictedReason: restricted
+      ? "Report downloads are available only on paid plans."
+      : "",
+  };
+};
+
+const assertReportDownloadAccess = ({ organization, res }) => {
+  const accessMeta = getReportAccessMeta(organization);
+  if (accessMeta.canDownload) return accessMeta;
+
+  res.status(403);
+  throw new Error(accessMeta.downloadRestrictedReason);
+};
+
+const resolveTeamLeaderReportRange = (req) => {
+  const to = todayKey();
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - 29);
+  const from = dateKey(fromDate);
+
+  const rangeFrom = String(req.query.from || from);
+  const rangeTo = String(req.query.to || to);
+  const period = String(req.query.period || "custom").toLowerCase();
+
+  let periodLabel = "Custom";
+  if (period === "daily") periodLabel = "Daily";
+  else if (period === "weekly") periodLabel = "Weekly";
+  else if (period === "monthly") periodLabel = "Monthly";
+
+  return {
+    from: rangeFrom,
+    to: rangeTo,
+    period,
+    periodLabel,
+  };
+};
+
+const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds }) => {
+  const records = await prisma.attendance.findMany({
+    where: {
+      orgId,
+      deletedAt: null,
+      teamId: {
+        in: teamIds,
+      },
+      date: {
+        gte: rangeFrom,
+        lte: rangeTo,
+      },
+    },
+    select: {
+      userId: true,
+      date: true,
+      punchInAt: true,
+      punchOutAt: true,
+      totalMinutesWorked: true,
+      status: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          mobileCountryCode: true,
+          mobile: true,
+        },
+      },
+    },
+    orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+  });
+
+  let presentEntries = 0;
+  let absentEntries = 0;
+  let totalWorkedMinutes = 0;
+  let totalPresentMinutes = 0;
+
+  const compareNames = (left, right) =>
+    String(left || "").trim().toLowerCase().localeCompare(String(right || "").trim().toLowerCase());
+
+  const toPdfContact = (user) => {
+    const code = String(user?.mobileCountryCode || "").trim();
+    const mobile = String(user?.mobile || "").trim();
+    if (!code && !mobile) return "-";
+    return `${code}${mobile}`;
+  };
+
+  const toPdfTime = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) return "-";
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  const sortedRecords = [...records].sort((left, right) => {
+    if (String(left.date || "") !== String(right.date || "")) {
+      return String(left.date || "").localeCompare(String(right.date || ""));
+    }
+
+    const nameComparison = compareNames(left.user?.name, right.user?.name);
+    if (nameComparison !== 0) return nameComparison;
+
+    return Number(left.userId || 0) - Number(right.userId || 0);
+  });
+
+  const rows = sortedRecords.map((record, index) => {
+    const totalMinutesWorked = Number(record.totalMinutesWorked || 0);
+    const isAbsent = String(record.status || "").toUpperCase() === "ABSENT";
+    const presentMinutes = isAbsent ? 0 : totalMinutesWorked;
+
+    if (isAbsent) absentEntries += 1;
+    else presentEntries += 1;
+
+    totalWorkedMinutes += totalMinutesWorked;
+    totalPresentMinutes += presentMinutes;
+
+    return {
+      entryNo: String(index + 1).padStart(3, "0"),
+      userId: String(record.user?.id ?? record.userId ?? "-"),
+      userName: record.user?.name || "-",
+      contact: toPdfContact(record.user),
+      email: record.user?.email || "-",
+      date: record.date || "-",
+      punchIn: toPdfTime(record.punchInAt),
+      punchOut: toPdfTime(record.punchOutAt),
+      totalHours: formatHoursValue(totalMinutesWorked, { fromMinutes: true }),
+      presentHours: formatHoursValue(presentMinutes, { fromMinutes: true }),
+      absent: isAbsent ? "YES" : "NO",
+    };
+  });
+
+  return {
+    rows,
+    summary: {
+      totalRecords: records.length,
+      presentEntries,
+      absentEntries,
+      totalWorkedMinutes,
+      totalPresentMinutes,
+    },
+  };
+};
+
+const buildAttendanceExcelBuffer = ({
+  organization,
+  periodLabel,
+  rangeFrom,
+  rangeTo,
+  summary,
+  rows,
+}) => {
+  const columns = [
+    { key: "entryNo", label: "No.", width: 42 },
+    { key: "date", label: "Date", width: 80 },
+    { key: "userId", label: "Member ID", width: 68 },
+    { key: "userName", label: "Member Name", width: 120 },
+    { key: "contact", label: "Contact", width: 92 },
+    { key: "email", label: "Email", width: 132 },
+    { key: "punchIn", label: "Punch In", width: 70 },
+    { key: "punchOut", label: "Punch Out", width: 70 },
+    { key: "totalHours", label: "Worked Hrs", width: 88 },
+    { key: "presentHours", label: "Present Hrs", width: 96 },
+    { key: "absent", label: "Is Absent", width: 64 },
+  ];
+
+  const infoLines = [
+    `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
+    `Period: ${String(periodLabel || "Report").toUpperCase()} | Range: ${rangeFrom} to ${rangeTo}`,
+    `Records: ${Number(summary?.totalRecords || 0)} | Present Entries: ${Number(summary?.presentEntries || 0)} | Absent Entries: ${Number(summary?.absentEntries || 0)}`,
+    `Worked Hrs: ${formatHoursValue(summary?.totalWorkedMinutes || 0, { fromMinutes: true })} | Present Hrs: ${formatHoursValue(summary?.totalPresentMinutes || 0, { fromMinutes: true })}`,
+  ];
+
+  const sheetData = [
+    ["ATTENDANCE REPORT"],
+    ...infoLines.map((line) => [line]),
+    [],
+    columns.map((column) => column.label),
+    ...rows.map((row) => columns.map((column) => row?.[column.key] ?? "-")),
+  ];
+
+  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
+  const lastColumnIndex = Math.max(columns.length - 1, 0);
+  const lastColumnLabel = xlsx.utils.encode_col(lastColumnIndex);
+  const headerRowNumber = infoLines.length + 3;
+
+  worksheet["!cols"] = columns.map((column) => ({
+    wch: Math.max(12, Math.round(Number(column.width || 84) / 6)),
+  }));
+  worksheet["!merges"] = Array.from({ length: infoLines.length + 1 }, (_, index) => ({
+    s: { r: index, c: 0 },
+    e: { r: index, c: lastColumnIndex },
+  }));
+  worksheet["!autofilter"] = {
+    ref: `A${headerRowNumber}:${lastColumnLabel}${headerRowNumber}`,
+  };
+
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
+  return xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+};
+
+exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId);
+  const range = resolveTeamLeaderReportRange(req);
+
+  const accessibleTeamIds = await getAccessibleTeamIds({
+    orgId,
+    userId: Number(req.user.id),
+    role: resolveUserRole(req.user, orgId),
+  });
+
+  if (accessibleTeamIds.length === 0) {
+    res.status(400);
+    throw new Error("No teams assigned to this account.");
+  }
+
+  const [organization, reportData] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: organizationSubscriptionSelect,
+    }),
+    buildTeamLeaderPdfReportData({
+      orgId,
+      rangeFrom: range.from,
+      rangeTo: range.to,
+      teamIds: accessibleTeamIds,
+    }),
+  ]);
+
+  assertReportDownloadAccess({ organization, res });
+
+  const pdfBuffer = await buildAttendanceDetailedPdf({
+    organizationName: organization?.name || "Organization",
+    organizationCode: organization?.organizationCode || "",
+    periodLabel: String(range.periodLabel || "Report").toUpperCase(),
+    rangeFrom: range.from,
+    rangeTo: range.to,
+    summary: reportData.summary,
+    rows: reportData.rows,
+  });
+
+  const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-attendance-report-${safePeriod}-${range.from}-to-${range.to}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId);
+  const range = resolveTeamLeaderReportRange(req);
+
+  const accessibleTeamIds = await getAccessibleTeamIds({
+    orgId,
+    userId: Number(req.user.id),
+    role: resolveUserRole(req.user, orgId),
+  });
+
+  if (accessibleTeamIds.length === 0) {
+    res.status(400);
+    throw new Error("No teams assigned to this account.");
+  }
+
+  const [organization, reportData] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: organizationSubscriptionSelect,
+    }),
+    buildTeamLeaderPdfReportData({
+      orgId,
+      rangeFrom: range.from,
+      rangeTo: range.to,
+      teamIds: accessibleTeamIds,
+    }),
+  ]);
+
+  assertReportDownloadAccess({ organization, res });
+
+  const excelBuffer = buildAttendanceExcelBuffer({
+    organization,
+    periodLabel: range.periodLabel,
+    rangeFrom: range.from,
+    rangeTo: range.to,
+    summary: reportData.summary,
+    rows: reportData.rows,
+  });
+
+  const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-attendance-report-${safePeriod}-${range.from}-to-${range.to}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+  res.status(200).send(excelBuffer);
 });

@@ -115,7 +115,7 @@ export default function OrgTeamsPage() {
     () =>
       users.filter((user) => {
         const role = normalizeRole(user.role);
-        return [ROLES.MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN].includes(role) && user.active;
+        return [ROLES.MEMBER].includes(role) && user.active;
       }),
     [users]
   );

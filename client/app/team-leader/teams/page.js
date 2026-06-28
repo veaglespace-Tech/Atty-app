@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   ChevronDown,
@@ -93,6 +95,7 @@ const detectLocation = () =>
   });
 
 export default function TeamLeaderTeamsPage() {
+  const router = useRouter();
   const authUser = useSelector((state) => state.auth.user);
   const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM_CREATE);
   const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
@@ -104,15 +107,14 @@ export default function TeamLeaderTeamsPage() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [leaderSearch, setLeaderSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
-  const [leaderOpen, setLeaderOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
     description: "",
     attendanceRadius: "",
-    leaderId: "",
+    leaderId: authUser?.id ? String(authUser.id) : "",
     memberIds: [],
     longitude: "",
     latitude: "",
@@ -130,7 +132,7 @@ export default function TeamLeaderTeamsPage() {
     isLoading: usersLoading,
     isFetching: usersFetching,
     refetch: refetchUsers,
-  } = useGetTeamLeaderUsersQuery(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_USERS, {
+  } = useGetTeamLeaderUsersQuery({ limit: DASHBOARD_FETCH_LIMITS.TEAM_LEADER_USERS, assignable: true }, {
     skip: !(canCreateTeams && canAssignMembers),
   });
 
@@ -143,36 +145,15 @@ export default function TeamLeaderTeamsPage() {
 
   const loading = teamsLoading || teamsFetching || usersLoading || usersFetching;
 
-  const leaderOptions = useMemo(
-    () =>
-      users.filter((user) =>
-        [ROLES.TEAM_LEADER, ROLES.SUB_ADMIN, ROLES.ORG_ADMIN].includes(normalizeRole(user.role))
-      ),
-    [users]
-  );
-
   const memberOptions = useMemo(
     () =>
       users.filter(
         (user) =>
-          [ROLES.MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN].includes(normalizeRole(user.role)) &&
+          [ROLES.MEMBER].includes(normalizeRole(user.role)) &&
           user.active
       ),
     [users]
   );
-
-  const filteredLeaders = useMemo(() => {
-    const query = leaderSearch.trim().toLowerCase();
-    return leaderOptions.filter((user) => {
-      if (String(user.id) === String(form.leaderId)) return false;
-      if (!query) return true;
-
-      return (
-        String(user.name || "").toLowerCase().includes(query) ||
-        String(user.email || "").toLowerCase().includes(query)
-      );
-    });
-  }, [form.leaderId, leaderOptions, leaderSearch]);
 
   const filteredMembers = useMemo(() => {
     const query = memberSearch.trim().toLowerCase();
@@ -187,11 +168,6 @@ export default function TeamLeaderTeamsPage() {
       );
     });
   }, [form.memberIds, memberOptions, memberSearch]);
-
-  const selectedLeader = useMemo(
-    () => leaderOptions.find((user) => String(user.id) === String(form.leaderId)) || null,
-    [form.leaderId, leaderOptions]
-  );
 
   const selectedMembers = useMemo(
     () => memberOptions.filter((user) => form.memberIds.includes(String(user.id))),
@@ -232,14 +208,7 @@ export default function TeamLeaderTeamsPage() {
     setForm((prev) => ({ ...prev, [event.target.name]: value }));
   };
 
-  const toggleLeader = (leaderId) => {
-    const id = String(leaderId);
-    setForm((prev) => ({
-      ...prev,
-      leaderId: String(prev.leaderId) === id ? "" : id,
-    }));
-    setLeaderSearch("");
-  };
+
 
   const addMember = (memberId) => {
     const id = String(memberId);
@@ -264,14 +233,12 @@ export default function TeamLeaderTeamsPage() {
       name: "",
       description: "",
       attendanceRadius: "",
-      leaderId: "",
+      leaderId: authUser?.id ? String(authUser.id) : "",
       memberIds: [],
       longitude: "",
       latitude: "",
     });
-    setLeaderSearch("");
     setMemberSearch("");
-    setLeaderOpen(false);
     setMemberOpen(false);
   };
 
@@ -339,6 +306,7 @@ export default function TeamLeaderTeamsPage() {
 
       setMessage(response?.message || "Team created successfully");
       resetForm();
+      setIsFormOpen(false);
       await fetchData();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to create team"));
@@ -416,16 +384,26 @@ export default function TeamLeaderTeamsPage() {
               Manage teams, assign members, and control team geofence based on your granted permissions.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={fetchData}
-            disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
-          </button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+            {canCreateTeams ? (
+              <button
+                type="button"
+                onClick={() => setIsFormOpen((prev) => !prev)}
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+              >
+                Create Team
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={fetchData}
+              disabled={loading}
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+              Refresh
+            </button>
+          </div>
         </div>
 
         {error ? (
@@ -437,8 +415,17 @@ export default function TeamLeaderTeamsPage() {
         ) : null}
       </div>
 
+      {isFormOpen ? (
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create Team</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Create Team</h3>
+          <button
+            onClick={() => setIsFormOpen(false)}
+            className="brand-btn brand-btn-secondary brand-btn-sm"
+          >
+            Close
+          </button>
+        </div>
         {!canCreateTeams ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
             You do not have permission to create teams.
@@ -481,79 +468,17 @@ export default function TeamLeaderTeamsPage() {
             <>
               <div className="dashboard-filter-shell">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-600">Team Leader</p>
-                <div className="relative mt-2">
-                  <Search size={14} className={selectorSearchIconClassName} />
-                  <input
-                    value={leaderSearch}
-                    onFocus={() => setLeaderOpen(true)}
-                    onChange={(event) => {
-                      setLeaderOpen(true);
-                      setLeaderSearch(event.target.value);
-                    }}
-                    placeholder="Search leader"
-                    className={selectorSearchFieldClassName}
-                    disabled={!canCreateTeams}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setLeaderOpen((prev) => !prev)}
-                    className={selectorSearchToggleClassName}
-                    disabled={!canCreateTeams}
-                  >
-                    {leaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                </div>
-
                 <div className={selectorSummaryClassName}>
-                  <p className={selectorSummaryLabelClassName}>Selected Leader</p>
                   <p className={selectorSummaryValueClassName}>
-                    {selectedLeader ? "1 leader" : "0 leaders"}
+                    1 leader
                   </p>
-
-                  {selectedLeader ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <button
-                        key={`selected-${selectedLeader.id}`}
-                        type="button"
-                        onClick={() => toggleLeader(selectedLeader.id)}
-                        className={selectorChipClassName}
-                      >
-                        {selectedLeader.name}
-                        <X size={12} />
-                      </button>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <div className={selectorChipClassName}>
+                      {authUser?.name || "You"}
                     </div>
-                  ) : (
-                    <p className={selectorSummaryHelperClassName}>No leader selected</p>
-                  )}
-                </div>
-
-                {leaderOpen ? (
-                  <div className="dashboard-dropdown-menu mt-2 max-h-40 space-y-1 overflow-auto p-1 pr-1">
-                    {filteredLeaders.map((leader) => {
-                      const active = String(form.leaderId) === String(leader.id);
-
-                      return (
-                        <button
-                          key={leader.id}
-                          type="button"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => toggleLeader(leader.id)}
-                          className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
-                            active
-                              ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                              : "border-slate-300 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
-                          }`}
-                        >
-                          <span>{leader.name}</span>
-                          <span className="ml-2 text-xs opacity-80">{formatRoleLabel(leader.role)}</span>
-                        </button>
-                      );
-                    })}
-                    {filteredLeaders.length === 0 ? (
-                      <p className="px-2 py-2 text-xs font-semibold text-slate-500">No leader found</p>
-                    ) : null}
                   </div>
-                ) : null}
+                  <p className={selectorSummaryHelperClassName}>You are automatically assigned as the team leader.</p>
+                </div>
               </div>
 
               <div className="dashboard-filter-shell">
@@ -687,6 +612,7 @@ export default function TeamLeaderTeamsPage() {
           </div>
         </form>
       </div>
+      ) : null}
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Directory</h3>
@@ -711,11 +637,14 @@ export default function TeamLeaderTeamsPage() {
                 return (
                   <article
                     key={`mobile-${team.id}`}
-                  className="dashboard-mobile-record-card"
+                    className="dashboard-mobile-record-card cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => router.push(`/team-leader/teams/${team.id}`)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h4 className="truncate text-base font-black text-slate-900">{team.name}</h4>
+                        <Link href={`/team-leader/teams/${team.id}`} onClick={(e) => e.stopPropagation()} className="truncate text-base font-black text-blue-600 hover:underline block">
+                          {team.name}
+                        </Link>
                         <p className="mt-1 text-xs text-slate-500">
                           Leader: {team.leaderName || "Unassigned"}
                         </p>
@@ -740,20 +669,20 @@ export default function TeamLeaderTeamsPage() {
                       <ActionButton
                         label={team.isActive ? "Deactivate" : "Activate"}
                         icon={<ShieldAlert size={14} />}
-                        onClick={() => toggleTeamActive(team)}
+                        onClick={(e) => { e.stopPropagation(); toggleTeamActive(team); }}
                         disabled={busy || !canUpdateTeams}
                         tone={team.isActive ? "danger" : "default"}
                       />
                       <ActionButton
                         label="Set Geo"
                         icon={<LocateFixed size={14} />}
-                        onClick={() => setTeamLocationFromCurrent(team)}
+                        onClick={(e) => { e.stopPropagation(); setTeamLocationFromCurrent(team); }}
                         disabled={busy || !canManageAttendance}
                       />
                       <ActionButton
                         label="Delete"
                         icon={<Trash2 size={14} />}
-                        onClick={() => deleteTeam(team)}
+                        onClick={(e) => { e.stopPropagation(); deleteTeam(team); }}
                         disabled={busy || !canDeleteTeams}
                         tone="danger"
                       />
@@ -783,8 +712,16 @@ export default function TeamLeaderTeamsPage() {
                     const busy = actionTeamId === team.id;
 
                     return (
-                      <tr key={team.id}>
-                        <td className="px-3 py-2 font-semibold text-slate-900">{team.name}</td>
+                      <tr 
+                        key={team.id}
+                        className="cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() => router.push(`/team-leader/teams/${team.id}`)}
+                      >
+                        <td className="px-3 py-2 font-semibold">
+                          <Link href={`/team-leader/teams/${team.id}`} onClick={(e) => e.stopPropagation()} className="text-blue-600 hover:underline">
+                            {team.name}
+                          </Link>
+                        </td>
                         <td className="px-3 py-2 text-slate-700">{team.leaderName || "Unassigned"}</td>
                         <td className="px-3 py-2 text-slate-700">{team.memberCount}</td>
                         <td className="px-3 py-2 text-slate-700">{team.attendanceRadius}</td>
@@ -796,20 +733,20 @@ export default function TeamLeaderTeamsPage() {
                             <ActionButton
                               label={team.isActive ? "Deactivate" : "Activate"}
                               icon={<ShieldAlert size={14} />}
-                              onClick={() => toggleTeamActive(team)}
+                              onClick={(e) => { e.stopPropagation(); toggleTeamActive(team); }}
                               disabled={busy || !canUpdateTeams}
                               tone={team.isActive ? "danger" : "default"}
                             />
                             <ActionButton
                               label="Set Geo"
                               icon={<LocateFixed size={14} />}
-                              onClick={() => setTeamLocationFromCurrent(team)}
+                              onClick={(e) => { e.stopPropagation(); setTeamLocationFromCurrent(team); }}
                               disabled={busy || !canManageAttendance}
                             />
                             <ActionButton
                               label="Delete"
                               icon={<Trash2 size={14} />}
-                              onClick={() => deleteTeam(team)}
+                              onClick={(e) => { e.stopPropagation(); deleteTeam(team); }}
                               disabled={busy || !canDeleteTeams}
                               tone="danger"
                             />

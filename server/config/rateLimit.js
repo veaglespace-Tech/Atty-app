@@ -5,7 +5,7 @@ const runtimeEnv = ensureEnv();
 
 const apiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 120,
+  max: 1200,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
