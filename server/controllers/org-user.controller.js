@@ -138,7 +138,7 @@ const ensureOrgTargetUser = async ({
   }
 
   const membership = resolveMembership(user, orgId);
-  const targetRole = resolveUserRole(user, orgId);
+  const targetRole = resolveUserRole(user, orgId) || membership?.role;
 
   if (!membership || !targetRole) {
     res.status(404);
@@ -284,9 +284,17 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
     take: limit,
   });
 
+  const requesterRole = resolveUserRole(req.user, orgId);
+
   const items = users
     .map((user) => mapUserForManagement(user, orgId))
-    .filter((user) => user.role !== "SUPER_ADMIN");
+    .filter((user) => {
+      if (user.role === "SUPER_ADMIN") return false;
+      if (requesterRole === "SUB_ADMIN") {
+        return user.role === "MEMBER" || user.role === "TEAM_LEADER";
+      }
+      return true;
+    });
 
   res.status(200).json({
     success: true,

@@ -301,15 +301,15 @@ export default function TeamLeaderUsersPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
               >
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                 {submitting ? "Creating..." : "Create User"}
               </button>
               <button
                 type="button"
                 onClick={() => { setCreateOpen(false); resetForm(); setError(""); }}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="brand-btn brand-btn-outline brand-btn-md w-full sm:w-auto"
               >
                 Cancel
               </button>

@@ -160,13 +160,7 @@ export const PERMISSION_GROUPS = Object.freeze([
 
 export const ASSIGNABLE_PERMISSIONS_BY_ROLE = Object.freeze({
   [ROLES.ORG_ADMIN]: ALL_PERMISSIONS,
-  [ROLES.SUB_ADMIN]: Object.freeze([
-    PERMISSIONS.TEAM_VIEW,
-    PERMISSIONS.ATTENDANCE_VIEW,
-    PERMISSIONS.REPORTS_VIEW,
-    PERMISSIONS.LOCATION_SET,
-    PERMISSIONS.POST_CREATE,
-  ]),
+  [ROLES.SUB_ADMIN]: ALL_PERMISSIONS,
   [ROLES.TEAM_LEADER]: Object.freeze([]),
   [ROLES.MEMBER]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: ALL_PERMISSIONS,
@@ -311,7 +305,11 @@ export const getManagedRoleOptions = (actorRole) => {
   }
 
   if (normalizedActorRole === ROLES.SUB_ADMIN) {
-    return ORG_MANAGED_ROLE_OPTIONS.filter((option) => option.value === ROLES.MEMBER);
+    return ORG_MANAGED_ROLE_OPTIONS.filter(
+      (option) =>
+        option.value === ROLES.MEMBER ||
+        option.value === ROLES.TEAM_LEADER
+    );
   }
 
   return ORG_MANAGED_ROLE_OPTIONS.filter((option) => option.value === ROLES.MEMBER);
