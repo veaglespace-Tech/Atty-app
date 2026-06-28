@@ -47,6 +47,12 @@ jobs:
 
             npm install
 
+            # run DB migrations
+            echo "===== RUNNING DB MIGRATIONS ====="
+            npx prisma migrate deploy
+            npx prisma generate
+            echo "===== MIGRATIONS DONE ====="
+
             # restart backend
             NODE_ENV=production pm2 restart attendee-server --update-env || NODE_ENV=production pm2 start npm --name "attendee-server" -- start
 
