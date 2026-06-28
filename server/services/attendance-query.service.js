@@ -472,6 +472,7 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
             email: u.email,
           },
           role: resolveUserRole(u, orgId) || 'MEMBER',
+          member: u.name,
           status: 'ABSENT',
           punchInAt: null,
           punchOutAt: null,
@@ -503,7 +504,9 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
   const combined = [...finalItems, ...absentItems];
   combined.sort((a, b) => {
     if (a.date !== b.date) return b.date.localeCompare(a.date);
-    return (a.user.name || '').localeCompare(b.user.name || '');
+    const nameA = a.member || a.user?.name || '';
+    const nameB = b.member || b.user?.name || '';
+    return nameA.localeCompare(nameB);
   });
 
   return combined;
