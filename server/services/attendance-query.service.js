@@ -422,7 +422,7 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
 
   const usersWhere = { orgId, deletedAt: null };
   if (teamIds && teamIds.length > 0) {
-    usersWhere.teamMembers = { some: { teamId: { in: teamIds.map(Number) } } };
+    usersWhere.teamMemberships = { some: { teamId: { in: teamIds.map(Number) } } };
   }
 
   const users = await prisma.user.findMany({
@@ -436,7 +436,7 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
         where: { orgId },
         select: { role: true }
       },
-      teamMembers: {
+      teamMemberships: {
         where: teamIds && teamIds.length > 0 ? { teamId: { in: teamIds.map(Number) } } : undefined,
         select: { team: { select: { id: true, name: true } } },
         take: 1
@@ -459,7 +459,7 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
   for (const d of dates) {
     for (const u of users) {
       if (!existingMap.has(u.id + '_' + d)) {
-        const team = u.teamMembers[0]?.team;
+        const team = u.teamMemberships[0]?.team;
         absentItems.push({
           id: 'absent_' + u.id + '_' + d,
           date: d,

@@ -45,7 +45,8 @@ export const teamLeaderApi = createApi({
       query: (arg) => {
         const limit = typeof arg === "object" ? (arg.limit || 1600) : (arg || 1600);
         const assignable = typeof arg === "object" ? !!arg.assignable : false;
-        return `/team-leader/users?limit=${limit}&assignable=${assignable}`;
+        const teamId = typeof arg === "object" && arg.teamId ? arg.teamId : "";
+        return `/team-leader/users?limit=${limit}&assignable=${assignable}${teamId ? `&teamId=${teamId}` : ""}`;
       },
       providesTags: ["TLUsers"],
     }),
