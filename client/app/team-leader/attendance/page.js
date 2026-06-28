@@ -173,7 +173,7 @@ export default function TeamLeaderAttendancePage() {
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
   const showSelfAttendance = normalizeRole(currentRole) === ROLES.TEAM_LEADER;
-  const canManageAttendanceSettings = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
+  const canManageAttendanceSettings = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
 
   const geoPermissionMessage = useMemo(() => {
     switch (geoPermissionState) {
@@ -396,7 +396,7 @@ export default function TeamLeaderAttendancePage() {
       return;
     }
     if (!canManageAttendanceSettings) {
-      setSettingsError("Admin permission is required to manage team attendance settings.");
+      setSettingsError("Permission is required to manage team location settings.");
       return;
     }
 

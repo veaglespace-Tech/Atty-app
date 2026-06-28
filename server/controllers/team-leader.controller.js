@@ -129,6 +129,7 @@ const getTeamPatchPermissionState = (req, orgId) => {
     body?.attendanceRadius !== undefined || Boolean(normalizeCoordinatesInput(body));
   const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE, orgId);
   const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE, orgId);
+  const canSetLocation = hasPermission(req.user, PERMISSION_KEYS.LOCATION_SET, orgId);
 
   return {
     canUpdateTeam,
@@ -136,7 +137,7 @@ const getTeamPatchPermissionState = (req, orgId) => {
     hasLeaderId,
     canPatchAttendanceOnly:
       !canUpdateTeam &&
-      canManageAttendance &&
+      (canManageAttendance || canSetLocation) &&
       hasAttendanceFields &&
       !hasBasicTeamFields &&
       !hasMemberIds &&
