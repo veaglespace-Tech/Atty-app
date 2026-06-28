@@ -23,7 +23,7 @@ import {
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits"
 import { getDateKey, getTodayDateKey } from "@/utils/date"
 import { formatHoursValue } from "@/utils/time"
-import { useSelector } from "react-redux"
+
 import { hasPermission, PERMISSIONS } from "@/utils/roles"
 
 const PERIOD_OPTIONS = [
