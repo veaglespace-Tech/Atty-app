@@ -18,6 +18,7 @@ import {
   useDownloadTeamLeaderReportsPdfMutation,
   useGetTeamLeaderReportsQuery,
   useGetTeamLeaderAttendanceQuery,
+  useGetTeamLeaderTeamsQuery,
 } from "@/services/api/teamLeaderApi"
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits"
 import { getDateKey, getTodayDateKey } from "@/utils/date"
@@ -63,7 +64,7 @@ const getDefaultCustomRange = () => ({
   to: todayKey(),
 })
 
-const toQueryString = ({ period, from, to }) => {
+const toQueryString = ({ period, from, to, teamId }) => {
   const params = new URLSearchParams({
     period,
   })
@@ -71,6 +72,10 @@ const toQueryString = ({ period, from, to }) => {
   if (period === "custom") {
     if (from) params.set("from", from)
     if (to) params.set("to", to)
+  }
+  
+  if (teamId) {
+    params.set("teamId", teamId)
   }
 
   return params.toString()
@@ -106,6 +111,12 @@ export default function TeamLeaderReportsPage() {
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const downloadMenuRef = useRef(null)
   const [selectedMemberReport, setSelectedMemberReport] = useState(null)
+  const [selectedTeamId, setSelectedTeamId] = useState("")
+
+  const { data: teamsData, isLoading: teamsLoading } = useGetTeamLeaderTeamsQuery(
+    "limit=50"
+  )
+  const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData])
 
   const { data: attendanceData, isLoading: attendanceLoading } = useGetTeamLeaderAttendanceQuery("limit=2000", {
     skip: !selectedMemberReport,
@@ -146,8 +157,9 @@ export default function TeamLeaderReportsPage() {
         period,
         from: customRange.from,
         to: customRange.to,
+        teamId: selectedTeamId,
       }),
-    [customRange.from, customRange.to, period]
+    [customRange.from, customRange.to, period, selectedTeamId]
   )
 
   const {
@@ -481,24 +493,45 @@ export default function TeamLeaderReportsPage() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {PERIOD_OPTIONS.map((option) => {
-            const active = period === option.value
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onPeriodChange(option.value)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-wide transition ${
-                  active
-                    ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
-                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50"
-                }`}
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap gap-2">
+            {PERIOD_OPTIONS.map((option) => {
+              const active = period === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onPeriodChange(option.value)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-wide transition ${
+                    active
+                      ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+          
+          {teams.length > 0 && (
+            <div className="sm:ml-auto shrink-0 w-full sm:w-64">
+              <select
+                className="dashboard-field-control dashboard-select-control w-full text-sm"
+                value={selectedTeamId}
+                onChange={(e) => {
+                  setSelectedTeamId(e.target.value)
+                  setDownloadError("")
+                  setShowDownloadMenu(false)
+                }}
               >
-                {option.label}
-              </button>
-            )
-          })}
+                <option value="">All My Teams</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {period === "custom" ? (

@@ -491,6 +491,18 @@ export default function TeamLeaderAttendancePage() {
         ) : null}
 
         <form onSubmit={saveSettings} className="mt-4 grid gap-3 md:grid-cols-2">
+          {teams.length > 1 ? (
+            <select
+              className="dashboard-field-control w-full"
+              value={selectedTeamId || currentTeam?.id || ""}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              disabled={!canManageAttendanceSettings}
+            >
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          ) : null}
           <input
             name="attendanceRadius"
             type="number"
