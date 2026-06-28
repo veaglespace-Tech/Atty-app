@@ -25,7 +25,7 @@ export default function PasswordInput({
       <input
         {...props}
         type={visible ? "text" : "password"}
-        className={`${className} pr-12`}
+        className={`${className} ${Icon ? "pl-11" : ""} pr-12`}
       />
 
       <button
