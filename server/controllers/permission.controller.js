@@ -1,20 +1,26 @@
 const asyncHandler = require("express-async-handler");
-const prisma = require("../lib/prisma");
-const { ensureRbacCatalogReady } = require("../services/rbac-bootstrap.service");
+const { PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS } = require("../constants/permissions");
+
+const toPermissionName = (key) =>
+  String(key || "")
+    .split("_")
+    .map((segment) => segment.charAt(0) + segment.slice(1).toLowerCase())
+    .join(" ");
+
+const DEFAULT_PERMISSION_DEFINITIONS = Object.values(PERMISSION_KEYS).map((key) => ({
+  id: key,
+  key,
+  name: toPermissionName(key),
+  description: `Permission to ${String(key).toLowerCase().replace(/_/g, " ")}`,
+}));
 
 // @desc    Get all permissions
 // @route   GET /api/super-admin/permissions
 // @access  SuperAdmin
 exports.getPermissions = asyncHandler(async (req, res) => {
-  await ensureRbacCatalogReady();
-
-  const permissions = await prisma.permission.findMany({
-    orderBy: { key: "asc" },
-  });
-
   res.status(200).json({
     success: true,
-    items: permissions,
+    items: DEFAULT_PERMISSION_DEFINITIONS,
   });
 });
 
@@ -22,96 +28,36 @@ exports.getPermissions = asyncHandler(async (req, res) => {
 // @route   POST /api/super-admin/permissions
 // @access  SuperAdmin
 exports.createPermission = asyncHandler(async (req, res) => {
-  const { key, name, description } = req.body;
-
-  if (!key || !name) {
-    res.status(400);
-    throw new Error("Key and Name are required");
-  }
-
-  const normalizedKey = String(key).toUpperCase().trim().replace(/[\s-]+/g, "_");
-
-  const existing = await prisma.permission.findUnique({
-    where: { key: normalizedKey },
-  });
-
-  if (existing) {
-    res.status(400);
-    throw new Error("Permission key already exists");
-  }
-
-  const permission = await prisma.permission.create({
-    data: {
-      key: normalizedKey,
-      name: name.trim(),
-      description: description || "",
-    },
-  });
-
-  res.status(201).json({
-    success: true,
-    message: "Permission created successfully",
-    item: permission,
-  });
+  res.status(400);
+  throw new Error("Permissions are statically defined and cannot be modified.");
 });
 
 // @desc    Update permission
 // @route   PATCH /api/super-admin/permissions/:id
 // @access  SuperAdmin
 exports.updatePermission = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { name, description } = req.body;
-
-  const permission = await prisma.permission.update({
-    where: { id: Number(id) },
-    data: {
-      name: name?.trim(),
-      description: description?.trim(),
-    },
-  });
-
-  res.status(200).json({
-    success: true,
-    message: "Permission updated successfully",
-    item: permission,
-  });
+  res.status(400);
+  throw new Error("Permissions are statically defined and cannot be modified.");
 });
 
 // @desc    Delete permission
 // @route   DELETE /api/super-admin/permissions/:id
 // @access  SuperAdmin
 exports.deletePermission = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
-  await prisma.permission.delete({
-    where: { id: Number(id) },
-  });
-
-  res.status(200).json({
-    success: true,
-    message: "Permission deleted successfully",
-  });
+  res.status(400);
+  throw new Error("Permissions are statically defined and cannot be modified.");
 });
 
 // @desc    Get all role permissions
 // @route   GET /api/super-admin/roles/permissions
 // @access  SuperAdmin
 exports.getRolePermissions = asyncHandler(async (req, res) => {
-  await ensureRbacCatalogReady();
-
-  const rolePermissions = await prisma.rolePermission.findMany({
-    include: {
-      permission: true,
-    },
-  });
-
-  // Group by role
   const roles = ["SUPER_ADMIN", "ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"];
   const mapping = roles.map((role) => ({
     role,
-    permissions: rolePermissions
-      .filter((rp) => rp.role === role)
-      .map((rp) => rp.permission),
+    permissions: (ROLE_DEFAULT_PERMISSIONS[role] || []).map(key => 
+      DEFAULT_PERMISSION_DEFINITIONS.find(p => p.key === key)
+    ).filter(Boolean),
   }));
 
   res.status(200).json({
@@ -124,32 +70,6 @@ exports.getRolePermissions = asyncHandler(async (req, res) => {
 // @route   POST /api/super-admin/roles/permissions
 // @access  SuperAdmin
 exports.updateRolePermissions = asyncHandler(async (req, res) => {
-  const { role, permissionIds } = req.body;
-
-  if (!role || !Array.isArray(permissionIds)) {
-    res.status(400);
-    throw new Error("Role and permissionIds array are required");
-  }
-
-  await prisma.$transaction(async (tx) => {
-    // 1. Delete existing mappings for this role
-    await tx.rolePermission.deleteMany({
-      where: { role },
-    });
-
-    // 2. Create new mappings
-    if (permissionIds.length > 0) {
-      await tx.rolePermission.createMany({
-        data: permissionIds.map((pId) => ({
-          role,
-          permissionId: Number(pId),
-        })),
-      });
-    }
-  });
-
-  res.status(200).json({
-    success: true,
-    message: `Permissions updated for ${role}`,
-  });
+  res.status(400);
+  throw new Error("Role permissions are statically defined and cannot be modified.");
 });
