@@ -446,7 +446,9 @@ const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, ex
 
   const existingMap = new Set();
   for (const item of existingItems) {
-    existingMap.add(item.user.id + '_' + item.date);
+    // use memberId (mapped field) instead of item.user.id which doesn't exist after mapping
+    const uid = item.memberId ?? item.userId ?? item.user?.id;
+    existingMap.add(uid + '_' + item.date);
   }
 
   const absentItems = [];
