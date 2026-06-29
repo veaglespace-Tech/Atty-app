@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE `registration_lead` (
+CREATE TABLE IF NOT EXISTS `registration_lead` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `organizationName` VARCHAR(191) NOT NULL,
     `organizationEmail` VARCHAR(191) NOT NULL,

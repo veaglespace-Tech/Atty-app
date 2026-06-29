@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE `email_sender_usage` (
+CREATE TABLE IF NOT EXISTS `email_sender_usage` (
     `usageDate` DATE NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `sentCount` INTEGER NOT NULL DEFAULT 0,
