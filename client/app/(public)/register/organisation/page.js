@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -109,7 +110,7 @@ const emailFieldProps = {
   spellCheck: false,
 };
 
-export default function OrganisationForm() {
+function OrganisationFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const partnerRef = searchParams.get("partnerRef");
@@ -275,6 +276,14 @@ export default function OrganisationForm() {
         </div>
       </form>
     </RegisterFlowShell>
+  );
+}
+
+export default function OrganisationForm() {
+  return (
+    <Suspense fallback={null}>
+      <OrganisationFormContent />
+    </Suspense>
   );
 }
 
