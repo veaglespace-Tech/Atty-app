@@ -148,7 +148,7 @@ export default function BackupPage() {
               id="generate-backup-btn"
               onClick={handleBackup}
               disabled={isLoading}
-              className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 py-4 font-bold text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(59,130,246,0.45)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 py-4 px-6 font-bold text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(59,130,246,0.45)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
               {isLoading ? (
@@ -159,7 +159,7 @@ export default function BackupPage() {
               ) : (
                 <>
                   <Download size={20} className="shrink-0" />
-                  <span className="text-center">Generate &amp; Download Backup</span>
+                  <span className="text-center px-2">Generate &amp; Download Backup</span>
                 </>
               )}
             </button>

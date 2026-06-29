@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -797,7 +798,14 @@ const getHeroDescription = ({ description, isDashboardEndpoint, isSuperAdminEndp
 const TeamLeaderLiveLocationButton = dynamic(() => import("@/components/saas/TeamLeaderLiveLocationButton"));
 
 function RecordDetailsModal({ record, onClose }) {
-  if (!record) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted || !record) return null;
 
   const isAttendance =
     "status" in record &&
@@ -856,12 +864,12 @@ function RecordDetailsModal({ record, onClose }) {
     return "-";
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 p-6 sm:p-7 text-left">
-        <div className="brand-metric-glow" />
-        <div className="relative flex flex-col max-h-[85vh]">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 pt-16 sm:p-6 sm:pt-24 lg:pl-80 lg:pt-32">
+      <div className="fixed inset-0 bg-slate-900/70 transition-opacity" onClick={onClose} />
+      <div className="relative w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden rounded-[24px] border border-slate-200/60 bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] dark:border-slate-800/80 dark:bg-[#0B1120] transition-all">
+        <div className="brand-metric-glow absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none" />
+        <div className="relative flex flex-col h-full p-6 sm:p-7 text-left">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-800/60">
             <div>
@@ -1015,6 +1023,8 @@ function RecordDetailsModal({ record, onClose }) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 export function DashboardRecordsSection({
@@ -1419,7 +1429,7 @@ export default function DataPanelPage({
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel relative overflow-hidden rounded-[2rem] p-6 lg:p-7">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.14),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
-        <div className="relative">
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <SectionEyebrow className="mobile-hide-chip border-blue-200/80 bg-white/88 px-3 py-1 text-[11px] text-blue-700 shadow-[0_14px_34px_rgba(59,130,246,0.10)] dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
               {heroKicker}
@@ -1431,37 +1441,39 @@ export default function DataPanelPage({
               {heroDescription}
             </p>
           </div>
-        </div>
 
-        <div className="relative mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          {isDashboardEndpoint && currentRole === "TEAM_LEADER" ? (
-            <TeamLeaderLiveLocationButton
-              teamId={payload.meta?.teamId}
-              disabled={loading}
-              onStart={() => {
-                setError("");
-                setLocMessage("");
-              }}
-              onError={(message) => {
-                setLocMessage("");
-                setError(message);
-              }}
-              onSuccess={() => {
-                setLocMessage("Today's live location has been set successfully!");
-                refetch();
-              }}
-            />
-          ) : null}
+          <div className="flex flex-col items-end justify-start mt-2 lg:mt-0">
+            <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+              {isDashboardEndpoint && currentRole === "TEAM_LEADER" ? (
+                <TeamLeaderLiveLocationButton
+                  teamId={payload.meta?.teamId}
+                  disabled={loading}
+                  onStart={() => {
+                    setError("");
+                    setLocMessage("");
+                  }}
+                  onError={(message) => {
+                    setLocMessage("");
+                    setError(message);
+                  }}
+                  onSuccess={() => {
+                    setLocMessage("Today's live location has been set successfully!");
+                    refetch();
+                  }}
+                />
+              ) : null}
 
-          <button
-            type="button"
-            onClick={fetchData}
-            disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
-          </button>
+              <button
+                type="button"
+                onClick={fetchData}
+                disabled={loading}
+                className="brand-btn brand-btn-secondary brand-btn-md"
+              >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+                Refresh
+              </button>
+            </div>
+          </div>
         </div>
 
         {error ? (

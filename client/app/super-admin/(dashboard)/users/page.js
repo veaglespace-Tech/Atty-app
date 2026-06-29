@@ -111,36 +111,36 @@ export default function SuperAdminUsersPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:min-w-[240px]">
-            <div className="dashboard-summary-card">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                Live View
-              </p>
-              <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {filteredUsers.length} of {users.length} users visible.
-              </p>
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-1">
+          <div className="flex flex-col items-end justify-start gap-4">
+            <div className="flex items-center justify-end gap-2 whitespace-nowrap">
               <button
                 type="button"
                 onClick={refetch}
                 disabled={loading}
-                className="brand-btn brand-btn-secondary brand-btn-md"
+                className="brand-btn brand-btn-secondary brand-btn-md px-3"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-                Refresh
               </button>
+              
               <button
                 type="button"
                 id="btn-export-all-users-excel"
                 onClick={handleExcelDownload}
                 disabled={downloading || isLoading || users.length === 0}
-                className="brand-btn brand-btn-secondary brand-btn-md"
+                className="brand-btn brand-btn-secondary brand-btn-md whitespace-nowrap"
               >
                 {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export Excel
               </button>
+            </div>
+
+            <div className="text-right mr-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                Live View
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {filteredUsers.length} of {users.length} users visible.
+              </p>
             </div>
           </div>
         </div>

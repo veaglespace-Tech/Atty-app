@@ -221,25 +221,27 @@ export default function SuperAdminAccessPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={refreshAccessCatalog}
-              className="brand-btn brand-btn-secondary brand-btn-md h-fit"
-              disabled={loading}
-            >
-              <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
-              Refresh
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAddModal(true)}
-              className="brand-btn brand-btn-primary brand-btn-md h-fit"
-              disabled={readOnlyFallback}
-            >
-              <Plus size={16} />
-              New Permission
-            </button>
+          <div className="flex flex-col items-end justify-start mt-2 lg:mt-0">
+            <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+              <button
+                type="button"
+                onClick={refreshAccessCatalog}
+                className="brand-btn brand-btn-secondary brand-btn-md h-fit"
+                disabled={loading}
+              >
+                <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
+                Refresh
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(true)}
+                className="brand-btn brand-btn-primary brand-btn-md h-fit whitespace-nowrap"
+                disabled={readOnlyFallback}
+              >
+                <Plus size={16} />
+                New Permission
+              </button>
+            </div>
           </div>
         </div>
 

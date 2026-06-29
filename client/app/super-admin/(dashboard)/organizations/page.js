@@ -189,51 +189,48 @@ export default function SuperAdminOrganizationsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:min-w-[240px]">
-            <div className="dashboard-summary-card">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                Live View
-              </p>
-              <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {filteredOrganizations.length} of {organizations.length} organizations visible.
-              </p>
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-1">
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(true)}
-                className="brand-btn brand-btn-primary brand-btn-md w-full justify-center"
-              >
-                <Plus size={18} />
-                Create Organization
-              </button>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-
+          <div className="flex flex-col items-end justify-start gap-4">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={refetch}
                 disabled={loading}
-                className="brand-btn brand-btn-secondary brand-btn-md"
+                className="brand-btn brand-btn-secondary brand-btn-md px-3"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-                Refresh
               </button>
 
-              <div className="min-w-0">
+              <div className="w-fit">
                 <DownloadMenuButton
                   label="Download"
                   onDownloadPdf={onDownloadPdf}
                   onDownloadExcel={onDownloadExcel}
                   downloadingPdf={downloadingPdf}
                   downloadingExcel={downloadingExcel}
-                  className="brand-btn brand-btn-secondary brand-btn-md w-full"
+                  className="brand-btn brand-btn-secondary brand-btn-md"
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="brand-btn brand-btn-primary brand-btn-md"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">Create Organization</span>
+                <span className="sm:hidden">Create</span>
+              </button>
+            </div>
+
+            <div className="text-right mr-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                Live View
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {filteredOrganizations.length} of {organizations.length} organizations visible.
+              </p>
             </div>
           </div>
-        </div>
       </div>
 
         {downloadError ? (
