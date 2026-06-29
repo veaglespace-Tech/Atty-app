@@ -28,7 +28,6 @@ const {
   buildAttendanceWhere,
   buildAttendanceSummary,
   mapAttendanceRecord,
-  augmentWithAbsentees,
 } = require("../services/attendance-query.service");
 const { buildAttendanceReport } = require("../services/report-query.service");
 const {
@@ -811,16 +810,13 @@ exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
     take: limit,
   });
 
-  const existingItems = records.map(mapAttendanceRecord);
-  const items = await augmentWithAbsentees({
-    orgId,
-    teamIds: filteredTeamIds,
-    date: req.query.date,
-    from: req.query.from,
-    to: req.query.to,
-    status: req.query.status,
-    existingItems,
-  });
+  let items = records.map(mapAttendanceRecord);
+  const statusFilter = String(req.query.status || "").toUpperCase();
+  if (statusFilter && statusFilter !== "ALL" && statusFilter !== "ABSENT") {
+    items = items.filter((item) => item.status === statusFilter);
+  } else if (statusFilter === "ABSENT") {
+    items = items.filter((item) => item.status === "ABSENT");
+  }
 
   res.status(200).json({
     success: true,

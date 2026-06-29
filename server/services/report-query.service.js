@@ -49,6 +49,22 @@ const buildAttendanceReport = async ({
     ? teamIds.map(Number).filter((value) => Number.isFinite(value) && value > 0)
     : [];
 
+  let userIdsInTeams = null;
+  if (normalizedTeamIds.length > 0) {
+    const teamMembers = await prisma.teamMember.findMany({
+      where: { teamId: { in: normalizedTeamIds } },
+      select: { userId: true },
+    });
+    userIdsInTeams = teamMembers.map((tm) => Number(tm.userId));
+    if (userIdsInTeams.length === 0) {
+      return {
+        summary: toReportSummary([]),
+        items: [],
+        recordsCount: 0,
+      };
+    }
+  }
+
   const where = {
     orgId: Number(orgId),
     deletedAt: null,
@@ -56,10 +72,10 @@ const buildAttendanceReport = async ({
       gte: rangeFrom,
       lte: rangeTo,
     },
-    ...(normalizedTeamIds.length > 0
+    ...(userIdsInTeams !== null
       ? {
-          teamId: {
-            in: normalizedTeamIds,
+          userId: {
+            in: userIdsInTeams,
           },
         }
       : {}),

@@ -105,9 +105,8 @@ const calculateLateMinutes = ({
 };
 
 const resolveAttendanceLateMinutes = (record = {}) => {
-  const storedLateMinutes = Number(record?.lateMinutes || 0);
-  if (storedLateMinutes > 0) {
-    return storedLateMinutes;
+  if (record && 'lateMinutes' in record && record.lateMinutes !== null) {
+    return Number(record.lateMinutes);
   }
 
   return calculateLateMinutes({

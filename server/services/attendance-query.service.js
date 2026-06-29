@@ -101,8 +101,15 @@ const buildAttendanceWhere = ({
   }
 
   if (Array.isArray(teamIds) && teamIds.length > 0) {
-    where.teamId = {
-      in: teamIds.map(Number),
+    where.user = {
+      ...(where.user || {}),
+      teamMemberships: {
+        some: {
+          teamId: {
+            in: teamIds.map(Number),
+          },
+        },
+      },
     };
   }
 
@@ -350,7 +357,7 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     orgId,
     from: rangeFrom,
     to: rangeTo,
-    status,
+    status: 'ALL',
     search,
   });
 
@@ -361,15 +368,10 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     take: 2500,
   });
 
-  const existingItems = records.map(mapAttendanceRecord);
-  const items = await augmentWithAbsentees({
-    orgId,
-    teamIds: [],
-    from: rangeFrom,
-    to: rangeTo,
-    status,
-    existingItems,
-  });
+  let items = records.map(mapAttendanceRecord);
+  if (status && String(status).toUpperCase() !== 'ALL') {
+    items = items.filter(item => item.status === String(status).toUpperCase());
+  }
   
   const summary = buildAttendanceSummary(items);
 
@@ -387,131 +389,6 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
   };
 };
 
-const augmentWithAbsentees = async ({ orgId, teamIds, date, from, to, status, existingItems }) => {
-  const { todayKey } = require('./common.service');
-  const { resolveUserRole } = require('../utils/membership');
-  const prisma = require('../lib/prisma');
-
-  const dates = [];
-  let currentStr = '';
-  let endStr = '';
-
-  if (date) {
-    currentStr = date;
-    endStr = date;
-  } else if (from || to) {
-    currentStr = from || '2000-01-01';
-    endStr = to || todayKey();
-  } else {
-    currentStr = todayKey();
-    endStr = todayKey();
-  }
-
-  const current = new Date(currentStr + 'T00:00:00.000Z');
-  const end = new Date(endStr + 'T00:00:00.000Z');
-  const today = new Date(todayKey() + 'T00:00:00.000Z');
-
-  if (end > today) end.setTime(today.getTime());
-
-  let days = 0;
-  while (current <= end && days < 31) {
-    dates.push(current.toISOString().split('T')[0]);
-    current.setDate(current.getDate() + 1);
-    days++;
-  }
-
-  const usersWhere = { orgId, deletedAt: null };
-  if (teamIds && teamIds.length > 0) {
-    usersWhere.teamMemberships = { some: { teamId: { in: teamIds.map(Number) } } };
-  }
-
-  const users = await prisma.user.findMany({
-    where: usersWhere,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      memberships: {
-        where: { orgId },
-        select: { role: true }
-      },
-      teamMemberships: {
-        where: teamIds && teamIds.length > 0 ? { teamId: { in: teamIds.map(Number) } } : undefined,
-        select: { team: { select: { id: true, name: true } } },
-        take: 1
-      }
-    }
-  });
-
-  const existingMap = new Set();
-  for (const item of existingItems) {
-    // use memberId (mapped field) instead of item.user.id which doesn't exist after mapping
-    const uid = item.memberId ?? item.userId ?? item.user?.id;
-    existingMap.add(uid + '_' + item.date);
-  }
-
-  const absentItems = [];
-  const statusFilter = String(status || '').toUpperCase();
-
-  if (statusFilter && statusFilter !== 'ALL' && statusFilter !== 'ABSENT') {
-    return existingItems;
-  }
-
-  for (const d of dates) {
-    for (const u of users) {
-      if (!existingMap.has(u.id + '_' + d)) {
-        const team = u.teamMemberships[0]?.team;
-        absentItems.push({
-          id: 'absent_' + u.id + '_' + d,
-          date: d,
-          userId: u.id,
-          user: {
-            id: u.id,
-            name: u.name,
-            email: u.email,
-          },
-          role: resolveUserRole(u, orgId) || 'MEMBER',
-          member: u.name,
-          status: 'ABSENT',
-          punchInAt: null,
-          punchOutAt: null,
-          workedMinutes: 0,
-          workedHours: '0h 0m',
-          lateMinutes: 0,
-          punchInValid: false,
-          punchOutValid: false,
-          punchInDistanceMeters: null,
-          punchOutDistanceMeters: null,
-          punchInCoordinates: null,
-          punchOutCoordinates: null,
-          punchInLocationMeta: null,
-          punchOutLocationMeta: null,
-          punchInSelfieUrl: null,
-          punchOutSelfieUrl: null,
-          teamId: team?.id || null,
-          teamName: team?.name || null,
-        });
-      }
-    }
-  }
-
-  let finalItems = existingItems;
-  if (statusFilter === 'ABSENT') {
-    finalItems = finalItems.filter(item => item.status === 'ABSENT');
-  }
-
-  const combined = [...finalItems, ...absentItems];
-  combined.sort((a, b) => {
-    if (a.date !== b.date) return b.date.localeCompare(a.date);
-    const nameA = a.member || a.user?.name || '';
-    const nameB = b.member || b.user?.name || '';
-    return nameA.localeCompare(nameB);
-  });
-
-  return combined;
-};
-
 module.exports = {
   attendanceRecordSelect,
   mapAttendanceRecord,
@@ -520,5 +397,4 @@ module.exports = {
   buildAttendanceSummary,
   buildUserAttendancePayload,
   buildOrgAttendancePayload,
-  augmentWithAbsentees,
 };
