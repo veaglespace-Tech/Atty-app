@@ -49,13 +49,27 @@ const buildAttendanceReport = async ({
     ? teamIds.map(Number).filter((value) => Number.isFinite(value) && value > 0)
     : [];
 
+  // --- 1. Fetch ALL team members (so absent-only members appear in the report) ---
+  const usersWhere = { orgId: Number(orgId), deletedAt: null };
+  if (normalizedTeamIds.length > 0) {
+    usersWhere.teamMemberships = { some: { teamId: { in: normalizedTeamIds } } };
+  }
+
+  const allUsers = await prisma.user.findMany({
+    where: usersWhere,
+    select: {
+      id: true,
+      name: true,
+      memberships: {
+        where: { orgId: Number(orgId) },
+        select: { role: true },
+      },
+    },
+  });
+
   let userIdsInTeams = null;
   if (normalizedTeamIds.length > 0) {
-    const teamMembers = await prisma.teamMember.findMany({
-      where: { teamId: { in: normalizedTeamIds } },
-      select: { userId: true },
-    });
-    userIdsInTeams = teamMembers.map((tm) => Number(tm.userId));
+    userIdsInTeams = allUsers.map((u) => Number(u.id));
     if (userIdsInTeams.length === 0) {
       return {
         summary: toReportSummary([]),
@@ -65,6 +79,7 @@ const buildAttendanceReport = async ({
     }
   }
 
+  // --- 2. Query attendance grouped stats ---
   const where = {
     orgId: Number(orgId),
     deletedAt: null,
@@ -92,37 +107,44 @@ const buildAttendanceReport = async ({
     },
   });
 
-  if (groupedRows.length === 0) {
-    return {
-      summary: toReportSummary([]),
-      items: [],
-      recordsCount: 0,
-    };
+  // --- 3. Calculate total working days in range (capped at today) ---
+  const startDate = new Date(rangeFrom + "T00:00:00.000Z");
+  const todayStr = new Date().toISOString().split("T")[0];
+  const endStr = rangeTo > todayStr ? todayStr : rangeTo;
+  const endDate = new Date(endStr + "T00:00:00.000Z");
+  let totalDays = 0;
+  const cursor = new Date(startDate);
+  while (cursor <= endDate) {
+    totalDays++;
+    cursor.setDate(cursor.getDate() + 1);
   }
 
-  const userIds = [...new Set(groupedRows.map((row) => Number(row.userId)).filter(Boolean))];
-  const users = await prisma.user.findMany({
-    where: {
-      id: {
-        in: userIds,
-      },
-    },
-    select: reportUserSelect,
-  });
-
-  const userMap = new Map(users.map((user) => [Number(user.id), user]));
+  // --- 4. Build report map starting with ALL members ---
   const reportMap = new Map();
 
+  for (const user of allUsers) {
+    const userId = Number(user.id);
+    reportMap.set(userId, {
+      id: userId,
+      member: user?.name || "Unknown",
+      role: resolveUserRole(user, orgId) || "MEMBER",
+      presentDays: 0,
+      halfDays: 0,
+      absentDays: 0,
+      workedMinutes: 0,
+    });
+  }
+
+  // --- 5. Overlay attendance data ---
   for (const row of groupedRows) {
     const userId = Number(row.userId);
-      const user = userMap.get(userId);
-      const current = reportMap.get(userId) || {
-        id: userId,
-        member: user?.name || "Unknown",
-        role: resolveUserRole(user, orgId) || "MEMBER",
-        presentDays: 0,
-        halfDays: 0,
-        absentDays: 0,
+    const current = reportMap.get(userId) || {
+      id: userId,
+      member: "Unknown",
+      role: "MEMBER",
+      presentDays: 0,
+      halfDays: 0,
+      absentDays: 0,
       workedMinutes: 0,
     };
 
@@ -136,6 +158,14 @@ const buildAttendanceReport = async ({
 
     current.workedMinutes += workedMinutes;
     reportMap.set(userId, current);
+  }
+
+  // --- 6. For members with fewer recorded days than totalDays, fill the rest as absent ---
+  for (const entry of reportMap.values()) {
+    const recordedDays = entry.presentDays + entry.halfDays + entry.absentDays;
+    if (recordedDays < totalDays) {
+      entry.absentDays += (totalDays - recordedDays);
+    }
   }
 
   const items = [...reportMap.values()].map((entry) => ({
