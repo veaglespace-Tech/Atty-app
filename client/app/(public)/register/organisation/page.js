@@ -131,19 +131,27 @@ function OrganisationFormContent() {
   const phone = useWatch({ control, name: "phone" });
 
   React.useEffect(() => {
+    let activePartnerRef = partnerRef;
+    if (typeof window !== "undefined") {
+      const globalRef = localStorage.getItem("globalPartnerRef");
+      if (globalRef && !activePartnerRef) {
+        activePartnerRef = globalRef;
+      }
+    }
+
     const storedOrganization = getRegistrationDraft(
       REGISTRATION_DRAFT_KEYS.organisation
     );
 
     if (!storedOrganization) {
-      if (partnerRef) {
-        setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, { partnerReferralCode: partnerRef });
+      if (activePartnerRef) {
+        setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, { partnerReferralCode: activePartnerRef });
       }
       return;
     }
 
-    if (partnerRef && !storedOrganization.partnerReferralCode) {
-      storedOrganization.partnerReferralCode = partnerRef;
+    if (activePartnerRef && !storedOrganization.partnerReferralCode) {
+      storedOrganization.partnerReferralCode = activePartnerRef;
       setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, storedOrganization);
     }
 
@@ -155,7 +163,7 @@ function OrganisationFormContent() {
         organisationDefaultValues.phoneCountryCode,
       country: storedOrganization.country || organisationDefaultValues.country,
     });
-  }, [reset]);
+  }, [reset, partnerRef]);
 
   const onSubmit = async (values) => {
     const existingDraft = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation) || {};

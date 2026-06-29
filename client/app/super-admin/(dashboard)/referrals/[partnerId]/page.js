@@ -3,17 +3,17 @@
 import React, { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, ArrowRight } from "lucide-react";
-import { useGetSuperAdminUserByIdQuery } from "@/services/api/superAdminApi";
+import { ArrowLeft, Loader2, ArrowRight, Mail, Phone, Users, Hash, Activity } from "lucide-react";
+import { useGetReferralPartnerByIdQuery } from "@/services/api/partnerReferralApi";
 
 export default function ReferredOrganizationsPage({ params }) {
   const router = useRouter();
   const { partnerId } = use(params);
-  const { data, isLoading } = useGetSuperAdminUserByIdQuery(partnerId, {
+  const { data, isLoading } = useGetReferralPartnerByIdQuery(partnerId, {
     skip: !partnerId
   });
 
-  const user = data?.item;
+  const user = data?.data;
 
   if (isLoading) {
     return (
@@ -49,6 +49,64 @@ export default function ReferredOrganizationsPage({ params }) {
           <p className="text-sm font-medium text-slate-500">
             Organizations that signed up using partner code: <span className="font-bold text-slate-700 dark:text-slate-300">{user.partnerReferralCode}</span>
           </p>
+        </div>
+      </div>
+
+      <div className="light-glow-card-static rounded-[1.9rem] p-6 mb-6">
+        <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 mb-6">
+          Partner Profile Details
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
+              <Mail size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Email Address</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{user.email || "-"}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <Phone size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Phone Number</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{user.mobile || "Not provided"}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
+              <Hash size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Referral Code</p>
+              <p className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5">{user.partnerReferralCode}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
+              <Activity size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Total Referred Orgs</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{organizations.length}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
+              <Users size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Total Referred Users</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{user._count?.referredUsers || 0}</p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -839,7 +839,6 @@ const serializeSessionUser = (user, organization = null) => {
     mobile: normalized.mobile,
     mobileCountryCode: normalized.mobileCountryCode || null,
     emergencyContact: normalized.emergencyContact || null,
-    isReferralPartner: Boolean(normalized.isReferralPartner),
     currentAddress: normalized.currentAddress || null,
     permanentAddress: normalized.permanentAddress || null,
     profileImageUrl: normalized.profileImageUrl || null,

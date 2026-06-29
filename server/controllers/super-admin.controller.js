@@ -609,9 +609,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
           name: true,
           email: true,
           mobile: true,
-          mobileCountryCode: true,
           partnerReferralCode: true,
-          isReferralPartner: true,
+          isActive: true,
         },
       },
       activeSubscription: {
@@ -770,9 +769,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
           name: organization.referredByPartner.name,
           email: organization.referredByPartner.email,
           mobile: organization.referredByPartner.mobile || "",
-          mobileCountryCode: organization.referredByPartner.mobileCountryCode || "",
           partnerReferralCode: organization.referredByPartner.partnerReferralCode || "",
-          active: Boolean(organization.referredByPartner.isReferralPartner),
+          active: Boolean(organization.referredByPartner.isActive),
         }
       : null,
     activeSubscription: organization.activeSubscription
@@ -2512,21 +2510,6 @@ exports.getSuperAdminUserById = asyncHandler(async (req, res) => {
           name: true,
         },
       },
-      _count: {
-        select: {
-          referredOrganizations: true
-        }
-      },
-      referredOrganizations: {
-        select: {
-          id: true,
-          name: true,
-          createdAt: true,
-          subscriptionStatus: true,
-          plan: { select: { name: true } },
-          orgAdmin: { select: { name: true, email: true } }
-        }
-      }
     },
   });
 
@@ -2603,10 +2586,7 @@ exports.getSuperAdminUserById = asyncHandler(async (req, res) => {
       attendanceSummary,
       teamNames,
       ledTeamNames,
-      isReferralPartner: user.isReferralPartner,
-      partnerReferralCode: user.partnerReferralCode,
       _count: user._count,
-      referredOrganizations: user.referredOrganizations,
     },
   });
 });
@@ -2865,8 +2845,6 @@ exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
       role: true,
       status: true,
       isActive: true,
-      isReferralPartner: true,
-      partnerReferralCode: true,
       createdAt: true,
       orgId: true,
       organization: {
@@ -2875,11 +2853,6 @@ exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
           organizationCode: true,
         },
       },
-      _count: {
-        select: {
-          referredOrganizations: true
-        }
-      }
     },
     orderBy: { createdAt: "desc" },
   });

@@ -264,6 +264,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
 
     console.log("[PayU Success Callback] Starting DB Transaction...");
     let createdOrgName = "Organization";
+    let newOrg;
     await prisma.$transaction(async (tx) => {
       const duration = resolvedPlan.durationInDays || 30;
       const expiryDate = new Date(Date.now() + duration * DAY_IN_MS);
@@ -274,12 +275,12 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
       let referredByPartnerId = null;
       const partnerReferralCode = normalizePartnerReferralCode(organization.partnerReferralCode);
       if (partnerReferralCode) {
-        const partner = await tx.user.findUnique({ where: { partnerReferralCode } });
-        if (partner && partner.isReferralPartner) referredByPartnerId = partner.id;
+        const partner = await tx.referralPartner.findUnique({ where: { partnerReferralCode } });
+        if (partner && partner.isActive) referredByPartnerId = partner.id;
       }
 
       console.log("[PayU Success Callback] Creating organization...");
-      const newOrg = await tx.organization.create({ data: { organizationCode, referralCode, referredByPartnerId, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "ACTIVE", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
+      newOrg = await tx.organization.create({ data: { organizationCode, referralCode, referredByPartnerId, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "ACTIVE", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
       createdOrgName = newOrg.name;
       
       console.log("[PayU Success Callback] Hashing password...");
@@ -604,8 +605,8 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       let referredByPartnerId = null;
       const partnerReferralCode = normalizePartnerReferralCode(organization.partnerReferralCode);
       if (partnerReferralCode) {
-        const partner = await tx.user.findUnique({ where: { partnerReferralCode } });
-        if (partner && partner.isReferralPartner) referredByPartnerId = partner.id;
+        const partner = await tx.referralPartner.findUnique({ where: { partnerReferralCode } });
+        if (partner && partner.isActive) referredByPartnerId = partner.id;
       }
       
       const newOrg = await tx.organization.create({ data: { organizationCode: orgCode, referralCode: refCode, referredByPartnerId, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "TRIAL", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });

@@ -4,21 +4,45 @@ import { buildBaseQuery } from "./baseApi";
 export const partnerReferralApi = createApi({
   reducerPath: "partnerReferralApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["PartnerReferral", "SuperAdminUsers"],
+  tagTypes: ["ReferralPartner"],
   endpoints: (builder) => ({
-    getPartnerStats: builder.query({
-      query: () => "/partner-referral/stats",
-      providesTags: ["PartnerReferral"],
+    getAllReferralPartners: builder.query({
+      query: () => "/partner-referral",
+      providesTags: ["ReferralPartner"],
     }),
-    toggleReferralPartner: builder.mutation({
-      query: ({ userId, isPartner }) => ({
-        url: `/partner-referral/toggle-partner/${userId}`,
+    getReferralPartnerById: builder.query({
+      query: (id) => `/partner-referral/${id}`,
+      providesTags: (result, error, id) => [{ type: "ReferralPartner", id }],
+    }),
+    createReferralPartner: builder.mutation({
+      query: (data) => ({
+        url: "/partner-referral",
         method: "POST",
-        body: { isPartner },
+        body: data,
       }),
-      invalidatesTags: ["SuperAdminUsers", "PartnerReferral"],
+      invalidatesTags: ["ReferralPartner"],
+    }),
+    deleteReferralPartner: builder.mutation({
+      query: (id) => ({
+        url: `/partner-referral/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ReferralPartner"],
+    }),
+    getPublicPartnerStats: builder.mutation({
+      query: (credentials) => ({
+        url: "/partner-referral/stats-public",
+        method: "POST",
+        body: credentials,
+      }),
     }),
   }),
 });
 
-export const { useGetPartnerStatsQuery, useToggleReferralPartnerMutation } = partnerReferralApi;
+export const {
+  useGetAllReferralPartnersQuery,
+  useGetReferralPartnerByIdQuery,
+  useCreateReferralPartnerMutation,
+  useDeleteReferralPartnerMutation,
+  useGetPublicPartnerStatsMutation,
+} = partnerReferralApi;

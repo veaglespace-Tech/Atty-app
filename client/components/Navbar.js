@@ -26,6 +26,7 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const { user, token, hydrated } = useAuthSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [isPartnerLoggedIn, setIsPartnerLoggedIn] = useState(false);
   const [userSignOut] = useUserSignOutMutation();
   const isAuthReady = hydrated;
   const isLoggedIn = Boolean(isAuthReady && token && user);
@@ -52,6 +53,23 @@ export default function Navbar() {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (pathname === "/refer") {
+      const checkPartnerAuth = () => {
+        setIsPartnerLoggedIn(!!localStorage.getItem("partnerAuth"));
+      };
+      checkPartnerAuth();
+      const interval = setInterval(checkPartnerAuth, 1000);
+      window.addEventListener("storage", checkPartnerAuth);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("storage", checkPartnerAuth);
+      };
+    } else {
+      setIsPartnerLoggedIn(false);
+    }
+  }, [pathname]);
+
   useIdleRoutePrefetch(router, prefetchedRoutes);
 
   const toggleMenu = () => {
@@ -70,6 +88,13 @@ export default function Navbar() {
     dispatch(logout());
     closeMenu();
     router.push("/login");
+  };
+
+  const onPartnerLogout = () => {
+    localStorage.removeItem("partnerAuth");
+    setIsPartnerLoggedIn(false);
+    closeMenu();
+    window.location.reload();
   };
 
   if (hideOnDashboardRoutes) {
@@ -124,13 +149,15 @@ export default function Navbar() {
                   <span className="hidden lg:inline">Dashboard</span>
                 </Link>
               ) : (
-                <Link
-                  href="/register"
-                  className="brand-btn brand-btn-primary h-11 rounded-2xl px-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30"
-                >
-                  <UserPlus size={18} />
-                  <span className="hidden lg:inline">Get Started</span>
-                </Link>
+                pathname !== "/refer" && (
+                  <Link
+                    href="/register"
+                    className="brand-btn brand-btn-primary h-11 rounded-2xl px-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30"
+                  >
+                    <UserPlus size={18} />
+                    <span className="hidden lg:inline">Get Started</span>
+                  </Link>
+                )
               )}
             </div>
 
@@ -165,13 +192,27 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="flex items-center gap-2 px-3 py-3 text-sm font-bold text-slate-500 transition-all hover:text-blue-600 2xl:px-5 dark:text-slate-300 dark:hover:text-blue-300">
-                    <LogIn size={18} />
-                    <span className="hidden 2xl:inline">Login</span>
-                  </Link>
-                  <Link href="/register" className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_24px_60px_rgba(59,130,246,0.28)] 2xl:px-7 dark:shadow-blue-950/30">
-                    Get Started
-                  </Link>
+                  {pathname === "/refer" && isPartnerLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={onPartnerLogout}
+                      className="flex items-center gap-2 px-3 py-3 text-sm font-bold text-slate-500 transition-all hover:text-rose-600 2xl:px-5 dark:text-slate-300 dark:hover:text-rose-300"
+                    >
+                      <LogOut size={18} />
+                      <span className="hidden 2xl:inline">Logout</span>
+                    </button>
+                  )}
+                  {pathname !== "/refer" && (
+                    <>
+                      <Link href="/login" className="flex items-center gap-2 px-3 py-3 text-sm font-bold text-slate-500 transition-all hover:text-blue-600 2xl:px-5 dark:text-slate-300 dark:hover:text-blue-300">
+                        <LogIn size={18} />
+                        <span className="hidden 2xl:inline">Login</span>
+                      </Link>
+                      <Link href="/register" className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_24px_60px_rgba(59,130,246,0.28)] 2xl:px-7 dark:shadow-blue-950/30">
+                        Get Started
+                      </Link>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -253,22 +294,36 @@ export default function Navbar() {
                   </>
                 ) : (
                   <>
-                    <Link
-                      href="/login"
-                      onClick={closeMenu}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 font-black text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-                    >
-                      <LogIn size={20} />
-                      Login
-                    </Link>
-                    <Link
-                      href="/register"
-                      onClick={closeMenu}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5 font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30"
-                    >
-                      <UserPlus size={20} />
-                      Register Now
-                    </Link>
+                    {pathname === "/refer" && isPartnerLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={onPartnerLogout}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-5 font-black text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+                      >
+                        <LogOut size={20} />
+                        Logout
+                      </button>
+                    )}
+                    {pathname !== "/refer" && (
+                      <>
+                        <Link
+                          href="/login"
+                          onClick={closeMenu}
+                          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 font-black text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        >
+                          <LogIn size={20} />
+                          Login
+                        </Link>
+                        <Link
+                          href="/register"
+                          onClick={closeMenu}
+                          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5 font-black text-white shadow-[0_20px_52px_rgba(59,130,246,0.24)] dark:shadow-blue-950/30"
+                        >
+                          <UserPlus size={20} />
+                          Register Now
+                        </Link>
+                      </>
+                    )}
                   </>
                 )}
 

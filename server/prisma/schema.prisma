@@ -163,7 +163,6 @@ model Organization {
   orgAdminId           Int?                        @unique(map: "Organization_orgAdminId_key")
   planId               Int?
   subscriptionId       Int?                        @unique(map: "Organization_subscriptionId_key")
-  referredByPartnerId  Int?
   name                 String
   organizationCode     String                      @unique(map: "Organization_organizationCode_key")
   referralCode         String                      @unique(map: "Organization_referralCode_key")
@@ -187,12 +186,13 @@ model Organization {
   attendanceStartTime  String                      @default("09:00")
   attendanceEndTime    String                      @default("18:00")
   lateGraceMinutes     Int                         @default(0)
+  referredByPartnerId  Int?
   attendances          Attendance[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
   activeSubscription   Subscription?               @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id], map: "Organization_subscriptionId_fkey")
+  referredByPartner    ReferralPartner?            @relation("ReferredOrganizations", fields: [referredByPartnerId], references: [id])
   members              OrganizationMember[]
-  referredByPartner    User?                       @relation("ReferredOrganizations", fields: [referredByPartnerId], references: [id])
   payments             Payment[]
   posts                Post[]
   registrationRequests RegistrationRequest[]
@@ -232,9 +232,6 @@ model Payment {
   planName           String
   planCode           String
   amount             Float
-  originalAmount     Float?
-  couponId           Int?
-  coupon             Coupon?       @relation(fields: [couponId], references: [id])
   currency           String        @default("INR")
   gateway            String        @default("PAYU")
   status             PaymentStatus @default(CREATED)
@@ -245,9 +242,12 @@ model Payment {
   paymentOrderId     String
   paymentReferenceId String?
   paymentSignature   String?
+  couponId           Int?
+  originalAmount     Float?
   organization       Organization  @relation(fields: [orgId], references: [id], map: "Payment_orgId_fkey")
   subscription       Subscription  @relation(fields: [subscriptionId], references: [id], map: "Payment_subscriptionId_fkey")
   user               User          @relation(fields: [userId], references: [id], map: "Payment_userId_fkey")
+  coupon             Coupon?       @relation(fields: [couponId], references: [id])
 
   @@index([orgId, createdAt], map: "Payment_orgId_createdAt_idx")
   @@index([orgId], map: "Payment_orgId_idx")
@@ -285,21 +285,21 @@ model Plan {
 }
 
 model Post {
-  id           Int          @id @default(autoincrement())
+  id           Int                    @id @default(autoincrement())
   orgId        Int?
-  teamId       Int?
   authorId     Int
   title        String
-  content      String       @db.Text
-  type         PostType     @default(NOTIFICATION)
+  content      String                 @db.Text
+  type         PostType               @default(NOTIFICATION)
   metadata     Json?
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  isActive     Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
   deletedAt    DateTime?
-  author       User         @relation("PostAuthor", fields: [authorId], references: [id], map: "posts_authorId_fkey")
-  organization Organization? @relation(fields: [orgId], references: [id], map: "posts_orgId_fkey")
-  team         Team?        @relation("PostTeam", fields: [teamId], references: [id], map: "posts_teamId_fkey")
+  teamId       Int?
+  author       User                   @relation("PostAuthor", fields: [authorId], references: [id], map: "posts_authorId_fkey")
+  organization Organization?          @relation(fields: [orgId], references: [id], map: "posts_orgId_fkey")
+  team         Team?                  @relation("PostTeam", fields: [teamId], references: [id], map: "posts_teamId_fkey")
   reads        UserNotificationRead[]
 
   @@index([authorId], map: "posts_authorId_idx")
@@ -422,19 +422,19 @@ model RegistrationRequest {
 }
 
 model RegistrationLead {
-  id                Int      @id @default(autoincrement())
-  organizationName  String
-  organizationEmail String   @unique
-  organizationPhone String?
-  organizationCity  String?
-  organizationState String?
-  organizationCountry String?
+  id                  Int      @id @default(autoincrement())
+  organizationName    String
+  organizationEmail   String   @unique
+  organizationPhone   String?
+  adminName           String?
+  adminEmail          String?
+  adminPhone          String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
   organizationAddress String?
-  adminName         String?
-  adminEmail        String?
-  adminPhone        String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  organizationCity    String?
+  organizationCountry String?
+  organizationState   String?
 
   @@map("registration_lead")
 }
@@ -516,18 +516,18 @@ model User {
   resetTokenExpiry            DateTime?
   status                      UserStatus                  @default(APPROVED)
   isActive                    Boolean                     @default(true)
-  isReferralPartner           Boolean                     @default(false)
-  partnerReferralCode         String?                     @unique(map: "User_partnerReferralCode_key")
   lastLoginAt                 DateTime?
   profileImageUrl             String?
   profileImagePublicId        String?
   createdAt                   DateTime                    @default(now())
   updatedAt                   DateTime                    @updatedAt
   deletedAt                   DateTime?
+  referredByPartnerId         Int?
   markedAttendances           Attendance[]                @relation("AttendanceMarkedBy")
   attendances                 Attendance[]                @relation("AttendanceUser")
+  assignedCoupons             Coupon[]                    @relation("CouponAssignedTo")
+  createdCoupons              Coupon[]                    @relation("CouponCreatedBy")
   primaryAdminForOrganization Organization?               @relation("OrganizationPrimaryAdmin")
-  referredOrganizations       Organization[]              @relation("ReferredOrganizations")
   memberships                 OrganizationMember[]
   payments                    Payment[]
   posts                       Post[]                      @relation("PostAuthor")
@@ -539,14 +539,14 @@ model User {
   createdBy                   User?                       @relation("UserCreatedBy", fields: [createdById], references: [id], map: "User_createdById_fkey")
   createdUsers                User[]                      @relation("UserCreatedBy")
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
+  referredByPartner           ReferralPartner?            @relation("ReferredUsers", fields: [referredByPartnerId], references: [id])
   notificationReads           UserNotificationRead[]
-  assignedCoupons             Coupon[]                    @relation("CouponAssignedTo")
-  createdCoupons              Coupon[]                    @relation("CouponCreatedBy")
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
   @@index([orgId, role], map: "User_orgId_role_idx")
   @@index([orgId, status], map: "User_orgId_status_idx")
+  @@index([referredByPartnerId], map: "user_referredByPartnerId_fkey")
   @@map("user")
 }
 
@@ -621,11 +621,9 @@ model UserNotificationRead {
   id             Int      @id @default(autoincrement())
   userId         Int
   notificationId Int
-
   readAt         DateTime @default(now())
-
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   notification   Post     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, notificationId])
   @@index([userId])
@@ -647,30 +645,41 @@ model email_sender_usage {
 }
 
 model Coupon {
-  id              Int           @id @default(autoincrement())
-  code            String        @unique
-  discountType    DiscountType
-  discountValue   Float
-  maxUses         Int?
-  usesCount       Int           @default(0)
-  
-  assignedUserId  Int?
-  createdById     Int
-  
-  isActive        Boolean       @default(true)
-  validUntil      DateTime?
-  
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  assignedUser    User?         @relation("CouponAssignedTo", fields: [assignedUserId], references: [id])
-  createdBy       User          @relation("CouponCreatedBy", fields: [createdById], references: [id])
-  payments        Payment[]
+  id             Int          @id @default(autoincrement())
+  code           String       @unique
+  discountType   DiscountType
+  discountValue  Float
+  maxUses        Int?
+  usesCount      Int          @default(0)
+  assignedUserId Int?
+  createdById    Int
+  isActive       Boolean      @default(true)
+  validUntil     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  assignedUser   User?        @relation("CouponAssignedTo", fields: [assignedUserId], references: [id])
+  createdBy      User         @relation("CouponCreatedBy", fields: [createdById], references: [id])
+  payments       Payment[]
 
   @@index([code])
   @@index([assignedUserId])
   @@index([createdById])
   @@map("coupon")
+}
+
+model ReferralPartner {
+  id                    Int            @id @default(autoincrement())
+  name                  String
+  email                 String         @unique
+  mobile                String?
+  partnerReferralCode   String         @unique
+  isActive              Boolean        @default(true)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  referredOrganizations Organization[] @relation("ReferredOrganizations")
+  referredUsers         User[]         @relation("ReferredUsers")
+
+  @@map("referral_partner")
 }
 
 enum DiscountType {

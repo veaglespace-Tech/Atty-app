@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   clearAllRegistrationDrafts,
   getRegistrationDraftSnapshot,
@@ -25,6 +25,14 @@ const isReloadNavigation = () => {
 
 export default function RegistrationDraftLifecycle() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const partnerRef = searchParams?.get("partnerRef");
+    if (partnerRef) {
+      localStorage.setItem("globalPartnerRef", partnerRef);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!pathname) return;

@@ -6,88 +6,125 @@ const normalizePartnerReferralCode = (value) =>
     .trim()
     .toUpperCase();
 
-// Toggle Partner Status (Super Admin Only)
-exports.toggleReferralPartner = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
-  const { isPartner } = req.body;
-
-  const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
-  if (!user) {
-    res.status(404);
-    throw new Error("User not found");
-  }
-
-  let partnerReferralCode = user.partnerReferralCode;
+exports.createReferralPartner = asyncHandler(async (req, res) => {
+  const { name, email, mobile, partnerReferralCode } = req.body;
   
-  // Generate a code if they are becoming a partner and don't have one
-  if (isPartner && !partnerReferralCode) {
-    partnerReferralCode = normalizePartnerReferralCode(
-      `PARTNER-${Math.random().toString(36).substring(2, 8)}`
-    );
-  } else if (partnerReferralCode) {
-    partnerReferralCode = normalizePartnerReferralCode(partnerReferralCode);
+  if (!name || !email) {
+    res.status(400);
+    throw new Error("Name and Email are required");
   }
 
-  const updatedUser = await prisma.user.update({
-    where: { id: Number(userId) },
-    data: {
-      isReferralPartner: isPartner,
-      partnerReferralCode: partnerReferralCode,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      isReferralPartner: true,
-      partnerReferralCode: true,
-    }
+  let code = partnerReferralCode ? normalizePartnerReferralCode(partnerReferralCode) : normalizePartnerReferralCode(`PARTNER-${Math.random().toString(36).substring(2, 8)}`);
+
+  const exists = await prisma.referralPartner.findFirst({
+    where: { OR: [{ email }, { partnerReferralCode: code }] }
   });
 
-  res.status(200).json({
-    success: true,
-    message: `User is ${isPartner ? 'now' : 'no longer'} a referral partner.`,
-    data: updatedUser
+  if (exists) {
+    res.status(400);
+    throw new Error("Partner with this email or code already exists");
+  }
+
+  const partner = await prisma.referralPartner.create({
+    data: { name, email, mobile, partnerReferralCode: code }
   });
+
+  res.status(201).json({ success: true, data: partner });
 });
 
-// Get Partner Stats (For the logged-in Partner)
-exports.getPartnerStats = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  
-  const user = await prisma.user.findUnique({
-    where: { id: Number(userId) },
+exports.getAllReferralPartners = asyncHandler(async (req, res) => {
+  const partners = await prisma.referralPartner.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { referredOrganizations: true, referredUsers: true }
+      }
+    }
+  });
+  res.status(200).json({ success: true, data: partners });
+});
+
+exports.getReferralPartnerById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const partner = await prisma.referralPartner.findUnique({
+    where: { id: Number(id) },
     include: {
       referredOrganizations: {
-        where: {
-          deletedAt: null,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
         select: {
-          id: true,
-          name: true,
-          organizationCode: true,
-          createdAt: true,
-          subscriptionStatus: true,
-          plan: { select: { name: true } },
+          id: true, name: true, organizationCode: true, createdAt: true, subscriptionStatus: true,
+          plan: { select: { name: true, price: true } },
           orgAdmin: { select: { name: true, email: true } }
         }
+      },
+      referredUsers: {
+        orderBy: { createdAt: "desc" },
+        select: { id: true, name: true, email: true, createdAt: true, role: true }
       }
     }
   });
 
-  if (!user || !user.isReferralPartner) {
-    res.status(403);
-    throw new Error("You are not authorized as a referral partner");
+  if (!partner) {
+    res.status(404);
+    throw new Error("Referral Partner not found");
   }
 
-  res.status(200).json({
-    success: true,
-    data: {
-      referralCode: user.partnerReferralCode,
-      totalReferred: user.referredOrganizations.length,
-      referredOrganizations: user.referredOrganizations
+  res.status(200).json({ success: true, data: partner });
+});
+
+exports.deleteReferralPartner = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.referralPartner.delete({ where: { id: Number(id) } });
+  res.status(200).json({ success: true, message: "Partner deleted" });
+});
+
+exports.getPublicPartnerStats = asyncHandler(async (req, res) => {
+  const { email, partnerReferralCode } = req.body;
+  
+  if (!email || !partnerReferralCode) {
+    res.status(400);
+    throw new Error("Email and Referral Code are required.");
+  }
+
+  const partner = await prisma.referralPartner.findFirst({
+    where: { 
+      email: email.trim(), 
+      partnerReferralCode: partnerReferralCode.trim().toUpperCase() 
+    },
+    include: {
+      referredOrganizations: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, name: true, createdAt: true, subscriptionStatus: true,
+          plan: { select: { name: true, price: true } },
+          orgAdmin: { select: { name: true, email: true } }
+        }
+      },
+      _count: {
+        select: { referredOrganizations: true, referredUsers: true }
+      }
     }
+  });
+
+  if (!partner) {
+    res.status(404);
+    throw new Error("Invalid email or referral code.");
+  }
+
+  if (!partner.isActive) {
+    res.status(403);
+    throw new Error("This referral partner account is inactive.");
+  }
+
+  res.status(200).json({ 
+    success: true, 
+    data: {
+      ...partner,
+      _config: {
+        referralLinkBase: process.env.PARTNER_REFERRAL_LINK_BASE || null
+      }
+    } 
   });
 });
