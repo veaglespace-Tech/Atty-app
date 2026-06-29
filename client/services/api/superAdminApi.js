@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -41,8 +41,15 @@ export const superAdminApi = createApi({
       providesTags: ["SAOrganizations"],
     }),
     getSuperAdminLeads: builder.query({
-      query: () => `/super-admin/leads`,
-      providesTags: ["SAOrganizations"],
+      query: () => "/super-admin/leads",
+      providesTags: ["SuperAdminLeads"],
+    }),
+    deleteSuperAdminLead: builder.mutation({
+      query: (leadId) => ({
+        url: `/super-admin/leads/${leadId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SuperAdminLeads"],
     }),
     downloadSuperAdminOrganizationsPdf: builder.mutation({
       query: (queryString = "") => ({
@@ -333,6 +340,7 @@ export const {
   useGetSuperAdminOrganizationUsersQuery,
   useGetSuperAdminOrganizationTeamsQuery,
   useGetSuperAdminLeadsQuery,
+  useDeleteSuperAdminLeadMutation,
   useDownloadSuperAdminOrganizationsPdfMutation,
   useDownloadSuperAdminOrganizationsExcelMutation,
   usePatchSuperAdminOrganizationMutation,

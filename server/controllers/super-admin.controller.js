@@ -3890,6 +3890,10 @@ exports.getSuperAdminLeads = asyncHandler(async (req, res) => {
     code: "-",
     email: lead.organizationEmail,
     phone: lead.organizationPhone,
+    city: lead.organizationCity,
+    state: lead.organizationState,
+    country: lead.organizationCountry,
+    address: lead.organizationAddress,
     adminName: lead.adminName || "-",
     adminEmail: lead.adminEmail || "-",
     adminPhone: lead.adminPhone || "-",
@@ -3898,4 +3902,19 @@ exports.getSuperAdminLeads = asyncHandler(async (req, res) => {
   }));
 
   res.status(200).json({ success: true, data: formattedLeads });
+});
+
+exports.deleteSuperAdminLead = asyncHandler(async (req, res) => {
+  const { leadId } = req.params;
+  
+  if (!leadId) {
+    res.status(400);
+    throw new Error("Lead ID is required");
+  }
+
+  await prisma.registrationLead.delete({
+    where: { id: Number(leadId) }
+  });
+
+  res.status(200).json({ success: true, message: "Lead deleted successfully" });
 });

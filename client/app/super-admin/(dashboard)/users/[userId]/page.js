@@ -21,7 +21,6 @@ import {
   formatPermissionLabel,
   formatRoleLabel,
   getDefaultPermissionsForRole,
-  ROLES,
 } from "@/utils/roles";
 import { useToggleReferralPartnerMutation } from "@/services/api/partnerReferralApi";
 import { getLocalPhoneNumber } from "@/utils/phone";

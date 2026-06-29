@@ -44,7 +44,7 @@ export default function ReferredOrganizationsPage({ params }) {
         </button>
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-            {user.name}'s Referrals
+            {user.name}&apos;s Referrals
           </h2>
           <p className="text-sm font-medium text-slate-500">
             Organizations that signed up using partner code: <span className="font-bold text-slate-700 dark:text-slate-300">{user.partnerReferralCode}</span>

@@ -117,7 +117,7 @@ export default function ReferralsPage() {
         
         {stats.referredOrganizations?.length === 0 ? (
           <p className="text-sm text-slate-500 italic text-center py-8">
-            You haven't referred any organizations yet. Share your link to get started!
+            You haven&apos;t referred any organizations yet. Share your link to get started!
           </p>
         ) : (
           <div className="overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white/90 dark:border-slate-800 dark:bg-slate-950/70">

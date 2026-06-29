@@ -425,6 +425,10 @@ model RegistrationLead {
   organizationName  String
   organizationEmail String   @unique
   organizationPhone String?
+  organizationCity  String?
+  organizationState String?
+  organizationCountry String?
+  organizationAddress String?
   adminName         String?
   adminEmail        String?
   adminPhone        String?

@@ -163,6 +163,7 @@ export default function AdminRegistration() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ org: orgDraft, admin: adminDraft }),
+            keepalive: true,
           });
         } catch (err) {
           console.error("Failed to save lead:", err);
