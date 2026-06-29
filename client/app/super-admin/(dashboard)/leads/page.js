@@ -144,10 +144,10 @@ export default function LeadsPage() {
                   <p><span className="font-semibold text-slate-700 dark:text-slate-300">Name:</span> {selectedLead.name}</p>
                   <p><span className="font-semibold text-slate-700 dark:text-slate-300">Email:</span> {selectedLead.email}</p>
                   <p><span className="font-semibold text-slate-700 dark:text-slate-300">Phone:</span> {selectedLead.phone || "-"}</p>
-                  {selectedLead.city && <p><span className="font-semibold text-slate-700 dark:text-slate-300">City:</span> {selectedLead.city}</p>}
-                  {selectedLead.state && <p><span className="font-semibold text-slate-700 dark:text-slate-300">State:</span> {selectedLead.state}</p>}
-                  {selectedLead.country && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Country:</span> {selectedLead.country}</p>}
-                  {selectedLead.address && <p><span className="font-semibold text-slate-700 dark:text-slate-300">Address:</span> {selectedLead.address}</p>}
+                  <p><span className="font-semibold text-slate-700 dark:text-slate-300">City:</span> {selectedLead.city || "(Not provided)"}</p>
+                  <p><span className="font-semibold text-slate-700 dark:text-slate-300">State:</span> {selectedLead.state || "(Not provided)"}</p>
+                  <p><span className="font-semibold text-slate-700 dark:text-slate-300">Country:</span> {selectedLead.country || "(Not provided)"}</p>
+                  <p><span className="font-semibold text-slate-700 dark:text-slate-300">Address:</span> {selectedLead.address || "(Not provided)"}</p>
                 </div>
               </div>
               

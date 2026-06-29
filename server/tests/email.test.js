@@ -9,6 +9,15 @@ process.env.SMTP_HOST = "smtp.hostinger.com";
 process.env.SMTP_PORT = "465";
 process.env.SMTP_SECURE = "true";
 
+const clearExtraMailboxEnv = () => {
+  for (let index = 3; index <= 20; index += 1) {
+    delete process.env[`EMAIL_${index}`];
+    delete process.env[`EMAIL_${index}_PASSWORD`];
+  }
+};
+
+clearExtraMailboxEnv();
+
 jest.mock("../lib/prisma", () => {
   const tx = {
     $executeRawUnsafe: jest.fn().mockResolvedValue(undefined),
@@ -33,6 +42,7 @@ const sendEmail = require("../utils/email");
 describe("email rotation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearExtraMailboxEnv();
   });
 
   it("uses EMAIL_1 while it is still under the daily limit", async () => {

@@ -150,6 +150,14 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
     data: { orgAdminId: adminUser.id },
   });
 
+  try {
+    await prisma.registrationLead.delete({
+      where: { organizationEmail: normalizedOrgEmail },
+    });
+  } catch (err) {
+    // Ignore if no lead exists
+  }
+
   res.status(201).json({
     success: true,
     message: "Organization and Admin created successfully",

@@ -446,6 +446,7 @@ function OverviewTab({ item, updatingAccess, onAccessUpdate }) {
             <DetailTile label="Subscription Expiry" value={formatCalendarDate(item.subscriptionExpiry, "-")} />
             <DetailTile label="Successful Payments" value={Number(item.paymentSummary?.successfulPayments || 0)} />
             <DetailTile label="Last Payment" value={formatDateTime(item.paymentSummary?.lastPaymentAt)} />
+            <DetailTile label="Referred By" value={item.referredByPartner?.name || "-"} />
           </div>
         </SectionCard>
 
@@ -453,6 +454,8 @@ function OverviewTab({ item, updatingAccess, onAccessUpdate }) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <DetailTile label="Admin Name" value={item.admin?.name || "-"} />
             <DetailTile label="Admin Email" value={item.admin?.email || "-"} />
+            <DetailTile label="Partner Code" value={item.referredByPartner?.partnerReferralCode || "-"} />
+            <DetailTile label="Partner Email" value={item.referredByPartner?.email || "-"} />
             <DetailTile label="Member Limit" value={Number(item.plan?.memberLimit || 0) || "-"} />
             <DetailTile label="Max Teams" value={Number(item.plan?.maxTeams || 0) || "-"} />
           </div>

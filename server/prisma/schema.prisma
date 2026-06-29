@@ -203,6 +203,7 @@ model Organization {
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
+  @@index([referredByPartnerId], map: "organization_referredByPartnerId_fkey")
   @@index([subscriptionStatus, subscriptionExpiry], map: "Organization_subscriptionStatus_subscriptionExpiry_idx")
   @@map("organization")
 }
@@ -647,9 +648,9 @@ model email_sender_usage {
 
 model Coupon {
   id              Int           @id @default(autoincrement())
-  code            String        @unique 
+  code            String        @unique
   discountType    DiscountType
-  discountValue   Float         
+  discountValue   Float
   maxUses         Int?
   usesCount       Int           @default(0)
   

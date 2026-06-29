@@ -392,6 +392,14 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
             mobileCountryCode: true,
           },
         },
+        referredByPartner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            partnerReferralCode: true,
+          },
+        },
         _count: {
           select: ORGANIZATION_MEMBER_COUNT_SELECT,
         },
@@ -447,6 +455,10 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
       adminEmail: org.orgAdmin?.email || "",
       adminPhone: org.orgAdmin?.mobile || "",
       adminPhoneCountryCode: org.orgAdmin?.mobileCountryCode || "",
+      referredByPartnerId: org.referredByPartner?.id || null,
+      referredByPartnerName: org.referredByPartner?.name || "",
+      referredByPartnerEmail: org.referredByPartner?.email || "",
+      partnerReferralCode: org.referredByPartner?.partnerReferralCode || "",
       users: Number(org._count?.members || 0),
       teams: Number(org._count?.teams || 0),
       planName: org.plan?.name || "TRIAL",
@@ -589,6 +601,17 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
           status: true,
           isActive: true,
           createdAt: true,
+        },
+      },
+      referredByPartner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          mobile: true,
+          mobileCountryCode: true,
+          partnerReferralCode: true,
+          isReferralPartner: true,
         },
       },
       activeSubscription: {
@@ -739,6 +762,17 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
           status: organization.orgAdmin.status,
           active: Boolean(organization.orgAdmin.isActive),
           createdAt: organization.orgAdmin.createdAt,
+        }
+      : null,
+    referredByPartner: organization.referredByPartner
+      ? {
+          id: organization.referredByPartner.id,
+          name: organization.referredByPartner.name,
+          email: organization.referredByPartner.email,
+          mobile: organization.referredByPartner.mobile || "",
+          mobileCountryCode: organization.referredByPartner.mobileCountryCode || "",
+          partnerReferralCode: organization.referredByPartner.partnerReferralCode || "",
+          active: Boolean(organization.referredByPartner.isReferralPartner),
         }
       : null,
     activeSubscription: organization.activeSubscription
@@ -1686,6 +1720,7 @@ exports.downloadSuperAdminOrganizationsPdf = asyncHandler(async (req, res) => {
     { key: "code", label: "Org Code", width: 70, align: "left" },
     { key: "adminName", label: "Admin", width: 120 },
     { key: "adminEmail", label: "Admin Email", width: 160 },
+    { key: "referredByPartnerName", label: "Referred By", width: 120 },
     { key: "planName", label: "Plan", width: 80 },
     { key: "subscriptionStatus", label: "Subscription", width: 85, align: "left" },
     { key: "users", label: "Users", width: 55, align: "left" },
@@ -1738,6 +1773,8 @@ exports.downloadSuperAdminOrganizationsExcel = asyncHandler(async (req, res) => 
       { key: "phoneLabel", label: "Phone", width: 104 },
       { key: "adminName", label: "Admin Name", width: 110 },
       { key: "adminEmail", label: "Admin Email", width: 132 },
+      { key: "referredByPartnerName", label: "Referred By", width: 110 },
+      { key: "partnerReferralCode", label: "Partner Code", width: 96 },
       { key: "planName", label: "Plan", width: 86 },
       { key: "planCode", label: "Plan Code", width: 80 },
       { key: "subscriptionStatus", label: "Subscription", width: 86 },

@@ -1,6 +1,11 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 
+const normalizePartnerReferralCode = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase();
+
 // Toggle Partner Status (Super Admin Only)
 exports.toggleReferralPartner = asyncHandler(async (req, res) => {
   const { userId } = req.params;
@@ -16,7 +21,11 @@ exports.toggleReferralPartner = asyncHandler(async (req, res) => {
   
   // Generate a code if they are becoming a partner and don't have one
   if (isPartner && !partnerReferralCode) {
-    partnerReferralCode = `PARTNER-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    partnerReferralCode = normalizePartnerReferralCode(
+      `PARTNER-${Math.random().toString(36).substring(2, 8)}`
+    );
+  } else if (partnerReferralCode) {
+    partnerReferralCode = normalizePartnerReferralCode(partnerReferralCode);
   }
 
   const updatedUser = await prisma.user.update({
@@ -49,9 +58,16 @@ exports.getPartnerStats = asyncHandler(async (req, res) => {
     where: { id: Number(userId) },
     include: {
       referredOrganizations: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
         select: {
           id: true,
           name: true,
+          organizationCode: true,
           createdAt: true,
           subscriptionStatus: true,
           plan: { select: { name: true } },

@@ -78,6 +78,10 @@ const isFreeTrialPlan = (plan = {}) => String(plan.code || "").toUpperCase().inc
 const parseIntentId = (v) => { const p = Number(v); return Number.isFinite(p) && p > 0 ? Math.floor(p) : null; };
 const getRemainingMs = (endDate, now = new Date()) => { const e = new Date(endDate || 0); return (!isNaN(e) && e > now) ? e - now : 0; };
 const createInternalOrderId = ({ orgId, mode = "RENEW" }) => `INTENT_${mode}_${orgId}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+const normalizePartnerReferralCode = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase();
 
 const calculateProratedCredit = (sub, now = new Date()) => {
   if (!sub?.startDate || !sub?.endDate) return 0;
@@ -268,8 +272,9 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
       const referralCode = await generateUniqueReferralCode(tx);
       
       let referredByPartnerId = null;
-      if (organization.partnerReferralCode) {
-        const partner = await tx.user.findUnique({ where: { partnerReferralCode: organization.partnerReferralCode } });
+      const partnerReferralCode = normalizePartnerReferralCode(organization.partnerReferralCode);
+      if (partnerReferralCode) {
+        const partner = await tx.user.findUnique({ where: { partnerReferralCode } });
         if (partner && partner.isReferralPartner) referredByPartnerId = partner.id;
       }
 
@@ -597,8 +602,9 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       const refCode = await generateUniqueReferralCode(tx);
       
       let referredByPartnerId = null;
-      if (organization.partnerReferralCode) {
-        const partner = await tx.user.findUnique({ where: { partnerReferralCode: organization.partnerReferralCode } });
+      const partnerReferralCode = normalizePartnerReferralCode(organization.partnerReferralCode);
+      if (partnerReferralCode) {
+        const partner = await tx.user.findUnique({ where: { partnerReferralCode } });
         if (partner && partner.isReferralPartner) referredByPartnerId = partner.id;
       }
       

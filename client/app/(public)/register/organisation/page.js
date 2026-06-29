@@ -176,7 +176,6 @@ export default function OrganisationForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ org: orgDraft, admin: {} }),
-        keepalive: true,
       });
     } catch (err) {
       console.error("Failed to save lead:", err);
