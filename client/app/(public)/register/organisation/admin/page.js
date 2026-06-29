@@ -145,13 +145,30 @@ export default function AdminRegistration() {
   const onSubmit = async (values) => {
     setSubmitError("");
     try {
-      setRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin, {
+      const adminDraft = {
         ...values,
         name: normalizeTextInput(values.name),
         email: normalizeEmailInput(values.email),
         city: normalizeTextInput(values.city),
         mobile: toDigitsOnly(values.mobile),
-      });
+      };
+      
+      setRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin, adminDraft);
+
+      // Save as lead to the backend
+      const orgDraft = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation);
+      if (orgDraft) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/save-lead`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ org: orgDraft, admin: adminDraft }),
+          });
+        } catch (err) {
+          console.error("Failed to save lead:", err);
+        }
+      }
+
       router.push("/register/organisation/plan");
     } catch (error) {
       setSubmitError(error.message || "Something went wrong during registration.");

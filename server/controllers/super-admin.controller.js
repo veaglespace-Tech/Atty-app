@@ -2475,6 +2475,21 @@ exports.getSuperAdminUserById = asyncHandler(async (req, res) => {
           name: true,
         },
       },
+      _count: {
+        select: {
+          referredOrganizations: true
+        }
+      },
+      referredOrganizations: {
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          subscriptionStatus: true,
+          plan: { select: { name: true } },
+          orgAdmin: { select: { name: true, email: true } }
+        }
+      }
     },
   });
 
@@ -2551,6 +2566,10 @@ exports.getSuperAdminUserById = asyncHandler(async (req, res) => {
       attendanceSummary,
       teamNames,
       ledTeamNames,
+      isReferralPartner: user.isReferralPartner,
+      partnerReferralCode: user.partnerReferralCode,
+      _count: user._count,
+      referredOrganizations: user.referredOrganizations,
     },
   });
 });
@@ -2809,6 +2828,8 @@ exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
       role: true,
       status: true,
       isActive: true,
+      isReferralPartner: true,
+      partnerReferralCode: true,
       createdAt: true,
       orgId: true,
       organization: {
@@ -2817,6 +2838,11 @@ exports.getAllSuperAdminUsers = asyncHandler(async (req, res) => {
           organizationCode: true,
         },
       },
+      _count: {
+        select: {
+          referredOrganizations: true
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });
@@ -3843,3 +3869,33 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
   res.status(200).send(buffer);
 });
 
+exports.getSuperAdminLeads = asyncHandler(async (req, res) => {
+  const leads = await prisma.registrationLead.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+
+  // We should only show leads that have NOT successfully registered
+  // Find organizations that match these emails to exclude them
+  const convertedOrgEmails = await prisma.organization.findMany({
+    where: { email: { in: leads.map(l => l.organizationEmail) } },
+    select: { email: true }
+  });
+  
+  const convertedEmailsSet = new Set(convertedOrgEmails.map(o => o.email));
+  const activeLeads = leads.filter(l => !convertedEmailsSet.has(l.organizationEmail));
+
+  const formattedLeads = activeLeads.map(lead => ({
+    id: lead.id,
+    name: lead.organizationName,
+    code: "-",
+    email: lead.organizationEmail,
+    phone: lead.organizationPhone,
+    adminName: lead.adminName || "-",
+    adminEmail: lead.adminEmail || "-",
+    adminPhone: lead.adminPhone || "-",
+    createdAt: lead.createdAt,
+    status: "PENDING"
+  }));
+
+  res.status(200).json({ success: true, data: formattedLeads });
+});

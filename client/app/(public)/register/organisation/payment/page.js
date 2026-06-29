@@ -20,6 +20,7 @@ import {
   clearAllRegistrationDrafts, clearRegistrationDraft,
   getRegistrationDraft, REGISTRATION_DRAFT_KEYS, setRegistrationDraft,
 } from "@/utils/registerDraft";
+import { API_BASE_URL } from "@/services/api/baseApi";
 
 const PAYMENT_FEATURES = [
   { icon: ShieldCheck, title: "Enterprise-grade Security", desc: "Your data is 100% encrypted and secure." },
@@ -61,6 +62,13 @@ export default function PaymentPage() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  
+  // Coupon State
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  
   const [paymentStatus, setPaymentStatus] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [successState, setSuccessState] = useState(null);
@@ -69,9 +77,50 @@ export default function PaymentPage() {
   const [archiveFailedRegistration] = useArchiveFailedRegistrationMutation();
   const { data: gstData } = useGetGstRateQuery();
   const gstRate = gstData?.gstRate ?? 18;
-  const planPrice = selectedPlan ? Number(selectedPlan.price) : 0;
+  const originalPlanPrice = selectedPlan ? Number(selectedPlan.price) : 0;
+  
+  let planPrice = originalPlanPrice;
+  let discountAmount = 0;
+  
+  if (appliedCoupon && originalPlanPrice > 0) {
+    if (appliedCoupon.discountType === "PERCENTAGE") {
+      discountAmount = (originalPlanPrice * appliedCoupon.discountValue) / 100;
+    } else {
+      discountAmount = appliedCoupon.discountValue;
+    }
+    planPrice = Math.max(0, originalPlanPrice - discountAmount);
+  }
+
   const gstAmount = (planPrice * gstRate) / 100;
   const finalPrice = planPrice + gstAmount;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    setAppliedCoupon(null);
+    
+    try {
+      // using standard fetch since it's a public endpoint
+      const res = await fetch(`${API_BASE_URL}/coupons/validate/${encodeURIComponent(couponCode.trim())}`);
+      const data = await res.json();
+      if (data.success) {
+        setAppliedCoupon(data.data);
+      } else {
+        setCouponError(data.message || "Invalid coupon code");
+      }
+    } catch (err) {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+  };
 
   // Check for PayU redirect result
   useEffect(() => {
@@ -173,7 +222,11 @@ export default function PaymentPage() {
     setPaymentError("");
 
     try {
-      const orderResponse = await createPaymentOrder({ planCode: selectedPlan.code, organization, admin }).unwrap();
+      const payload = { planCode: selectedPlan.code, organization, admin };
+      if (appliedCoupon) {
+        payload.couponCode = appliedCoupon.code;
+      }
+      const orderResponse = await createPaymentOrder(payload).unwrap();
 
       // Free trial flow
       if (orderResponse?.freeTrial) {
@@ -301,19 +354,70 @@ export default function PaymentPage() {
                       </div>
 
                       {selectedPlan && Number(selectedPlan.price) > 0 && (
-                        <div className="mb-4 rounded-2xl bg-black/5 p-4 dark:bg-white/5 space-y-2 text-sm font-semibold">
-                          <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                            <span>Base Price</span>
-                            <span>Rs. {planPrice.toLocaleString("en-IN")}</span>
+                        <div className="mb-4">
+                          <div className="mb-4">
+                            <label className={`block text-xs font-bold uppercase tracking-widest ${theme.textSub} mb-2`}>Have a coupon code?</label>
+                            {!appliedCoupon ? (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={couponCode}
+                                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                  placeholder="Enter code"
+                                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white uppercase"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={!couponCode.trim() || isApplyingCoupon}
+                                  onClick={handleApplyCoupon}
+                                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500"
+                                >
+                                  {isApplyingCoupon ? "..." : "Apply"}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                  <span className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+                                    {appliedCoupon.code} Applied
+                                  </span>
+                                </div>
+                                <button type="button" onClick={removeCoupon} className="text-xs font-medium text-red-600 hover:underline">Remove</button>
+                              </div>
+                            )}
+                            {couponError && <p className="mt-1 text-xs text-red-500">{couponError}</p>}
                           </div>
-                          <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                            <span>GST ({gstRate}%)</span>
-                            <span>Rs. {gstAmount.toLocaleString("en-IN")}</span>
-                          </div>
-                          <div className={`h-[1px] w-full ${theme.divider}`} />
-                          <div className="flex justify-between font-black text-slate-900 dark:text-white">
-                            <span>Total Payable</span>
-                            <span>Rs. {finalPrice.toLocaleString("en-IN")}</span>
+
+                          <div className="rounded-2xl bg-black/5 p-4 dark:bg-white/5 space-y-2 text-sm font-semibold">
+                            <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                              <span>Base Price</span>
+                              <span className={appliedCoupon ? "line-through opacity-70" : ""}>Rs. {originalPlanPrice.toLocaleString("en-IN")}</span>
+                            </div>
+                            
+                            {appliedCoupon && (
+                              <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                                <span>Discount ({appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}%` : 'Flat'})</span>
+                                <span>- Rs. {discountAmount.toLocaleString("en-IN")}</span>
+                              </div>
+                            )}
+
+                            {appliedCoupon && (
+                              <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                                <span>Discounted Price</span>
+                                <span>Rs. {planPrice.toLocaleString("en-IN")}</span>
+                              </div>
+                            )}
+
+                            <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                              <span>GST ({gstRate}%)</span>
+                              <span>Rs. {gstAmount.toLocaleString("en-IN")}</span>
+                            </div>
+                            <div className={`h-[1px] w-full ${theme.divider}`} />
+                            <div className="flex justify-between font-black text-slate-900 dark:text-white">
+                              <span>Total Payable</span>
+                              <span>Rs. {finalPrice.toLocaleString("en-IN")}</span>
+                            </div>
                           </div>
                         </div>
                       )}

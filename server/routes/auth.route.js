@@ -11,6 +11,7 @@ const {
   forgotPassword,
   validateResetPasswordToken,
   resetPassword,
+  saveLead,
 } = require("../controllers/auth.controller");
 const {
   validateReferralCode,
@@ -141,6 +142,7 @@ router.get("/organizations/search", searchOrganizations);
 router.get("/join/:referralCode", validateReferralCode);
 router.post("/join/:referralCode", submitJoinRequest);
 router.post("/register", validateBody(registerSchema), register);
+router.post("/save-lead", saveLead);
 router.post("/login", validateBody(loginSchema), login);
 router.post("/forgot-password", validateBody(forgotPasswordSchema), forgotPassword);
 router.post(

@@ -21,7 +21,7 @@
     "@cerebras/cerebras_cloud_sdk": "^1.64.1",
     "@prisma/client": "^5.22.0",
     "@sentry/node": "^10.22.0",
-    "archiver": "^5.3.1",
+    "archiver": "^5.3.2",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.9.0",

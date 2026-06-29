@@ -163,6 +163,7 @@ model Organization {
   orgAdminId           Int?                        @unique(map: "Organization_orgAdminId_key")
   planId               Int?
   subscriptionId       Int?                        @unique(map: "Organization_subscriptionId_key")
+  referredByPartnerId  Int?
   name                 String
   organizationCode     String                      @unique(map: "Organization_organizationCode_key")
   referralCode         String                      @unique(map: "Organization_referralCode_key")
@@ -191,6 +192,7 @@ model Organization {
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
   activeSubscription   Subscription?               @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id], map: "Organization_subscriptionId_fkey")
   members              OrganizationMember[]
+  referredByPartner    User?                       @relation("ReferredOrganizations", fields: [referredByPartnerId], references: [id])
   payments             Payment[]
   posts                Post[]
   registrationRequests RegistrationRequest[]
@@ -229,6 +231,9 @@ model Payment {
   planName           String
   planCode           String
   amount             Float
+  originalAmount     Float?
+  couponId           Int?
+  coupon             Coupon?       @relation(fields: [couponId], references: [id])
   currency           String        @default("INR")
   gateway            String        @default("PAYU")
   status             PaymentStatus @default(CREATED)
@@ -250,6 +255,7 @@ model Payment {
   @@index([status], map: "Payment_status_idx")
   @@index([subscriptionId], map: "Payment_subscriptionId_idx")
   @@index([userId], map: "Payment_userId_fkey")
+  @@index([couponId], map: "Payment_couponId_idx")
   @@map("payment")
 }
 
@@ -414,6 +420,20 @@ model RegistrationRequest {
   @@map("registration_request")
 }
 
+model RegistrationLead {
+  id                Int      @id @default(autoincrement())
+  organizationName  String
+  organizationEmail String   @unique
+  organizationPhone String?
+  adminName         String?
+  adminEmail        String?
+  adminPhone        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("registration_lead")
+}
+
 model SupportTicket {
   id        Int                 @id @default(autoincrement())
   orgId     Int?
@@ -491,6 +511,8 @@ model User {
   resetTokenExpiry            DateTime?
   status                      UserStatus                  @default(APPROVED)
   isActive                    Boolean                     @default(true)
+  isReferralPartner           Boolean                     @default(false)
+  partnerReferralCode         String?                     @unique(map: "User_partnerReferralCode_key")
   lastLoginAt                 DateTime?
   profileImageUrl             String?
   profileImagePublicId        String?
@@ -500,6 +522,7 @@ model User {
   markedAttendances           Attendance[]                @relation("AttendanceMarkedBy")
   attendances                 Attendance[]                @relation("AttendanceUser")
   primaryAdminForOrganization Organization?               @relation("OrganizationPrimaryAdmin")
+  referredOrganizations       Organization[]              @relation("ReferredOrganizations")
   memberships                 OrganizationMember[]
   payments                    Payment[]
   posts                       Post[]                      @relation("PostAuthor")
@@ -512,6 +535,8 @@ model User {
   createdUsers                User[]                      @relation("UserCreatedBy")
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   notificationReads           UserNotificationRead[]
+  assignedCoupons             Coupon[]                    @relation("CouponAssignedTo")
+  createdCoupons              Coupon[]                    @relation("CouponCreatedBy")
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
@@ -614,6 +639,38 @@ model email_sender_usage {
   @@id([usageDate, email])
   @@index([email])
   @@index([usageDate])
+}
+
+model Coupon {
+  id              Int           @id @default(autoincrement())
+  code            String        @unique 
+  discountType    DiscountType
+  discountValue   Float         
+  maxUses         Int?
+  usesCount       Int           @default(0)
+  
+  assignedUserId  Int?
+  createdById     Int
+  
+  isActive        Boolean       @default(true)
+  validUntil      DateTime?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  assignedUser    User?         @relation("CouponAssignedTo", fields: [assignedUserId], references: [id])
+  createdBy       User          @relation("CouponCreatedBy", fields: [createdById], references: [id])
+  payments        Payment[]
+
+  @@index([code])
+  @@index([assignedUserId])
+  @@index([createdById])
+  @@map("coupon")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FLAT_AMOUNT
 }
 
 enum UserRole {

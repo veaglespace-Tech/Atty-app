@@ -86,6 +86,8 @@ app.use("/api/member", require("./routes/member.route"));
 app.use("/api/posts", require("./routes/post.route"));
 app.use("/api/atty", require("./routes/atty.route"));
 app.use("/api/contact", require("./routes/contact.route"));
+app.use("/api/coupons", require("./routes/coupon.route"));
+app.use("/api/partner-referral", require("./routes/partner-referral.route"));
 
 app.use("*", (req, res) => {
   res.status(404).json({ message: "resource not found" });

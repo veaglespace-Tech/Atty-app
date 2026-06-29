@@ -64,6 +64,7 @@ function getNavIcon(label) {
     return CreditCard;
   }
   if (normalized.includes("organization")) return Building2;
+  if (normalized.includes("referral")) return UserPlus;
   return ShieldCheck;
 }
 
@@ -86,6 +87,7 @@ function getNavColor(label) {
     return "text-violet-500 dark:text-violet-400";
   }
   if (normalized.includes("organization")) return "text-blue-600 dark:text-blue-400";
+  if (normalized.includes("referral")) return "text-emerald-500 dark:text-emerald-400";
   return "text-slate-500 dark:text-slate-400";
 }
 
@@ -118,7 +120,10 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   const visibleNavItems = useMemo(
     () =>
       (Array.isArray(navItems) ? navItems : []).filter(
-        (item) => !item?.permission || hasPermission(user, item.permission)
+        (item) => {
+          if (item.requiresPartner && !user?.isReferralPartner) return false;
+          return !item?.permission || hasPermission(user, item.permission);
+        }
       ),
     [navItems, user]
   );

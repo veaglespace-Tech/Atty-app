@@ -40,6 +40,10 @@ export const superAdminApi = createApi({
       query: (organizationId) => `/super-admin/organizations/${organizationId}/teams`,
       providesTags: ["SAOrganizations"],
     }),
+    getSuperAdminLeads: builder.query({
+      query: () => `/super-admin/leads`,
+      providesTags: ["SAOrganizations"],
+    }),
     downloadSuperAdminOrganizationsPdf: builder.mutation({
       query: (queryString = "") => ({
         url: `/super-admin/organizations/pdf${queryString ? `?${queryString}` : ""}`,
@@ -328,6 +332,7 @@ export const {
   useGetSuperAdminOrganizationByIdQuery,
   useGetSuperAdminOrganizationUsersQuery,
   useGetSuperAdminOrganizationTeamsQuery,
+  useGetSuperAdminLeadsQuery,
   useDownloadSuperAdminOrganizationsPdfMutation,
   useDownloadSuperAdminOrganizationsExcelMutation,
   usePatchSuperAdminOrganizationMutation,

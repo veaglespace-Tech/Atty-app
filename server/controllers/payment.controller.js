@@ -152,16 +152,36 @@ exports.getGstRateEndpoint = asyncHandler(async (req, res) => {
 
 // -- POST /api/payment/create-order -------------------------------------------
 exports.createOrder = asyncHandler(async (req, res) => {
-  const { planCode, organization, admin } = req.body || {};
+  const { planCode, organization, admin, couponCode } = req.body || {};
   const orgEmail = normalizeEmail(organization?.email);
   const adminEmail = normalizeEmail(admin?.email);
   const { dbPlan, plan, freeTrialPlan } = await resolvePlanForCheckout(planCode);
   try { await assertOnboardingIdentityAvailable({ adminEmail, organizationEmail: orgEmail }); }
   catch (err) { res.status(err.statusCode || 409); throw new Error(err.message || "Duplicate account details."); }
 
+  let discountAmount = 0;
+  let originalPrice = Number(plan.price || 0);
+  let basePrice = originalPrice;
+  let couponId = null;
+
+  if (couponCode && !freeTrialPlan) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } });
+    if (coupon && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.maxUses || coupon.usesCount < coupon.maxUses)) {
+      if (coupon.discountType === 'PERCENTAGE') {
+        discountAmount = (basePrice * coupon.discountValue) / 100;
+      } else {
+        discountAmount = coupon.discountValue;
+      }
+      basePrice = Math.max(0, basePrice - discountAmount);
+      couponId = coupon.id;
+    } else {
+       res.status(400); throw new Error("Invalid or expired coupon code");
+    }
+  }
+
   const gstRate = await getGstRate();
-  const gstAmount = roundMoney((Number(plan.price || 0) * gstRate) / 100);
-  const finalPrice = roundMoney(Number(plan.price || 0) + gstAmount);
+  const gstAmount = roundMoney((basePrice * gstRate) / 100);
+  const finalPrice = roundMoney(basePrice + gstAmount);
 
   if (freeTrialPlan) {
     if (!orgEmail || !adminEmail) { res.status(400); throw new Error("Org and admin details required for free trial."); }
@@ -187,14 +207,14 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const failureUrl = `${getServerBaseUrl()}/api/payment/payu-failure`;
 
   // Store registration data in memory keyed by txnid (30 min TTL)
-  pendingRegistrations.set(txnid, { organization, admin, plan: { code: plan.code, name: plan.name, price: plan.price, finalPrice, gstRate, gstAmount, durationInDays: plan.durationInDays }, expiresAt: Date.now() + RENEWAL_INTENT_TTL_MS });
+  pendingRegistrations.set(txnid, { organization, admin, plan: { code: plan.code, name: plan.name, price: plan.price, finalPrice, gstRate, gstAmount, durationInDays: plan.durationInDays }, couponId, originalPrice, expiresAt: Date.now() + RENEWAL_INTENT_TTL_MS });
   setTimeout(() => pendingRegistrations.delete(txnid), RENEWAL_INTENT_TTL_MS);
 
   res.status(200).json({
     success: true, freeTrial: false,
     payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, phone, udf1, surl: successUrl, furl: failureUrl, hash },
     baseUrl,
-    plan: { code: plan.code, name: plan.name, price: plan.price, finalPrice, gstRate, gstAmount, durationInDays: plan.durationInDays },
+    plan: { code: plan.code, name: plan.name, price: plan.price, finalPrice, gstRate, gstAmount, durationInDays: plan.durationInDays, basePrice, discountAmount },
     source: dbPlan ? "DB" : "FALLBACK",
   });
 });
@@ -221,7 +241,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
   if (Date.now() > pending.expiresAt) { pendingRegistrations.delete(txnid); return failRedirect("Registration session expired."); }
 
   console.log("[PayU Success Callback] Processing registration for txnid:", txnid);
-  const { organization, admin, plan } = pending;
+  const { organization, admin, plan, couponId, originalPrice } = pending;
   const adminEmail = normalizeEmail(admin?.email);
   const organizationEmail = normalizeEmail(organization?.email);
   let organizationPhone, adminPhone;
@@ -239,6 +259,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
     if (userExists || orgExists) return failRedirect("Account already exists. Please login.");
 
     console.log("[PayU Success Callback] Starting DB Transaction...");
+    let createdOrgName = "Organization";
     await prisma.$transaction(async (tx) => {
       const duration = resolvedPlan.durationInDays || 30;
       const expiryDate = new Date(Date.now() + duration * DAY_IN_MS);
@@ -246,8 +267,15 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
       const organizationCode = await generateUniqueOrgCode(tx);
       const referralCode = await generateUniqueReferralCode(tx);
       
+      let referredByPartnerId = null;
+      if (organization.partnerReferralCode) {
+        const partner = await tx.user.findUnique({ where: { partnerReferralCode: organization.partnerReferralCode } });
+        if (partner && partner.isReferralPartner) referredByPartnerId = partner.id;
+      }
+
       console.log("[PayU Success Callback] Creating organization...");
-      const newOrg = await tx.organization.create({ data: { organizationCode, referralCode, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "ACTIVE", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
+      const newOrg = await tx.organization.create({ data: { organizationCode, referralCode, referredByPartnerId, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "ACTIVE", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
+      createdOrgName = newOrg.name;
       
       console.log("[PayU Success Callback] Hashing password...");
       const hashedPw = await bcrypt.hash(admin.password, 10);
@@ -261,8 +289,19 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
       const sub = await tx.subscription.create({ data: { orgId: newOrg.id, planId: dbPlan ? dbPlan.id : null, planName: resolvedPlan.name, planCode: normalizedPlanCode, amount: Number(plan.finalPrice || resolvedPlan.price), currency: resolvedPlan.currency || "INR", status: "ACTIVE", startDate: new Date(), endDate: expiryDate, paymentGateway: PAYMENT_GATEWAYS.PAYU, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, createdById: newUser.id, activeKey: `ORG_${newOrg.id}` } });
       
       console.log("[PayU Success Callback] Creating payment record...");
-      await tx.payment.create({ data: { orgId: newOrg.id, userId: newUser.id, subscriptionId: sub.id, planName: resolvedPlan.name, planCode: normalizedPlanCode, amount: Number(plan.finalPrice || resolvedPlan.price), currency: resolvedPlan.currency || "INR", gateway: PAYMENT_GATEWAYS.PAYU, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, rawResponse: req.body || {}, status: "SUCCESS" } });
+      await tx.payment.create({ data: { orgId: newOrg.id, userId: newUser.id, subscriptionId: sub.id, planName: resolvedPlan.name, planCode: normalizedPlanCode, amount: Number(plan.finalPrice || resolvedPlan.price), currency: resolvedPlan.currency || "INR", gateway: PAYMENT_GATEWAYS.PAYU, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, rawResponse: req.body || {}, status: "SUCCESS", couponId: couponId || null, originalAmount: originalPrice || null } });
       await tx.organization.update({ where: { id: newOrg.id }, data: { subscriptionId: sub.id, orgAdminId: newUser.id } });
+      
+      if (couponId) {
+        await tx.coupon.update({ where: { id: couponId }, data: { usesCount: { increment: 1 } } });
+      }
+
+      // Delete the lead if it exists
+      try {
+        await tx.registrationLead.delete({ where: { organizationEmail } });
+      } catch (err) {
+        // It's okay if it doesn't exist
+      }
     });
 
     console.log("[PayU Success Callback] Transaction committed successfully.");
@@ -271,7 +310,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
       console.log("[PayU Success Callback] Sending welcome email...");
       await sendEmail({
         email: adminEmail,
-        subject: `Welcome to Veagle Attendee - ${truncateText(newOrg.name, 40)}`,
+        subject: `Welcome to Veagle Attendee - ${truncateText(createdOrgName, 40)}`,
         greeting: `Hello ${admin.name},`,
         intro: [
           "Congratulations! Your organization has been successfully registered on Veagle Attendee.",
@@ -332,7 +371,7 @@ exports.payuFailure = asyncHandler(async (req, res) => {
 });
 
 // -- Renewal helpers -----------------------------------------------------------
-const resolveRenewalContext = async ({ organizationId, planCode }) => {
+const resolveRenewalContext = async ({ organizationId, planCode, couponCode }) => {
   const org = await prisma.organization.findUnique({ where: { id: Number(organizationId) }, include: { plan: { select: { id: true, name: true, code: true, price: true, durationInDays: true, currency: true } } } });
   if (!org) { const e = new Error("Organization not found"); e.statusCode = 404; throw e; }
   const { code, dbPlan, plan, freeTrialPlan } = await resolvePlanForCheckout(planCode);
@@ -349,31 +388,47 @@ const resolveRenewalContext = async ({ organizationId, planCode }) => {
   let mode = RENEWAL_MODES.RENEW;
   if (hasActive) { if (samePlan) mode = RENEWAL_MODES.EXTEND; else if (selPrice < curPrice) mode = RENEWAL_MODES.DOWNGRADE_SCHEDULED; else mode = RENEWAL_MODES.UPGRADE_NOW; }
   const upgradeCredit = mode === RENEWAL_MODES.UPGRADE_NOW ? calculateProratedCredit(activeSub, now) : 0;
-  const basePayableAmount = roundMoney(mode === RENEWAL_MODES.UPGRADE_NOW ? Math.max(selPrice - upgradeCredit, 0) : selPrice);
+  let discountAmount = 0;
+  let couponId = null;
+  let discountedPrice = selPrice;
+  if (couponCode && !freeTrialPlan) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } });
+    if (coupon && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.maxUses || coupon.usesCount < coupon.maxUses)) {
+      if (coupon.discountType === 'PERCENTAGE') {
+        discountAmount = (discountedPrice * coupon.discountValue) / 100;
+      } else {
+        discountAmount = coupon.discountValue;
+      }
+      discountedPrice = Math.max(0, discountedPrice - discountAmount);
+      couponId = coupon.id;
+    }
+  }
+
+  const basePayableAmount = roundMoney(mode === RENEWAL_MODES.UPGRADE_NOW ? Math.max(discountedPrice - upgradeCredit, 0) : discountedPrice);
   const gstAmount = roundMoney((basePayableAmount * gstRate) / 100);
   const payableAmount = roundMoney(basePayableAmount + gstAmount);
   const durationInDays = Number(plan.durationInDays || 0) || 30;
   const effectiveStartDate = (mode === RENEWAL_MODES.EXTEND || mode === RENEWAL_MODES.DOWNGRADE_SCHEDULED) && activeSub?.endDate ? new Date(activeSub.endDate) : now;
   const expiryDate = new Date(effectiveStartDate.getTime() + durationInDays * DAY_IN_MS);
-  return { org, activeSub, code, dbPlan, plan, freeTrialPlan, mode, upgradeCredit, basePayableAmount, gstRate, gstAmount, payableAmount, remainingDays, curPrice, selPrice, hasActive, curCode, currentExpiry: activeSub?.endDate || org.subscriptionExpiry || null, effectiveStartDate, durationInDays, now, expiryDate };
+  return { org, activeSub, code, dbPlan, plan, freeTrialPlan, mode, upgradeCredit, basePayableAmount, gstRate, gstAmount, payableAmount, remainingDays, curPrice, selPrice, hasActive, curCode, currentExpiry: activeSub?.endDate || org.subscriptionExpiry || null, effectiveStartDate, durationInDays, now, expiryDate, couponId, discountAmount, originalPrice: selPrice };
 };
 
 const createRenewalIntent = async ({ organizationId, userId, ctx, gatewayOrderId = null }) => {
   const now = new Date();
   const fallbackId = createInternalOrderId({ orgId: organizationId, mode: ctx.mode });
   const resolvedOrderId = String(gatewayOrderId || fallbackId);
-  return prisma.subscriptionRenewalIntent.create({ data: { orgId: Number(organizationId), userId: Number(userId), planId: ctx.dbPlan?.id || null, currentSubscriptionId: ctx.activeSub?.id || null, planName: ctx.plan.name, planCode: ctx.code, currentPlanName: ctx.activeSub?.planName || ctx.org.plan?.name || null, currentPlanCode: ctx.curCode || null, mode: ctx.mode, status: "CREATED", payableAmount: roundMoney(ctx.payableAmount), creditAmount: roundMoney(ctx.upgradeCredit), currency: ctx.plan.currency || "INR", remainingDays: Number(ctx.remainingDays || 0), expectedStartDate: ctx.effectiveStartDate, expectedEndDate: ctx.expiryDate, gateway: ctx.payableAmount > 0 ? PAYMENT_GATEWAYS.PAYU : PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: resolvedOrderId, expiresAt: ctx.payableAmount > 0 ? new Date(now.getTime() + RENEWAL_INTENT_TTL_MS) : null, metadata: { source: "create-renewal-order", renewal: { mode: ctx.mode, hasActiveSub: ctx.hasActive, currentExpiry: ctx.currentExpiry, basePayableAmount: ctx.basePayableAmount, gstRate: ctx.gstRate, gstAmount: ctx.gstAmount } } } });
+  return prisma.subscriptionRenewalIntent.create({ data: { orgId: Number(organizationId), userId: Number(userId), planId: ctx.dbPlan?.id || null, currentSubscriptionId: ctx.activeSub?.id || null, planName: ctx.plan.name, planCode: ctx.code, currentPlanName: ctx.activeSub?.planName || ctx.org.plan?.name || null, currentPlanCode: ctx.curCode || null, mode: ctx.mode, status: "CREATED", payableAmount: roundMoney(ctx.payableAmount), creditAmount: roundMoney(ctx.upgradeCredit), currency: ctx.plan.currency || "INR", remainingDays: Number(ctx.remainingDays || 0), expectedStartDate: ctx.effectiveStartDate, expectedEndDate: ctx.expiryDate, gateway: ctx.payableAmount > 0 ? PAYMENT_GATEWAYS.PAYU : PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: resolvedOrderId, expiresAt: ctx.payableAmount > 0 ? new Date(now.getTime() + RENEWAL_INTENT_TTL_MS) : null, metadata: { source: "create-renewal-order", renewal: { mode: ctx.mode, hasActiveSub: ctx.hasActive, currentExpiry: ctx.currentExpiry, basePayableAmount: ctx.basePayableAmount, gstRate: ctx.gstRate, gstAmount: ctx.gstAmount }, couponId: ctx.couponId || null, discountAmount: ctx.discountAmount || 0, originalPrice: ctx.originalPrice || 0 } } });
 
 };
 
 // -- POST /api/payment/create-renewal-order ------------------------------------
 exports.createRenewalOrder = asyncHandler(async (req, res) => {
-  const { planCode } = req.body || {};
+  const { planCode, couponCode } = req.body || {};
   const organizationId = Number(req.user?.organizationId || req.user?.organization);
   const userId = Number(req.user?.id);
   if (!organizationId || !userId) { res.status(403); throw new Error("Organization context missing"); }
 
-  const ctx = await resolveRenewalContext({ organizationId, planCode });
+  const ctx = await resolveRenewalContext({ organizationId, planCode, couponCode });
   if (ctx.org.isBlocked || ctx.org.isActive === false || ctx.org.deletedAt) { res.status(403); throw new Error("Organization access is blocked"); }
   if (ctx.freeTrialPlan) { res.status(400); throw new Error("Existing organizations cannot renew with a free trial plan."); }
 
@@ -381,7 +436,7 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
 
   if (ctx.payableAmount <= 0) {
     const intent = await createRenewalIntent({ organizationId, userId, ctx });
-    return res.status(200).json({ success: true, freeRenewal: true, intentId: intent.id, intentStatus: intent.status, order: null, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: 0, basePayableAmount: 0, gstRate: ctx.gstRate, gstAmount: 0, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR" }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate } });
+    return res.status(200).json({ success: true, freeRenewal: true, intentId: intent.id, intentStatus: intent.status, order: null, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: 0, basePayableAmount: 0, gstRate: ctx.gstRate, gstAmount: 0, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR", discountAmount: ctx.discountAmount }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate } });
   }
 
   const { merchantKey, merchantSalt, baseUrl } = getPayuCredentials();
@@ -399,7 +454,7 @@ exports.createRenewalOrder = asyncHandler(async (req, res) => {
   const successUrl = `${getServerBaseUrl()}/api/payment/payu-renewal-success`;
   const failureUrl = `${getServerBaseUrl()}/api/payment/payu-renewal-failure`;
 
-  res.status(200).json({ success: true, freeRenewal: false, intentId: intent.id, intentStatus: intent.status, intentExpiresAt: intent.expiresAt, payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, phone: userRecord?.mobile || "", udf1, surl: successUrl, furl: failureUrl, hash }, baseUrl, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: ctx.payableAmount, basePayableAmount: ctx.basePayableAmount, gstRate: ctx.gstRate, gstAmount: ctx.gstAmount, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR" }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate, currentPlanPrice: ctx.curPrice, selectedPlanPrice: ctx.selPrice } });
+  res.status(200).json({ success: true, freeRenewal: false, intentId: intent.id, intentStatus: intent.status, intentExpiresAt: intent.expiresAt, payuParams: { key: merchantKey, txnid, amount, productinfo, firstname, email, phone: userRecord?.mobile || "", udf1, surl: successUrl, furl: failureUrl, hash }, baseUrl, plan: { code: ctx.plan.code, name: ctx.plan.name, price: ctx.plan.price, payableAmount: ctx.payableAmount, basePayableAmount: ctx.basePayableAmount, gstRate: ctx.gstRate, gstAmount: ctx.gstAmount, upgradeCredit: ctx.upgradeCredit, durationInDays: ctx.durationInDays, currency: ctx.plan.currency || "INR", discountAmount: ctx.discountAmount }, renewal: { mode: ctx.mode, remainingDays: ctx.remainingDays, currentExpiry: ctx.currentExpiry, nextExpiry: ctx.expiryDate, currentPlanPrice: ctx.curPrice, selectedPlanPrice: ctx.selPrice } });
 });
 
 // -- POST /api/payment/payu-renewal-success -----------------------------------
@@ -436,7 +491,10 @@ exports.payuRenewalSuccess = asyncHandler(async (req, res) => {
         sub = await tx.subscription.create({ data: { orgId: intent.orgId, planId: intent.planId || null, planName: intent.planName, planCode: intent.planCode, amount: roundMoney(Number(intent.payableAmount) + Number(intent.creditAmount)), currency: intent.currency || "INR", status: "ACTIVE", startDate: expStart, endDate: expEnd, paymentGateway: PAYMENT_GATEWAYS.PAYU, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, createdById: intent.userId, activeKey: `ORG_${intent.orgId}` } });
         await tx.organization.update({ where: { id: intent.orgId }, data: { planId: intent.planId || null, subscriptionStatus: "ACTIVE", subscriptionExpiry: expEnd, subscriptionId: sub.id } });
       }
-      await tx.payment.create({ data: { orgId: intent.orgId, userId: intent.userId, subscriptionId: sub.id, planName: intent.planName, planCode: intent.planCode, amount: payableAmt, currency: intent.currency || "INR", gateway: PAYMENT_GATEWAYS.PAYU, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, rawResponse: req.body || undefined, status: "SUCCESS" } });
+      await tx.payment.create({ data: { orgId: intent.orgId, userId: intent.userId, subscriptionId: sub.id, planName: intent.planName, planCode: intent.planCode, amount: payableAmt, currency: intent.currency || "INR", gateway: PAYMENT_GATEWAYS.PAYU, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, rawResponse: req.body || undefined, status: "SUCCESS", couponId: intent.metadata?.couponId || null, originalAmount: intent.metadata?.originalPrice || null } });
+      if (intent.metadata?.couponId) {
+        await tx.coupon.update({ where: { id: intent.metadata.couponId }, data: { usesCount: { increment: 1 } } });
+      }
       await tx.subscriptionRenewalIntent.update({ where: { id: intent.id }, data: { status: "APPLIED", verifiedAt: now, appliedAt: now, appliedSubscriptionId: sub.id, paymentOrderId: txnid, paymentReferenceId: mihpayid || null, gateway: PAYMENT_GATEWAYS.PAYU } });
     });
     res.redirect(`${clientBase}/pricing?payustatus=success`);
@@ -492,7 +550,10 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
       sub = await tx.subscription.create({ data: { orgId: organizationId, planId: intent.planId || null, planName: intent.planName, planCode: intent.planCode, amount: roundMoney(Number(intent.payableAmount) + Number(intent.creditAmount)), currency: intent.currency || "INR", status: "ACTIVE", startDate: expStart, endDate: expEnd, paymentGateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, createdById: userId, activeKey: `ORG_${organizationId}` } });
       await tx.organization.update({ where: { id: organizationId }, data: { planId: intent.planId || null, subscriptionStatus: "ACTIVE", subscriptionExpiry: expEnd, subscriptionId: sub.id } });
     }
-    await tx.payment.create({ data: { orgId: organizationId, userId, subscriptionId: sub.id, planName: intent.planName, planCode: intent.planCode, amount: 0, currency: intent.currency || "INR", gateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, status: "SUCCESS" } });
+    await tx.payment.create({ data: { orgId: organizationId, userId, subscriptionId: sub.id, planName: intent.planName, planCode: intent.planCode, amount: 0, currency: intent.currency || "INR", gateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, status: "SUCCESS", couponId: intent.metadata?.couponId || null, originalAmount: intent.metadata?.originalPrice || null } });
+    if (intent.metadata?.couponId) {
+      await tx.coupon.update({ where: { id: intent.metadata.couponId }, data: { usesCount: { increment: 1 } } });
+    }
     await tx.subscriptionRenewalIntent.update({ where: { id: intent.id }, data: { status: "APPLIED", verifiedAt: now, appliedAt: now, appliedSubscriptionId: sub.id, gateway: PAYMENT_GATEWAYS.PLAN_CREDIT } });
     return { sub, org: await tx.organization.findUnique({ where: { id: organizationId } }) };
   });
@@ -534,7 +595,14 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       const { longitude, latitude } = parseCoordinates(organization);
       const orgCode = await generateUniqueOrgCode(tx);
       const refCode = await generateUniqueReferralCode(tx);
-      const newOrg = await tx.organization.create({ data: { organizationCode: orgCode, referralCode: refCode, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "TRIAL", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
+      
+      let referredByPartnerId = null;
+      if (organization.partnerReferralCode) {
+        const partner = await tx.user.findUnique({ where: { partnerReferralCode: organization.partnerReferralCode } });
+        if (partner && partner.isReferralPartner) referredByPartnerId = partner.id;
+      }
+      
+      const newOrg = await tx.organization.create({ data: { organizationCode: orgCode, referralCode: refCode, referredByPartnerId, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "TRIAL", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
       const hashedPw = await bcrypt.hash(admin.password, 10);
       const adminRole = normalizeRole("ORG_ADMIN");
       const newUser = await tx.user.create({ data: { name: truncateText(admin.name, 120) || "Admin", email: adminEmail, mobile: adminPhone.e164, mobileCountryCode: adminPhone.countryCode, password: hashedPw, role: adminRole, orgId: newOrg.id, status: "APPROVED", isActive: true } });
@@ -543,6 +611,11 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       await tx.payment.create({ data: { orgId: newOrg.id, userId: newUser.id, subscriptionId: sub.id, planName: resolvedPlan.name, planCode: normalizedPlanCode, amount: 0, gateway: PAYMENT_GATEWAYS.FREE_TRIAL, paymentOrderId: refId, status: "SUCCESS" } });
       await tx.organization.update({ where: { id: newOrg.id }, data: { subscriptionId: sub.id, orgAdminId: newUser.id } });
       await tx.$executeRaw`INSERT INTO free_trial_claim (orgEmail,adminEmail,adminPhone,planCode,startDate,endDate,orgName,adminName) VALUES (${organizationEmail},${adminEmail},${adminPhone.e164},${normalizedPlanCode},${new Date()},${expiryDate},${truncateText(organization.name,120)||null},${truncateText(admin.name,120)||null})`;
+      
+      try {
+        await tx.registrationLead.delete({ where: { organizationEmail } });
+      } catch (err) {}
+      
       return { newOrg, newUser };
     });
     let emailSent = false;

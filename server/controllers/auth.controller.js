@@ -839,6 +839,7 @@ const serializeSessionUser = (user, organization = null) => {
     mobile: normalized.mobile,
     mobileCountryCode: normalized.mobileCountryCode || null,
     emergencyContact: normalized.emergencyContact || null,
+    isReferralPartner: Boolean(normalized.isReferralPartner),
     currentAddress: normalized.currentAddress || null,
     permanentAddress: normalized.permanentAddress || null,
     profileImageUrl: normalized.profileImageUrl || null,
@@ -1623,4 +1624,34 @@ exports.getMe = asyncHandler(async (req, res) => {
   res.status(200).json({
     user: serializeSessionUser(user, user.organization || null),
   });
+});
+
+exports.saveLead = asyncHandler(async (req, res) => {
+  const { org, admin } = req.body || {};
+
+  if (!org?.email) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  // Upsert the lead based on organization email
+  const lead = await prisma.registrationLead.upsert({
+    where: { organizationEmail: org.email },
+    update: {
+      organizationName: org.name || "Unknown",
+      organizationPhone: org.mobile || org.phone || "",
+      ...(admin?.email ? { adminEmail: admin.email } : {}),
+      ...(admin?.name ? { adminName: admin.name } : {}),
+      ...(admin?.mobile ? { adminPhone: admin.mobile } : {}),
+    },
+    create: {
+      organizationName: org.name || "Unknown",
+      organizationEmail: org.email,
+      organizationPhone: org.mobile || org.phone || "",
+      adminName: admin?.name || null,
+      adminEmail: admin?.email || null,
+      adminPhone: admin?.mobile || null,
+    },
+  });
+
+  res.status(200).json({ success: true, data: lead });
 });

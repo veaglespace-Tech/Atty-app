@@ -35,7 +35,13 @@ const resolveApiBaseUrl = () => {
     || DEFAULT_PRODUCTION_API_URL;
 
   if (typeof window !== "undefined") {
-    return isLocalHost(window.location.hostname) ? localApiUrl : productionApiUrl;
+    if (isLocalHost(window.location.hostname)) {
+      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        return `http://${window.location.hostname}:5000/api`;
+      }
+      return localApiUrl;
+    }
+    return productionApiUrl;
   }
 
   return process.env.NODE_ENV === "production" ? productionApiUrl : localApiUrl;

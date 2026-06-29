@@ -30,6 +30,7 @@ import {
   formatPlanPrice,
 } from "@/utils/plans";
 import { ROLES } from "@/utils/roles";
+import { API_BASE_URL } from "@/services/api/baseApi";
 
 function getAccentPalette(color) {
   return {
@@ -70,7 +71,7 @@ const formatRenewalModeLabel = (mode) =>
     RENEW: "Renew",
   }[mode] || String(mode || "-").replaceAll("_", " "));
 
-const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName }) => {
+const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName, appliedCoupon }) => {
   if (!selectedPlan) return null;
 
   const now = new Date();
@@ -117,10 +118,21 @@ const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName
     }
   }
 
+  let discountedPrice = Number(selectedPlan.price || 0);
+  let discountAmount = 0;
+  if (appliedCoupon && discountedPrice > 0) {
+    if (appliedCoupon.discountType === "PERCENTAGE") {
+      discountAmount = (discountedPrice * appliedCoupon.discountValue) / 100;
+    } else {
+      discountAmount = appliedCoupon.discountValue;
+    }
+    discountedPrice = Math.max(0, discountedPrice - discountAmount);
+  }
+
   const payableAmount =
     mode === "UPGRADE_NOW"
-      ? Math.max(0, Number(Number(selectedPlan.price || 0) - upgradeCredit).toFixed(2))
-      : Number(selectedPlan.price || 0);
+      ? Math.max(0, Number(discountedPrice - upgradeCredit).toFixed(2))
+      : discountedPrice;
   const nextExpiry =
     (mode === "EXTEND" || mode === "DOWNGRADE_SCHEDULED") && hasActiveWindow
       ? new Date(
@@ -138,6 +150,8 @@ const buildRenewalPreview = ({ selectedPlan, activeSubscription, currentPlanName
     upgradeCredit,
     payableAmount,
     nextExpiry,
+    discountAmount,
+    originalPrice: Number(selectedPlan.price || 0)
   };
 };
 
@@ -167,6 +181,14 @@ export default function PricingPage() {
   const [paymentStatus, setPaymentStatus] = useState("");
   const [processingPlanCode, setProcessingPlanCode] = useState("");
   const [successState, setSuccessState] = useState(null);
+  
+  // Checkout Modal State
+  const [checkoutModalPlan, setCheckoutModalPlan] = useState(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  
   const { data: gstData } = useGetGstRateQuery();
   const gstRate = gstData?.gstRate || 0;
 
@@ -186,7 +208,11 @@ export default function PricingPage() {
         redirectPath: "/org/dashboard",
         emailSent: true,
       });
-      refetchSubscription?.();
+      try {
+        refetchSubscription?.();
+      } catch (e) {
+        // Ignore RTK Query error if the query hasn't started yet due to skip condition
+      }
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [refetchSubscription, user]);
@@ -249,17 +275,20 @@ export default function PricingPage() {
   ).toUpperCase();
   const currentPlanCode = String(orgMeta.currentPlanCode || "").trim().toUpperCase();
 
-  const handleRenewPlan = async (selectedPlan) => {
+  const handleRenewPlan = async (selectedPlan, appliedCouponCode = null) => {
     if (!isOrgAdminRenewal || !selectedPlan?.code) return;
 
+    setCheckoutModalPlan(null); // close modal
     setSuccessState(null);
     setPaymentStatus("Preparing secure checkout...");
     setProcessingPlanCode(selectedPlan.code);
 
     try {
-      const orderResponse = await createRenewalOrder({
-        planCode: selectedPlan.code,
-      }).unwrap();
+      const payload = { planCode: selectedPlan.code };
+      if (appliedCouponCode) {
+        payload.couponCode = appliedCouponCode;
+      }
+      const orderResponse = await createRenewalOrder(payload).unwrap();
       const intentId = Number(orderResponse?.intentId || 0);
       if (!Number.isFinite(intentId) || intentId <= 0) {
         throw new Error("Unable to create secure renewal session.");
@@ -302,6 +331,33 @@ export default function PricingPage() {
       setPaymentStatus(getErrorMessage(renewalError, "Unable to start renewal payment."));
       setProcessingPlanCode("");
     }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    setAppliedCoupon(null);
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/coupons/validate/${encodeURIComponent(couponCode.trim())}`);
+      const data = await res.json();
+      if (data.success) {
+        setAppliedCoupon(data.data);
+      } else {
+        setCouponError(data.message || "Invalid coupon code");
+      }
+    } catch (err) {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
   };
 
   if (isLoading) {
@@ -632,7 +688,7 @@ export default function PricingPage() {
                     {isOrgAdminRenewal ? (
                       <button
                         type="button"
-                        onClick={() => handleRenewPlan(selectedPlan)}
+                        onClick={() => handleRenewPlan(selectedPlan, null)}
                         disabled={Boolean(processingPlanCode)}
                         className="group/btn flex w-full items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 py-5 font-black text-slate-950 shadow-[0_18px_44px_rgba(15,23,42,0.10)] transition-all duration-500 hover:-translate-y-1 hover:bg-blue-600 hover:text-white hover:shadow-[0_24px_60px_rgba(59,130,246,0.18)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-100"
                       >
@@ -695,6 +751,7 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+      
     </div>
   );
 }

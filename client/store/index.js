@@ -14,6 +14,7 @@ import { paymentApi } from "@/services/api/paymentApi";
 import { utilityApi } from "@/services/api/utilityApi";
 import { postApi } from "@/services/api/postApi";
 import { attyApi } from "@/services/api/attyApi";
+import { partnerReferralApi } from "@/services/api/partnerReferralApi";
 
 export const store = configureStore({
   reducer: {
@@ -31,6 +32,7 @@ export const store = configureStore({
     [utilityApi.reducerPath]: utilityApi.reducer,
     [postApi.reducerPath]: postApi.reducer,
     [attyApi.reducerPath]: attyApi.reducer,
+    [partnerReferralApi.reducerPath]: partnerReferralApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -49,6 +51,7 @@ export const store = configureStore({
       paymentApi.middleware,
       utilityApi.middleware,
       postApi.middleware,
-      attyApi.middleware
+      attyApi.middleware,
+      partnerReferralApi.middleware
     ),
 });

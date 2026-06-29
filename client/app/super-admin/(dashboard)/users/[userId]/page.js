@@ -21,7 +21,9 @@ import {
   formatPermissionLabel,
   formatRoleLabel,
   getDefaultPermissionsForRole,
+  ROLES,
 } from "@/utils/roles";
+import { useToggleReferralPartnerMutation } from "@/services/api/partnerReferralApi";
 import { getLocalPhoneNumber } from "@/utils/phone";
 import {
   getErrorMessage,
@@ -153,9 +155,33 @@ export default function SuperAdminUserDetailStandalonePage() {
       role: user.role || "MEMBER",
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
+      isReferralPartner: Boolean(user.isReferralPartner),
+      partnerReferralCode: user.partnerReferralCode || "",
       permissions: Array.isArray(user.permissions) ? user.permissions : [],
     });
   }, [user]);
+
+  const [togglePartnerMutation] = useToggleReferralPartnerMutation();
+
+  const togglePartnerStatus = async () => {
+    try {
+      setTogglingAccess(true);
+      setError("");
+      setMessage("");
+      
+      await togglePartnerMutation({
+        userId,
+        isPartner: !form.isReferralPartner,
+      }).unwrap();
+
+      setMessage(!form.isReferralPartner ? "User is now a Referral Partner" : "Partner status revoked");
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to update partner status"));
+    } finally {
+      setTogglingAccess(false);
+    }
+  };
 
   const saveProfile = async () => {
     const validationError = validateManagedUserForm({
@@ -314,8 +340,18 @@ export default function SuperAdminUserDetailStandalonePage() {
               <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">{user.email}</p>
             </div>
           </div>
-
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={togglePartnerStatus}
+              disabled={togglingAccess}
+              className={`brand-btn brand-btn-sm w-full sm:w-auto disabled:opacity-60 ${
+                form.isReferralPartner ? "brand-btn-primary" : "brand-btn-secondary"
+              }`}
+            >
+              {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <UserCog size={15} />}
+              {form.isReferralPartner ? "Revoke Partner" : "Make Partner"}
+            </button>
             <button
               type="button"
               onClick={toggleAccess}
@@ -351,6 +387,9 @@ export default function SuperAdminUserDetailStandalonePage() {
           <DetailTile label="Role" value={formatRoleLabel(user.role)} />
           <DetailTile label="Approval Status" value={toDisplayText(user.approvalStatus)} />
           <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
+          <DetailTile label="Referral Partner" value={user.isReferralPartner ? "Yes" : "No"} />
+          {user.isReferralPartner && <DetailTile label="Partner Code" value={user.partnerReferralCode || "-"} />}
+          {user.isReferralPartner && <DetailTile label="Referred Orgs" value={String(user._count?.referredOrganizations || 0)} />}
           <DetailTile label="Email" value={toDisplayText(user.email)} />
           <DetailTile label="Mobile" value={userMobileLabel} />
           {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (

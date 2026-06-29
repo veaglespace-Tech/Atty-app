@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -110,6 +110,8 @@ const emailFieldProps = {
 
 export default function OrganisationForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const partnerRef = searchParams.get("partnerRef");
 
   const {
     register,
@@ -131,7 +133,17 @@ export default function OrganisationForm() {
       REGISTRATION_DRAFT_KEYS.organisation
     );
 
-    if (!storedOrganization) return;
+    if (!storedOrganization) {
+      if (partnerRef) {
+        setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, { partnerReferralCode: partnerRef });
+      }
+      return;
+    }
+
+    if (partnerRef && !storedOrganization.partnerReferralCode) {
+      storedOrganization.partnerReferralCode = partnerRef;
+      setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, storedOrganization);
+    }
 
     reset({
       ...organisationDefaultValues,
@@ -144,7 +156,9 @@ export default function OrganisationForm() {
   }, [reset]);
 
   const onSubmit = async (values) => {
-    setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, {
+    const existingDraft = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation) || {};
+    const orgDraft = {
+      ...existingDraft,
       ...values,
       name: normalizeTextInput(values.name),
       email: normalizeEmailInput(values.email),
@@ -153,7 +167,19 @@ export default function OrganisationForm() {
       country: normalizeTextInput(values.country),
       address: normalizeTextInput(values.address),
       phone: toDigitsOnly(values.phone),
-    });
+    };
+    setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, orgDraft);
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/save-lead`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ org: orgDraft, admin: {} }),
+      });
+    } catch (err) {
+      console.error("Failed to save lead:", err);
+    }
+
     router.push("/register/organisation/admin");
   };
 

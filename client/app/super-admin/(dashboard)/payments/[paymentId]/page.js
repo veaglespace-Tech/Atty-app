@@ -18,7 +18,7 @@ import {
 import { formatCalendarDate, getDateKey } from "@/utils/date";
 import { getErrorMessage, normalizeTextInput } from "@/utils/formValidation";
 
-const PAYMENT_STATUS_OPTIONS = ["CREATED", "SUCCESS", "FAILED", "CANCELLED", "REFUNDED"];
+const PAYMENT_STATUS_OPTIONS = ["CREATED", "SUCCESS", "FAILED", "REFUNDED"];
 const SUBSCRIPTION_STATUS_OPTIONS = ["ACTIVE", "EXPIRED", "PAYMENT_PENDING", "CANCELLED"];
 
 const formatMoney = (value, currency = "INR") => {

@@ -12,6 +12,7 @@ const navItems = [
   { label: "Posts", href: "/org/posts", permission: PERMISSIONS.POST_CREATE },
   { label: "Reports", href: "/org/reports", permission: PERMISSIONS.REPORTS_VIEW },
   { label: "Subscription", href: "/org/subscription", permission: PERMISSIONS.SUBSCRIPTION_VIEW },
+  { label: "Referrals", href: "/org/referrals", requiresPartner: true },
 ];
 
 export default function OrgLayout({ children }) {
