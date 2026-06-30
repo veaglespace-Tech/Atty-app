@@ -3,7 +3,7 @@ const prisma = require('../lib/prisma');
 // Create a new coupon
 exports.createCoupon = async (req, res) => {
   try {
-    const { discountType, discountValue, maxUses, validUntil } = req.body;
+    const { discountType, discountValue, maxUses, validFrom, validUntil } = req.body;
     const code = req.body.code?.toUpperCase();
 
     const existing = await prisma.coupon.findUnique({ where: { code } });
@@ -18,6 +18,7 @@ exports.createCoupon = async (req, res) => {
         discountValue: parseFloat(discountValue),
         maxUses: maxUses ? parseInt(maxUses) : null,
         createdById: Number(req.user?.id || req.user?._id || req.user?.userId),
+        validFrom: validFrom ? new Date(validFrom) : null,
         validUntil: validUntil ? new Date(validUntil) : null
       }
     });
@@ -114,7 +115,7 @@ exports.getMyCoupons = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    const { discountType, discountValue, maxUses, validUntil } = req.body;
+    const { discountType, discountValue, maxUses, validFrom, validUntil } = req.body;
     const code = req.body.code?.toUpperCase();
 
     const existing = await prisma.coupon.findUnique({ where: { id: parseInt(id) } });
@@ -136,6 +137,7 @@ exports.updateCoupon = async (req, res) => {
         discountType,
         discountValue: parseFloat(discountValue),
         maxUses: maxUses ? parseInt(maxUses) : null,
+        validFrom: validFrom ? new Date(validFrom) : null,
         validUntil: validUntil ? new Date(validUntil) : null
       }
     });
@@ -183,7 +185,13 @@ exports.validateCoupon = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Invalid coupon code' });
     }
     
-    if (coupon.validUntil && new Date(coupon.validUntil) < new Date()) {
+    const now = new Date();
+    
+    if (coupon.validFrom && new Date(coupon.validFrom) > now) {
+      return res.status(400).json({ success: false, message: 'This coupon code is not yet valid' });
+    }
+
+    if (coupon.validUntil && new Date(coupon.validUntil) < now) {
       return res.status(400).json({ success: false, message: 'This coupon code has expired' });
     }
     

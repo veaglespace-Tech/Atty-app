@@ -18,7 +18,8 @@ export default function CouponsPage() {
     discountType: "PERCENTAGE",
     discountValue: "",
     maxUses: "",
-    validityDays: ""
+    validFrom: "",
+    validUntil: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -52,7 +53,8 @@ export default function CouponsPage() {
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
       maxUses: coupon.maxUses || "",
-      validityDays: "" 
+      validFrom: coupon.validFrom ? coupon.validFrom.substring(0, 10) : "",
+      validUntil: coupon.validUntil ? coupon.validUntil.substring(0, 10) : ""
     });
     setEditingId(coupon.id);
     setShowForm(true);
@@ -84,26 +86,13 @@ export default function CouponsPage() {
     setIsSubmitting(true);
     setError("");
 
-    let validUntil = null;
-    if (formData.validityDays) {
-      const days = parseInt(formData.validityDays);
-      if (days > 0) {
-        const date = new Date();
-        date.setDate(date.getDate() + days);
-        validUntil = date.toISOString();
-      }
-    } else if (editingId) {
-      // Keep existing validUntil if editing and no new days provided
-      const existingCoupon = coupons.find(c => c.id === editingId);
-      if (existingCoupon) validUntil = existingCoupon.validUntil;
-    }
-
     const payload = {
       code: formData.code,
       discountType: formData.discountType,
       discountValue: parseFloat(formData.discountValue),
       maxUses: formData.maxUses ? parseInt(formData.maxUses) : null,
-      validUntil: validUntil
+      validFrom: formData.validFrom ? new Date(formData.validFrom).toISOString() : null,
+      validUntil: formData.validUntil ? new Date(formData.validUntil).toISOString() : null
     };
 
     try {
@@ -123,7 +112,7 @@ export default function CouponsPage() {
       if (data.success) {
         setShowForm(false);
         setEditingId(null);
-        setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validityDays: "" });
+        setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validFrom: "", validUntil: "" });
         fetchCoupons();
       } else {
         setError(data.message || "Failed to save coupon");
@@ -138,7 +127,7 @@ export default function CouponsPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validityDays: "" });
+    setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validFrom: "", validUntil: "" });
     setError("");
   };
 
@@ -187,9 +176,13 @@ export default function CouponsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Validity in Days (Optional)</label>
-              <input type="number" name="validityDays" value={formData.validityDays} onChange={handleInputChange} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="e.g. 30 (Updates expiry date from today)" />
-              {editingId && <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2">Leave blank to keep existing expiration date.</p>}
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valid From (Optional)</label>
+              <input type="date" name="validFrom" value={formData.validFrom} onChange={handleInputChange} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valid Until (Optional)</label>
+              <input type="date" name="validUntil" value={formData.validUntil} onChange={handleInputChange} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
             </div>
 
             <div className="md:col-span-2 flex justify-end gap-3 mt-4">
@@ -212,6 +205,7 @@ export default function CouponsPage() {
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Code</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Discount</th>
                 <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Uses</th>
+                <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Valid From</th>
                 <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Valid Until</th>
                 <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Actions</th>
               </tr>
@@ -236,6 +230,9 @@ export default function CouponsPage() {
                         >
                           {viewUsersId === c.id ? "Hide Users" : "View Users"}
                         </button>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                        {c.validFrom ? new Date(c.validFrom).toLocaleDateString() : "-"}
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap text-center text-sm font-medium text-slate-600 dark:text-slate-400">
                         {c.validUntil ? new Date(c.validUntil).toLocaleDateString() : "Never Expires"}
