@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
@@ -18,8 +19,10 @@ export default function CouponsPage() {
     discountType: "PERCENTAGE",
     discountValue: "",
     maxUses: "",
+    maxUses: "",
     validFrom: "",
-    validUntil: ""
+    validUntil: "",
+    applicablePlanCodes: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -37,8 +40,29 @@ export default function CouponsPage() {
       .catch((err) => console.error(err));
   };
 
+  const fetchPlans = () => {
+    fetch(`${API_BASE_URL}/plans`, {
+      credentials: "include"
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          const loadedPlans = data.plans || [];
+          setPlans(loadedPlans);
+          setFormData(prev => {
+            if (!editingId && prev.applicablePlanCodes.length === 0) {
+              return { ...prev, applicablePlanCodes: loadedPlans.map(p => p.code) };
+            }
+            return prev;
+          });
+        }
+      })
+      .catch((err) => console.error(err));
+  };
+
   useEffect(() => {
     fetchCoupons();
+    fetchPlans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -48,15 +72,16 @@ export default function CouponsPage() {
   };
 
   const handleEdit = (coupon) => {
+    setEditingId(coupon.id);
     setFormData({
       code: coupon.code,
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
       maxUses: coupon.maxUses || "",
       validFrom: coupon.validFrom ? coupon.validFrom.substring(0, 10) : "",
-      validUntil: coupon.validUntil ? coupon.validUntil.substring(0, 10) : ""
+      validUntil: coupon.validUntil ? coupon.validUntil.substring(0, 10) : "",
+      applicablePlanCodes: coupon.applicablePlanCodes || plans.map(p => p.code)
     });
-    setEditingId(coupon.id);
     setShowForm(true);
     setViewUsersId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -86,13 +111,28 @@ export default function CouponsPage() {
     setIsSubmitting(true);
     setError("");
 
+    if (formData.validFrom && formData.validUntil) {
+      if (new Date(formData.validFrom) > new Date(formData.validUntil)) {
+        setError("Valid Until date cannot be before Valid From date.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (!formData.applicablePlanCodes || formData.applicablePlanCodes.length === 0) {
+      setError("Please select at least one plan for this coupon.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
       code: formData.code,
       discountType: formData.discountType,
       discountValue: parseFloat(formData.discountValue),
       maxUses: formData.maxUses ? parseInt(formData.maxUses) : null,
       validFrom: formData.validFrom ? new Date(formData.validFrom).toISOString() : null,
-      validUntil: formData.validUntil ? new Date(formData.validUntil).toISOString() : null
+      validUntil: formData.validUntil ? new Date(formData.validUntil).toISOString() : null,
+      applicablePlanCodes: formData.applicablePlanCodes
     };
 
     try {
@@ -111,11 +151,10 @@ export default function CouponsPage() {
       
       if (data.success) {
         setShowForm(false);
-        setEditingId(null);
-        setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validFrom: "", validUntil: "" });
+        resetForm();
         fetchCoupons();
       } else {
-        setError(data.message || "Failed to save coupon");
+        setError(data.message || "Operation failed");
       }
     } catch (err) {
       setError("Network error occurred");
@@ -124,11 +163,15 @@ export default function CouponsPage() {
     }
   };
 
+  const resetForm = () => {
+    setEditingId(null);
+    setError("");
+    setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validFrom: "", validUntil: "", applicablePlanCodes: plans.map(p => p.code) });
+  };
+
   const handleCancel = () => {
     setShowForm(false);
-    setEditingId(null);
-    setFormData({ code: "", discountType: "PERCENTAGE", discountValue: "", maxUses: "", validFrom: "", validUntil: "" });
-    setError("");
+    resetForm();
   };
 
   return (
@@ -185,6 +228,54 @@ export default function CouponsPage() {
               <input type="date" name="validUntil" value={formData.validUntil} onChange={handleInputChange} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
             </div>
 
+            <div className="md:col-span-2">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Valid For Plans *</label>
+                {plans.length > 0 && (
+                  <div className="flex gap-4">
+                    <button 
+                      type="button" 
+                      onClick={() => setFormData(prev => ({ ...prev, applicablePlanCodes: plans.map(p => p.code) }))}
+                      className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20 dark:hover:bg-indigo-500/20 transition-all"
+                    >
+                      Select All
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setFormData(prev => ({ ...prev, applicablePlanCodes: [] }))}
+                      className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {plans.map(plan => (
+                  <label key={plan.id} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      className="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500 bg-white border-gray-300" 
+                      checked={formData.applicablePlanCodes.includes(plan.code)}
+                      onChange={(e) => {
+                        const code = plan.code;
+                        setFormData(prev => ({
+                          ...prev,
+                          applicablePlanCodes: e.target.checked 
+                            ? [...prev.applicablePlanCodes, code] 
+                            : prev.applicablePlanCodes.filter(c => c !== code)
+                        }));
+                      }}
+                    />
+                    <span className="text-slate-700 dark:text-slate-300 font-medium text-sm">
+                      {plan.name} <span className="text-slate-400 dark:text-slate-500 text-xs ml-1">({Number(plan.price) > 0 ? `₹${plan.price}` : 'Free'})</span>
+                    </span>
+                  </label>
+                ))}
+                {plans.length === 0 && <span className="text-sm text-slate-500">No plans found.</span>}
+              </div>
+            </div>
+
             <div className="md:col-span-2 flex justify-end gap-3 mt-4">
               <button type="button" onClick={handleCancel} className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 px-6 py-3 rounded-xl font-semibold transition-all">
                 Cancel
@@ -205,6 +296,7 @@ export default function CouponsPage() {
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Code</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Discount</th>
                 <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Uses</th>
+                <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Plans</th>
                 <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Valid From</th>
                 <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Valid Until</th>
                 <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Actions</th>
@@ -230,6 +322,13 @@ export default function CouponsPage() {
                         >
                           {viewUsersId === c.id ? "Hide Users" : "View Users"}
                         </button>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                        {c.applicablePlanCodes && c.applicablePlanCodes.length > 0 ? (
+                          <span title={c.applicablePlanCodes.join(", ")} className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-1 rounded text-xs font-bold cursor-help">{c.applicablePlanCodes.length} Plans</span>
+                        ) : (
+                          "All"
+                        )}
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap text-center text-sm font-medium text-slate-600 dark:text-slate-400">
                         {c.validFrom ? new Date(c.validFrom).toLocaleDateString() : "-"}

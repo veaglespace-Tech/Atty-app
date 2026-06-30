@@ -102,7 +102,7 @@ export default function PaymentPage() {
     
     try {
       // using standard fetch since it's a public endpoint
-      const res = await fetch(`${API_BASE_URL}/coupons/validate/${encodeURIComponent(couponCode.trim())}`);
+      const res = await fetch(`${API_BASE_URL}/coupons/validate/${encodeURIComponent(couponCode.trim())}?planCode=${encodeURIComponent(selectedPlan?.code || "")}`);
       const data = await res.json();
       if (data.success) {
         setAppliedCoupon(data.data);

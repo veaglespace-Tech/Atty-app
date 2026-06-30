@@ -170,7 +170,35 @@ exports.createOrder = asyncHandler(async (req, res) => {
 
   if (couponCode && !freeTrialPlan) {
     const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } });
-    if (coupon && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.maxUses || coupon.usesCount < coupon.maxUses)) {
+    
+    let isCouponValid = false;
+    if (coupon) {
+      let expiryDate = null;
+      if (coupon.validUntil) {
+        expiryDate = new Date(coupon.validUntil);
+        expiryDate.setUTCHours(23, 59, 59, 999);
+      }
+      
+      const now = new Date();
+      const isValidDate = !expiryDate || expiryDate >= now;
+      const isNotStarted = coupon.validFrom && new Date(coupon.validFrom) > now;
+      const isMaxUsesReached = coupon.maxUses && coupon.usesCount >= coupon.maxUses;
+      const isPlanValid = !coupon.applicablePlanCodes || (Array.isArray(coupon.applicablePlanCodes) && coupon.applicablePlanCodes.includes(plan.code));
+      
+      if (isValidDate && !isNotStarted && !isMaxUsesReached && isPlanValid) {
+        isCouponValid = true;
+      } else {
+        const errorReason = [];
+        if (!isValidDate) errorReason.push("Expired");
+        if (isNotStarted) errorReason.push("Not yet started");
+        if (isMaxUsesReached) errorReason.push("Usage limit reached");
+        if (!isPlanValid) errorReason.push(`Not valid for plan ${plan.code}`);
+        res.status(400); 
+        throw new Error(`Coupon rejected: ${errorReason.join(', ')}`);
+      }
+    }
+
+    if (isCouponValid) {
       if (coupon.discountType === 'PERCENTAGE') {
         discountAmount = (basePrice * coupon.discountValue) / 100;
       } else {
@@ -178,8 +206,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
       }
       basePrice = Math.max(0, basePrice - discountAmount);
       couponId = coupon.id;
-    } else {
-       res.status(400); throw new Error("Invalid or expired coupon code");
+    } else if (!coupon) {
+       res.status(404); throw new Error("Coupon code does not exist");
     }
   }
 
@@ -399,7 +427,26 @@ const resolveRenewalContext = async ({ organizationId, planCode, couponCode }) =
   let discountedPrice = selPrice;
   if (couponCode && !freeTrialPlan) {
     const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } });
-    if (coupon && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.maxUses || coupon.usesCount < coupon.maxUses)) {
+    let isCouponValid = false;
+    if (coupon) {
+      let expiryDate = null;
+      if (coupon.validUntil) {
+        expiryDate = new Date(coupon.validUntil);
+        expiryDate.setUTCHours(23, 59, 59, 999);
+      }
+      
+      const now = new Date();
+      const isValidDate = !expiryDate || expiryDate >= now;
+      const isNotStarted = coupon.validFrom && new Date(coupon.validFrom) > now;
+      const isMaxUsesReached = coupon.maxUses && coupon.usesCount >= coupon.maxUses;
+      const isPlanValid = !coupon.applicablePlanCodes || (Array.isArray(coupon.applicablePlanCodes) && coupon.applicablePlanCodes.includes(plan.code));
+      
+      if (isValidDate && !isNotStarted && !isMaxUsesReached && isPlanValid) {
+        isCouponValid = true; } else { console.log("Coupon validation failed:", { isValidDate, isNotStarted, isMaxUsesReached, isPlanValid, planCode: plan.code, applicablePlanCodes: coupon.applicablePlanCodes });
+      }
+    }
+
+    if (isCouponValid) {
       if (coupon.discountType === 'PERCENTAGE') {
         discountAmount = (discountedPrice * coupon.discountValue) / 100;
       } else {
