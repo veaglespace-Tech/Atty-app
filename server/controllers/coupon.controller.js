@@ -3,8 +3,16 @@ const prisma = require('../lib/prisma');
 // Create a new coupon
 exports.createCoupon = async (req, res) => {
   try {
-    const { discountType, discountValue, maxUses, validFrom, validUntil } = req.body;
+    const { discountType, discountValue, maxUses, validFrom, validUntil, applicablePlanCodes } = req.body;
     const code = req.body.code?.toUpperCase();
+
+    if (validFrom && validUntil && new Date(validFrom) > new Date(validUntil)) {
+      return res.status(400).json({ success: false, message: 'Valid Until date cannot be before Valid From date' });
+    }
+
+    if (!Array.isArray(applicablePlanCodes) || applicablePlanCodes.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one applicable plan code is required' });
+    }
 
     const existing = await prisma.coupon.findUnique({ where: { code } });
     if (existing) {
@@ -19,7 +27,8 @@ exports.createCoupon = async (req, res) => {
         maxUses: maxUses ? parseInt(maxUses) : null,
         createdById: Number(req.user?.id || req.user?._id || req.user?.userId),
         validFrom: validFrom ? new Date(validFrom) : null,
-        validUntil: validUntil ? new Date(validUntil) : null
+        validUntil: validUntil ? new Date(validUntil) : null,
+        applicablePlanCodes
       }
     });
 
@@ -115,8 +124,16 @@ exports.getMyCoupons = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    const { discountType, discountValue, maxUses, validFrom, validUntil } = req.body;
+    const { discountType, discountValue, maxUses, validFrom, validUntil, applicablePlanCodes } = req.body;
     const code = req.body.code?.toUpperCase();
+
+    if (validFrom && validUntil && new Date(validFrom) > new Date(validUntil)) {
+      return res.status(400).json({ success: false, message: 'Valid Until date cannot be before Valid From date' });
+    }
+
+    if (!Array.isArray(applicablePlanCodes) || applicablePlanCodes.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one applicable plan code is required' });
+    }
 
     const existing = await prisma.coupon.findUnique({ where: { id: parseInt(id) } });
     if (!existing) {
@@ -138,7 +155,8 @@ exports.updateCoupon = async (req, res) => {
         discountValue: parseFloat(discountValue),
         maxUses: maxUses ? parseInt(maxUses) : null,
         validFrom: validFrom ? new Date(validFrom) : null,
-        validUntil: validUntil ? new Date(validUntil) : null
+        validUntil: validUntil ? new Date(validUntil) : null,
+        applicablePlanCodes
       }
     });
 
@@ -176,6 +194,8 @@ exports.deleteCoupon = async (req, res) => {
 exports.validateCoupon = async (req, res) => {
   try {
     const { code } = req.params;
+    const { planCode } = req.query;
+    
     if (!code) {
       return res.status(400).json({ success: false, message: 'Coupon code is required' });
     }
@@ -185,14 +205,24 @@ exports.validateCoupon = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Invalid coupon code' });
     }
     
+    if (planCode && coupon.applicablePlanCodes && Array.isArray(coupon.applicablePlanCodes)) {
+      if (!coupon.applicablePlanCodes.includes(planCode)) {
+        return res.status(400).json({ success: false, message: 'This coupon code is not valid for the selected plan' });
+      }
+    }
+
     const now = new Date();
     
     if (coupon.validFrom && new Date(coupon.validFrom) > now) {
       return res.status(400).json({ success: false, message: 'This coupon code is not yet valid' });
     }
 
-    if (coupon.validUntil && new Date(coupon.validUntil) < now) {
-      return res.status(400).json({ success: false, message: 'This coupon code has expired' });
+    if (coupon.validUntil) {
+      const expiryDate = new Date(coupon.validUntil);
+      expiryDate.setUTCHours(23, 59, 59, 999);
+      if (expiryDate < now) {
+        return res.status(400).json({ success: false, message: 'This coupon code has expired' });
+      }
     }
     
     if (coupon.maxUses && coupon.usesCount >= coupon.maxUses) {
