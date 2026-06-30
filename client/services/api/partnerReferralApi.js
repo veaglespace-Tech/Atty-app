@@ -29,6 +29,17 @@ export const partnerReferralApi = createApi({
       }),
       invalidatesTags: ["ReferralPartner"],
     }),
+    updateReferralPartner: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/partner-referral/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "ReferralPartner", id },
+        "ReferralPartner",
+      ],
+    }),
     getPublicPartnerStats: builder.mutation({
       query: (credentials) => ({
         url: "/partner-referral/stats-public",
@@ -43,6 +54,7 @@ export const {
   useGetAllReferralPartnersQuery,
   useGetReferralPartnerByIdQuery,
   useCreateReferralPartnerMutation,
+  useUpdateReferralPartnerMutation,
   useDeleteReferralPartnerMutation,
   useGetPublicPartnerStatsMutation,
 } = partnerReferralApi;

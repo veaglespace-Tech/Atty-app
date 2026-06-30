@@ -73,6 +73,48 @@ exports.getReferralPartnerById = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: partner });
 });
 
+exports.updateReferralPartner = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, email, mobile, partnerReferralCode, isActive } = req.body;
+  
+  const partner = await prisma.referralPartner.findUnique({ where: { id: Number(id) } });
+  if (!partner) {
+    res.status(404);
+    throw new Error("Referral Partner not found");
+  }
+
+  const updateData = {};
+  if (name !== undefined) updateData.name = name;
+  if (email !== undefined) updateData.email = email;
+  if (mobile !== undefined) updateData.mobile = mobile;
+  if (isActive !== undefined) updateData.isActive = isActive;
+  if (partnerReferralCode !== undefined) updateData.partnerReferralCode = normalizePartnerReferralCode(partnerReferralCode);
+
+  if (updateData.email || updateData.partnerReferralCode) {
+    const exists = await prisma.referralPartner.findFirst({
+      where: { 
+        id: { not: Number(id) },
+        OR: [
+          ...(updateData.email ? [{ email: updateData.email }] : []),
+          ...(updateData.partnerReferralCode ? [{ partnerReferralCode: updateData.partnerReferralCode }] : [])
+        ]
+      }
+    });
+
+    if (exists) {
+      res.status(400);
+      throw new Error("Partner with this email or code already exists");
+    }
+  }
+
+  const updatedPartner = await prisma.referralPartner.update({
+    where: { id: Number(id) },
+    data: updateData
+  });
+
+  res.status(200).json({ success: true, data: updatedPartner });
+});
+
 exports.deleteReferralPartner = asyncHandler(async (req, res) => {
   const { id } = req.params;
   await prisma.referralPartner.delete({ where: { id: Number(id) } });
