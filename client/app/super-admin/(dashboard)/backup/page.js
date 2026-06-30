@@ -148,7 +148,7 @@ export default function BackupPage() {
               id="generate-backup-btn"
               onClick={handleBackup}
               disabled={isLoading}
-              className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 py-4 px-6 font-bold text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(59,130,246,0.45)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative flex w-full flex-col sm:flex-row items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 py-3 sm:py-4 px-4 sm:px-6 font-bold text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(59,130,246,0.45)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
               {isLoading ? (
@@ -159,22 +159,22 @@ export default function BackupPage() {
               ) : (
                 <>
                   <Download size={20} className="shrink-0" />
-                  <span className="text-center px-2">Generate &amp; Download Backup</span>
+                  <span className="text-center">Generate & Download Backup</span>
                 </>
               )}
             </button>
 
             {/* Format info */}
-            <div className="mt-5 space-y-2">
+            <div className="mt-5 space-y-3">
               {[
                 ["Format", "ZIP archive (.zip)"],
                 ["Contents", "JSON files per table + manifest"],
                 ["Compression", "Maximum (level 9)"],
                 ["Access", "Super Admin only"],
               ].map(([key, val]) => (
-                <div key={key} className="flex items-center justify-between text-xs">
+                <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1 sm:gap-4 border-b border-slate-100 dark:border-slate-800/50 pb-2 last:border-0 last:pb-0">
                   <span className="text-slate-500">{key}</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-300">{val}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-300 text-left sm:text-right break-words">{val}</span>
                 </div>
               ))}
             </div>
