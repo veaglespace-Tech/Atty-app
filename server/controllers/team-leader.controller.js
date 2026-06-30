@@ -996,9 +996,12 @@ const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds
     if (!date) return "-";
     const d = new Date(date);
     if (Number.isNaN(d.getTime())) return "-";
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
+    return d.toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
   };
 
   const sortedRecords = [...records].sort((left, right) => {
