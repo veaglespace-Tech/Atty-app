@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, ArrowRight, Mail, Phone, Users, Hash, Activity } from "lucide-react";
@@ -9,6 +9,8 @@ import { useGetReferralPartnerByIdQuery } from "@/services/api/partnerReferralAp
 export default function ReferredOrganizationsPage({ params }) {
   const router = useRouter();
   const { partnerId } = use(params);
+  const [monthFilter, setMonthFilter] = useState("");
+
   const { data, isLoading } = useGetReferralPartnerByIdQuery(partnerId, {
     skip: !partnerId
   });
@@ -32,6 +34,13 @@ export default function ReferredOrganizationsPage({ params }) {
   }
 
   const organizations = user.referredOrganizations || [];
+
+  const filteredOrganizations = organizations.filter((org) => {
+    if (!monthFilter) return true;
+    const orgDate = new Date(org.createdAt);
+    const orgMonth = `${orgDate.getFullYear()}-${String(orgDate.getMonth() + 1).padStart(2, "0")}`;
+    return orgMonth === monthFilter;
+  });
 
   return (
     <section className="space-y-6">
@@ -111,18 +120,39 @@ export default function ReferredOrganizationsPage({ params }) {
       </div>
 
       <div className="light-glow-card-static rounded-[1.9rem] p-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-            Referred Organizations List
-          </h3>
-          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
-            {organizations.length} Total
-          </span>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              Referred Organizations List
+            </h3>
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+              {filteredOrganizations.length} Total
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <label htmlFor="monthFilter" className="text-[10px] font-black uppercase tracking-wider text-slate-400">Filter by Month:</label>
+            <input
+              type="month"
+              id="monthFilter"
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-200 dark:focus:border-blue-500"
+            />
+            {monthFilter && (
+              <button
+                onClick={() => setMonthFilter("")}
+                className="h-9 rounded-xl px-3 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
-        {organizations.length === 0 ? (
+        {filteredOrganizations.length === 0 ? (
           <div className="py-12 text-center text-sm font-medium text-slate-500">
-            No organizations have been referred by this partner yet.
+            {monthFilter ? "No organizations registered in this month." : "No organizations have been referred by this partner yet."}
           </div>
         ) : (
           <div className="overflow-x-auto rounded-[1.45rem] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/50">
@@ -138,7 +168,7 @@ export default function ReferredOrganizationsPage({ params }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {organizations.map((org) => (
+                {filteredOrganizations.map((org) => (
                   <tr key={org.id} className="transition hover:bg-slate-50/50 dark:hover:bg-slate-900/50">
                     <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white">{org.name}</td>
                     <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
