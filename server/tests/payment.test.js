@@ -18,6 +18,9 @@ jest.mock("../lib/prisma", () => ({
   freeTrialClaim: {
     findFirst: jest.fn(),
   },
+  systemSetting: {
+    findUnique: jest.fn(),
+  },
 }));
 
 const prisma = require("../lib/prisma");

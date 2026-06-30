@@ -1165,7 +1165,8 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
 });
 
 exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
-  const xlsx = require("xlsx");
+  const ExcelJS = require("exceljs");
+  const { fetchImageBuffer } = require("../utils/user-profile-pdf");
   const orgId = ensureOrganizationId(req, res);
   assertAnyPermission(
     res,
@@ -1214,44 +1215,136 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     "Emergency Contact",
     "Current Address",
     "Permanent Address",
-    "Profile Photo URL",
+    "Profile Photo",
     "Role",
     "Status",
     "Active",
     "Joined At",
   ];
 
-  const sheetData = [
-    [`${orgName} — User Directory`],
-    [`Exported on: ${new Date().toLocaleString("en-IN")}`],
-    [],
-    headers,
-    ...users.map((user, index) => [
-      index + 1,
-      user.name || "-",
-      user.email || "-",
-      user.mobile || "-",
-      user.emergencyContact || "-",
-      user.currentAddress || "-",
-      user.permanentAddress || "-",
-      user.profileImageUrl || "-",
-      user.role || "-",
-      user.status || "-",
-      user.isActive ? "Active" : "Blocked",
-      user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-    ]),
-  ];
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Users");
 
-  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
-  worksheet["!cols"] = headers.map((h, i) => ({ wch: i === 0 ? 8 : i >= 5 && i <= 7 ? 40 : 25 }));
-  worksheet["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
-  ];
+  // Title rows
+  worksheet.addRow([`${orgName} — User Directory`]);
+  worksheet.addRow([`Exported on: ${new Date().toLocaleString("en-IN")}`]);
+  worksheet.addRow([]); // Blank row
+  worksheet.addRow(headers);
 
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Users");
-  const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+  // Styling titles & merges
+  worksheet.mergeCells("A1:L1");
+  worksheet.mergeCells("A2:L2");
+
+  worksheet.getCell("A1").font = { size: 14, bold: true };
+  worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
+  worksheet.getCell("A2").font = { size: 10, italic: true };
+  worksheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
+
+  const headerRow = worksheet.getRow(4);
+  headerRow.font = { bold: true };
+  headerRow.height = 25;
+  headerRow.eachCell((cell) => {
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE2E8F0" }, // Light gray background
+    };
+  });
+
+  // Set column widths
+  headers.forEach((h, i) => {
+    const col = worksheet.getColumn(i + 1);
+    col.width = i === 0 ? 8 : i === 7 ? 18 : (i >= 5 && i <= 6 ? 40 : 25);
+  });
+
+  // Helper for parallel map with concurrency limit
+  const mapConcurrent = async (array, limit, fn) => {
+    const results = [];
+    const promises = [];
+    let index = 0;
+    async function run() {
+      while (index < array.length) {
+        const curIndex = index++;
+        results[curIndex] = await fn(array[curIndex], curIndex);
+      }
+    }
+    for (let i = 0; i < Math.min(limit, array.length); i++) {
+      promises.push(run());
+    }
+    await Promise.all(promises);
+    return results;
+  };
+
+  // Fetch images in parallel with concurrency limit of 15
+  const userRows = await mapConcurrent(users, 15, async (user, index) => {
+    let imageBuffer = null;
+    if (user.profileImageUrl) {
+      imageBuffer = await fetchImageBuffer(user.profileImageUrl);
+    }
+    return {
+      index: index + 1,
+      name: user.name || "-",
+      email: user.email || "-",
+      mobile: user.mobile || "-",
+      emergencyContact: user.emergencyContact || "-",
+      currentAddress: user.currentAddress || "-",
+      permanentAddress: user.permanentAddress || "-",
+      profileImageUrl: user.profileImageUrl || "-",
+      role: user.role || "-",
+      status: user.status || "-",
+      active: user.isActive ? "Active" : "Blocked",
+      joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+      imageBuffer,
+    };
+  });
+
+  let currentRowIndex = 5;
+  for (const rowData of userRows) {
+    const row = worksheet.addRow([
+      rowData.index,
+      rowData.name,
+      rowData.email,
+      rowData.mobile,
+      rowData.emergencyContact,
+      rowData.currentAddress,
+      rowData.permanentAddress,
+      "", // Profile Photo cell
+      rowData.role,
+      rowData.status,
+      rowData.active,
+      rowData.joinedAt,
+    ]);
+
+    row.height = 60;
+    row.eachCell((cell) => {
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+
+    if (rowData.imageBuffer) {
+      try {
+        const ext = (rowData.profileImageUrl || "").toLowerCase().endsWith(".png") ? "png" : "jpeg";
+        const imageId = workbook.addImage({
+          buffer: rowData.imageBuffer,
+          extension: ext,
+        });
+
+        worksheet.addImage(imageId, {
+          tl: { col: 7 + 0.31, row: currentRowIndex - 1 + 0.18 },
+          ext: { width: 50, height: 50 },
+          editAs: "oneCell",
+        });
+      } catch (err) {
+        worksheet.getCell(currentRowIndex, 8).value = "Error loading image";
+      }
+    } else {
+      worksheet.getCell(currentRowIndex, 8).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+    }
+
+    currentRowIndex++;
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename="${safeName}-users.xlsx"`);
