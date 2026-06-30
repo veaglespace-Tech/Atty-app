@@ -1031,10 +1031,10 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-xl overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95">
         <div className="brand-metric-glow" />
-        <div className="relative flex flex-col">
+        <div className="relative flex flex-col max-h-[92vh]">
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200/60 px-8 py-6 dark:border-slate-800/60">
+          <div className="shrink-0 flex items-center justify-between border-b border-slate-200/60 px-8 py-6 dark:border-slate-800/60 relative z-10">
             <div>
               <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">Extend Plan</h3>
               <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -1047,7 +1047,7 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
           </div>
 
           {/* Body */}
-          <div className="space-y-6 px-8 py-6">
+          <div className="space-y-6 px-8 py-6 flex-1 min-h-0 overflow-y-auto visible-scrollbar relative z-10">
             {error && (
               <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
                 {error}
@@ -1131,7 +1131,7 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 border-t border-slate-200/60 bg-slate-50/50 px-8 py-5 dark:border-slate-800/60 dark:bg-slate-900/50">
+          <div className="shrink-0 relative z-10 flex items-center justify-end gap-3 border-t border-slate-200/60 bg-slate-50/50 px-8 py-5 dark:border-slate-800/60 dark:bg-slate-900/50">
             <button type="button" onClick={onClose} className="brand-btn brand-btn-secondary brand-btn-md px-8">
               Cancel
             </button>

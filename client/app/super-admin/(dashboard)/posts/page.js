@@ -683,7 +683,7 @@ export default function SuperAdminPostsPage() {
       {/* Create / Edit Form Modal */}
       {(showAddForm || editingPost) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl rounded-[2.2rem] bg-white p-6 sm:p-8 shadow-2xl dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-y-auto max-h-[90vh]">
+          <div className="w-full max-w-2xl rounded-[2.2rem] bg-white p-6 sm:p-8 shadow-2xl dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-y-auto visible-scrollbar max-h-[92vh]">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">

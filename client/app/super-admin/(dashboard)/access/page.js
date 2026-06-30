@@ -382,7 +382,7 @@ export default function SuperAdminAccessPage() {
       {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+          <div className="w-full max-w-md rounded-[2rem] bg-white p-6 sm:p-8 shadow-2xl dark:bg-slate-950 border border-slate-200 dark:border-slate-800 max-h-[92vh] overflow-y-auto visible-scrollbar">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white">New Permission</h3>
             <form onSubmit={handleCreate} className="mt-6 space-y-4">
               <div>
@@ -438,7 +438,7 @@ export default function SuperAdminAccessPage() {
       {/* Edit Modal */}
       {editingPermission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+          <div className="w-full max-w-md rounded-[2rem] bg-white p-6 sm:p-8 shadow-2xl dark:bg-slate-950 border border-slate-200 dark:border-slate-800 max-h-[92vh] overflow-y-auto visible-scrollbar">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white">Edit Permission</h3>
             <p className="text-xs font-mono text-indigo-500 mt-1 uppercase tracking-wider">{editingPermission.key}</p>
             <form onSubmit={handleUpdate} className="mt-6 space-y-4">

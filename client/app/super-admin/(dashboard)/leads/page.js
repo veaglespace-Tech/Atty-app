@@ -129,15 +129,15 @@ export default function LeadsPage() {
       )}
 
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-800">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh]">
+            <div className="shrink-0 flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-800 relative z-10">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Lead Details</h3>
               <button onClick={() => setSelectedLead(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 flex-1 min-h-0 overflow-y-auto visible-scrollbar relative z-10">
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Organization Details</p>
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl space-y-2 border border-slate-100 dark:border-slate-800">

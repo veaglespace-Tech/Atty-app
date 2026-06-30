@@ -544,8 +544,8 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-4xl overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90">
         <div className="brand-metric-glow" />
-        <div className="relative flex flex-col max-h-[90vh]">
-          <div className="flex items-center justify-between border-b border-slate-200/60 px-8 py-6 dark:border-slate-800/60">
+        <div className="relative flex flex-col max-h-[92vh]">
+          <div className="shrink-0 relative z-10 flex items-center justify-between border-b border-slate-200/60 px-8 py-6 dark:border-slate-800/60">
             <div>
               <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Create New Organization</h3>
               <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">Directly onboard a new organization (Payment Bypassed)</p>
@@ -555,7 +555,7 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
             </button>
           </div>
 
-          <div className="overflow-y-auto px-8 py-6 space-y-8">
+          <div className="overflow-y-auto px-8 py-6 space-y-8 flex-1 min-h-0 visible-scrollbar relative z-10">
             {error && (
               <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200 font-semibold">
                 {error}
@@ -688,7 +688,8 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-slate-200/60 px-8 py-6 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
+          {/* Footer */}
+          <div className="shrink-0 relative z-10 flex items-center justify-end gap-3 border-t border-slate-200/60 bg-slate-50/50 px-8 py-5 dark:border-slate-800/60 dark:bg-slate-900/50">
             <button
               type="button"
               onClick={onClose}

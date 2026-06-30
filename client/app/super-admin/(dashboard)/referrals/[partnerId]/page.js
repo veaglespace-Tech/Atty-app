@@ -236,9 +236,9 @@ export default function ReferredOrganizationsPage({ params }) {
 
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-white/20 dark:border-slate-800/80 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex flex-col max-h-[90vh] scale-in-95 duration-200">
+          <div className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-white/20 dark:border-slate-800/80 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex flex-col max-h-[92vh] scale-in-95 duration-200">
             
-            <div className="relative p-8 pb-6 border-b border-slate-100 dark:border-slate-800/50">
+            <div className="shrink-0 relative z-10 p-8 pb-6 border-b border-slate-100 dark:border-slate-800/50">
               <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
               <div className="flex items-start justify-between">
                 <div>
@@ -254,7 +254,7 @@ export default function ReferredOrganizationsPage({ params }) {
               </div>
             </div>
             
-            <form onSubmit={handleUpdatePartner} className="p-8 space-y-5 overflow-y-auto">
+            <form onSubmit={handleUpdatePartner} className="p-8 space-y-5 overflow-y-auto visible-scrollbar flex-1 min-h-0 relative z-10">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 ml-1">Full Name</label>
                 <div className="relative group">
