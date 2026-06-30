@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -57,7 +58,9 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <StoreProvider>
             <SessionSync />
-            <RegistrationDraftLifecycle />
+            <Suspense fallback={null}>
+              <RegistrationDraftLifecycle />
+            </Suspense>
             <Navbar />
             <main className="w-full overflow-x-clip">{children}</main>
             <GlobalErrorToast />
