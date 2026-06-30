@@ -107,15 +107,6 @@ export default function ReferredOrganizationsPage({ params }) {
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
-              <Users size={18} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Total Referred Users</p>
-              <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{user._count?.referredUsers || 0}</p>
-            </div>
-          </div>
         </div>
       </div>
 
