@@ -3678,6 +3678,9 @@ exports.generateDatabaseBackup = asyncHandler(async (req, res) => {
 // ─── Super Admin User Excel Exports ───────────────────────────────────────────
 
 exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) => {
+  const ExcelJS = require("exceljs");
+  const { fetchImageBuffer } = require("../utils/user-profile-pdf");
+
   const organizationId = parseId(req.params.organizationId);
   if (!organizationId) {
     res.status(400);
@@ -3721,41 +3724,133 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
 
   const headers = [
     "Sr. No.", "Name", "Email", "Contact No.", "Emergency Contact",
-    "Current Address", "Permanent Address", "Profile Photo URL",
+    "Current Address", "Permanent Address", "Profile Photo",
     "Role", "Status", "Active", "Joined At",
   ];
 
-  const sheetData = [
-    [`${orgName} — User Directory`],
-    [`Exported on: ${new Date().toLocaleString("en-IN")}`],
-    [],
-    headers,
-    ...users.map((user, index) => [
-      index + 1,
-      user.name || "-",
-      user.email || "-",
-      user.mobile || "-",
-      user.emergencyContact || "-",
-      user.currentAddress || "-",
-      user.permanentAddress || "-",
-      user.profileImageUrl || "-",
-      user.role || "-",
-      user.status || "-",
-      user.isActive ? "Active" : "Blocked",
-      user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-    ]),
-  ];
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Users");
 
-  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
-  worksheet["!cols"] = headers.map((h, i) => ({ wch: i === 0 ? 8 : i >= 5 && i <= 7 ? 40 : 25 }));
-  worksheet["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
-  ];
+  // Title rows
+  worksheet.addRow([`${orgName} — User Directory`]);
+  worksheet.addRow([`Exported on: ${new Date().toLocaleString("en-IN")}`]);
+  worksheet.addRow([]); // Blank row
+  worksheet.addRow(headers);
 
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Users");
-  const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+  // Styling titles & merges
+  worksheet.mergeCells("A1:L1");
+  worksheet.mergeCells("A2:L2");
+
+  worksheet.getCell("A1").font = { size: 14, bold: true };
+  worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
+  worksheet.getCell("A2").font = { size: 10, italic: true };
+  worksheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
+
+  const headerRow = worksheet.getRow(4);
+  headerRow.font = { bold: true };
+  headerRow.height = 25;
+  headerRow.eachCell((cell) => {
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE2E8F0" }, // Light gray background
+    };
+  });
+
+  // Set column widths
+  headers.forEach((h, i) => {
+    const col = worksheet.getColumn(i + 1);
+    col.width = i === 0 ? 8 : i === 7 ? 18 : (i >= 5 && i <= 6 ? 40 : 25);
+  });
+
+  // Helper for parallel map with concurrency limit
+  const mapConcurrent = async (array, limit, fn) => {
+    const results = [];
+    const promises = [];
+    let index = 0;
+    async function run() {
+      while (index < array.length) {
+        const curIndex = index++;
+        results[curIndex] = await fn(array[curIndex], curIndex);
+      }
+    }
+    for (let i = 0; i < Math.min(limit, array.length); i++) {
+      promises.push(run());
+    }
+    await Promise.all(promises);
+    return results;
+  };
+
+  // Fetch images in parallel with concurrency limit of 15
+  const userRows = await mapConcurrent(users, 15, async (user, index) => {
+    let imageBuffer = null;
+    if (user.profileImageUrl) {
+      imageBuffer = await fetchImageBuffer(user.profileImageUrl);
+    }
+    return {
+      index: index + 1,
+      name: user.name || "-",
+      email: user.email || "-",
+      mobile: user.mobile || "-",
+      emergencyContact: user.emergencyContact || "-",
+      currentAddress: user.currentAddress || "-",
+      permanentAddress: user.permanentAddress || "-",
+      profileImageUrl: user.profileImageUrl || "-",
+      role: user.role || "-",
+      status: user.status || "-",
+      active: user.isActive ? "Active" : "Blocked",
+      joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+      imageBuffer,
+    };
+  });
+
+  let currentRowIndex = 5;
+  for (const rowData of userRows) {
+    const row = worksheet.addRow([
+      rowData.index,
+      rowData.name,
+      rowData.email,
+      rowData.mobile,
+      rowData.emergencyContact,
+      rowData.currentAddress,
+      rowData.permanentAddress,
+      "", // Profile Photo cell
+      rowData.role,
+      rowData.status,
+      rowData.active,
+      rowData.joinedAt,
+    ]);
+
+    row.height = 60;
+    row.eachCell((cell) => {
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+
+    if (rowData.imageBuffer) {
+      try {
+        const ext = (rowData.profileImageUrl || "").toLowerCase().endsWith(".png") ? "png" : "jpeg";
+        const imageId = workbook.addImage({
+          buffer: rowData.imageBuffer,
+          extension: ext,
+        });
+
+        worksheet.addImage(imageId, {
+          tl: { col: 7 + 0.31, row: currentRowIndex - 1 + 0.18 },
+          ext: { width: 50, height: 50 },
+          editAs: "oneCell",
+        });
+      } catch (err) {
+        worksheet.getCell(currentRowIndex, 8).value = "Error loading image";
+      }
+    } else {
+      worksheet.getCell(currentRowIndex, 8).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+    }
+
+    currentRowIndex++;
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename="${safeName}-users.xlsx"`);
@@ -3763,6 +3858,9 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
 });
 
 exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
+  const ExcelJS = require("exceljs");
+  const { fetchImageBuffer } = require("../utils/user-profile-pdf");
+
   const organizations = await prisma.organization.findMany({
     where: { deletedAt: null },
     select: { id: true, name: true },
@@ -3798,81 +3896,210 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
 
   const headers = [
     "Sr. No.", "Organization", "Name", "Email", "Contact No.", "Emergency Contact",
-    "Current Address", "Permanent Address", "Profile Photo URL",
+    "Current Address", "Permanent Address", "Profile Photo",
     "Role", "Status", "Active", "Joined At",
   ];
 
-  const workbook = xlsx.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
+
+  // Helper for parallel map with concurrency limit
+  const mapConcurrent = async (array, limit, fn) => {
+    const results = [];
+    const promises = [];
+    let index = 0;
+    async function run() {
+      while (index < array.length) {
+        const curIndex = index++;
+        results[curIndex] = await fn(array[curIndex], curIndex);
+      }
+    }
+    for (let i = 0; i < Math.min(limit, array.length); i++) {
+      promises.push(run());
+    }
+    await Promise.all(promises);
+    return results;
+  };
+
+  // Fetch images in parallel with concurrency limit of 15
+  const userRows = await mapConcurrent(allUsers, 15, async (user, index) => {
+    let imageBuffer = null;
+    if (user.profileImageUrl) {
+      imageBuffer = await fetchImageBuffer(user.profileImageUrl);
+    }
+    return {
+      ...user,
+      index: index + 1,
+      imageBuffer,
+    };
+  });
 
   // Sheet 1 — All Users combined
-  const allSheetData = [
-    ["All Users Directory"],
-    [`Exported on: ${new Date().toLocaleString("en-IN")}`],
-    [],
-    headers,
-    ...allUsers.map((user, index) => [
-      index + 1,
-      orgMap.get(user.orgId) || "-",
-      user.name || "-",
-      user.email || "-",
-      user.mobile || "-",
-      user.emergencyContact || "-",
-      user.currentAddress || "-",
-      user.permanentAddress || "-",
-      user.profileImageUrl || "-",
-      user.role || "-",
-      user.status || "-",
-      user.isActive ? "Active" : "Blocked",
-      user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-    ]),
-  ];
-  const allSheet = xlsx.utils.aoa_to_sheet(allSheetData);
-  allSheet["!cols"] = headers.map((h, i) => ({ wch: i === 0 ? 8 : i >= 6 && i <= 8 ? 40 : 25 }));
-  allSheet["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
-  ];
-  xlsx.utils.book_append_sheet(workbook, allSheet, "All Users");
+  const allSheet = workbook.addWorksheet("All Users");
+  allSheet.addRow(["All Users Directory"]);
+  allSheet.addRow([`Exported on: ${new Date().toLocaleString("en-IN")}`]);
+  allSheet.addRow([]); // Blank
+  allSheet.addRow(headers);
 
-  // One sheet per organization (max 30 sheets due to Excel limit)
-  const orgHeaders = headers.slice(1); // Remove "Organization" column for per-org sheets
-  const orgsWithUsers = organizations.slice(0, 29);
-  for (const org of orgsWithUsers) {
-    const orgUsers = allUsers.filter((u) => u.orgId === org.id);
-    if (orgUsers.length === 0) continue;
+  // Styles & merges
+  allSheet.mergeCells("A1:M1");
+  allSheet.mergeCells("A2:M2");
+  allSheet.getCell("A1").font = { size: 14, bold: true };
+  allSheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
+  allSheet.getCell("A2").font = { size: 10, italic: true };
+  allSheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
 
-    const safeName = (org.name || "Org").slice(0, 28); // Excel sheet name max 31 chars
-    const sheetData = [
-      [`${org.name} — User Directory`],
-      [`Exported on: ${new Date().toLocaleString("en-IN")}`],
-      [],
-      orgHeaders,
-      ...orgUsers.map((user, index) => [
-        index + 1,
-        user.name || "-",
-        user.email || "-",
-        user.mobile || "-",
-        user.emergencyContact || "-",
-        user.currentAddress || "-",
-        user.permanentAddress || "-",
-        user.profileImageUrl || "-",
-        user.role || "-",
-        user.status || "-",
-        user.isActive ? "Active" : "Blocked",
-        user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-      ]),
-    ];
+  const allHeaderRow = allSheet.getRow(4);
+  allHeaderRow.font = { bold: true };
+  allHeaderRow.height = 25;
+  allHeaderRow.eachCell((cell) => {
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE2E8F0" },
+    };
+  });
 
-    const sheet = xlsx.utils.aoa_to_sheet(sheetData);
-    sheet["!cols"] = orgHeaders.map((h, i) => ({ wch: i === 0 ? 8 : i >= 5 && i <= 7 ? 40 : 25 }));
-    sheet["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: orgHeaders.length - 1 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: orgHeaders.length - 1 } },
-    ];
-    xlsx.utils.book_append_sheet(workbook, sheet, safeName);
+  // Set widths
+  headers.forEach((h, i) => {
+    const col = allSheet.getColumn(i + 1);
+    col.width = i === 0 ? 8 : i === 8 ? 18 : (i >= 6 && i <= 7 ? 40 : 25);
+  });
+
+  // Add rows & images to All Users sheet
+  let currentRowIndex = 5;
+  for (const rowData of userRows) {
+    const row = allSheet.addRow([
+      rowData.index,
+      orgMap.get(rowData.orgId) || "-",
+      rowData.name || "-",
+      rowData.email || "-",
+      rowData.mobile || "-",
+      rowData.emergencyContact || "-",
+      rowData.currentAddress || "-",
+      rowData.permanentAddress || "-",
+      "", // Profile Photo
+      rowData.role || "-",
+      rowData.status || "-",
+      rowData.isActive ? "Active" : "Blocked",
+      rowData.createdAt ? new Date(rowData.createdAt).toLocaleDateString("en-IN") : "-",
+    ]);
+
+    row.height = 60;
+    row.eachCell((cell) => {
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+
+    if (rowData.imageBuffer) {
+      try {
+        const ext = (rowData.profileImageUrl || "").toLowerCase().endsWith(".png") ? "png" : "jpeg";
+        const imageId = workbook.addImage({
+          buffer: rowData.imageBuffer,
+          extension: ext,
+        });
+
+        allSheet.addImage(imageId, {
+          tl: { col: 8 + 0.31, row: currentRowIndex - 1 + 0.18 },
+          ext: { width: 50, height: 50 },
+          editAs: "oneCell",
+        });
+      } catch (err) {
+        allSheet.getCell(currentRowIndex, 9).value = "Error loading image";
+      }
+    } else {
+      allSheet.getCell(currentRowIndex, 9).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+    }
+
+    currentRowIndex++;
   }
 
-  const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+  // One sheet per organization (max 30 sheets due to Excel limit)
+  const orgHeaders = headers.slice(0, 1).concat(headers.slice(2)); // Remove "Organization" column
+  const orgsWithUsers = organizations.slice(0, 29);
+  for (const org of orgsWithUsers) {
+    const orgUsers = userRows.filter((u) => u.orgId === org.id);
+    if (orgUsers.length === 0) continue;
+
+    const safeSheetName = (org.name || "Org").slice(0, 28);
+    const sheet = workbook.addWorksheet(safeSheetName);
+
+    sheet.addRow([`${org.name} — User Directory`]);
+    sheet.addRow([`Exported on: ${new Date().toLocaleString("en-IN")}`]);
+    sheet.addRow([]);
+    sheet.addRow(orgHeaders);
+
+    sheet.mergeCells("A1:L1");
+    sheet.mergeCells("A2:L2");
+    sheet.getCell("A1").font = { size: 14, bold: true };
+    sheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
+    sheet.getCell("A2").font = { size: 10, italic: true };
+    sheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
+
+    const orgHeaderRow = sheet.getRow(4);
+    orgHeaderRow.font = { bold: true };
+    orgHeaderRow.height = 25;
+    orgHeaderRow.eachCell((cell) => {
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE2E8F0" },
+      };
+    });
+
+    // Widths
+    orgHeaders.forEach((h, i) => {
+      const col = sheet.getColumn(i + 1);
+      col.width = i === 0 ? 8 : i === 7 ? 18 : (i >= 5 && i <= 6 ? 40 : 25);
+    });
+
+    let orgRowIndex = 5;
+    orgUsers.forEach((rowData, idx) => {
+      const row = sheet.addRow([
+        idx + 1,
+        rowData.name || "-",
+        rowData.email || "-",
+        rowData.mobile || "-",
+        rowData.emergencyContact || "-",
+        rowData.currentAddress || "-",
+        rowData.permanentAddress || "-",
+        "", // Profile Photo
+        rowData.role || "-",
+        rowData.status || "-",
+        rowData.isActive ? "Active" : "Blocked",
+        rowData.createdAt ? new Date(rowData.createdAt).toLocaleDateString("en-IN") : "-",
+      ]);
+
+      row.height = 60;
+      row.eachCell((cell) => {
+        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      });
+
+      if (rowData.imageBuffer) {
+        try {
+          const ext = (rowData.profileImageUrl || "").toLowerCase().endsWith(".png") ? "png" : "jpeg";
+          const imageId = workbook.addImage({
+            buffer: rowData.imageBuffer,
+            extension: ext,
+          });
+
+          sheet.addImage(imageId, {
+            tl: { col: 7 + 0.31, row: orgRowIndex - 1 + 0.18 },
+            ext: { width: 50, height: 50 },
+            editAs: "oneCell",
+          });
+        } catch (err) {
+          sheet.getCell(orgRowIndex, 8).value = "Error loading image";
+        }
+      } else {
+        sheet.getCell(orgRowIndex, 8).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      }
+
+      orgRowIndex++;
+    });
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", 'attachment; filename="all-users-org-wise.xlsx"');

@@ -1,5 +1,5 @@
 -- DropForeignKey
--- ALTER TABLE `organization` DROP FOREIGN KEY `organization_referredByPartnerId_fkey`;
+ALTER TABLE `organization` DROP FOREIGN KEY `organization_referredByPartnerId_fkey`;
 
 UPDATE `organization` SET `referredByPartnerId` = NULL;
 

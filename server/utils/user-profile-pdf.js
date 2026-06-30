@@ -371,4 +371,6 @@ const buildUserHallTicketPdf = async ({
 
 module.exports = {
   buildUserHallTicketPdf,
+  fetchImageBuffer,
 };
+
