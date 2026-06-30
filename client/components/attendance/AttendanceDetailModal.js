@@ -44,27 +44,27 @@ export default function AttendanceDetailModal({ selectedRecord, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 p-6 sm:p-7">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="relative flex flex-col max-h-[92vh] w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90">
         <div className="brand-metric-glow" />
-        <div className="relative flex flex-col max-h-[85vh]">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200/60 pb-4 dark:border-slate-800/60">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Attendance Details</h3>
-              <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Detailed punch log and verification</p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50"
-            >
-              <X size={18} />
-            </button>
+        
+        {/* Header */}
+        <div className="shrink-0 px-6 pt-6 pb-4 sm:px-7 sm:pt-7 sm:pb-4 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60 relative z-10">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Attendance Details</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Detailed punch log and verification</p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800/50 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-          {/* Body */}
-          <div className="overflow-y-auto py-4 space-y-4 pr-1">
+        {/* Body */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 sm:px-7 space-y-4 visible-scrollbar relative z-10">
             {/* Member Profile info */}
             <div className="flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-200 font-bold text-base">
@@ -142,16 +142,15 @@ export default function AttendanceDetailModal({ selectedRecord, onClose }) {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-end border-t border-slate-200/60 pt-4 dark:border-slate-800/60">
-            <button
-              type="button"
-              onClick={onClose}
-              className="brand-btn brand-btn-secondary brand-btn-md px-6"
-            >
-              Close
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="shrink-0 px-6 py-4 sm:px-7 sm:py-5 flex items-center justify-end border-t border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 relative z-10 rounded-b-[2rem]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="brand-btn brand-btn-secondary brand-btn-md px-6"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

@@ -631,6 +631,7 @@ export default function OrgTeamsPage() {
                           onClick={() => toggleTeamActive(team)}
                           disabled={busy}
                           tone={team.isActive ? "danger" : "default"}
+                          fullWidth={true}
                         />
                       ) : null}
                       {canDeleteTeams ? (
@@ -640,6 +641,7 @@ export default function OrgTeamsPage() {
                           onClick={() => deleteTeam(team)}
                           disabled={busy}
                           tone="danger"
+                          fullWidth={true}
                         />
                       ) : null}
                       {busy ? <Loader2 size={14} className="animate-spin self-center text-slate-500" /> : null}
@@ -678,7 +680,7 @@ export default function OrgTeamsPage() {
                         <td className="px-3 py-2 text-slate-700 dark:text-slate-200">{team.isActive ? "Yes" : "No"}</td>
                         <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{formatDate(team.createdAt)}</td>
                         <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-nowrap items-center gap-2">
                             {canUpdateTeams ? (
                               <ActionButton
                                 label={team.isActive ? "Deactivate" : "Activate"}
@@ -726,15 +728,16 @@ export default function OrgTeamsPage() {
   );
 }
 
-function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
+function ActionButton({ label, icon, onClick, disabled, tone = "default", fullWidth = false }) {
   const style = tone === "danger" ? "brand-btn-danger" : "brand-btn-soft";
+  const widthClass = fullWidth ? "w-full sm:w-auto" : "";
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`brand-btn brand-btn-sm w-full sm:w-auto ${style}`}
+      className={`brand-btn brand-btn-sm ${widthClass} ${style} whitespace-nowrap`}
     >
       {icon}
       {label}

@@ -249,13 +249,13 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
       {mobileNavOpen ? (
         <div
           onClick={() => setMobileNavOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity"
         />
       ) : null}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white px-4 py-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800 dark:bg-slate-950/92 dark:shadow-black/30 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-[70] flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200/60 bg-white/95 px-4 py-4 shadow-[0_0_80px_-20px_rgba(0,0,0,0.15)] backdrop-blur-2xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800/60 dark:bg-slate-950/95 dark:shadow-black/50 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
           mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
@@ -263,7 +263,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
           <DashboardBrandBlock />
         </div>
 
-        <nav className="mt-6 flex-1 space-y-2">
+        <nav className="mt-6 flex-1 space-y-2 visible-scrollbar">
           {resolvedNavItems.map((item) => {
             const active = pathname === item.href;
             const Icon = item.Icon;
@@ -274,12 +274,12 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                 href={item.href}
                 onClick={() => setMobileNavOpen(false)}
                 className={cn(
-                  "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5",
-                  active ? "brand-nav-item-active" : "brand-nav-item"
+                  "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5 transition-all duration-300",
+                  active ? "brand-nav-item-active scale-[1.02]" : "brand-nav-item hover:scale-[1.02]"
                 )}
               >
                 <div className="relative">
-                  <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl">
+                  <span className="brand-nav-icon flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:rotate-3">
                     <Icon size={20} className={active ? "" : item.colorClass} />
                   </span>
                   {badgeCounts[item.label] > 0 ? (
@@ -289,32 +289,32 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold tracking-[0.01em]">{item.label}</p>
+                  <p className="text-sm font-bold tracking-tight">{item.label}</p>
                 </div>
               </Link>
             );
           })}
         </nav>
 
-        <div className="light-glow-card-static mt-6 rounded-[1.75rem] p-3">
+        <div className="light-glow-card-static mt-6 rounded-[1.75rem] p-3 shrink-0">
           <Link
             href={settingsHref}
-            onClick={() => setMobileNavPath(null)}
+            onClick={() => setMobileNavOpen(false)}
             className={cn(
-              "brand-btn brand-btn-md w-full rounded-[1.25rem]",
-              settingsActive ? "brand-btn-primary" : "brand-btn-secondary"
+              "brand-btn w-full rounded-[1.25rem] px-4 py-3.5 flex items-center gap-3 transition-all duration-300",
+              settingsActive ? "bg-blue-600 text-white shadow-lg hover:-translate-y-1" : "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:text-slate-300"
             )}
           >
-            <Settings size={18} className={settingsActive ? "" : "text-slate-500 dark:text-slate-400"} />
-            Settings
+            <Settings size={20} className={settingsActive ? "animate-spin-slow" : ""} />
+            <span className="font-bold">Settings</span>
           </Link>
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200/80 bg-white px-3 py-3 shadow-[0_12px_34px_rgba(59,130,246,0.10)] backdrop-blur-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-950/82 dark:shadow-black/20 sm:px-4 sm:py-4 md:px-6">
-          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto visible-scrollbar">
+        <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200/50 bg-white/70 px-4 py-3.5 shadow-[0_8px_32px_rgba(59,130,246,0.06)] backdrop-blur-2xl transition-all duration-500 dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/20 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 onClick={() => setMobileNavOpen((prev) => !prev)}

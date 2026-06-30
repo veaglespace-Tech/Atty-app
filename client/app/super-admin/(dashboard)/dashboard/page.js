@@ -45,16 +45,17 @@ export default function Page() {
       hiddenSummaryLabels={["Revenue"]}
       recordsView="table"
       tableColumns={[
-        { key: "organization", label: "Organization" },
-        { key: "code", label: "Org Code" },
-        { key: "planName", label: "Plan" },
-        { key: "subscriptionStatus", label: "Subscription", type: "badge" },
-        { key: "users", label: "Users" },
-        { key: "teams", label: "Teams" },
+        { key: "organization", label: "Organization", minWidth: 260 },
+        { key: "code", label: "Org Code", minWidth: 110 },
+        { key: "planName", label: "Plan", minWidth: 160 },
+        { key: "subscriptionStatus", label: "Subscription", type: "badge", minWidth: 140 },
+        { key: "users", label: "Users", minWidth: 80 },
+        { key: "teams", label: "Teams", minWidth: 80 },
         {
           key: "active",
           label: "Access",
           type: "badge",
+          minWidth: 100,
           badgeMap: {
             true: "ACTIVE",
             false: "INACTIVE",
@@ -64,12 +65,13 @@ export default function Page() {
           key: "blocked",
           label: "Block",
           type: "badge",
+          minWidth: 100,
           badgeMap: {
             true: "BLOCKED",
             false: "UNBLOCKED",
           },
         },
-        { key: "createdAt", label: "Created At", type: "datetime" },
+        { key: "createdAt", label: "Created At", type: "datetime", minWidth: 160 },
       ]}
     />
   )
