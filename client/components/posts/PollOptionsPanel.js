@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useSelector } from "react-redux";
+import PollResultsModal from "./PollResultsModal";
+
 function getPollResults(post) {
   if (Array.isArray(post?.poll?.results) && post.poll.results.length > 0) {
     return post.poll.results;
@@ -21,6 +25,10 @@ export default function PollOptionsPanel({
   isVoting = false,
   voteLabel = "Tap to vote",
 }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const user = useSelector((state) => state.auth.user);
+  const userRole = user?.role;
+
   const pollResults = getPollResults(post);
   const totalVotes = Number(post?.poll?.totalVotes || 0);
   const selectedOptionIndex =
@@ -123,6 +131,31 @@ export default function PollOptionsPanel({
           );
         })}
       </div>
+
+      {["ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"].includes(userRole) && (
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-500 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            View Results
+          </button>
+        </div>
+      )}
+
+      {modalOpen && (
+        <PollResultsModal
+          postId={post.id}
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

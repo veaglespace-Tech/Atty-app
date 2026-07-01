@@ -53,6 +53,10 @@ export const postApi = createApi({
       }),
       invalidatesTags: ["Posts"],
     }),
+    getPostPollResults: builder.query({
+      query: (id) => `/posts/${id}/poll-results`,
+      providesTags: (result, error, id) => [{ type: "Posts", id }],
+    }),
   }),
 });
 
@@ -62,5 +66,6 @@ export const {
   useUpdatePostMutation,
   useVoteOnPostMutation,
   useDeletePostMutation,
+  useGetPostPollResultsQuery,
 } = postApi;
 

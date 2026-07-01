@@ -49,11 +49,11 @@ export default function TeamLeaderDashboardPage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6 sm:p-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="mobile-compact-title text-2xl font-black text-slate-900 dark:text-white">{`${firstName}'s Dashboard`}</h2>
-            <p className="mobile-hide-copy mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <h2 className="mobile-compact-title text-[1.65rem] font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">{`${firstName}'s Dashboard`}</h2>
+            <p className="mobile-hide-copy mt-2.5 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Team: {meta?.teamName || "Not Assigned"}
             </p>
           </div>
@@ -79,14 +79,14 @@ export default function TeamLeaderDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Enabled Modules" value={summaryMap.get("Enabled Modules") || 0} />
+        <MetricCard label="Granted Permissions" value={summaryMap.get("Granted Permissions") || 0} />
         <MetricCard label="Team Members" value={summaryMap.get("Team Members") || 0} />
         <MetricCard label="Present Today" value={summaryMap.get("Present Today") ?? "-"} />
         <MetricCard label="Pending Punch Out" value={summaryMap.get("Pending Punch Out") ?? "-"} />
       </div>
 
-      <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-6 shadow-lg shadow-slate-200/30 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-black/20">
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Your Modules</h3>
+      <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-lg shadow-slate-200/30 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-black/20">
+        <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Your Modules</h3>
 
         {modules.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">No modules assigned yet.</p>

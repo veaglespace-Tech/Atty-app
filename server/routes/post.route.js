@@ -6,6 +6,7 @@ const {
   updatePost,
   deletePost,
   voteOnPostPoll,
+  getPostPollResults,
 } = require("../controllers/post.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
@@ -15,6 +16,7 @@ router.use(userProtected);
 
 // Get all posts (Available to all authenticated members of organization)
 router.get("/", getOrgPosts);
+router.get("/:id/poll-results", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), getPostPollResults);
 router.post("/:id/vote", voteOnPostPoll);
 
 // Post management (Gated by permission in controller)

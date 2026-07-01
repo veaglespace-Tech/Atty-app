@@ -857,7 +857,7 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
   const limit = parseLimit(req.query.limit, 100, 500);
 
   const where = {
-    OR: [{ orgId }, { orgId: null }],
+    orgId,
     isActive: true,
     deletedAt: null,
   };
@@ -1058,7 +1058,7 @@ exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
   try {
     const unreadPosts = await prisma.post.findMany({
       where: {
-        OR: [{ orgId }, { orgId: null }],
+        orgId,
         isActive: true,
         deletedAt: null,
         reads: { none: { userId } }

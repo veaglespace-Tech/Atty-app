@@ -39,7 +39,7 @@ const formatDate = (value) => {
   return date.toLocaleString();
 };
 
-const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
+const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
 const selectorCardClassName = "dashboard-filter-shell";
 const selectorSummaryClassName = "dashboard-filter-field mt-2";
@@ -313,8 +313,8 @@ export default function OrgTeamsPage() {
       <div className={`${sectionCardClassName} mobile-compact-panel`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="mobile-compact-title text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Teams</h2>
-            <p className="mobile-hide-copy mt-2 text-sm text-slate-600 dark:text-slate-300">
+            <h2 className="mobile-compact-title text-[1.65rem] font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">Organization Teams</h2>
+            <p className="mobile-hide-copy mt-2.5 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Create teams, assign leader and members, and open each team for full management.
             </p>
           </div>

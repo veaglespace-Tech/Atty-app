@@ -612,3 +612,133 @@ exports.deletePost = asyncHandler(async (req, res) => {
     message: "Post deleted successfully",
   });
 });
+
+// @desc    Get detailed poll voters grouped by selected option
+// @route   GET /api/posts/:id/poll-results
+// @access  ORG_ADMIN, SUB_ADMIN, TEAM_LEADER
+exports.getPostPollResults = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const orgId = resolveOrganizationId(req.user);
+  
+  // Verify user has access based on role
+  const role = normalizeRole(req.user.role);
+  if (!["ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"].includes(role)) {
+    res.status(403);
+    throw new Error("Not authorized to view detailed poll results");
+  }
+
+  const existing = await prisma.post.findUnique({
+    where: { id: Number(id) },
+  });
+
+  if (!existing || existing.orgId !== orgId || existing.deletedAt !== null) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  if (existing.type !== "POLL") {
+    res.status(400);
+    throw new Error("This post is not a poll");
+  }
+
+  const safeMetadata = toSafeObject(existing.metadata);
+  const options = normalizePollOptions(safeMetadata.options);
+  const votes = normalizePollVotes(safeMetadata.votes, options.length);
+  
+  // Collect all unique user IDs who voted
+  const voterUserIds = Object.keys(votes).map(Number).filter(Boolean);
+
+  if (voterUserIds.length === 0) {
+    return res.status(200).json({
+      success: true,
+      message: "Poll results fetched successfully",
+      items: options.map((option, index) => ({
+        index,
+        option,
+        voters: [],
+      })),
+    });
+  }
+
+  // Define team scope if TEAM_LEADER
+  let leaderTeamIds = null;
+  if (role === "TEAM_LEADER") {
+    const leaderTeams = await prisma.team.findMany({
+      where: {
+        orgId,
+        deletedAt: null,
+        OR: [
+          { leaderId: req.user.id },
+          { createdById: req.user.id },
+          { members: { some: { userId: req.user.id } } },
+        ]
+      },
+      select: { id: true }
+    });
+    leaderTeamIds = leaderTeams.map(t => t.id);
+  }
+
+  // Fetch the voters details
+  const users = await prisma.user.findMany({
+    where: {
+      id: { in: voterUserIds },
+      orgId,
+      ...(leaderTeamIds !== null ? {
+        teamMemberships: {
+          some: { teamId: { in: leaderTeamIds } }
+        }
+      } : {})
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profileImageUrl: true,
+      role: true,
+      teamMemberships: {
+        select: {
+          team: {
+            select: { name: true }
+          }
+        }
+      }
+    }
+  });
+
+  const validUserIds = new Set(users.map(u => u.id));
+  
+  // Map users back to options, honoring team constraints
+  const groupedResults = options.map((option, index) => {
+    const votersForOption = [];
+    
+    // Find all user IDs who voted for this option
+    for (const [userIdStr, votedIndex] of Object.entries(votes)) {
+      if (votedIndex === index) {
+        const uid = Number(userIdStr);
+        if (validUserIds.has(uid)) {
+          const u = users.find(user => user.id === uid);
+          votersForOption.push({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            profileImageUrl: u.profileImageUrl,
+            role: u.role,
+            teams: u.teamMemberships.map(tm => tm.team.name).join(", "),
+          });
+        }
+      }
+    }
+
+    return {
+      index,
+      option,
+      voters: votersForOption,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Poll results fetched successfully",
+    items: groupedResults,
+  });
+});

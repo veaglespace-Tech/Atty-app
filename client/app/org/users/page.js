@@ -37,7 +37,7 @@ import {
 
 const STATUS_OPTIONS = ["APPROVED", "PENDING"];
 const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
-const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-4 sm:p-6";
+const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
 
 const summaryMapFromArray = (summary) => {
@@ -265,8 +265,8 @@ export default function OrgUsersPage() {
       <div className={`${sectionCardClassName} mobile-compact-panel relative z-50`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="mobile-compact-title text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Organization Users</h2>
-            <p className="mobile-hide-copy mt-2 text-sm text-slate-600 dark:text-slate-300">
+            <h2 className="mobile-compact-title text-[1.65rem] font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">Organization Users</h2>
+            <p className="mobile-hide-copy mt-2.5 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Directory keeps core fields simple. Click a user row to open full profile and actions.
             </p>
           </div>

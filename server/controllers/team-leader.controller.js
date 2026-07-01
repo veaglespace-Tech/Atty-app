@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
-const { PERMISSION_KEYS, hasPermission } = require("../constants/permissions");
+const { PERMISSION_KEYS, hasPermission, resolveUserPermissions } = require("../constants/permissions");
 const { resolveUserRole } = require("../utils/membership");
 const {
   ensureOrganizationId,
@@ -238,7 +238,7 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
     return res.status(200).json({
       success: true,
       summary: [
-        toSummaryItem("Enabled Modules", modules.filter((module) => module.enabled).length),
+        toSummaryItem("Granted Permissions", resolveUserPermissions(req.user, orgId).length),
         toSummaryItem("Team Members", 0),
         toSummaryItem("Present Today", 0),
         toSummaryItem("Pending Punch Out", 0),
@@ -307,7 +307,7 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     summary: [
-      toSummaryItem("Enabled Modules", modules.filter((module) => module.enabled).length),
+      toSummaryItem("Granted Permissions", resolveUserPermissions(req.user, orgId).length),
       toSummaryItem("Team Members", teamMemberRows.length),
       toSummaryItem("Present Today", presentToday),
       toSummaryItem("Pending Punch Out", pendingPunchOut),
