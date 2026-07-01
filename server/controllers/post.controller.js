@@ -3,7 +3,6 @@ const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
 const { PERMISSION_KEYS } = require("../constants/permissions");
-const { normalizeRole } = require("../constants/rbac");
 const {
   parseBoolean,
   parseLimit,
@@ -622,7 +621,7 @@ exports.getPostPollResults = asyncHandler(async (req, res) => {
   const orgId = resolveOrganizationId(req.user);
   
   // Verify user has access based on role
-  const role = normalizeRole(req.user.role);
+  const role = resolveUserRole(req.user);
   if (!["ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"].includes(role)) {
     res.status(403);
     throw new Error("Not authorized to view detailed poll results");
