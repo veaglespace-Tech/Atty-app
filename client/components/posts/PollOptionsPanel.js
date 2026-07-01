@@ -27,7 +27,7 @@ export default function PollOptionsPanel({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const user = useSelector((state) => state.auth.user);
-  const userRole = user?.role;
+  const userRole = user?.currentRole || user?.role;
 
   const pollResults = getPollResults(post);
   const totalVotes = Number(post?.poll?.totalVotes || 0);

@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
 const { PERMISSION_KEYS } = require("../constants/permissions");
+const { normalizeRole } = require("../constants/rbac");
 const {
   parseBoolean,
   parseLimit,
