@@ -2970,7 +2970,7 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
         try {
           const uploadResult = await uploadFileDataUrl({
             dataUrl: file.dataUrl,
-            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+            folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
           });
           nextMetadata.attachments.push({
             url: uploadResult.url,
@@ -2989,7 +2989,7 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
     try {
       const uploadResult = await uploadFileDataUrl({
         dataUrl: req.body.attachmentDataUrl,
-        folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+        folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
       });
       nextMetadata.attachment = {
         url: uploadResult.url,
@@ -3060,7 +3060,7 @@ exports.updateSuperAdminPost = asyncHandler(async (req, res) => {
         try {
           const uploadResult = await uploadFileDataUrl({
             dataUrl: file.dataUrl,
-            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+            folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
           });
           nextMeta.attachments.push({
             url: uploadResult.url,
@@ -3087,7 +3087,7 @@ exports.updateSuperAdminPost = asyncHandler(async (req, res) => {
       try {
         const uploadResult = await uploadFileDataUrl({
           dataUrl: req.body.attachmentDataUrl,
-          folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+          folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
         });
         if (nextMeta.attachment?.publicId) {
           await deleteCloudinaryFile(nextMeta.attachment.publicId, nextMeta.attachment.resourceType).catch(e => console.error(e));

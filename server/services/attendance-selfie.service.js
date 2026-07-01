@@ -6,7 +6,7 @@ const {
 const { todayKey } = require("./common.service");
 
 const ATTENDANCE_SELFIE_FOLDER = String(
-  process.env.CLOUDINARY_ATTENDANCE_SELFIE_FOLDER || "veagle-attendee/attendance-selfies"
+  process.env.IMAGEKIT_ATTENDANCE_SELFIE_FOLDER || "veagle-attendee/attendance-selfies"
 ).trim();
 const MAX_ATTENDANCE_SELFIE_BYTES = Number(
   process.env.ATTENDANCE_SELFIE_MAX_BYTES || 3 * 1024 * 1024
