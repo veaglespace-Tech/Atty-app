@@ -82,16 +82,35 @@ exports.getStats = asyncHandler(async (req, res) => {
     return;
   }
 
-  const myAttendance = await prisma.attendance.count({
-    where: {
-      userId,
-      deletedAt: null,
-    },
-  });
+  const { from, to } = todayKey ? require("../services/common.service").monthWindow(new Date()) : { from: null, to: null };
+  const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+
+  const [myAttendance, todayRecord] = await Promise.all([
+    prisma.attendance.count({
+      where: {
+        userId,
+        deletedAt: null,
+        status: { in: ["PRESENT", "HALF_DAY"] },
+        date: {
+          gte: from,
+          lte: to,
+        },
+      },
+    }),
+    prisma.attendance.findFirst({
+      where: {
+        userId,
+        deletedAt: null,
+        date: todayKey(),
+      },
+      select: { status: true }
+    })
+  ]);
 
   res.status(200).json({
-    myAttendance: `${myAttendance}/30`,
+    myAttendance: `${myAttendance}/${lastDay}`,
     streak: 5,
+    todayStatus: todayRecord?.status || "No Record",
   });
 });
 

@@ -20,7 +20,7 @@ const { checkActiveSubscription } = require("../middlewares/subscription.middlew
 router.use(
   userProtected,
   checkActiveSubscription,
-  allowRoles("TEAM_LEADER", "SUB_ADMIN", "ORG_ADMIN")
+  allowRoles("TEAM_LEADER", "SUB_ADMIN", "ORG_ADMIN", "MEMBER")
 );
 
 router.get("/dashboard", getTeamLeaderDashboard);
