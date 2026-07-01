@@ -2,7 +2,7 @@ const {
   createImageUploadError,
   uploadImageDataUrl,
   deleteCloudinaryImage,
-} = require("./cloudinary-image.service");
+} = require("./image-upload.service");
 const { todayKey } = require("./common.service");
 
 const ATTENDANCE_SELFIE_FOLDER = String(

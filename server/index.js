@@ -90,7 +90,7 @@ app.use("/api/coupons", require("./routes/coupon.route"));
 app.use("/api/partner-referral", require("./routes/partner-referral.route"));
 
 app.use("*", (req, res) => {
-  res.status(404).json({ message: "resource not found" });
+  res.status(404).json({ success: false, message: "resource not found" });
 });
 
 if (sentryEnabled) {
@@ -98,7 +98,20 @@ if (sentryEnabled) {
 }
 
 app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  if (sentryEnabled) {
+    Sentry.captureException(err);
+  }
+
+  // Structured response for custom AppError
+  if (err.isOperational) {
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      errors: err.errors || {},
+    });
+  }
+
+  const statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
   const isSchemaMismatchError =
     err?.code === "P2022" ||
     String(err?.message || "").toLowerCase().includes("does not exist in the current database");
@@ -106,12 +119,10 @@ app.use((err, req, res, next) => {
     ? "Server settings are updating. Please retry in a moment."
     : err.message || "Server Error";
 
-  if (sentryEnabled) {
-    Sentry.captureException(err);
-  }
   res.status(statusCode).json({
+    success: false,
     message: clientMessage,
-    error: process.env.NODE_ENV === "production" ? null : err.stack,
+    errors: process.env.NODE_ENV === "production" ? null : { stack: err.stack },
   });
 });
 

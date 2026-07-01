@@ -9,7 +9,7 @@ const {
   parseOffset,
   truncateText,
 } = require("../services/common.service");
-const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/cloudinary-image.service");
+const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/image-upload.service");
 
 const POST_TYPES = new Set([
   "NOTIFICATION",

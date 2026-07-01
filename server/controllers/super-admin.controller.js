@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const { buildUserAttendancePayload } = require("../services/attendance-query.service");
 const archiver = require("archiver");
 const prisma = require("../lib/prisma");
-const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/cloudinary-image.service");
+const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/image-upload.service");
 const {
   parseBoolean,
   parseId,

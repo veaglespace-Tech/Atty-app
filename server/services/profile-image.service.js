@@ -2,7 +2,7 @@ const {
   createImageUploadError,
   uploadImageDataUrl,
   deleteCloudinaryImage,
-} = require("./cloudinary-image.service");
+} = require("./image-upload.service");
 
 const PROFILE_IMAGE_FOLDER = String(
   process.env.CLOUDINARY_PROFILE_IMAGE_FOLDER || "veagle-attendee/profile-images"
