@@ -79,7 +79,7 @@ export default function Dashboard() {
         },
       ]
     : [
-        { icon: Clock, label: "Present This Month", value: stats?.myAttendance || "0/0", tone: "blue" },
+        { icon: Clock, label: "Daily Attendance", value: stats?.myAttendance || "0/0", tone: "blue" },
         { icon: Zap, label: "Active Streak", value: `${stats?.streak || "0"} Days`, tone: "amber" },
         { icon: ShieldCheck, label: "Verified", value: "Yes", tone: "emerald" },
         { icon: TrendingUp, label: "Attendance Focus", value: "On Track", tone: "indigo" },
@@ -129,7 +129,7 @@ export default function Dashboard() {
             <MiniCard label="Status" value={isManager ? "Manager View" : "Member View"} />
             <MiniCard
               label="Today"
-              value={isManager ? `${stats?.presentToday || 0} Present` : stats?.todayStatus || "No Record"}
+              value={isManager ? `${stats?.presentToday || 0} Present` : stats?.myAttendance || "0/0"}
             />
             <MiniCard label="Organization" value={user?.organizationCode || "Veagle Attendee"} />
             <MiniCard
