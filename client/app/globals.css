@@ -2080,3 +2080,14 @@
     opacity: 1;
   }
 }
+
+@layer utilities {
+  @keyframes flipY {
+    0% { transform: perspective(600px) rotateY(0deg); }
+    100% { transform: perspective(600px) rotateY(360deg); }
+  }
+  .animate-flip-y {
+    animation: flipY 6s linear infinite;
+    transform-style: preserve-3d;
+  }
+}

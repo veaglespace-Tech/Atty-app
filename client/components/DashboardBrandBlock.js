@@ -24,7 +24,7 @@ export default function DashboardBrandBlock() {
               height={80}
               priority
               unoptimized
-              className="brand-logo-mark h-full w-full object-contain"
+              className="brand-logo-mark h-full w-full object-contain filter drop-shadow-[0_20px_25px_rgba(0,0,0,0.85)] drop-shadow-[0_10px_10px_rgba(0,0,0,1)] animate-flip-y"
             />
           </div>
         </div>
