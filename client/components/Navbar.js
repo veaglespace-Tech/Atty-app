@@ -116,7 +116,7 @@ export default function Navbar() {
                     fill
                     priority
                     sizes="(max-width: 768px) 40px, 48px"
-                    className="brand-logo-mark h-full w-full object-contain filter drop-shadow-[0_20px_25px_rgba(0,0,0,0.85)] drop-shadow-[0_10px_10px_rgba(0,0,0,1)] animate-flip-y"
+                    className="brand-logo-mark h-full w-full object-contain filter drop-shadow-[0_0_12px_rgba(92,209,229,0.6)] drop-shadow-[0_4px_8px_rgba(30,112,209,0.5)] animate-flip-y"
                   />
                 </div>
               </div>
