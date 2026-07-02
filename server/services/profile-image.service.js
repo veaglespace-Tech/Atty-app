@@ -5,7 +5,7 @@ const {
 } = require("./image-upload.service");
 
 const PROFILE_IMAGE_FOLDER = String(
-  process.env.CLOUDINARY_PROFILE_IMAGE_FOLDER || "veagle-attendee/profile-images"
+  process.env.IMAGEKIT_PROFILE_IMAGE_FOLDER || "veagle-attendee/profile-images"
 ).trim();
 const MAX_PROFILE_IMAGE_BYTES = Number(process.env.PROFILE_IMAGE_MAX_BYTES || 2 * 1024 * 1024);
 

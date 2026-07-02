@@ -211,7 +211,7 @@ exports.createPost = asyncHandler(async (req, res) => {
         try {
           const uploadResult = await uploadFileDataUrl({
             dataUrl: file.dataUrl,
-            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+            folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
           });
           nextMetadata.attachments.push({
             url: uploadResult.url,
@@ -231,7 +231,7 @@ exports.createPost = asyncHandler(async (req, res) => {
     try {
       const uploadResult = await uploadFileDataUrl({
         dataUrl: req.body.attachmentDataUrl,
-        folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+        folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
       });
       nextMetadata.attachment = {
         url: uploadResult.url,
@@ -426,7 +426,7 @@ exports.updatePost = asyncHandler(async (req, res) => {
         try {
           const uploadResult = await uploadFileDataUrl({
             dataUrl: file.dataUrl,
-            folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+            folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
           });
           nextMetadata.attachments.push({
             url: uploadResult.url,
@@ -457,7 +457,7 @@ exports.updatePost = asyncHandler(async (req, res) => {
       try {
         const uploadResult = await uploadFileDataUrl({
           dataUrl: req.body.attachmentDataUrl,
-          folder: process.env.CLOUDINARY_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
+          folder: process.env.IMAGEKIT_POST_ATTACHMENT_FOLDER || "veagle-attendee/post-attachments",
         });
         
         // Delete old attachment if it exists
