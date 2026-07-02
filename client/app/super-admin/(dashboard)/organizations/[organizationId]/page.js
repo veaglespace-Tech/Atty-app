@@ -678,6 +678,21 @@ function ProfileTab({
                 : "-"
             }
           />
+          {item.agreementPdfUrl ? (
+            <div className="dashboard-detail-tile min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                Agreement PDF
+              </p>
+              <a
+                href={item.agreementPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+              >
+                <Download size={14} /> View Agreement
+              </a>
+            </div>
+          ) : null}
         </div>
       )}
     </SectionCard>

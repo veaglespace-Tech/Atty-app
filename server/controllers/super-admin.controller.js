@@ -728,6 +728,7 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
     subscriptionExpiry: organization.subscriptionExpiry || null,
     blocked: Boolean(organization.isBlocked),
     active: Boolean(organization.isActive),
+    agreementPdfUrl: organization.agreementPdfUrl || null,
     createdAt: organization.createdAt,
     updatedAt: organization.updatedAt,
     counts: {

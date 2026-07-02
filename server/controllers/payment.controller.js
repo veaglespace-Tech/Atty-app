@@ -14,6 +14,7 @@ const { archiveFailedRegistration } = require("../services/archive.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
 const { truncateText, formatDate } = require("../services/common.service");
+const { generateSubscriptionAgreement } = require("../utils/pdf-generator");
 
 // -- PayU helpers --------------------------------------------------------------
 const getPayuCredentials = () => ({
@@ -341,6 +342,44 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
     console.log("[PayU Success Callback] Transaction committed successfully.");
     pendingRegistrations.delete(txnid);
     try {
+      console.log("[PayU Success Callback] Generating Subscription Agreement...");
+      const agreementPdfBuffer = await generateSubscriptionAgreement(
+        newOrg,
+        admin,
+        {
+          name: resolvedPlan.name,
+          code: resolvedPlan.code,
+          amount: Number(plan.finalPrice || resolvedPlan.price),
+          currency: resolvedPlan.currency || "INR",
+          durationInDays: resolvedPlan.durationInDays || 30,
+          startDate: new Date(),
+          endDate: new Date(newOrg.subscriptionExpiry),
+        }
+      );
+
+      console.log("[PayU Success Callback] Uploading Agreement to ImageKit...");
+      let agreementPdfUrl = null;
+      let agreementPdfPublicId = null;
+      try {
+        const { uploadFileDataUrl } = require("../services/image-upload.service");
+        const dataUrl = `data:application/pdf;base64,${agreementPdfBuffer.toString('base64')}`;
+        const uploadResult = await uploadFileDataUrl({
+          dataUrl,
+          folder: "agreements",
+          publicId: `agreement-${newOrg.organizationCode}`
+        });
+        agreementPdfUrl = uploadResult?.url;
+        agreementPdfPublicId = uploadResult?.publicId;
+        if (agreementPdfUrl) {
+          await prisma.organization.update({
+            where: { id: newOrg.id },
+            data: { agreementPdfUrl, agreementPdfPublicId }
+          });
+        }
+      } catch (uploadError) {
+        console.error("[PayU Success Callback] Failed to upload agreement to ImageKit:", uploadError);
+      }
+
       console.log("[PayU Success Callback] Sending welcome email...");
       await sendEmail({
         email: adminEmail,
@@ -370,7 +409,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
               { label: "Status", value: "ACTIVE" },
               { label: "Amount Paid", value: `${resolvedPlan.currency || "INR"} ${Number(plan.finalPrice || resolvedPlan.price).toLocaleString("en-IN")}` },
               { label: "Start Date", value: new Date().toLocaleDateString("en-GB") },
-              { label: "Expiry Date", value: expiryDate.toLocaleDateString("en-GB") },
+              { label: "Expiry Date", value: new Date(newOrg.subscriptionExpiry).toLocaleDateString("en-GB") },
             ],
           },
         ],
@@ -383,6 +422,13 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
           "For security reasons, your password is not included in this email.",
         ],
         footerNote: "Empowering your workspace with smart attendance solutions.",
+        attachments: [
+          {
+            filename: "Software_Subscription_Agreement.pdf",
+            content: agreementPdfBuffer,
+            contentType: "application/pdf",
+          },
+        ],
       });
     } catch (e) {
       console.error("[PayU Success Callback] Email error (non-fatal):", e);
@@ -674,6 +720,48 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
     });
     let emailSent = false;
     try {
+      console.log("[Free Trial Callback] Generating Subscription Agreement...");
+      const agreementPdfBuffer = await generateSubscriptionAgreement(
+        result.newOrg,
+        {
+          name: result.newUser.name,
+          email: result.newUser.email,
+          mobile: result.newUser.mobile,
+        },
+        {
+          name: resolvedPlan.name,
+          code: resolvedPlan.code,
+          amount: Number(resolvedPlan.price),
+          currency: resolvedPlan.currency || "INR",
+          durationInDays: resolvedPlan.durationInDays || 7,
+          startDate: new Date(),
+          endDate: new Date(result.newOrg.subscriptionExpiry),
+        }
+      );
+
+      console.log("[Free Trial Callback] Uploading Agreement to ImageKit...");
+      let agreementPdfUrl = null;
+      let agreementPdfPublicId = null;
+      try {
+        const { uploadFileDataUrl } = require("../services/image-upload.service");
+        const dataUrl = `data:application/pdf;base64,${agreementPdfBuffer.toString('base64')}`;
+        const uploadResult = await uploadFileDataUrl({
+          dataUrl,
+          folder: "agreements",
+          publicId: `agreement-${result.newOrg.organizationCode}`
+        });
+        agreementPdfUrl = uploadResult?.url;
+        agreementPdfPublicId = uploadResult?.publicId;
+        if (agreementPdfUrl) {
+          await prisma.organization.update({
+            where: { id: result.newOrg.id },
+            data: { agreementPdfUrl, agreementPdfPublicId }
+          });
+        }
+      } catch (uploadError) {
+        console.error("[Free Trial Callback] Failed to upload agreement to ImageKit:", uploadError);
+      }
+
       await sendEmail({
         email: result.newUser.email,
         subject: `Welcome to Veagle Attendee - ${result.newOrg.organizationCode}`,
@@ -713,6 +801,13 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
           "For security reasons, your password is not included in this email.",
         ],
         footerNote: "Empowering your workspace with smart attendance solutions.",
+        attachments: [
+          {
+            filename: "Software_Subscription_Agreement.pdf",
+            content: agreementPdfBuffer,
+            contentType: "application/pdf",
+          },
+        ],
       });
       emailSent = true;
     } catch (e) {

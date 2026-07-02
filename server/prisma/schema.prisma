@@ -187,6 +187,8 @@ model Organization {
   attendanceEndTime    String                      @default("18:00")
   lateGraceMinutes     Int                         @default(0)
   referredByPartnerId  Int?
+  agreementPdfUrl      String?
+  agreementPdfPublicId String?
   attendances          Attendance[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
