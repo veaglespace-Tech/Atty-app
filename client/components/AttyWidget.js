@@ -151,7 +151,7 @@ function BotAvatar({ avatarBorder }) {
             alt="Atty"
             width={32}
             height={32}
-            className="brand-logo-mark h-full w-full object-contain drop-shadow-[0_15px_35px_rgba(0,0,0,0.85)] drop-shadow-[0_5px_15px_rgba(0,0,0,1)] animate-flip-y"
+            className="brand-logo-mark h-full w-full object-contain"
           />
         </div>
       </div>
@@ -470,7 +470,7 @@ export default function AttyWidget() {
                     alt="Atty"
                     width={40}
                     height={40}
-                    className="brand-logo-mark h-full w-full object-contain drop-shadow-[0_15px_35px_rgba(0,0,0,0.85)] drop-shadow-[0_5px_15px_rgba(0,0,0,1)] animate-flip-y"
+                    className="brand-logo-mark h-full w-full object-contain"
                   />
                 </div>
               </div>
