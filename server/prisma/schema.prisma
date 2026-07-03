@@ -202,6 +202,7 @@ model Organization {
   renewalIntents       SubscriptionRenewalIntent[]
   teams                Team[]
   users                User[]                      @relation("OrganizationUsers")
+  regularizations      AttendanceRegularization[]
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -543,6 +544,8 @@ model User {
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   referredByPartner           ReferralPartner?            @relation("ReferredUsers", fields: [referredByPartnerId], references: [id])
   notificationReads           UserNotificationRead[]
+  regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
+  regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
@@ -710,6 +713,7 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   HALF_DAY
+  REGULARIZED
 }
 
 enum SubscriptionStatus {
@@ -771,4 +775,29 @@ enum RegistrationRequestStatus {
   EXPIRED
 }
 
+enum RegularizationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
+model AttendanceRegularization {
+  id           Int                  @id @default(autoincrement())
+  orgId        Int
+  userId       Int
+  date         String
+  reason       String               @db.Text
+  status       RegularizationStatus @default(PENDING)
+  reviewedById Int?
+  reviewedAt   DateTime?
+  reviewNote   String?              @default("")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  organization Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User                 @relation("RegularizationRequests", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer     User?                @relation("RegularizationReviews", fields: [reviewedById], references: [id])
+
+  @@index([orgId, status])
+  @@index([userId, date])
+  @@map("attendance_regularization")
+}

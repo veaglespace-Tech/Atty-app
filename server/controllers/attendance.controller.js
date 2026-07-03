@@ -180,6 +180,7 @@ const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
   }, {});
 
   const presentCount = Number(statusCountMap.PRESENT || 0);
+  const regularizedCount = Number(statusCountMap.REGULARIZED || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
   const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
@@ -187,7 +188,7 @@ const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
   return {
     summary: [
       toSummaryItem("Today Status", todayRecord?.status || "No Records"),
-      toSummaryItem("Present This Month", presentCount + halfDayCount),
+      toSummaryItem("Present This Month", presentCount + regularizedCount + halfDayCount),
       toSummaryItem("Absent This Month", absentCount),
       toSummaryItem("Worked Hrs This Month", workedHours),
     ],
@@ -636,5 +637,47 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
     late,
     absent: Math.max(0, absent),
     leaves: 0,
+  });
+});
+
+exports.requestRegularization = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const userId = Number(req.user.id);
+  const { date, reason } = req.body;
+
+  if (!date || !reason) {
+    res.status(400);
+    throw new Error("Date and reason are required");
+  }
+
+  // Check if pending request exists
+  const existingRequest = await prisma.attendanceRegularization.findFirst({
+    where: {
+      orgId,
+      userId,
+      date,
+      status: "PENDING",
+    },
+  });
+
+  if (existingRequest) {
+    res.status(400);
+    throw new Error("A pending regularization request already exists for this date.");
+  }
+
+  const newRequest = await prisma.attendanceRegularization.create({
+    data: {
+      orgId,
+      userId,
+      date,
+      reason,
+      status: "PENDING",
+    },
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Regularization request submitted successfully",
+    data: newRequest,
   });
 });

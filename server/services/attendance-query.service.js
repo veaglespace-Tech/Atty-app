@@ -128,7 +128,7 @@ const buildAttendanceWhere = ({
 const buildAttendanceSummary = (records = []) => {
   const totals = records.reduce(
     (acc, record) => {
-      if (record.status === "PRESENT") acc.present += 1;
+      if (record.status === "PRESENT" || record.status === "REGULARIZED") acc.present += 1;
       else if (record.status === "HALF_DAY") acc.halfDay += 1;
       else if (record.status === "ABSENT") acc.absent += 1;
       return acc;
@@ -240,7 +240,7 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
   });
 
   const totalRecords = logs.length;
-  const presentDays = logs.filter(l => l.status === "PRESENT").length;
+  const presentDays = logs.filter(l => l.status === "PRESENT" || l.status === "REGULARIZED").length;
   const halfDays = logs.filter(l => l.status === "HALF_DAY").length;
   const absentDays = logs.filter(l => l.status === "ABSENT").length;
   const totalWorkedMinutes = logs.reduce((sum, l) => sum + Number(l.totalMinutesWorked || 0), 0);

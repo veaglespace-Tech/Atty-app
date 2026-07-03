@@ -121,6 +121,7 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
   }, {});
 
   const presentCount = Number(statusCountMap.PRESENT || 0);
+  const regularizedCount = Number(statusCountMap.REGULARIZED || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
   const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
@@ -142,7 +143,7 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
     success: true,
     summary: [
       toSummaryItem("Today Status", todayRecord?.status || "No Records"),
-      toSummaryItem("Present This Month", presentCount + halfDayCount),
+      toSummaryItem("Present This Month", presentCount + regularizedCount + halfDayCount),
       toSummaryItem("Absent This Month", absentCount),
       toSummaryItem("Worked Hrs This Month", workedHours),
     ],

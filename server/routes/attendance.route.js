@@ -7,6 +7,7 @@ const {
   getAttendance,
   getAttendanceSummary,
   getMyAttendance,
+  requestRegularization,
 } = require("../controllers/attendance.controller");
 const { verifyToken } = require("../middlewares/token.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
@@ -57,5 +58,6 @@ router.post("/punch-out", validateBody(attendanceLocationSchema), punchOut);
 router.get("/me", getMyAttendance);
 router.get("/", getAttendance);
 router.get("/summary", getAttendanceSummary);
+router.post("/regularize", requestRegularization);
 
 module.exports = router;

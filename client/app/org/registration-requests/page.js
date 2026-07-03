@@ -15,6 +15,7 @@ import {
   AlertCircle,
   UserPlus,
   ShieldCheck,
+  FileWarning
 } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import useLocalPagination from "@/hooks/useLocalPagination";
@@ -22,6 +23,9 @@ import {
   useGetOrgRegistrationRequestsQuery,
   useAcceptRegistrationRequestMutation,
   useRejectRegistrationRequestMutation,
+  useGetOrgRegularizationRequestsQuery,
+  useApproveRegularizationRequestMutation,
+  useRejectRegularizationRequestMutation
 } from "@/services/api/orgApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 
@@ -41,7 +45,103 @@ const formatDate = (value) => {
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback;
 
-export default function RegistrationRequestsPage() {
+function DetailRow({ icon: Icon, label, wrap = false }) {
+  return (
+    <div className="flex min-w-0 items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300">
+      <Icon size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
+      <span className={wrap ? "min-w-0 flex-1 break-all" : "min-w-0 flex-1 truncate"}>{label}</span>
+    </div>
+  );
+}
+
+export default function RequestsPage() {
+  const [activeTab, setActiveTab] = useState("REGISTRATION"); // "REGISTRATION" | "ATTENDANCE"
+
+  // Hoist queries to get counts for the tabs
+  const {
+    data: regData,
+    isLoading: isRegLoading,
+    isFetching: isRegFetching,
+    refetch: refetchReg,
+  } = useGetOrgRegistrationRequestsQuery();
+
+  const {
+    data: attData,
+    isLoading: isAttLoading,
+    isFetching: isAttFetching,
+    refetch: refetchAtt,
+  } = useGetOrgRegularizationRequestsQuery();
+
+  const regItems = Array.isArray(regData?.items) ? regData.items : [];
+  const attItems = Array.isArray(attData?.data) ? attData.data.filter((r) => r.status === "PENDING") : [];
+
+  return (
+    <section className="space-y-6">
+      {/* Header with Tabs */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/80 sm:p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
+            <UserPlus size={20} />
+          </div>
+          <h2 className="mobile-compact-title text-2xl font-black text-slate-900 dark:text-white">
+            Requests Management
+          </h2>
+        </div>
+        
+        {/* Tabs */}
+        <div className="flex space-x-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800 max-w-md">
+          <button
+            onClick={() => setActiveTab("REGISTRATION")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+              activeTab === "REGISTRATION"
+                ? "bg-white text-blue-600 shadow dark:bg-slate-700 dark:text-blue-400"
+                : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
+            }`}
+          >
+            Registration Requests
+            {regItems.length > 0 && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                {regItems.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("ATTENDANCE")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+              activeTab === "ATTENDANCE"
+                ? "bg-white text-blue-600 shadow dark:bg-slate-700 dark:text-blue-400"
+                : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
+            }`}
+          >
+            Attendance Issues
+            {attItems.length > 0 && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                {attItems.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "REGISTRATION" ? (
+        <RegistrationRequestsTab
+          items={regItems}
+          loading={isRegLoading || isRegFetching}
+          refetch={refetchReg}
+        />
+      ) : (
+        <AttendanceRequestsTab
+          pendingItems={attItems}
+          loading={isAttLoading || isAttFetching}
+          refetch={refetchAtt}
+        />
+      )}
+    </section>
+  );
+}
+
+// --- REGISTRATION REQUESTS SUB-COMPONENT --- //
+function RegistrationRequestsTab({ items, loading, refetch }) {
   const [actionId, setActionId] = useState("");
   const [rejectNoteId, setRejectNoteId] = useState(null);
   const [rejectNote, setRejectNote] = useState("");
@@ -50,18 +150,9 @@ export default function RegistrationRequestsPage() {
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [isBulkActionBusy, setIsBulkActionBusy] = useState(false);
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    refetch,
-  } = useGetOrgRegistrationRequestsQuery();
-
   const [acceptRequest] = useAcceptRegistrationRequestMutation();
   const [rejectRequest] = useRejectRegistrationRequestMutation();
 
-  const items = Array.isArray(data?.items) ? data.items : [];
-  const loading = isLoading || isFetching;
   const {
     page,
     pageSize,
@@ -171,57 +262,44 @@ export default function RegistrationRequestsPage() {
   };
 
   return (
-    <section className="space-y-6">
-      {/* Header */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/80 sm:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-                <UserPlus size={20} />
-              </div>
-              <h2 className="mobile-compact-title text-2xl font-black text-slate-900 dark:text-white">
-                Registration Requests
-              </h2>
-            </div>
-            <p className="mobile-hide-copy mt-2 text-sm text-slate-600 dark:text-slate-400">
-              Members who requested to join your organization via the referral link appear here.
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <p className="mobile-hide-copy text-sm text-slate-600 dark:text-slate-400">
+          Members who requested to join your organization via the referral link appear here.
+        </p>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            {items.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-                <Clock size={12} />
-                {items.length} pending
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={refreshRequests}
-              disabled={loading}
-              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
-            </button>
-          </div>
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          {items.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+              <Clock size={12} />
+              {items.length} pending
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={refreshRequests}
+            disabled={loading}
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+            Refresh
+          </button>
         </div>
-
-        {error ? (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
-            <AlertCircle size={16} />
-            {error}
-          </div>
-        ) : null}
-
-        {message ? (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200">
-            <CheckCircle2 size={16} />
-            {message}
-          </div>
-        ) : null}
       </div>
+
+      {error ? (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      ) : null}
+
+      {message ? (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200">
+          <CheckCircle2 size={16} />
+          {message}
+        </div>
+      ) : null}
 
       {/* Request Cards */}
       {loading ? (
@@ -412,15 +490,197 @@ export default function RegistrationRequestsPage() {
           />
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
-function DetailRow({ icon: Icon, label, wrap = false }) {
+// --- ATTENDANCE REQUESTS SUB-COMPONENT --- //
+function AttendanceRequestsTab({ pendingItems, loading, refetch }) {
+  const [actionId, setActionId] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const [approveRequest] = useApproveRegularizationRequestMutation();
+  const [rejectRequest] = useRejectRegularizationRequestMutation();
+
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(pendingItems, {
+    initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.REQUESTS[0],
+    dependencies: [pendingItems.length],
+  });
+
+  const refreshRequests = async () => {
+    setError("");
+    setMessage("");
+    await refetch();
+  };
+
+  const handleApprove = async (requestId) => {
+    try {
+      setActionId(requestId);
+      setError("");
+      setMessage("");
+      await approveRequest(requestId).unwrap();
+      setMessage("Request approved and attendance updated to REGULARIZED.");
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to approve request"));
+    } finally {
+      setActionId("");
+    }
+  };
+
+  const handleReject = async (requestId) => {
+    try {
+      setActionId(requestId);
+      setError("");
+      setMessage("");
+      await rejectRequest({ id: requestId, note: "Rejected by administrator" }).unwrap();
+      setMessage("Request rejected.");
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to reject request"));
+    } finally {
+      setActionId("");
+    }
+  };
+
   return (
-    <div className="flex min-w-0 items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300">
-      <Icon size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
-      <span className={wrap ? "min-w-0 flex-1 break-all" : "min-w-0 flex-1 truncate"}>{label}</span>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <p className="mobile-hide-copy text-sm text-slate-600 dark:text-slate-400">
+          Members reporting technical issues with punching in/out appear here.
+        </p>
+
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          {pendingItems.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+              <Clock size={12} />
+              {pendingItems.length} pending
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={refreshRequests}
+            disabled={loading}
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-200">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      ) : null}
+
+      {message ? (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200">
+          <CheckCircle2 size={16} />
+          {message}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-slate-500 dark:text-slate-400">
+          <Loader2 className="animate-spin" size={20} />
+          <span className="text-sm font-medium">Loading requests...</span>
+        </div>
+      ) : pendingItems.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900/60">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <FileWarning size={28} className="text-slate-400 dark:text-slate-500" />
+          </div>
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            No pending attendance issues
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedItems.map((item) => {
+            const busy = String(actionId) === String(item.id);
+
+            return (
+              <div
+                key={item.id}
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md dark:border-slate-700/80 dark:bg-slate-900/80 dark:hover:border-slate-600"
+              >
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-400 to-rose-400 opacity-60 transition-opacity group-hover:opacity-100" />
+
+                <div className="mb-4 mt-1 pr-6">
+                  <p className="text-base font-bold text-slate-900 dark:text-white">
+                    {item.user?.name || "Unknown"}
+                  </p>
+                  <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                    {item.user?.email}
+                  </p>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500">Request Date:</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{item.date}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500">Technical Issue / Reason:</p>
+                    <div className="mt-1 rounded bg-slate-50 p-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      {item.reason}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleApprove(item.id)}
+                    disabled={busy}
+                    className="brand-btn brand-btn-soft brand-btn-sm flex-1"
+                  >
+                    {busy && actionId === item.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleReject(item.id)}
+                    disabled={busy}
+                    className="brand-btn brand-btn-danger brand-btn-sm flex-1"
+                  >
+                    {busy && actionId === item.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                    Reject
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          </div>
+
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={pendingItems.length}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.REQUESTS}
+            label="requests"
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -464,3 +464,124 @@ exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
 
   res.status(200).json({ success: true, item: mapAttendanceRecord(log) });
 });
+
+exports.getOrgRegularizationRequests = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  // Ensure only authorized people can view this
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+
+  const requests = await prisma.attendanceRegularization.findMany({
+    where: { orgId },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
+      reviewer: {
+        select: { id: true, name: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  res.status(200).json({ success: true, data: requests });
+});
+
+exports.approveRegularizationRequest = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW); // Adjust permission if needed
+
+  const { id } = req.params;
+  const adminId = Number(req.user.id);
+
+  const request = await prisma.attendanceRegularization.findFirst({
+    where: { id: Number(id), orgId },
+  });
+
+  if (!request) {
+    res.status(404);
+    throw new Error("Regularization request not found");
+  }
+
+  if (request.status !== "PENDING") {
+    res.status(400);
+    throw new Error(`Request is already ${request.status}`);
+  }
+
+  // Update the request status
+  const updatedRequest = await prisma.attendanceRegularization.update({
+    where: { id: request.id },
+    data: {
+      status: "APPROVED",
+      reviewedById: adminId,
+      reviewedAt: new Date(),
+    },
+  });
+
+  // Upsert the actual attendance record
+  await prisma.attendance.upsert({
+    where: {
+      orgId_userId_date: {
+        orgId: request.orgId,
+        userId: request.userId,
+        date: request.date,
+      },
+    },
+    update: {
+      status: "REGULARIZED",
+      notes: "Approved via regularization request",
+    },
+    create: {
+      orgId: request.orgId,
+      userId: request.userId,
+      date: request.date,
+      status: "REGULARIZED",
+      notes: "Approved via regularization request",
+      markedById: adminId,
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Request approved and attendance regularized",
+    data: updatedRequest,
+  });
+});
+
+exports.rejectRegularizationRequest = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW); 
+
+  const { id } = req.params;
+  const adminId = Number(req.user.id);
+  const { reviewNote } = req.body;
+
+  const request = await prisma.attendanceRegularization.findFirst({
+    where: { id: Number(id), orgId },
+  });
+
+  if (!request) {
+    res.status(404);
+    throw new Error("Regularization request not found");
+  }
+
+  if (request.status !== "PENDING") {
+    res.status(400);
+    throw new Error(`Request is already ${request.status}`);
+  }
+
+  const updatedRequest = await prisma.attendanceRegularization.update({
+    where: { id: request.id },
+    data: {
+      status: "REJECTED",
+      reviewedById: adminId,
+      reviewedAt: new Date(),
+      reviewNote: reviewNote || "",
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Request rejected",
+    data: updatedRequest,
+  });
+});

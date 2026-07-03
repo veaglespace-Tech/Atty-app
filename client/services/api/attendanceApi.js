@@ -179,6 +179,13 @@ export const attendanceApi = createApi({
         { type: "Attendance", id: "SUMMARY" },
       ],
     }),
+    requestRegularization: builder.mutation({
+      query: (payload) => ({
+        url: "/attendance/regularize",
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -188,5 +195,6 @@ export const {
   useGetAttendanceSummaryQuery,
   usePunchInMutation,
   usePunchOutMutation,
+  useRequestRegularizationMutation,
 } = attendanceApi;
 

@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -31,6 +31,25 @@ export const orgApi = createApi({
         body: { note },
       }),
       invalidatesTags: ["RegistrationRequests"],
+    }),
+    getOrgRegularizationRequests: builder.query({
+      query: () => "/org/regularization-requests",
+      providesTags: ["RegularizationRequests"],
+    }),
+    approveRegularizationRequest: builder.mutation({
+      query: (id) => ({
+        url: `/org/regularization-requests/${id}/approve`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["RegularizationRequests", "OrgAttendance", "OrgUserAttendance"],
+    }),
+    rejectRegularizationRequest: builder.mutation({
+      query: ({ id, note }) => ({
+        url: `/org/regularization-requests/${id}/reject`,
+        method: "PATCH",
+        body: { reviewNote: note },
+      }),
+      invalidatesTags: ["RegularizationRequests"],
     }),
     getOrgDashboard: builder.query({
       query: () => "/org/dashboard",
@@ -275,4 +294,7 @@ export const {
   useRejectRegistrationRequestMutation,
   useDownloadOrgUsersExcelMutation,
   useDownloadOrgUsersPdfMutation,
+  useGetOrgRegularizationRequestsQuery,
+  useApproveRegularizationRequestMutation,
+  useRejectRegularizationRequestMutation,
 } = orgApi;

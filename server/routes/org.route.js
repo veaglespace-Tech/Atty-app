@@ -35,6 +35,9 @@ const {
   downloadOrgUserAttendanceExcel,
   downloadOrgAttendancePdf,
   downloadOrgAttendanceExcel,
+  getOrgRegularizationRequests,
+  approveRegularizationRequest,
+  rejectRegularizationRequest,
 } = require("../controllers/org-attendance.controller");
 const {
   getOrgRegistrationRequests,
@@ -109,5 +112,9 @@ router.get("/attendance/excel", downloadOrgAttendanceExcel);
 router.get("/attendance/settings", getOrgAttendanceSettings);
 router.patch("/attendance/settings", updateOrgAttendanceSettings);
 router.get("/attendance/:id", getOrgAttendanceLogById);
+
+router.get("/regularization-requests", getOrgRegularizationRequests);
+router.patch("/regularization-requests/:id/approve", approveRegularizationRequest);
+router.patch("/regularization-requests/:id/reject", rejectRegularizationRequest);
 
 module.exports = router;

@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle, Filter } from "lucide-react";
+import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle, Filter, FileWarning } from "lucide-react";
 import dynamic from "next/dynamic";
+import RegularizationModal from "@/components/attendance/RegularizationModal";
 
 const AttendanceFaceCaptureModal = dynamic(
   () => import("@/components/attendance/AttendanceFaceCaptureModal"),
@@ -17,9 +18,9 @@ import {
   useGetMemberAttendanceQuery, 
   useGetMemberDashboardQuery,
   useDownloadMemberAttendancePdfMutation,
-  useDownloadMemberAttendanceExcelMutation
+  useDownloadMemberAttendanceExcelMutation,
 } from "@/services/api/memberApi";
-import { usePunchInMutation, usePunchOutMutation } from "@/services/api/attendanceApi";
+import { usePunchInMutation, usePunchOutMutation, useRequestRegularizationMutation } from "@/services/api/attendanceApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { getDateKey, getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
@@ -79,6 +80,7 @@ export default function MemberAttendancePage() {
   const [message, setMessage] = useState("");
   const [filterType, setFilterType] = useState("ALL");
   const [customRange, setCustomRange] = useState({ from: "", to: "" });
+  const [isRegularizeModalOpen, setIsRegularizeModalOpen] = useState(false);
 
   const attendanceQueryParams = useMemo(() => {
     const today = new Date();
@@ -116,6 +118,7 @@ export default function MemberAttendancePage() {
   } = useGetMemberAttendanceQuery(attendanceQueryParams, { skip: !user });
   const [punchInMutation] = usePunchInMutation();
   const [punchOutMutation] = usePunchOutMutation();
+  const [requestRegularizationMutation, { isLoading: isSubmittingRegularization }] = useRequestRegularizationMutation();
   const [downloadPdfMutation, { isLoading: downloadingPdf }] = useDownloadMemberAttendancePdfMutation();
   const [downloadExcelMutation, { isLoading: downloadingExcel }] = useDownloadMemberAttendanceExcelMutation();
 
@@ -272,6 +275,21 @@ export default function MemberAttendancePage() {
     }
   };
 
+  const submitRegularization = async (payload) => {
+    try {
+      await requestRegularizationMutation(payload).unwrap();
+      dispatch(addNotification({ type: "success", message: "Regularization request submitted successfully" }));
+      setIsRegularizeModalOpen(false);
+    } catch (err) {
+      dispatch(
+        addNotification({
+          type: "error",
+          message: err?.data?.message || "Failed to submit regularization request",
+        })
+      );
+    }
+  };
+
   const canPunchIn = !todayRecord?.punchInAt;
   const canPunchOut = Boolean(todayRecord?.punchInAt) && !todayRecord?.punchOutAt;
 
@@ -316,6 +334,15 @@ export default function MemberAttendancePage() {
           >
             {actionLoading === "out" ? <Loader2 size={16} className="animate-spin" /> : <Timer size={16} />}
             Punch Out
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setIsRegularizeModalOpen(true)}
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto ml-auto"
+          >
+            <FileWarning size={16} className="text-amber-500" />
+            Technical Issue? Regularize
           </button>
         </div>
 
@@ -528,6 +555,13 @@ export default function MemberAttendancePage() {
         isSubmitting={actionLoading !== ""}
         onClose={() => setPendingPunchType("")}
         onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)}
+      />
+
+      <RegularizationModal 
+        open={isRegularizeModalOpen}
+        onClose={() => setIsRegularizeModalOpen(false)}
+        onSubmit={submitRegularization}
+        isSubmitting={isSubmittingRegularization}
       />
     </section>
   );

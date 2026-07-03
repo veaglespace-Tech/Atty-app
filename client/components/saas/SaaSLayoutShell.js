@@ -28,7 +28,7 @@ import { logout } from "@/store/slices/authSlice";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useIdleRoutePrefetch } from "@/hooks/useIdleRoutePrefetch";
 import { useUserSignOutMutation } from "@/services/api/authApi";
-import { useGetOrgNotificationsQuery, useGetOrgRegistrationRequestsQuery } from "@/services/api/orgApi";
+import { useGetOrgNotificationsQuery, useGetOrgRegistrationRequestsQuery, useGetOrgRegularizationRequestsQuery } from "@/services/api/orgApi";
 import UserAvatar from "@/components/UserAvatar";
 import {
   formatRoleLabel,
@@ -159,11 +159,16 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
   const { data: notificationsData } = useGetOrgNotificationsQuery(1, { skip: !hasNotificationsNavItem });
   const { data: requestsData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !hasRequestsNavItem });
+  const { data: attRequestsData } = useGetOrgRegularizationRequestsQuery(undefined, { skip: !hasRequestsNavItem });
 
-  const badgeCounts = useMemo(() => ({
-    Notifications: notificationsData?.meta?.unreadCount || 0,
-    Requests: requestsData?.items?.length || 0,
-  }), [notificationsData, requestsData]);
+  const badgeCounts = useMemo(() => {
+    const regCount = requestsData?.items?.length || 0;
+    const attCount = Array.isArray(attRequestsData?.data) ? attRequestsData.data.filter(r => r.status === "PENDING").length : 0;
+    return {
+      Notifications: notificationsData?.meta?.unreadCount || 0,
+      Requests: regCount + attCount,
+    };
+  }, [notificationsData, requestsData, attRequestsData]);
 
   const roleLabel = formatRoleLabel(currentRole);
   const roleBadgeTheme = getRoleBadgeTheme(currentRole);
