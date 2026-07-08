@@ -54,12 +54,12 @@ const buildBypassUser = (req) => {
     memberships:
       testOrganizationId && testRole
         ? [
-            {
-              orgId: testOrganizationId,
-              role: testRole,
-              isActive: true,
-            },
-          ]
+          {
+            orgId: testOrganizationId,
+            role: testRole,
+            isActive: true,
+          },
+        ]
         : [],
     isActive: true,
     status: "APPROVED",

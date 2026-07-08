@@ -108,7 +108,8 @@ if (cleanMode || shouldCleanForChunkRecovery) {
 }
 
 const nextCli = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
-const nextArgs = ["dev", "--turbopack", "--hostname", host, "-p", String(port)];
+const useTurbopack = process.argv.includes("--turbopack");
+const nextArgs = ["dev", ...(useTurbopack ? ["--turbopack"] : []), "--hostname", host, "-p", String(port)];
 
 const child = spawn(process.execPath, [nextCli, ...nextArgs], {
   cwd: projectRoot,

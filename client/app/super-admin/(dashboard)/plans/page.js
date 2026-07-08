@@ -56,6 +56,7 @@ export default function SuperAdminPlansPage() {
   const [message, setMessage] = useState("");
   
   const [gstRate, setGstRate] = useState("18");
+  const [sortBy, setSortBy] = useState("displayOrder-asc");
 
   const [form, setForm] = useState({
     name: "",
@@ -68,7 +69,8 @@ export default function SuperAdminPlansPage() {
     maxTeams: "0",
     maxLocations: "0",
     isDefault: false,
-    isActive: true
+    isActive: true,
+    displayOrder: "0"
   });
 
   const {
@@ -126,10 +128,30 @@ export default function SuperAdminPlansPage() {
     }
   };
 
-  const plans = useMemo(
-    () => filterVisiblePlans(Array.isArray(data?.items) ? data.items : []),
-    [data]
-  );
+  const plans = useMemo(() => {
+    let list = filterVisiblePlans(Array.isArray(data?.items) ? data.items : []);
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "price-asc":
+          return (a.price || 0) - (b.price || 0);
+        case "price-desc":
+          return (b.price || 0) - (a.price || 0);
+        case "date-desc":
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        case "date-asc":
+          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        case "name-asc":
+          return (a.name || "").localeCompare(b.name || "");
+        case "displayOrder-asc":
+        default:
+          if ((a.displayOrder || 0) !== (b.displayOrder || 0)) {
+            return (a.displayOrder || 0) - (b.displayOrder || 0);
+          }
+          return (a.price || 0) - (b.price || 0);
+      }
+    });
+    return list;
+  }, [data, sortBy]);
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
   const overviewCards = useMemo(
@@ -193,7 +215,8 @@ export default function SuperAdminPlansPage() {
       maxTeams: "0",
       maxLocations: "0",
       isDefault: false,
-      isActive: true
+      isActive: true,
+      displayOrder: "0"
     });
   };
 
@@ -227,7 +250,8 @@ export default function SuperAdminPlansPage() {
             maxLocations: Number(form.maxLocations || 0),
         },
         isDefault: form.isDefault,
-        isActive: form.isActive
+        isActive: form.isActive,
+        displayOrder: Number(form.displayOrder || 0)
       };
 
       await createPlanMutation(payload).unwrap();
@@ -275,7 +299,24 @@ export default function SuperAdminPlansPage() {
             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">SaaS Model Control</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+             <div className="relative">
+                 <select 
+                   value={sortBy}
+                   onChange={(e) => setSortBy(e.target.value)}
+                   className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-10 text-sm font-bold text-slate-700 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-[#111111] dark:text-slate-300"
+                 >
+                   <option value="displayOrder-asc">Default (Display Order)</option>
+                   <option value="price-asc">Price (Low to High)</option>
+                   <option value="price-desc">Price (High to Low)</option>
+                   <option value="date-desc">Newest First</option>
+                   <option value="date-asc">Oldest First</option>
+                   <option value="name-asc">Name (A-Z)</option>
+                 </select>
+                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                 </div>
+             </div>
              <button
               type="button"
               onClick={refetch}
@@ -411,6 +452,17 @@ export default function SuperAdminPlansPage() {
                         name="memberLimit"
                         type="number"
                         value={form.memberLimit}
+                        onChange={onInputChange}
+                        className="w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none ring-offset-2 transition-all focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                    />
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Display Order</label>
+                    <input
+                        name="displayOrder"
+                        type="number"
+                        value={form.displayOrder}
                         onChange={onInputChange}
                         className="w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none ring-offset-2 transition-all focus:ring-2 focus:ring-blue-500 focus:bg-white"
                     />

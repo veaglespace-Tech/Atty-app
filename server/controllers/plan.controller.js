@@ -57,6 +57,7 @@ const PLAN_SELECT_COLUMNS = `
   maxLocations,
   isActive,
   isDefault,
+  displayOrder,
   createdAt,
   updatedAt
 `;
@@ -120,7 +121,7 @@ exports.getPlans = asyncHandler(async (req, res) => {
   const resolvePlans = () =>
     fetchPlanRows({
       whereClause: "WHERE `isActive` = 1",
-      orderClause: "ORDER BY `id` ASC",
+      orderClause: "ORDER BY `displayOrder` ASC, `price` ASC",
     });
 
   const plans = shouldBypassRuntimeCache(req.query)
@@ -164,7 +165,7 @@ exports.getPlanById = asyncHandler(async (req, res) => {
 // @route   POST /api/plans
 // @access  Private/SuperAdmin
 exports.createPlan = asyncHandler(async (req, res) => {
-  const { name, code, price, durationInDays, features, limits, memberLimit, isDefault, description } = req.body;
+  const { name, code, price, durationInDays, features, limits, memberLimit, isDefault, description, displayOrder } = req.body;
 
   if (!name || !code || price === undefined || durationInDays === undefined) {
     res.status(400);
@@ -203,7 +204,7 @@ exports.createPlan = asyncHandler(async (req, res) => {
   }
 
   const parsedMaxUsers =
-    limits && limits.maxUsers !== undefined && limits.maxUsers !== null 
+    limits && limits.maxUsers !== undefined && limits.maxUsers !== null
       ? Number(limits.maxUsers)
       : parsedMemberLimit;
 
@@ -250,6 +251,7 @@ exports.createPlan = asyncHandler(async (req, res) => {
       maxTeams: parsedMaxTeams,
       maxLocations: parsedMaxLocations,
       isDefault: Boolean(isDefault),
+      displayOrder: displayOrder !== undefined ? Number(displayOrder) : 0,
       description: description ? String(description).trim() : "",
     },
   });
@@ -314,7 +316,7 @@ exports.deletePlan = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 exports.updatePlan = asyncHandler(async (req, res) => {
   const planId = Number(req.params.id);
-  const { name, price, durationInDays, features, limits, memberLimit, isDefault, isActive, description } = req.body;
+  const { name, price, durationInDays, features, limits, memberLimit, isDefault, isActive, description, displayOrder } = req.body;
 
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
   if (!plan) {
@@ -346,6 +348,7 @@ exports.updatePlan = asyncHandler(async (req, res) => {
   }
   if (isDefault !== undefined) updateData.isDefault = Boolean(isDefault);
   if (isActive !== undefined) updateData.isActive = Boolean(isActive);
+  if (displayOrder !== undefined) updateData.displayOrder = Number(displayOrder);
   if (description !== undefined) updateData.description = String(description).trim();
 
   const updatedPlan = await prisma.plan.update({

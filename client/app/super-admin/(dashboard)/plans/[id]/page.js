@@ -35,6 +35,7 @@ const getFormDefaults = (plan) => ({
   maxLocations: String(plan?.maxLocations || 0),
   isDefault: Boolean(plan?.isDefault),
   isActive: plan?.isActive !== false,
+  displayOrder: String(plan?.displayOrder || 0),
 });
 
 function DetailItem({ label, value }) {
@@ -103,6 +104,7 @@ export default function PlanDetailPage() {
         },
         isDefault: form.isDefault,
         isActive: form.isActive,
+        displayOrder: Number(form.displayOrder || 0),
       }).unwrap();
 
       setMessage("Plan updated successfully.");
@@ -380,6 +382,19 @@ export default function PlanDetailPage() {
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Display Order
+                  </label>
+                  <input
+                    name="displayOrder"
+                    type="number"
+                    value={form.displayOrder}
+                    onChange={onInputChange}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
+                  />
+                </div>
+
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
                     Features (CSV)
@@ -484,6 +499,10 @@ export default function PlanDetailPage() {
                   <DetailItem
                     label="Billing Cycle"
                     value={`${plan.durationInDays} Full Days`}
+                  />
+                  <DetailItem
+                    label="Display Order"
+                    value={plan.displayOrder || 0}
                   />
                 </div>
 
