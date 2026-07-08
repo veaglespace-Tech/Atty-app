@@ -40,6 +40,7 @@ const loginSchema = z
       .string()
       .min(8, "Password must be at least 8 characters")
       .max(128, "Password is too long"),
+    rememberMe: z.boolean().optional(),
   });
 const shouldReportUnexpectedAuthError = (error) => {
   const status = error?.status ?? error?.originalStatus;
@@ -58,6 +59,7 @@ export default function LoginPage() {
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -65,6 +67,7 @@ export default function LoginPage() {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
   const watchedEmail = useWatch({
@@ -82,6 +85,14 @@ export default function LoginPage() {
   })();
 
   React.useEffect(() => {
+    const savedEmail = localStorage.getItem("attendee_saved_email");
+    if (savedEmail) {
+      setValue("email", savedEmail);
+      setValue("rememberMe", true);
+    }
+  }, [setValue]);
+
+  React.useEffect(() => {
     if (!hydrated || !token) return;
     const nextPath =
       resolveDashboardPath(currentRole, user?.dashboardPath || redirectPath) ||
@@ -97,6 +108,12 @@ export default function LoginPage() {
         ...values,
         email: normalizeEmailInput(values.email),
       };
+
+      if (values.rememberMe) {
+        localStorage.setItem("attendee_saved_email", payload.email);
+      } else {
+        localStorage.removeItem("attendee_saved_email");
+      }
 
       const result = await userSignIn(payload).unwrap();
 
@@ -197,6 +214,18 @@ export default function LoginPage() {
                     {errors.password.message}
                   </p>
                 ) : null}
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-800"
+                  {...register("rememberMe")}
+                />
+                <label htmlFor="rememberMe" className="ml-2 block cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Remember me
+                </label>
               </div>
 
               <button

@@ -34,6 +34,7 @@ const superAdminLoginSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password is too long"),
+  rememberMe: z.boolean().optional(),
 });
 
 const shouldReportUnexpectedAuthError = (error) => {
@@ -53,6 +54,7 @@ export default function SuperAdminLoginPage() {
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(superAdminLoginSchema),
@@ -60,6 +62,7 @@ export default function SuperAdminLoginPage() {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
   const watchedEmail = useWatch({
@@ -69,6 +72,14 @@ export default function SuperAdminLoginPage() {
   const forgotPasswordHref = watchedEmail
     ? `/super-admin/forgot-password?email=${encodeURIComponent(watchedEmail)}`
     : "/super-admin/forgot-password";
+
+  React.useEffect(() => {
+    const savedEmail = localStorage.getItem("attendee_superadmin_saved_email");
+    if (savedEmail) {
+      setValue("email", savedEmail);
+      setValue("rememberMe", true);
+    }
+  }, [setValue]);
 
   React.useEffect(() => {
     if (!hydrated || !token) return;
@@ -90,6 +101,12 @@ export default function SuperAdminLoginPage() {
         loginAs: ROLES.SUPER_ADMIN,
         organizationCode: "",
       };
+
+      if (values.rememberMe) {
+        localStorage.setItem("attendee_superadmin_saved_email", payload.email);
+      } else {
+        localStorage.removeItem("attendee_superadmin_saved_email");
+      }
 
       const result = await adminSignin(payload).unwrap();
       dispatch(setSession(result));
@@ -189,6 +206,18 @@ export default function SuperAdminLoginPage() {
                     {errors.password.message}
                   </p>
                 ) : null}
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-800"
+                  {...register("rememberMe")}
+                />
+                <label htmlFor="rememberMe" className="ml-2 block cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Remember me
+                </label>
               </div>
 
               <button

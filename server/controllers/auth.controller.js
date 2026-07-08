@@ -44,11 +44,11 @@ const REJECTED_APPROVAL_LOGIN_MESSAGE =
 const EXPIRED_APPROVAL_LOGIN_MESSAGE =
   "Your registration request has expired. Please submit a new join request or contact your administrator.";
 
-const getSessionCookieOptions = () => ({
+const getSessionCookieOptions = (rememberMe = false) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict",
-  maxAge: SESSION_TOKEN_TTL_MS,
+  maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : SESSION_TOKEN_TTL_MS,
   path: "/",
 });
 
@@ -1165,7 +1165,7 @@ exports.register = asyncHandler(async (req, res) => {
 });
 
 exports.login = asyncHandler(async (req, res) => {
-  const { email, password, organizationCode, organizationId, organizationName, loginAs } =
+  const { email, password, organizationCode, organizationId, organizationName, loginAs, rememberMe } =
     req.validatedBody || req.body || {};
   const normalizedEmail = normalizeEmail(email);
 
@@ -1299,8 +1299,9 @@ exports.login = asyncHandler(async (req, res) => {
         }
       : hydratedUser;
 
+  const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
   const token = jwt.sign({ id: user.id }, process.env.JWT_KEY, {
-    expiresIn: SESSION_TOKEN_TTL_SECONDS,
+    expiresIn: tokenTTL,
   });
 
   const redirectPath =
@@ -1308,7 +1309,7 @@ exports.login = asyncHandler(async (req, res) => {
       ? "/org/subscription"
       : getDashboardPathByRole(currentRole);
 
-  res.cookie("token", token, getSessionCookieOptions());
+  res.cookie("token", token, getSessionCookieOptions(rememberMe));
 
   res.status(200).json({
     success: true,

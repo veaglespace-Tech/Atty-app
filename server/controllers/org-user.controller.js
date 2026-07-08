@@ -1329,9 +1329,21 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           extension: ext,
         });
 
+        const imageWidth = 50;
+        const imageHeight = 50;
+        const cellWidthPixels = 18 * 7.5;
+        const cellHeightPixels = 60 * 1.33;
+        const offsetX = (cellWidthPixels - imageWidth) / 2;
+        const offsetY = (cellHeightPixels - imageHeight) / 2;
+
         worksheet.addImage(imageId, {
-          tl: { col: 7 + 0.31, row: currentRowIndex - 1 + 0.18 },
-          ext: { width: 50, height: 50 },
+          tl: { 
+            nativeCol: 7, 
+            nativeColOff: Math.round(offsetX * 9525), 
+            nativeRow: currentRowIndex - 1, 
+            nativeRowOff: Math.round(offsetY * 9525)
+          },
+          ext: { width: imageWidth, height: imageHeight },
           editAs: "oneCell",
         });
       } catch (err) {

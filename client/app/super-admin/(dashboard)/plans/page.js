@@ -57,6 +57,8 @@ export default function SuperAdminPlansPage() {
   
   const [gstRate, setGstRate] = useState("18");
   const [sortBy, setSortBy] = useState("displayOrder-asc");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -130,6 +132,21 @@ export default function SuperAdminPlansPage() {
 
   const plans = useMemo(() => {
     let list = filterVisiblePlans(Array.isArray(data?.items) ? data.items : []);
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(p => 
+        (p.name && p.name.toLowerCase().includes(q)) || 
+        (p.code && p.code.toLowerCase().includes(q))
+      );
+    }
+    
+    if (filterStatus === "active") {
+      list = list.filter(p => p.isActive);
+    } else if (filterStatus === "inactive") {
+      list = list.filter(p => !p.isActive);
+    }
+
     list.sort((a, b) => {
       switch (sortBy) {
         case "price-asc":
@@ -151,7 +168,7 @@ export default function SuperAdminPlansPage() {
       }
     });
     return list;
-  }, [data, sortBy]);
+  }, [data, sortBy, searchQuery, filterStatus]);
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
   const overviewCards = useMemo(
@@ -300,6 +317,29 @@ export default function SuperAdminPlansPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+             <div className="relative">
+                 <input
+                   type="text"
+                   placeholder="Search plans..."
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   className="h-10 w-full sm:w-48 appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-4 text-sm font-bold text-slate-700 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-[#111111] dark:text-slate-300"
+                 />
+             </div>
+             <div className="relative">
+                 <select 
+                   value={filterStatus}
+                   onChange={(e) => setFilterStatus(e.target.value)}
+                   className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-10 text-sm font-bold text-slate-700 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-[#111111] dark:text-slate-300"
+                 >
+                   <option value="all">All Status</option>
+                   <option value="active">Active</option>
+                   <option value="inactive">Inactive</option>
+                 </select>
+                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                 </div>
+             </div>
              <div className="relative">
                  <select 
                    value={sortBy}
