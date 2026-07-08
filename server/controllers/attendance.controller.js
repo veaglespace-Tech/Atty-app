@@ -272,6 +272,13 @@ exports.punchIn = asyncHandler(async (req, res) => {
     }
   );
 
+  console.log("PUNCH IN DEBUG:", {
+    userLoc: parsedLocation,
+    targetLoc: attendanceTarget.targetLocation,
+    distance,
+    radius: attendanceTarget.targetRadius
+  });
+
   const isValid = distance <= attendanceTarget.targetRadius;
 
   if (!isValid) {

@@ -4,6 +4,7 @@ const path = require("path");
 
 const projectRoot = process.cwd();
 const port = 3000;
+const host = process.env.HOST || process.env.NEXT_HOST || "0.0.0.0";
 const cleanMode = process.argv.includes("--clean");
 const nextDevLogPath = path.join(projectRoot, ".next", "dev", "logs", "next-development.log");
 
@@ -107,7 +108,7 @@ if (cleanMode || shouldCleanForChunkRecovery) {
 }
 
 const nextCli = path.join(projectRoot, "node_modules", "next", "dist", "bin", "next");
-const nextArgs = ["dev", "--turbopack", "-p", String(port)];
+const nextArgs = ["dev", "--turbopack", "--hostname", host, "-p", String(port)];
 
 const child = spawn(process.execPath, [nextCli, ...nextArgs], {
   cwd: projectRoot,

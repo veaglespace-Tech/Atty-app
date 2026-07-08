@@ -95,6 +95,7 @@ exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
 });
 
 exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
+  console.log("UPDATE ORG ATTENDANCE SETTINGS: ", req.body);
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSION_KEYS.LOCATION_SET);
 

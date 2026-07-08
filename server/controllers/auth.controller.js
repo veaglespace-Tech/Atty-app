@@ -1314,6 +1314,7 @@ exports.login = asyncHandler(async (req, res) => {
     success: true,
     message: "Login successful",
     user: serializeSessionUser(sessionUser, org),
+    token,
     redirectPath,
   });
 });
