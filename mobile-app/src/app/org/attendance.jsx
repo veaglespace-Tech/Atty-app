@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, TextInput, Alert, ToastAndroid, Platform } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, ChevronRight, CalendarCheck2, Clock, Search, MapPin, Save, Crosshair, ChevronDown } from "lucide-react-native";
-import { useGetOrgAttendanceQuery, useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useGetOrgTeamsQuery, usePatchOrgTeamMutation } from "@/services/api/orgApi";
+import { ChevronLeft, ChevronRight, CalendarCheck2, Clock, Search, MapPin, Save, Crosshair, ChevronDown, Download, FileBox, FileText } from "lucide-react-native";
+import { useGetOrgAttendanceQuery, useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useGetOrgTeamsQuery, usePatchOrgTeamMutation, useDownloadOrgAttendancePdfMutation, useDownloadOrgAttendanceExcelMutation } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
 import { getCurrentLocation } from "@/utils/location";
 import { useSelector } from "react-redux";
@@ -33,6 +33,8 @@ export default function OrgAttendancePage() {
   
   const [updateSettings, { isLoading: updatingSettings }] = useUpdateOrgAttendanceSettingsMutation();
   const [patchTeamMutation, { isLoading: updatingTeam }] = usePatchOrgTeamMutation();
+  const [downloadOrgAttendancePdf, { isLoading: downloadingPdf }] = useDownloadOrgAttendancePdfMutation();
+  const [downloadOrgAttendanceExcel, { isLoading: downloadingExcel }] = useDownloadOrgAttendanceExcelMutation();
 
   const teams = teamsData?.items || [];
 
@@ -139,10 +141,55 @@ export default function OrgAttendancePage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-        <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center justify-between mb-2">
           <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Attendance Records</Text>
         </View>
-        <Text className="text-xs font-semibold text-slate-500 text-center mb-2">Configure organization geofence and monitor team attendance logs.</Text>
+        <Text className="text-xs font-semibold text-slate-500 mb-4">Configure organization geofence and monitor team attendance logs.</Text>
+        
+        <View className="flex-row gap-2">
+          <Pressable 
+            onPress={async () => {
+              try {
+                const blob = await downloadOrgAttendancePdf(`period=${period}`).unwrap();
+                // Note: file saving/sharing should use expo-file-system and expo-sharing in a real app,
+                // this acts as a placeholder or web-compatible download logic.
+                if (Platform.OS === 'web') {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = `attendance-report-${period}.pdf`;
+                  document.body.appendChild(a); a.click(); a.remove();
+                } else {
+                  ToastAndroid.show("PDF download simulated", ToastAndroid.SHORT);
+                }
+              } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
+            }}
+            disabled={downloadingPdf || downloadingExcel}
+            className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-3 flex-row items-center justify-center gap-2 active:scale-95 transition-transform border border-slate-200 dark:border-slate-700"
+          >
+            {downloadingPdf ? <ActivityIndicator size="small" color="#475569" /> : <FileBox size={16} className="text-slate-600 dark:text-slate-400" />}
+            <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Export PDF</Text>
+          </Pressable>
+          <Pressable 
+            onPress={async () => {
+              try {
+                const blob = await downloadOrgAttendanceExcel(`period=${period}`).unwrap();
+                if (Platform.OS === 'web') {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = `attendance-report-${period}.xlsx`;
+                  document.body.appendChild(a); a.click(); a.remove();
+                } else {
+                  ToastAndroid.show("Excel download simulated", ToastAndroid.SHORT);
+                }
+              } catch (e) { Alert.alert("Error", "Failed to download Excel"); }
+            }}
+            disabled={downloadingPdf || downloadingExcel}
+            className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-3 flex-row items-center justify-center gap-2 active:scale-95 transition-transform border border-slate-200 dark:border-slate-700"
+          >
+            {downloadingExcel ? <ActivityIndicator size="small" color="#475569" /> : <FileText size={16} className="text-slate-600 dark:text-slate-400" />}
+            <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Export Excel</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -349,8 +396,12 @@ export default function OrgAttendancePage() {
           </View>
         ) : (
           <View className="gap-4">
-            {records.map((record) => (
-              <View key={record.id} className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
+            {paginatedItems.map((record) => (
+              <Pressable 
+                key={record.id} 
+                onPress={() => router.push(`/org/attendance/${record.id}`)}
+                className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm active:scale-[0.98] transition-transform"
+              >
                 <View className="flex-row items-start justify-between mb-4">
                   <View className="flex-1 pr-4">
                     <Text className="text-base font-bold text-slate-900 dark:text-white" numberOfLines={1}>
@@ -393,7 +444,7 @@ export default function OrgAttendancePage() {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </Pressable>
             ))}
 
             {totalPages > 1 && (

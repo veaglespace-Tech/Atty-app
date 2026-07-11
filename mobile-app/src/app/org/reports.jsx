@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, FileBarChart, FileText, Download } from "lucide-react-native";
-import { useGetOrgReportsQuery } from "@/services/api/orgApi";
+import { ChevronLeft, FileBarChart, FileText, Download, FileBox, FileArchive } from "lucide-react-native";
+import { useGetOrgReportsQuery, useDownloadOrgReportPdfMutation, useDownloadOrgReportExcelMutation } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
 
 const PERIODS = [
@@ -15,6 +15,9 @@ export default function OrgReportsPage() {
   const [period, setPeriod] = useState("monthly");
   
   const { data, isLoading, isFetching, refetch } = useGetOrgReportsQuery(`period=${period}`);
+  const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadOrgReportPdfMutation();
+  const [downloadExcel, { isLoading: downloadingExcel }] = useDownloadOrgReportExcelMutation();
+  
   const items = Array.isArray(data?.items) ? data.items : [];
   const summary = Array.isArray(data?.summary) ? data.summary : [];
 
@@ -29,8 +32,51 @@ export default function OrgReportsPage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between mb-4">
           <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Reports</Text>
+        </View>
+
+        <View className="flex-row gap-2">
+          <Pressable 
+            onPress={async () => {
+              try {
+                const blob = await downloadPdf(`period=${period}`).unwrap();
+                if (Platform.OS === 'web') {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = `report-${period}.pdf`;
+                  document.body.appendChild(a); a.click(); a.remove();
+                } else {
+                  ToastAndroid.show("PDF download simulated", ToastAndroid.SHORT);
+                }
+              } catch (e) {}
+            }}
+            disabled={downloadingPdf || downloadingExcel}
+            className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-3 flex-row items-center justify-center gap-2 active:scale-95 transition-transform border border-slate-200 dark:border-slate-700"
+          >
+            {downloadingPdf ? <ActivityIndicator size="small" color="#475569" /> : <FileBox size={16} className="text-slate-600 dark:text-slate-400" />}
+            <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Export PDF</Text>
+          </Pressable>
+          <Pressable 
+            onPress={async () => {
+              try {
+                const blob = await downloadExcel(`period=${period}`).unwrap();
+                if (Platform.OS === 'web') {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = `report-${period}.xlsx`;
+                  document.body.appendChild(a); a.click(); a.remove();
+                } else {
+                  ToastAndroid.show("Excel download simulated", ToastAndroid.SHORT);
+                }
+              } catch (e) {}
+            }}
+            disabled={downloadingPdf || downloadingExcel}
+            className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-3 flex-row items-center justify-center gap-2 active:scale-95 transition-transform border border-slate-200 dark:border-slate-700"
+          >
+            {downloadingExcel ? <ActivityIndicator size="small" color="#475569" /> : <FileArchive size={16} className="text-slate-600 dark:text-slate-400" />}
+            <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Export Excel</Text>
+          </Pressable>
         </View>
 
         {/* Period Selector */}

@@ -1,441 +1,358 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Alert, ToastAndroid, Platform, TextInput, Modal, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { ChevronLeft, UserCircle2, Download, ShieldAlert, Mail, Phone, Calendar, Briefcase, MapPin, Check, UserCog, UserRound, ChevronDown } from "lucide-react-native";
-import { 
-  useGetOrgUserByIdQuery, 
-  usePatchOrgUserMutation, 
-  useDownloadOrgUserProfilePdfMutation 
-} from "@/services/api/orgApi";
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  View, Text, Pressable, ScrollView, RefreshControl,
+  TextInput, ActivityIndicator, Switch, Alert, Image,
+} from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import {
+  ArrowLeft, ShieldAlert, UserCog, UserRound, Loader2,
+  Mail, Phone, Calendar, Building2, ShieldCheck, Clock,
+} from "lucide-react-native";
 import { useSelector } from "react-redux";
 import {
-  PERMISSION_GROUPS,
-  formatPermissionLabel,
-  getAssignablePermissionsByRole,
-  getManagedRoleOptions,
-  hasPermission,
-  PERMISSIONS,
-  normalizeRole,
-  getDefaultPermissionsForRole
+  useGetOrgUserByIdQuery,
+  usePatchOrgUserMutation,
+  useGetOrgUserAttendanceLogsQuery,
+} from "@/services/api/orgApi";
+import {
+  PERMISSIONS, PERMISSION_GROUPS, ROLES,
+  formatPermissionLabel, formatRoleLabel,
+  getAssignablePermissionsByRole, getDefaultPermissionsForRole,
+  getManagedRoleOptions, hasPermission, normalizeRole,
 } from "@/utils/roles";
+import { getLocalPhoneNumber } from "@/utils/phone";
+import {
+  getErrorMessage, normalizeTextInput, toDigitsOnly, validateManagedUserForm,
+} from "@/utils/formValidation";
 
 const STATUS_OPTIONS = ["APPROVED", "PENDING", "REJECTED"];
 
-const DetailTile = ({ label, value, icon: Icon }) => (
-  <View className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 flex-1 min-w-[45%] mb-3">
-    <View className="flex-row items-center gap-2 mb-2">
-      {Icon && <Icon size={14} className="text-slate-400" />}
-      <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</Text>
-    </View>
-    <Text className="text-sm font-semibold text-slate-900 dark:text-white">{value || "-"}</Text>
-  </View>
-);
+const toDisplayText = (value, fallback = "-") => String(value ?? "").trim() || fallback;
+const toDateLabel = (value, fallback = "-") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+const toDateTimeLabel = (value, fallback = "-") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
+};
+const toTimeLabel = (value, fallback = "-") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+};
 
-const Checkbox = ({ label, checked, onChange, disabled }) => (
-  <Pressable 
-    onPress={onChange} 
-    disabled={disabled}
-    className="flex-row items-center gap-3 py-2"
-  >
-    <View className={`h-5 w-5 rounded border items-center justify-center ${checked ? 'bg-blue-600 border-blue-600' : 'border-slate-300 dark:border-slate-600 bg-transparent'} ${disabled ? 'opacity-50' : ''}`}>
-      {checked && <Check size={14} color="#fff" />}
+function DetailTile({ label, value }) {
+  return (
+    <View className="w-[48%] rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-3">
+      <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{label}</Text>
+      <Text className="mt-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100" numberOfLines={3}>{value}</Text>
     </View>
-    <Text className={`text-xs font-semibold ${disabled ? 'text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{label}</Text>
-  </Pressable>
-);
+  );
+}
 
 export default function OrgUserDetailPage() {
   const { id } = useLocalSearchParams();
   const userId = Number(id);
-
   const authUser = useSelector((state) => state.auth.user);
-  
-  const { data, isLoading, isFetching, refetch } = useGetOrgUserByIdQuery(userId, { skip: !userId });
-  const [patchUser, { isLoading: patching }] = usePatchOrgUserMutation();
-  const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadOrgUserProfilePdfMutation();
 
-  const user = data?.item;
-  const attendanceSummary = user?.attendanceSummary || {};
-
-  const [form, setForm] = useState({
-    name: "",
-    mobile: "",
-    role: "MEMBER",
-    approvalStatus: "APPROVED",
-    permissions: [],
-  });
-
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPermissions, setSavingPermissions] = useState(false);
-  const [modalType, setModalType] = useState(null); // "ROLE" or "STATUS"
+  const [togglingAccess, setTogglingAccess] = useState(false);
+  const [period, setPeriod] = useState("monthly");
+  const [form, setForm] = useState({
+    name: "", mobileCountryCode: "+91", mobile: "",
+    role: "MEMBER", approvalStatus: "APPROVED", active: true, permissions: [],
+  });
 
-  useEffect(() => {
-    if (user) {
-      setForm({
-        name: user.name || "",
-        mobile: user.mobile || "",
-        role: normalizeRole(user.role),
-        approvalStatus: user.approvalStatus || user.status || "APPROVED",
-        permissions: Array.isArray(user.permissions) ? user.permissions : [],
-      });
-    }
-  }, [user]);
+  const { data: userData, isLoading, isFetching, refetch } = useGetOrgUserByIdQuery(userId, { skip: !Number.isFinite(userId) || userId <= 0 });
+  const [patchUserMutation] = usePatchOrgUserMutation();
+  const { data: logsData, isLoading: loadingLogs } = useGetOrgUserAttendanceLogsQuery(
+    { userId, params: `period=${period}` },
+    { skip: !Number.isFinite(userId) || userId <= 0 }
+  );
 
+  const user = userData?.item || null;
+  const attendanceSummary = user?.attendanceSummary || {};
   const actorRole = normalizeRole(authUser?.currentRole);
+
   const manageableRoleOptions = useMemo(() => getManagedRoleOptions(actorRole), [actorRole]);
   const assignablePermissions = useMemo(() => getAssignablePermissionsByRole(actorRole), [actorRole]);
-  const permissionGroups = useMemo(() => 
-    PERMISSION_GROUPS.map((group) => ({
-      ...group,
-      items: group.items.filter((p) => assignablePermissions.includes(p)),
-    })).filter((group) => group.items.length > 0), 
-  [assignablePermissions]);
+  const permissionGroups = useMemo(
+    () => PERMISSION_GROUPS.map((g) => ({ ...g, items: g.items.filter((p) => assignablePermissions.includes(p)) })).filter((g) => g.items.length > 0),
+    [assignablePermissions]
+  );
 
-  const canEditUser = hasPermission(authUser, PERMISSIONS.USERS_CREATE);
   const canUpdateStatus = hasPermission(authUser, PERMISSIONS.USERS_STATUS_UPDATE);
+  const canToggleAccess = hasPermission(authUser, PERMISSIONS.USERS_ACTIVE_TOGGLE);
+  const canEditUser = hasPermission(authUser, PERMISSIONS.USERS_CREATE);
 
-  const handleToggleAccess = async () => {
+  useEffect(() => {
     if (!user) return;
-    try {
-      await patchUser({ userId, isActive: !user.active }).unwrap();
-      if (Platform.OS === 'android') {
-        ToastAndroid.show(user.active ? "User blocked" : "User unblocked", ToastAndroid.SHORT);
-      }
-    } catch (err) {
-      Alert.alert("Error", err?.data?.message || "Failed to update user access");
-    }
-  };
+    setForm({
+      name: user.name || "",
+      mobileCountryCode: user.mobileCountryCode || "+91",
+      mobile: getLocalPhoneNumber(user.mobile, user.mobileCountryCode),
+      role: normalizeRole(user.role),
+      approvalStatus: user.approvalStatus || "APPROVED",
+      active: Boolean(user.active),
+      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+    });
+  }, [user]);
 
   const saveProfile = async () => {
+    const validationError = validateManagedUserForm({ name: form.name, email: user?.email, mobile: form.mobile, password: "", passwordRequired: false });
+    if (validationError) { setError(validationError); return; }
     try {
-      setSavingProfile(true);
-      await patchUser({
-        userId,
-        name: form.name,
-        mobile: form.mobile,
-        role: form.role,
-        ...(canUpdateStatus ? { status: form.approvalStatus } : {}),
+      setSavingProfile(true); setError(""); setMessage("");
+      await patchUserMutation({
+        userId, name: normalizeTextInput(form.name),
+        mobileCountryCode: form.mobileCountryCode, mobile: toDigitsOnly(form.mobile),
+        role: form.role, ...(canUpdateStatus ? { status: form.approvalStatus } : {}),
       }).unwrap();
-      if (Platform.OS === 'android') ToastAndroid.show("Profile updated", ToastAndroid.SHORT);
-      refetch();
-    } catch (err) {
-      Alert.alert("Error", err?.data?.message || "Failed to update profile");
-    } finally {
-      setSavingProfile(false);
-    }
+      setMessage("User profile updated"); await refetch();
+    } catch (e) { setError(getErrorMessage(e, "Failed to update user")); } finally { setSavingProfile(false); }
   };
 
   const savePermissions = async () => {
     try {
-      setSavingPermissions(true);
-      await patchUser({
-        userId,
-        permissions: form.permissions,
-      }).unwrap();
-      if (Platform.OS === 'android') ToastAndroid.show("Permissions updated", ToastAndroid.SHORT);
-      refetch();
-    } catch (err) {
-      Alert.alert("Error", err?.data?.message || "Failed to update permissions");
-    } finally {
-      setSavingPermissions(false);
-    }
+      setSavingPermissions(true); setError(""); setMessage("");
+      await patchUserMutation({ userId, permissions: form.permissions }).unwrap();
+      setMessage("Permissions updated"); await refetch();
+    } catch (e) { setError(getErrorMessage(e, "Failed to update permissions")); } finally { setSavingPermissions(false); }
   };
 
-  const handleDownloadPdf = async () => {
+  const toggleAccess = async () => {
     try {
-      const blob = await downloadPdf(userId).unwrap();
-      const fr = new FileReader();
-      fr.onload = async () => {
-        const base64data = fr.result.split(',')[1];
-        const safeName = (user?.name || "user").replace(/[^a-z0-9]/gi, '-').toLowerCase();
-        const fileUri = FileSystem.documentDirectory + `${safeName}-profile.pdf`;
-        await FileSystem.writeAsStringAsync(fileUri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri);
-        } else {
-          Alert.alert("Success", "PDF generated, but sharing is not available on this device.");
-        }
-      };
-      fr.readAsDataURL(blob);
-    } catch (err) {
-      Alert.alert("Error", err?.data?.message || "Failed to download PDF");
-    }
+      setTogglingAccess(true); setError(""); setMessage("");
+      await patchUserMutation({ userId, isActive: !form.active }).unwrap();
+      setMessage(!form.active ? "User unblocked" : "User blocked"); await refetch();
+    } catch (e) { setError(getErrorMessage(e, "Failed to toggle access")); } finally { setTogglingAccess(false); }
   };
 
-  const onPermissionToggle = (permission) => {
+  const onPermissionToggle = (perm) => {
     if (!canEditUser) return;
-    setForm((prev) => ({
-      ...prev,
-      permissions: prev.permissions.includes(permission)
-        ? prev.permissions.filter((p) => p !== permission)
-        : [...prev.permissions, permission],
-    }));
+    setForm((p) => ({ ...p, permissions: p.permissions.includes(perm) ? p.permissions.filter((x) => x !== perm) : [...p.permissions, perm] }));
   };
 
-  const onRoleSelect = (roleValue) => {
-    setForm((prev) => ({
-      ...prev,
-      role: roleValue,
-      permissions: getDefaultPermissionsForRole(roleValue),
-    }));
-    setModalType(null);
-  };
-
-  const renderDropdownModal = () => (
-    <Modal visible={!!modalType} transparent animationType="fade">
-      <TouchableOpacity activeOpacity={1} onPress={() => setModalType(null)} className="flex-1 bg-black/50 justify-end">
-        <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-12">
-          <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">
-            {modalType === "ROLE" ? "Select Role" : "Select Status"}
-          </Text>
-          {(modalType === "ROLE" ? manageableRoleOptions : STATUS_OPTIONS.map(s => ({label: s, value: s}))).map((opt) => (
-            <Pressable
-              key={opt.value}
-              onPress={() => modalType === "ROLE" ? onRoleSelect(opt.value) : (setForm(p => ({...p, approvalStatus: opt.value})), setModalType(null))}
-              className="py-4 border-b border-slate-100 dark:border-slate-800 flex-row items-center justify-between"
-            >
-              <Text className={`text-base font-bold ${(modalType === "ROLE" ? form.role : form.approvalStatus) === opt.value ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                {opt.label}
-              </Text>
-              {(modalType === "ROLE" ? form.role : form.approvalStatus) === opt.value && <Check size={20} className="text-blue-600 dark:text-blue-400" />}
-            </Pressable>
-          ))}
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  if (isLoading && !user) {
+  if (isLoading) {
     return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
         <ActivityIndicator size="large" color="#2563eb" />
+        <Text className="mt-4 text-sm font-semibold text-slate-500">Loading user...</Text>
       </View>
     );
   }
 
   if (!user) {
     return (
-      <View className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center p-6">
-        <Text className="text-slate-500 font-medium">User not found.</Text>
-        <Pressable onPress={() => router.back()} className="mt-4 px-6 py-3 bg-blue-600 rounded-full">
-          <Text className="text-white font-bold">Go Back</Text>
+      <View className="flex-1 bg-slate-50 dark:bg-slate-950 p-5">
+        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-4">
+          <ArrowLeft size={18} color="#64748b" />
+          <Text className="text-sm font-bold text-slate-600 dark:text-slate-400">Back to Users</Text>
         </Pressable>
+        <View className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+          <Text className="text-sm font-semibold text-amber-700 dark:text-amber-300">User not found.</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10 flex-row items-center justify-between">
-        <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-          <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+      {/* Header */}
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
+        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-3">
+          <ArrowLeft size={18} color="#64748b" />
+          <Text className="text-sm font-bold text-slate-600 dark:text-slate-400">Back</Text>
         </Pressable>
-        <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex-1 text-center mr-10" numberOfLines={1}>
-          {user.name}
-        </Text>
+        <View className="flex-row items-center gap-4">
+          {user.profileImageUrl ? (
+            <Image source={{ uri: user.profileImageUrl }} style={{ width: 56, height: 56, borderRadius: 20 }} resizeMode="cover" />
+          ) : (
+            <View className="h-14 w-14 rounded-[20px] bg-blue-50 dark:bg-blue-500/10 items-center justify-center border border-blue-100 dark:border-blue-800/30">
+              <Text className="text-2xl font-black text-blue-600 dark:text-blue-400">{(form.name || "?")[0]?.toUpperCase()}</Text>
+            </View>
+          )}
+          <View className="flex-1">
+            <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>{form.name}</Text>
+            <Text className="text-sm font-medium text-slate-500 dark:text-slate-400" numberOfLines={1}>{user.email}</Text>
+          </View>
+        </View>
+        <View className="flex-row gap-2 mt-3">
+          <Pressable
+            onPress={toggleAccess}
+            disabled={!canToggleAccess || togglingAccess}
+            className={`flex-1 py-3 rounded-2xl items-center flex-row justify-center gap-2 ${form.active ? "bg-rose-500" : "bg-emerald-500"}`}>
+            {togglingAccess ? <ActivityIndicator size="small" color="#fff" /> : <ShieldAlert size={15} color="#fff" />}
+            <Text className="text-white text-sm font-bold">{form.active ? "Block" : "Unblock"}</Text>
+          </Pressable>
+        </View>
       </View>
 
-      <ScrollView 
-        className="flex-1" 
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
-      >
-        {/* TOP CARD */}
-        <View className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 mb-6 shadow-sm shadow-slate-200/50 dark:shadow-none items-center">
-          <View className="h-24 w-24 rounded-full bg-blue-50 dark:bg-blue-900/30 items-center justify-center mb-4 border-4 border-white dark:border-slate-900 shadow-sm">
-            <UserCircle2 size={48} className="text-blue-500" />
-          </View>
-          <Text className="text-2xl font-black text-slate-900 dark:text-white text-center mb-1">{user.name}</Text>
-          <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-4">{user.email}</Text>
-          
-          <View className="flex-row items-center gap-2 mb-6 flex-wrap justify-center">
-            <View className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
-                {user.role === 'TEAM_LEADER' ? 'Team Leader' : user.role === 'MEMBER' ? 'Member' : user.role}
-              </Text>
-            </View>
-            <View className={`px-3 py-1.5 rounded-full border ${user.active ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20' : 'bg-rose-50 border-rose-200 dark:bg-rose-900/20'}`}>
-              <Text className={`text-[10px] font-black uppercase tracking-widest ${user.active ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-                {user.active ? "ACTIVE" : "BLOCKED"}
-              </Text>
-            </View>
-            <View className={`px-3 py-1.5 rounded-full border ${
-              user.status === 'APPROVED' ? 'bg-emerald-50 border-emerald-200' : 
-              user.status === 'PENDING' ? 'bg-amber-50 border-amber-200' : 
-              'bg-slate-100 border-slate-200'
-            }`}>
-              <Text className={`text-[10px] font-black uppercase tracking-widest ${
-                user.status === 'APPROVED' ? 'text-emerald-700' : 
-                user.status === 'PENDING' ? 'text-amber-700' : 
-                'text-slate-600'
-              }`}>
-                {user.status || 'UNKNOWN'}
-              </Text>
-            </View>
-          </View>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />}>
 
-          <View className="flex-col w-full gap-3 mt-4">
-            <Pressable 
-              onPress={handleDownloadPdf}
-              disabled={downloadingPdf}
-              className="w-full bg-blue-600 dark:bg-blue-600 py-3.5 rounded-2xl flex-row items-center justify-center gap-2 active:opacity-70"
-            >
-              {downloadingPdf ? <ActivityIndicator size="small" color="#ffffff" /> : <Download size={16} className="text-white" />}
-              <Text className="text-sm font-bold text-white">Download User Details PDF</Text>
-            </Pressable>
+        {error ? <View className="mb-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"><Text className="text-sm text-red-700 dark:text-red-300">{error}</Text></View> : null}
+        {message ? <View className="mb-3 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"><Text className="text-sm text-emerald-700 dark:text-emerald-300">{message}</Text></View> : null}
 
-            <Pressable 
-              onPress={handleToggleAccess}
-              disabled={patching}
-              className={`w-full py-3.5 rounded-2xl flex-row items-center justify-center gap-2 active:opacity-70 ${
-                user.active ? 'bg-rose-100 dark:bg-rose-900/40' : 'bg-emerald-100 dark:bg-emerald-900/40'
-              }`}
-            >
-              {patching && !savingProfile && !savingPermissions ? (
-                <ActivityIndicator size="small" color={user.active ? "#e11d48" : "#059669"} />
-              ) : (
-                <ShieldAlert size={16} className={user.active ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400"} />
-              )}
-              <Text className={`text-sm font-bold ${user.active ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400"}`}>
-                {user.active ? "Block User" : "Unblock User"}
-              </Text>
-            </Pressable>
+        {/* User Details */}
+        <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">Complete Details</Text>
+          <View className="flex-row flex-wrap gap-3">
+            <DetailTile label="User ID" value={toDisplayText(user.id)} />
+            <DetailTile label="Role" value={formatRoleLabel(user.role)} />
+            <DetailTile label="Status" value={toDisplayText(user.approvalStatus)} />
+            <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
+            <DetailTile label="Email" value={toDisplayText(user.email)} />
+            <DetailTile label="Mobile" value={`${user.mobileCountryCode || ""} ${user.mobile || "-"}`} />
+            <DetailTile label="Joined On" value={toDateLabel(user.membership?.joinedAt || user.joinedAt)} />
+            <DetailTile label="Last Login" value={toDateTimeLabel(user.lastLoginAt)} />
+            <DetailTile label="Organization" value={toDisplayText(user.organization?.name)} />
+            <DetailTile label="Org Code" value={toDisplayText(user.organization?.organizationCode)} />
+            <DetailTile label="Present" value={String(attendanceSummary.presentDays || 0)} />
+            <DetailTile label="Absent" value={String(attendanceSummary.absentDays || 0)} />
           </View>
         </View>
 
-        {/* PROFILE & ACCESS EDIT FORM */}
-        <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Profile & Access</Text>
-        <View className="bg-white dark:bg-slate-900 rounded-[24px] p-5 border border-slate-200 dark:border-slate-800 mb-6">
-          <View className="mb-4">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Name</Text>
-            <TextInput 
-              value={form.name}
-              onChangeText={(text) => setForm(p => ({...p, name: text}))}
-              editable={canEditUser}
-              className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"
-            />
-          </View>
-          <View className="mb-4">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Mobile Number</Text>
-            <TextInput 
-              value={form.mobile}
-              onChangeText={(text) => setForm(p => ({...p, mobile: text}))}
-              editable={canEditUser}
-              keyboardType="phone-pad"
-              className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"
-            />
-          </View>
-          <View className="flex-row gap-3 mb-6">
-            <View className="flex-1">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Role</Text>
-              <Pressable 
-                onPress={() => canEditUser && setModalType("ROLE")}
-                className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 flex-row items-center justify-between"
-              >
-                <Text className="text-sm font-semibold text-slate-900 dark:text-white">{manageableRoleOptions.find(r => r.value === form.role)?.label || form.role}</Text>
-                {canEditUser && <ChevronDown size={14} className="text-slate-400" />}
-              </Pressable>
+        {/* Edit Profile */}
+        <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">Profile & Access</Text>
+          <View className="gap-3">
+            <View className="gap-1.5">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Name</Text>
+              <TextInput value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} editable={canEditUser}
+                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
             </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Status</Text>
-              <Pressable 
-                onPress={() => canUpdateStatus && setModalType("STATUS")}
-                className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 flex-row items-center justify-between"
-              >
-                <Text className="text-sm font-semibold text-slate-900 dark:text-white">{form.approvalStatus}</Text>
-                {canUpdateStatus && <ChevronDown size={14} className="text-slate-400" />}
-              </Pressable>
-            </View>
-          </View>
-
-          <Pressable 
-            onPress={saveProfile}
-            disabled={!canEditUser || savingProfile}
-            className="w-full bg-blue-600 py-3.5 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70 disabled:opacity-50"
-          >
-            {savingProfile ? <ActivityIndicator size="small" color="#ffffff" /> : <UserRound size={16} className="text-white" />}
-            <Text className="text-sm font-bold text-white">Update Profile</Text>
-          </Pressable>
-        </View>
-
-        {/* PERMISSIONS */}
-        <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Permissions</Text>
-        <View className="bg-white dark:bg-slate-900 rounded-[24px] p-5 border border-slate-200 dark:border-slate-800 mb-6">
-          {permissionGroups.map((group, index) => (
-            <View key={group.key} className={index !== permissionGroups.length - 1 ? "border-b border-slate-100 dark:border-slate-800 mb-4 pb-4" : "mb-6"}>
-              <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-2">{group.label}</Text>
-              <View className="flex-row flex-wrap gap-x-6 gap-y-1">
-                {group.items.map((permission) => (
-                  <View key={permission} className="min-w-[45%]">
-                    <Checkbox 
-                      label={formatPermissionLabel(permission)} 
-                      checked={form.permissions.includes(permission)}
-                      onChange={() => onPermissionToggle(permission)}
-                      disabled={!canEditUser}
-                    />
-                  </View>
-                ))}
+            <View className="gap-1.5">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Mobile</Text>
+              <View className="flex-row gap-2">
+                <TextInput value={form.mobileCountryCode} onChangeText={(v) => setForm((p) => ({ ...p, mobileCountryCode: v }))} editable={canEditUser}
+                  className="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
+                <TextInput value={form.mobile} onChangeText={(v) => setForm((p) => ({ ...p, mobile: v.replace(/[^\d]/g, "") }))} editable={canEditUser} keyboardType="phone-pad"
+                  className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
               </View>
             </View>
-          ))}
-          
-          <Pressable 
-            onPress={savePermissions}
-            disabled={!canEditUser || savingPermissions}
-            className="w-full bg-blue-600 py-3.5 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70 disabled:opacity-50"
-          >
-            {savingPermissions ? <ActivityIndicator size="small" color="#ffffff" /> : <UserCog size={16} className="text-white" />}
-            <Text className="text-sm font-bold text-white">Update Permissions</Text>
-          </Pressable>
-        </View>
-
-        <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Contact Details</Text>
-        <View className="flex-row flex-wrap justify-between mb-6">
-          <DetailTile label="Email" value={user.email} icon={Mail} />
-          <DetailTile label="Emergency" value={user.emergencyContact} icon={ShieldAlert} />
-          <DetailTile label="Address" value={user.currentAddress} icon={MapPin} />
-        </View>
-
-        <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Platform Details</Text>
-        <View className="flex-row flex-wrap justify-between mb-6">
-          <DetailTile label="Joined On" value={user.membership?.joinedAt || user.joinedAt ? new Date(user.membership?.joinedAt || user.joinedAt).toLocaleDateString() : "-"} icon={Calendar} />
-          <DetailTile label="Last Login" value={user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : "-"} icon={Calendar} />
-          <DetailTile label="Assigned Teams" value={user.teamNames?.length ? user.teamNames.join(", ") : "-"} icon={Briefcase} />
-          <DetailTile label="Leads Teams" value={user.ledTeamNames?.length ? user.ledTeamNames.join(", ") : "-"} icon={Briefcase} />
-        </View>
-
-        <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Attendance Summary</Text>
-        <View className="bg-[#0f172a] dark:bg-[#020617] rounded-[24px] p-5 border border-slate-800">
-          <View className="flex-row items-center justify-between border-b border-slate-800 pb-4 mb-4">
-            <View>
-              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Entries</Text>
-              <Text className="text-xl font-black text-white">{attendanceSummary.totalEntries || 0}</Text>
+            <View className="gap-1.5">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Role</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {manageableRoleOptions.map((r) => (
+                  <Pressable key={r.value} onPress={() => { if (!canEditUser) return; setForm((p) => ({ ...p, role: r.value, permissions: getDefaultPermissionsForRole(r.value) })); }}
+                    className={`px-4 py-2.5 rounded-2xl border ${form.role === r.value ? "bg-blue-600 border-blue-600" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                    <Text className={`text-[13px] font-bold ${form.role === r.value ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{r.label}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
             </View>
-            <View className="items-end">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Worked</Text>
-              <Text className="text-xl font-black text-white">{attendanceSummary.totalWorkedMinutes ? Math.round(attendanceSummary.totalWorkedMinutes / 60) : 0} hrs</Text>
-            </View>
-          </View>
-          <View className="flex-row justify-between">
-            <View className="items-center">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">Present</Text>
-              <Text className="text-lg font-bold text-white">{attendanceSummary.presentDays || 0}</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-1">Half Day</Text>
-              <Text className="text-lg font-bold text-white">{attendanceSummary.halfDays || 0}</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-1">Absent</Text>
-              <Text className="text-lg font-bold text-white">{attendanceSummary.absentDays || 0}</Text>
-            </View>
+            {canUpdateStatus && (
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Approval Status</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  {STATUS_OPTIONS.map((s) => (
+                    <Pressable key={s} onPress={() => setForm((p) => ({ ...p, approvalStatus: s }))}
+                      className={`px-4 py-2.5 rounded-2xl border ${form.approvalStatus === s ? "bg-blue-600 border-blue-600" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                      <Text className={`text-[13px] font-bold ${form.approvalStatus === s ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{s}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            <Pressable onPress={saveProfile} disabled={!canEditUser || savingProfile}
+              className={`w-full py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${savingProfile ? "bg-blue-400" : "bg-blue-600"}`}>
+              {savingProfile ? <ActivityIndicator size="small" color="#fff" /> : <UserRound size={16} color="#fff" />}
+              <Text className="text-white text-sm font-bold">Update Profile</Text>
+            </Pressable>
           </View>
         </View>
 
+        {/* Permissions */}
+        <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">Permissions</Text>
+          <View className="gap-3">
+            {permissionGroups.map((group) => (
+              <View key={group.key} className="bg-slate-50 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 gap-2">
+                <Text className="text-[11px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">{group.label}</Text>
+                {group.items.map((perm) => (
+                  <Pressable key={perm} onPress={() => onPermissionToggle(perm)} className="flex-row items-center justify-between py-1.5">
+                    <Text className="text-xs font-semibold text-slate-700 dark:text-slate-200 flex-1">{formatPermissionLabel(perm)}</Text>
+                    <Switch value={form.permissions.includes(perm)} onValueChange={() => onPermissionToggle(perm)} trackColor={{ false: "#e2e8f0", true: "#2563eb" }} thumbColor="#fff" style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }} />
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+            <Pressable onPress={savePermissions} disabled={!canEditUser || savingPermissions}
+              className={`w-full py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${savingPermissions ? "bg-blue-400" : "bg-blue-600"}`}>
+              {savingPermissions ? <ActivityIndicator size="small" color="#fff" /> : <UserCog size={16} color="#fff" />}
+              <Text className="text-white text-sm font-bold">Update Permissions</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Attendance Logs */}
+        <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Attendance Logs</Text>
+          <Text className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-4">Day-by-day punch records</Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 12 }}>
+            {["weekly", "monthly", "custom"].map((p) => (
+              <Pressable key={p} onPress={() => setPeriod(p)}
+                className={`px-4 py-2 rounded-full border ${period === p ? "bg-blue-600 border-blue-600" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                <Text className={`text-[12px] font-bold capitalize ${period === p ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{p}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {loadingLogs ? (
+            <View className="py-8 items-center"><ActivityIndicator size="large" color="#2563eb" /></View>
+          ) : logsData?.items?.length ? (
+            <View className="gap-3">
+              {logsData.items.map((log) => (
+                <View key={log.id} className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-sm font-bold text-slate-900 dark:text-white">{log.date}</Text>
+                    <View className={`px-2 py-0.5 rounded-full ${
+                      log.status === "PRESENT" ? "bg-emerald-100 dark:bg-emerald-500/10" :
+                      log.status === "ABSENT" ? "bg-rose-100 dark:bg-rose-500/10" :
+                      "bg-amber-100 dark:bg-amber-500/10"
+                    }`}>
+                      <Text className={`text-[10px] font-black uppercase tracking-widest ${
+                        log.status === "PRESENT" ? "text-emerald-600 dark:text-emerald-400" :
+                        log.status === "ABSENT" ? "text-rose-600 dark:text-rose-400" :
+                        "text-amber-600 dark:text-amber-400"
+                      }`}>{log.status}</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row gap-4">
+                    <View className="flex-1">
+                      <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">In</Text>
+                      <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">{toTimeLabel(log.punchInAt)}</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Out</Text>
+                      <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">{toTimeLabel(log.punchOutAt)}</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hours</Text>
+                      <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">{Number(log.workedHours || 0).toFixed(2)}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View className="py-8 items-center">
+              <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400">No records for this period.</Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
-      {renderDropdownModal()}
     </View>
   );
 }

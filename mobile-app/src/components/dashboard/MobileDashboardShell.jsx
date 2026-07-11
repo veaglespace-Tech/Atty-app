@@ -6,14 +6,15 @@ import { useDispatch } from "react-redux";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
-import { ROLES, DASHBOARD_ROOT_BY_ROLE } from "@/utils/roles";
+import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES } from "@/utils/roles";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
 
 import { BarChart3, Building2, Book, Gift, Database, Inbox, Settings } from "lucide-react-native";
 
-const getTabsForRole = (role) => {
+const getTabsForRole = (rawRole) => {
+  const role = ROLE_ALIASES[rawRole?.toUpperCase()] || rawRole;
   const commonIconProps = { size: 18, color: "#2563eb" };
   
   if (role === ROLES.SUPER_ADMIN) {
@@ -44,6 +45,7 @@ const getTabsForRole = (role) => {
       { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
       { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
       { title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" },
+      { title: "Coupons", icon: <Gift {...commonIconProps} />, href: "coupons" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
       { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
@@ -226,13 +228,15 @@ export default function MobileDashboardShell() {
                 </Text>
                 
                 <View className="gap-y-1">
-                  {getTabsForRole(user?.role).map((tab) => (
+                  {getTabsForRole(user?.currentRole || user?.role).map((tab) => (
                     <Pressable
                       key={tab.title}
                       onPress={() => {
                         closeDrawer();
                         setTimeout(() => {
-                          const basePath = DASHBOARD_ROOT_BY_ROLE[user?.role] || "/member";
+                          const activeRole = user?.currentRole || user?.role;
+                          const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
+                          const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
                           router.replace(`${basePath}/${tab.href}`);
                         }, 200);
                       }}
