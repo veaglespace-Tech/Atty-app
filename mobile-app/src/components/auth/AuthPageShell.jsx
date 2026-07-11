@@ -1,9 +1,13 @@
 
+<<<<<<< HEAD
 import { View, Text, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {  ArrowLeft  } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
+=======
+import { View, Text, Image } from "react-native";
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { cn } from "@/lib/utils";
 import AnimatedLogo from '../AnimatedLogo.jsx';
@@ -57,8 +61,15 @@ export default function AuthPageShell(props) {
           <View className="p-5">
             {eyebrow || title || description ?
             <View className="mb-8 items-center">
+<<<<<<< HEAD
                 <AnimatedLogo 
                   style={{ width: 64, height: 64, marginBottom: 16 }}
+=======
+                <Image 
+                  source={require('../../../assets/images/icon.png')}
+                  style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 16 }}
+                  resizeMode="contain"
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 />
                 {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}
                 {title ?

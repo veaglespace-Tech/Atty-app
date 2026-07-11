@@ -113,7 +113,7 @@ export default function LoginPage() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <AuthPageShell
           eyebrow="Team Login"
-          title="Welcome to Veagle Attendee"
+          title="Welcome to Veagle Space"
           description="Sign in to manage attendance, check-ins, and your daily work in one place."
           footer={null}>
           

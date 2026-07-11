@@ -17,7 +17,7 @@ export default function RegisterScreen() {
               </Text>
             </View>
             <Text className="mb-2 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white text-center">
-              Veagle <Text className="text-blue-600 dark:text-blue-400">Attendee</Text>
+              Veagle <Text className="text-blue-600 dark:text-blue-400">Space</Text>
             </Text>
             <Text className="font-medium tracking-wide text-slate-500 dark:text-slate-400 text-center mt-2">
               Pick the setup that matches you, whether you are creating an organization or joining an existing team.

@@ -20,7 +20,11 @@ export default function PermissionsTab({
 
   if (permissions.length === 0) {
     return (
+<<<<<<< HEAD
       <View className="py-12 items-center justify-center bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B]">
+=======
+      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
         <KeyRound size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
         <Text className="text-slate-500 font-medium text-center px-6">No permissions found in the system.</Text>
       </View>
@@ -28,6 +32,7 @@ export default function PermissionsTab({
   }
 
   return (
+<<<<<<< HEAD
     <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] overflow-hidden mb-6">
       <View className="px-5 py-4 border-b border-slate-200 dark:border-[#1E293B]">
         <Text className="text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">System Permissions ({totalItems !== undefined ? totalItems : permissions.length})</Text>
@@ -43,6 +48,15 @@ export default function PermissionsTab({
               <Text className="text-[10px] font-black uppercase tracking-wider text-blue-500 mb-1">{p.key}</Text>
               <Text className="text-sm font-bold text-slate-900 dark:text-white mb-1">{p.name}</Text>
               <Text className="text-xs text-slate-500 dark:text-slate-400">{p.description || "No description provided."}</Text>
+=======
+    <View className="space-y-4 pb-12">
+      {permissions.map((p) => (
+        <View key={p.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+          <View className="flex-row justify-between items-start mb-2">
+            <View className="flex-1 pr-4">
+              <Text className="text-lg font-black text-slate-900 dark:text-white">{p.name}</Text>
+              <Text className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1 uppercase tracking-wider">{p.key}</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             </View>
             
             {!readOnlyFallback && (

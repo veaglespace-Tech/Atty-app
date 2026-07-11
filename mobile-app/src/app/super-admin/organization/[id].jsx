@@ -221,6 +221,7 @@ export default function OrganizationDetailsPage() {
         {activeTab === "Overview" && (
           <View className="flex-col md:flex-row gap-4">
             {/* AT A GLANCE */}
+<<<<<<< HEAD
             <View className="flex-1 space-y-4">
               <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
                 <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-1">At a Glance</Text>
@@ -247,6 +248,20 @@ export default function OrganizationDetailsPage() {
                   {renderOverviewField("Member Limit", org.plan?.memberLimit || "-")}
                   {renderOverviewField("Max Teams", org.plan?.maxTeams || "-")}
                 </View>
+=======
+            <View className="flex-1 bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
+              <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-1">At a Glance</Text>
+              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-6">Important account, subscription, usage, and admin details in one place.</Text>
+              
+              <View className="flex-row flex-wrap justify-between">
+                {renderOverviewField("Email", org.email || org.admin?.email || "-")}
+                {renderOverviewField("Phone", org.phone ? `${org.phoneCountryCode} ${org.phone}` : (org.admin?.mobile ? `${org.admin.mobileCountryCode} ${org.admin.mobile}` : "-"))}
+                {renderOverviewField("Subscription Expiry", org.subscriptionExpiry ? new Date(org.subscriptionExpiry).toLocaleDateString() : "Never")}
+                {renderOverviewField("Location", [org.city, org.state, org.country].filter(Boolean).join(", ") || "-")}
+                {renderOverviewField("Successful Payments", org.paymentSummary?.successfulPayments || "0")}
+                {renderOverviewField("Last Payment", org.paymentSummary?.lastPaymentAt ? new Date(org.paymentSummary.lastPaymentAt).toLocaleString() : "-")}
+                {renderOverviewField("Referred By", org.referredByPartner?.name || "-")}
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
               </View>
             </View>
 
@@ -292,6 +307,7 @@ export default function OrganizationDetailsPage() {
 
         {activeTab === "Billing" && (
           <View className="space-y-4">
+<<<<<<< HEAD
             <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
               <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">Subscription Snapshot</Text>
@@ -299,6 +315,17 @@ export default function OrganizationDetailsPage() {
                   <CalendarClock size={14} color="white" className="mr-2" />
                   <Text className="text-xs font-bold text-white">Extend Plan</Text>
                 </Pressable>
+=======
+            {org.activeSubscription ? (
+              <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
+                <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Active Subscription</Text>
+                <View className="space-y-3">
+                  <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Plan</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription.planName}</Text></View>
+                  <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Amount</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription.currency} {org.activeSubscription.amount}</Text></View>
+                  <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Valid Until</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription.endDate ? new Date(org.activeSubscription.endDate).toLocaleDateString() : "Never"}</Text></View>
+                  <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Gateway</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription.paymentGateway || "N/A"}</Text></View>
+                </View>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
               </View>
               <View className="space-y-3">
                 <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Plan</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.plan?.name || "TRIAL"}</Text></View>
@@ -309,6 +336,7 @@ export default function OrganizationDetailsPage() {
               </View>
             </View>
             
+<<<<<<< HEAD
             <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Recent Subscriptions</Text>
               {(org.recentSubscriptions && org.recentSubscriptions.length > 0) ? (
@@ -323,6 +351,8 @@ export default function OrganizationDetailsPage() {
               )}
             </View>
 
+=======
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Recent Payments</Text>
               {(org.recentPayments && org.recentPayments.length > 0) ? (
@@ -359,6 +389,7 @@ export default function OrganizationDetailsPage() {
 
         {activeTab === "Profile" && (
           <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
+<<<<<<< HEAD
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">Organization Profile</Text>
               {!editMode ? (
@@ -376,6 +407,14 @@ export default function OrganizationDetailsPage() {
                     {isPatchingOrg ? <ActivityIndicator size="small" color="white" className="mr-1" /> : <Save size={14} color="white" className="mr-1" />}
                     <Text className="text-white text-xs font-bold">Save</Text>
                   </Pressable>
+=======
+            <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-6">Organization Profile</Text>
+            <View className="space-y-4">
+              <View>
+                <Text className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">Organization Name</Text>
+                <View className="bg-slate-50 dark:bg-[#1E293B]/50 p-4 rounded-xl border border-slate-200 dark:border-[#1E293B]">
+                  <Text className="text-sm font-bold text-slate-900 dark:text-white">{org.name}</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 </View>
               )}
             </View>
@@ -451,6 +490,7 @@ export default function OrganizationDetailsPage() {
 
         {activeTab === "Users" && (
           <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
+<<<<<<< HEAD
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">Organization Users</Text>
               {usersData?.items?.length > 0 && (
@@ -464,6 +504,9 @@ export default function OrganizationDetailsPage() {
                 </Pressable>
               )}
             </View>
+=======
+            <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Organization Users</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             {isLoadingUsers ? (
               <ActivityIndicator size="small" color="#3B82F6" />
             ) : usersData?.items?.length > 0 ? (

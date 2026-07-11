@@ -70,7 +70,23 @@ export default function MyTeamsPage(props) {
   const teams = Array.isArray(teamsData?.items) ? teamsData.items : [];
 
   return (
+<<<<<<< HEAD
     <>
+=======
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
+      {/* Native-style App Header */}
+      <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
+        <Pressable 
+          onPress={() => router.back()} 
+          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900/80 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
+        >
+          <ChevronLeft size={22} className="text-slate-900 dark:text-white" />
+        </Pressable>
+        <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">My Teams</Text>
+        <View className="w-11" />
+      </View>
+
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#2563eb" />
@@ -90,7 +106,10 @@ export default function MyTeamsPage(props) {
           {teams.map((team) => (
             <Pressable 
               key={team.id} 
+<<<<<<< HEAD
               onPress={() => setSelectedTeam(team)}
+=======
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
               className="bg-white dark:bg-slate-900/80 rounded-[28px] p-6 mb-5 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-90 active:scale-[0.98]"
             >
               <View className="flex-row items-start justify-between mb-5">
