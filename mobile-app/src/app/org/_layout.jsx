@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Briefcase, CalendarCheck2, Users } from 'lucide-react-native';
+import { Home, Briefcase, CalendarCheck2, Users, CreditCard } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 
 export default function OrgLayout() {
@@ -42,25 +42,25 @@ export default function OrgLayout() {
         }}
       />
       <Tabs.Screen
-        name="employees"
+        name="users"
         options={{
-          title: 'Employees',
+          title: 'Users',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="workspace"
+        name="subscription"
         options={{
-          title: 'Workspace',
-          tabBarIcon: ({ color }) => <Briefcase size={24} color={color} />,
+          title: 'Subscription',
+          tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
         }}
       />
+      <Tabs.Screen name="workspace" options={{ href: null }} />
       <Tabs.Screen name="teams" options={{ href: null }} />
       <Tabs.Screen name="registration-requests" options={{ href: null }} />
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
-      <Tabs.Screen name="subscription" options={{ href: null }} />
       <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="my-attendance" options={{ href: null }} />
     </Tabs>

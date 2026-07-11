@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Alert, TextInput, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { ChevronLeft, MessageSquare, Plus, Trash2, Edit2, X, Search, FileText, Megaphone, BarChart2, Trophy, CheckCircle2 } from "lucide-react-native";
+import { ChevronLeft, MessageSquare, Plus, Trash2, Edit2, X, Search, FileText, Megaphone, BarChart2, Trophy, CheckCircle2, Image as ImageIcon } from "lucide-react-native";
 import { 
   useGetOrgPostsQuery, 
   useCreatePostMutation, 
@@ -32,7 +34,8 @@ export default function TeamLeaderPostsPage() {
     title: "",
     content: "",
     type: "NOTIFICATION",
-    options: ["", ""]
+    options: ["", ""],
+    attachment: null
   });
   const [selectedTeamId, setSelectedTeamId] = useState("");
 
@@ -58,7 +61,7 @@ export default function TeamLeaderPostsPage() {
   }, [posts, searchTerm, typeFilter]);
 
   const resetForm = () => {
-    setForm({ title: "", content: "", type: "NOTIFICATION", options: ["", ""] });
+    setForm({ title: "", content: "", type: "NOTIFICATION", options: ["", ""], attachment: null });
     setSelectedTeamId("");
     setEditingId(null);
     setModalVisible(false);
@@ -74,7 +77,8 @@ export default function TeamLeaderPostsPage() {
       title: post.title || "",
       content: post.content || "",
       type: post.type || "NOTIFICATION",
-      options: post.metadata?.options || ["", ""]
+      options: post.metadata?.options || ["", ""],
+      attachment: post.metadata?.attachment ? { uri: post.metadata.attachment.url, existing: true } : null
     });
     setSelectedTeamId(post.teamId ? post.teamId.toString() : "");
     setEditingId(post.id);
@@ -96,6 +100,15 @@ export default function TeamLeaderPostsPage() {
 
       if (selectedTeamId) {
         payload.teamId = Number(selectedTeamId);
+      }
+
+      if (form.attachment) {
+        if (!form.attachment.existing) {
+          payload.attachmentDataUrl = `data:${form.attachment.mimeType || 'image/jpeg'};base64,${form.attachment.base64}`;
+          payload.attachmentName = form.attachment.name || 'image.jpg';
+        }
+      } else {
+        payload.attachmentDataUrl = "";
       }
 
       if (form.type === "POLL") {
@@ -143,6 +156,28 @@ export default function TeamLeaderPostsPage() {
       Alert.alert("Error", err?.data?.message || "Failed to save poll response");
     } finally {
       setActiveVoteId(null);
+    }
+  };
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      setForm({
+        ...form,
+        attachment: {
+          uri: asset.uri,
+          base64: asset.base64,
+          mimeType: asset.mimeType || 'image/jpeg',
+          name: asset.fileName || 'upload.jpg',
+        }
+      });
     }
   };
 
@@ -247,6 +282,17 @@ export default function TeamLeaderPostsPage() {
                   <Text className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
                     {post.content}
                   </Text>
+
+                  {post.metadata?.attachment?.url && (
+                    <View className="w-full h-48 rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800">
+                      <Image 
+                        source={{ uri: post.metadata.attachment.url }} 
+                        className="w-full h-full"
+                        contentFit="cover"
+                        transition={200}
+                      />
+                    </View>
+                  )}
 
                   {isPoll && post.metadata?.options && (
                     <View className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl space-y-3">
@@ -378,6 +424,31 @@ export default function TeamLeaderPostsPage() {
                     className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 h-32 text-slate-900 dark:text-white font-medium"
                   />
                 </View>
+
+                {form.type !== "POLL" && (
+                  <View>
+                    <Text className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Attachment</Text>
+                    {form.attachment ? (
+                      <View className="relative w-full h-40 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                        <Image source={{ uri: form.attachment.uri }} className="w-full h-full" contentFit="cover" />
+                        <Pressable 
+                          onPress={() => setForm({ ...form, attachment: null })}
+                          className="absolute top-2 right-2 h-8 w-8 items-center justify-center rounded-full bg-black/50"
+                        >
+                          <X size={16} className="text-white" />
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable 
+                        onPress={pickImage}
+                        className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 border-dashed rounded-xl p-6 items-center justify-center flex-row gap-2"
+                      >
+                        <ImageIcon size={20} className="text-slate-400" />
+                        <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400">Add an image</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
 
                 {form.type === "POLL" && (
                   <View className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-800/30">

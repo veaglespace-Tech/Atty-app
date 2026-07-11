@@ -41,10 +41,10 @@ export default function OrgDashboard() {
         href: "registration-requests"
       },
       {
-        title: "Employees",
+        title: "Users",
         description: "Review members, roles, and organization access.",
         icon: <Users size={22} color="#2563eb" />,
-        href: "employees"
+        href: "users"
       },
       {
         title: "Teams",
@@ -53,8 +53,8 @@ export default function OrgDashboard() {
         href: "teams"
       },
       {
-        title: "Attendance Logs",
-        description: "Monitor daily attendance logs for the entire organization.",
+        title: "Attendance",
+        description: "Configure organization geofence and monitor team attendance logs.",
         icon: <CalendarCheck2 size={22} color="#2563eb" />,
         href: "attendance"
       },
@@ -75,20 +75,8 @@ export default function OrgDashboard() {
         description: "Manage your organization subscription plan.",
         icon: <CreditCard size={22} color="#2563eb" />,
         href: "subscription"
-      },
-      {
-        title: "Coupons",
-        description: "Manage referral and discount coupons.",
-        icon: <Gift size={22} color="#2563eb" />,
-        href: "coupons"
-      },
-      {
-        title: "Workspace",
-        description: "Update organization profile, plans, and settings.",
-        icon: <Building2 size={22} color="#2563eb" />,
-        href: "workspace"
-      }]
-      }>
+      }
+      ]}>
       
       {isLoading ?
       <View className="py-8 items-center">

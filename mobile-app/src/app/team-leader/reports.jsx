@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, Users, CheckCircle2, XCircle, Timer, Loader2 } from "lucide-react-native";
 import { useGetTeamLeaderReportsQuery, useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation } from "@/services/api/teamLeaderApi";
 import { useSelector } from "react-redux";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from "expo-sharing";
 
 const PERIOD_OPTIONS = [

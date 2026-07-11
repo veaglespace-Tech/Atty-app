@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, Users, CheckCircle2, XCircle, Timer, Loader2 } from "lucide-react-native";
 import { useGetOrgReportsQuery, useGetOrgAttendanceQuery, useDownloadOrgReportPdfMutation, useDownloadOrgReportExcelMutation } from "@/services/api/orgApi";
 import { useSelector } from "react-redux";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from "expo-sharing";
 
 const PERIOD_OPTIONS = [
@@ -122,68 +122,98 @@ export default function OrgReportsPage() {
   const canDownload = Boolean(meta?.canDownload) && !isFreePlan;
   
   if (selectedMember) {
+    const rangeText = period === 'custom' ? `${customRange.from} to ${customRange.to}` : (
+        period === 'monthly' ? "THIS MONTH" :
+        period === 'weekly' ? "THIS WEEK" : "TODAY"
+    );
+
     return (
-      <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-        <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-          <View className="flex-row items-center justify-between">
-            <Pressable onPress={() => setSelectedMember(null)} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-              <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+      <View className="flex-1 bg-[#0B1120]">
+        <View className="px-5 pt-12 pb-4 bg-[#0B1120] z-20">
+          <View className="bg-[#0f172a] rounded-[24px] p-5 border border-[#1e293b] flex-row items-center justify-between mb-4">
+            <Pressable onPress={() => setSelectedMember(null)} className="flex-row items-center gap-1 border border-[#334155] px-3 py-1.5 rounded-full bg-[#1e293b] active:bg-[#334155]">
+              <ChevronLeft size={14} className="text-slate-300" />
+              <Text className="text-xs font-bold text-slate-300">Back to Reports</Text>
             </Pressable>
-            <View className="flex-1 items-center">
-              <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">{selectedMember.member}</Text>
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest">{selectedMember.role || "Member"}</Text>
+            <View className="items-end">
+              <Text className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Selected Range</Text>
+              <Text className="text-[10px] font-bold text-slate-300">{rangeText}</Text>
             </View>
-            <View className="w-10" />
+          </View>
+          
+          <View className="px-2">
+            <Text className="text-xl font-black tracking-tight text-white uppercase">{selectedMember.member}</Text>
+            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedMember.role || "Member"} • ATTENDANCE HISTORY</Text>
           </View>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-          <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-            <MetricCard label="Present" value={selectedMember.presentDays} icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
-            <MetricCard label="Half Day" value={selectedMember.halfDays} icon={<Timer size={16} className="text-amber-500" />} />
-            <MetricCard label="Absent" value={selectedMember.absentDays} icon={<XCircle size={16} className="text-rose-500" />} />
-            <MetricCard label="Worked Hrs" value={formatHoursValue(selectedMember.workedHours)} icon={<FileBarChart size={16} className="text-blue-500" />} />
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+          <View className="-mx-4 mb-6">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+              <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+                <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Present Days</Text>
+                <Text className="text-3xl font-black text-white">{selectedMember.presentDays}</Text>
+              </View>
+              <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+                <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Half Days</Text>
+                <Text className="text-3xl font-black text-white">{selectedMember.halfDays}</Text>
+              </View>
+              <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+                <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Absent Days</Text>
+                <Text className="text-3xl font-black text-white">{selectedMember.absentDays}</Text>
+              </View>
+              <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+                <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Total Worked Hrs</Text>
+                <Text className="text-3xl font-black text-white">{formatHoursValue(selectedMember.workedHours)}</Text>
+              </View>
+            </ScrollView>
           </View>
 
-          <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Daily Logs ({memberLogs.length})</Text>
+          <View className="bg-[#0f172a] rounded-[24px] border border-[#1e293b] overflow-hidden mb-6">
+            <View className="p-5 border-b border-[#1e293b]">
+              <Text className="text-xs font-black uppercase tracking-widest text-white">Daily Attendance Logs ({memberLogs.length} Entries)</Text>
+            </View>
 
-          {isLoadingMemberAttendance ? (
-            <View className="py-12 items-center justify-center">
-              <ActivityIndicator size="large" color="#2563eb" />
-            </View>
-          ) : memberLogs.length === 0 ? (
-            <View className="py-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 items-center justify-center">
-              <Text className="text-sm font-medium text-slate-500">No logs found for this period.</Text>
-            </View>
-          ) : (
-            <View className="space-y-3 pb-12">
-              {memberLogs.map((log) => (
-                <View key={log.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
-                  <View className="flex-row items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <Text className="text-sm font-black text-slate-900 dark:text-white">{log.date}</Text>
-                    <View className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">
-                      <Text className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">{log.status}</Text>
-                    </View>
+            {isLoadingMemberAttendance ? (
+              <View className="py-12 items-center justify-center">
+                <ActivityIndicator size="large" color="#3b82f6" />
+              </View>
+            ) : memberLogs.length === 0 ? (
+              <View className="py-8 items-center justify-center">
+                <Text className="text-sm font-medium text-slate-500">No logs found.</Text>
+              </View>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View className="min-w-[650px] px-5 pb-5">
+                  <View className="flex-row items-center border-b border-[#1e293b] py-4">
+                    <Text className="w-24 text-[9px] font-black uppercase tracking-widest text-slate-400">Date</Text>
+                    <Text className="w-28 text-[9px] font-black uppercase tracking-widest text-slate-400">Status</Text>
+                    <Text className="w-24 text-[9px] font-black uppercase tracking-widest text-slate-400">Punch In</Text>
+                    <Text className="w-24 text-[9px] font-black uppercase tracking-widest text-slate-400">Punch Out</Text>
+                    <Text className="w-28 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Worked Hrs</Text>
+                    <Text className="w-20 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Geo Valid</Text>
                   </View>
                   
-                  <View className="flex-row justify-between">
-                    <View>
-                      <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">In</Text>
-                      <Text className="text-xs font-bold text-slate-800 dark:text-slate-200">{log.punchInAt ? new Date(log.punchInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-"}</Text>
+                  {memberLogs.map((log) => (
+                    <View key={log.id} className="flex-row items-center border-b border-[#1e293b]/50 py-4">
+                      <Text className="w-24 text-xs font-bold text-slate-300">{log.date}</Text>
+                      <View className="w-28">
+                        <View className={`self-start px-3 py-1 rounded-full border ${log.status === 'PRESENT' || log.status === 'HALF_DAY' ? 'border-blue-500/30 bg-blue-900/20' : 'border-slate-500/30 bg-slate-800'}`}>
+                          <Text className={`text-[9px] font-black uppercase tracking-widest ${log.status === 'PRESENT' || log.status === 'HALF_DAY' ? 'text-blue-400' : 'text-slate-400'}`}>{log.status}</Text>
+                        </View>
+                      </View>
+                      <Text className="w-24 text-xs font-bold text-slate-300">{log.punchInAt ? new Date(log.punchInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-"}</Text>
+                      <Text className="w-24 text-xs font-bold text-slate-300">{log.punchOutAt ? new Date(log.punchOutAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-"}</Text>
+                      <Text className="w-28 text-xs font-bold text-slate-300 text-right">{formatHoursValue(log.workedHours ?? log.workedMinutes)} hrs</Text>
+                      <Text className="w-20 text-xs font-bold text-slate-300 text-center">
+                        {log.status === 'ABSENT' ? 'No' : (log.isLocationValid === false ? 'No' : 'Yes')}
+                      </Text>
                     </View>
-                    <View>
-                      <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 text-center">Out</Text>
-                      <Text className="text-xs font-bold text-slate-800 dark:text-slate-200 text-center">{log.punchOutAt ? new Date(log.punchOutAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-"}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 text-right">Hrs</Text>
-                      <Text className="text-xs font-bold text-slate-800 dark:text-slate-200 text-right">{formatHoursValue(log.workedHours ?? log.workedMinutes)}</Text>
-                    </View>
-                  </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          )}
+              </ScrollView>
+            )}
+          </View>
         </ScrollView>
       </View>
     );
@@ -224,11 +254,25 @@ export default function OrgReportsPage() {
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
       >
-        <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-          <MetricCard label="Members" value={summaryMap.get("Members") || 0} icon={<Users size={16} className="text-indigo-500" />} />
-          <MetricCard label="Present" value={summaryMap.get("Present Days") || 0} icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
-          <MetricCard label="Absent" value={summaryMap.get("Absent Days") || 0} icon={<XCircle size={16} className="text-rose-500" />} />
-          <MetricCard label="Worked Hrs" value={formatHoursValue(summaryMap.get("Worked Hrs"))} icon={<Timer size={16} className="text-amber-500" />} />
+        <View className="-mx-4 mb-6">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+            <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+              <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Members</Text>
+              <Text className="text-3xl font-black text-white">{summaryMap.get("Members") || 0}</Text>
+            </View>
+            <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+              <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Present</Text>
+              <Text className="text-3xl font-black text-white">{summaryMap.get("Present Days") || 0}</Text>
+            </View>
+            <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+              <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Absent</Text>
+              <Text className="text-3xl font-black text-white">{summaryMap.get("Absent Days") || 0}</Text>
+            </View>
+            <View className="w-[150px] bg-[#0f172a] p-5 rounded-[16px] border border-[#1e293b]">
+              <Text className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">Worked Hrs</Text>
+              <Text className="text-3xl font-black text-white">{formatHoursValue(summaryMap.get("Worked Hrs"))}</Text>
+            </View>
+          </ScrollView>
         </View>
 
         <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Member Reports ({reports.length})</Text>
