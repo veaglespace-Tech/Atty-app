@@ -1,28 +1,75 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView } from "react-native";
+import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
+import { ROLES, DASHBOARD_ROOT_BY_ROLE } from "@/utils/roles";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
 
-const TABS = [
-  { title: "Dashboard", icon: <BarChart3 size={18} color="#2563eb" />, href: "dashboard" },
-  { title: "Users", icon: <Users size={18} color="#2563eb" />, href: "users" },
-  { title: "Teams", icon: <Component size={18} color="#2563eb" />, href: "teams" },
-  { title: "Requests", icon: <ClipboardCheck size={18} color="#2563eb" />, href: "registration-requests" },
-  { title: "My Attendance", icon: <CalendarCheck2 size={18} color="#2563eb" />, href: "my-attendance" },
-  { title: "Attendance", icon: <CalendarCheck2 size={18} color="#2563eb" />, href: "attendance" },
-  { title: "Reports", icon: <FileBarChart size={18} color="#2563eb" />, href: "reports" },
-  { title: "Subscription", icon: <CreditCard size={18} color="#2563eb" />, href: "subscription" },
-  { title: "Posts", icon: <MessageSquare size={18} color="#2563eb" />, href: "posts" },
-  { title: "Notifications", icon: <Bell size={18} color="#2563eb" />, href: "notifications" }
-];
-import { BarChart3 } from "lucide-react-native";
+import { BarChart3, Building2, Book, Gift, Database, Inbox, Settings } from "lucide-react-native";
+
+const getTabsForRole = (role) => {
+  const commonIconProps = { size: 18, color: "#2563eb" };
+  
+  if (role === ROLES.SUPER_ADMIN) {
+    return [
+      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
+      { title: "Organizations", icon: <Building2 {...commonIconProps} />, href: "organizations" },
+      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
+      { title: "Plans", icon: <Book {...commonIconProps} />, href: "plans" },
+      { title: "Payments", icon: <CreditCard {...commonIconProps} />, href: "payments" },
+      { title: "Coupons", icon: <Gift {...commonIconProps} />, href: "coupons" },
+      { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
+      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
+      { title: "Leads", icon: <Users {...commonIconProps} />, href: "leads" },
+      { title: "Contacts", icon: <Users {...commonIconProps} />, href: "contacts" },
+      { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" },
+      { title: "Referrals", icon: <Users {...commonIconProps} />, href: "referrals" },
+      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
+    ];
+  }
+  
+  if (role === ROLES.ORG_ADMIN || role === ROLES.SUB_ADMIN) {
+    return [
+      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
+      { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
+      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
+      { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" },
+      { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
+      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
+      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
+      { title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" },
+      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
+      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
+      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
+    ];
+  }
+  
+  if (role === ROLES.TEAM_LEADER) {
+    return [
+      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
+      { title: "My Team", icon: <Users {...commonIconProps} />, href: "teams" },
+      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
+      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
+      { title: "Requests", icon: <Inbox {...commonIconProps} />, href: "requests" },
+      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" }
+    ];
+  }
+  
+  // MEMBER fallback
+  return [
+    { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
+    { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
+    { title: "My Teams", icon: <Component {...commonIconProps} />, href: "teams" },
+    { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
+    { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
+  ];
+};
 
 export default function MobileDashboardShell() {
   const dispatch = useDispatch();
@@ -84,24 +131,18 @@ export default function MobileDashboardShell() {
               <Menu size={22} className="text-slate-900 dark:text-white" />
             </Pressable>
             <View className="flex-row items-center gap-2.5">
-              <View className="h-9 w-9 items-center justify-center rounded-xl bg-blue-600 shadow-sm shadow-blue-500/30 overflow-hidden">
-                {user?.organization?.logoUrl ? (
-                  <Image 
-                    source={{ uri: user.organization.logoUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text className="text-white font-black text-base">
-                    {(user?.organization?.name || "V").charAt(0).toUpperCase()}
-                  </Text>
-                )}
+              <View className="h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
+                <Image 
+                  source={require('../../../assets/images/logo-glow.png')}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="contain"
+                />
               </View>
               <View>
-                <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-                  {user?.organization?.name || "Veagle"}
+                <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight tracking-tight">
+                  Veagle <Text className="text-blue-500">Attendee</Text>
                 </Text>
-                <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <Text className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
                   Workspace
                 </Text>
               </View>
@@ -110,8 +151,20 @@ export default function MobileDashboardShell() {
           
           <Pressable
             onPress={() => router.push('/org/settings')}
-            className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 active:scale-95 transition-transform">
-            <User size={18} className="text-slate-700 dark:text-slate-300" />
+            className="flex-row items-center gap-2 bg-slate-50 dark:bg-slate-800/50 pl-1.5 pr-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
+          >
+            {user?.avatar || user?.profilePicture ? (
+              <Image source={{ uri: user.avatar || user.profilePicture }} style={{ width: 26, height: 26, borderRadius: 13 }} />
+            ) : (
+              <View className="h-[26px] w-[26px] items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <Text className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                  {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
+                </Text>
+              </View>
+            )}
+            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {user?.firstName || user?.name || "Profile"}
+            </Text>
           </Pressable>
         </View>
       )}
@@ -146,16 +199,14 @@ export default function MobileDashboardShell() {
             <View className="flex-1 bg-white dark:bg-[#020617] pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8">
                 <View className="flex-row items-center gap-3">
-                  {user?.organization?.logoUrl && (
-                    <Image 
-                      source={{ uri: user.organization.logoUrl }}
-                      style={{ width: 36, height: 36, borderRadius: 8 }}
-                      resizeMode="cover"
-                    />
-                  )}
+                  <Image 
+                    source={require('../../../assets/images/logo-glow.png')}
+                    style={{ width: 36, height: 36 }}
+                    resizeMode="contain"
+                  />
                   <View>
-                    <Text className="text-2xl font-black text-slate-900 dark:text-white">
-                      {user?.organization?.name || "Veagle"}
+                    <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      Veagle <Text className="text-blue-500">Attendee</Text>
                     </Text>
                     <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-1">
                       Workspace
@@ -175,13 +226,14 @@ export default function MobileDashboardShell() {
                 </Text>
                 
                 <View className="gap-y-1">
-                  {TABS.map((tab) => (
+                  {getTabsForRole(user?.role).map((tab) => (
                     <Pressable
                       key={tab.title}
                       onPress={() => {
                         closeDrawer();
                         setTimeout(() => {
-                          router.replace(`/org/${tab.href}`);
+                          const basePath = DASHBOARD_ROOT_BY_ROLE[user?.role] || "/member";
+                          router.replace(`${basePath}/${tab.href}`);
                         }, 200);
                       }}
                       className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50 dark:active:bg-slate-800 transition-colors">

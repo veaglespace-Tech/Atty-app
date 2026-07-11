@@ -12,7 +12,7 @@ export default function TeamLeaderTeamsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -32,7 +32,7 @@ export default function TeamLeaderTeamsPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : teams.length === 0 ? (
-          <View className="py-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800">
+          <View className="py-16 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <Component size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
             <Text className="text-xl font-black text-slate-900 dark:text-white mb-2">No teams found</Text>
             <Text className="text-sm font-medium text-slate-500 text-center px-4">
@@ -46,7 +46,7 @@ export default function TeamLeaderTeamsPage() {
             </Text>
             
             {teams.map((team) => (
-              <View key={team.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none">
+              <View key={team.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none">
                 <View className="flex-row items-start justify-between mb-4">
                   <View className="flex-1 pr-4">
                     <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>

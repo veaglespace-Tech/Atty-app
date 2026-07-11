@@ -33,7 +33,7 @@ export default function PostsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -63,7 +63,7 @@ export default function PostsPage() {
         ) : (
           <View className="space-y-4">
             {posts.map((post) => (
-              <View key={post.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5">
+              <View key={post.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 pr-4">
                     <Text className="text-sm font-black text-slate-900 dark:text-white">{post.title || post.content?.substring(0, 50) + "..."}</Text>
@@ -82,7 +82,7 @@ export default function PostsPage() {
                   </Text>
                 )}
 
-                <View className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl space-y-2">
+                <View className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-[24px] space-y-2">
                   {post.organization?.name && (
                     <View className="flex-row items-center gap-2">
                       <Building2 size={14} className="text-slate-400" />

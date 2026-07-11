@@ -41,7 +41,7 @@ export default function NotificationsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -53,7 +53,7 @@ export default function NotificationsPage() {
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         
-        <View className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 mb-6">
+        <View className="bg-white dark:bg-slate-900/80 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 mb-6 shadow-sm">
           <View className="flex-row items-center gap-3 mb-6">
             <View className="h-12 w-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 items-center justify-center border border-blue-100 dark:border-blue-800/50">
               <Bell size={24} className="text-blue-600 dark:text-blue-400" />
@@ -113,7 +113,7 @@ export default function NotificationsPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : recentBroadcasts.length === 0 ? (
-          <View className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-200 dark:border-slate-800 items-center justify-center">
+          <View className="bg-white dark:bg-slate-900/80 p-8 rounded-[24px] border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm">
             <Users size={32} className="text-slate-300 dark:text-slate-700 mb-3" />
             <Text className="text-base font-bold text-slate-900 dark:text-white text-center">No Recent Broadcasts</Text>
             <Text className="text-xs text-slate-500 text-center mt-1">Previous system notifications will appear here.</Text>
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
         ) : (
           <View className="space-y-4">
             {recentBroadcasts.map((broadcast) => (
-              <View key={broadcast.id} className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800">
+              <View key={broadcast.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-start justify-between mb-2">
                   <View className="flex-row items-center gap-2">
                     <View className="bg-blue-50 dark:bg-blue-900/30 p-1.5 rounded-lg border border-blue-100 dark:border-blue-800/50">

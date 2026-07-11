@@ -1,5 +1,5 @@
 
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +48,11 @@ export default function AuthPageShell({
           <View className="p-5">
             {eyebrow || title || description ?
             <View className="mb-8 items-center">
+                <Image 
+                  source={require('../../../assets/images/icon.png')}
+                  style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 16 }}
+                  resizeMode="contain"
+                />
                 {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}
                 {title ?
               <Text className="mb-2 text-center text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl">

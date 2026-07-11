@@ -64,7 +64,7 @@ export default function TeamLeaderUsersPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -111,7 +111,7 @@ export default function TeamLeaderUsersPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : filteredUsers.length === 0 ? (
-          <View className="py-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800">
+          <View className="py-16 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <Users size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
             <Text className="text-xl font-black text-slate-900 dark:text-white mb-2">No members found</Text>
             <Text className="text-sm font-medium text-slate-500 text-center px-4">
@@ -124,7 +124,7 @@ export default function TeamLeaderUsersPage() {
               {filteredUsers.length} Members Found
             </Text>
             {filteredUsers.map((user) => (
-              <View key={user.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none flex-row items-center gap-4">
+              <View key={user.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none flex-row items-center gap-4">
                 <View className="h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-900/20 items-center justify-center border border-blue-100 dark:border-blue-800/30">
                   <UserCircle2 size={24} className="text-blue-400 dark:text-blue-500" />
                 </View>
@@ -155,7 +155,7 @@ export default function TeamLeaderUsersPage() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50"
         >
-          <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 pb-12">
+          <View className="bg-white dark:bg-slate-900/80 rounded-t-[32px] p-6 pb-12 shadow-sm">
             <View className="flex-row items-center justify-between mb-6">
               <Text className="text-xl font-black text-slate-900 dark:text-white">Add Team Member</Text>
               <Pressable onPress={() => setModalVisible(false)} className="h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">

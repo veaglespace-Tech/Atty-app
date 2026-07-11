@@ -57,7 +57,7 @@ export default function OrganizationsPage() {
           onPress={() => setActiveFilter(null)}
           className="flex-1 bg-black/50 justify-end"
         >
-          <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-12">
+          <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 pb-12 shadow-sm">
             <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">{title}</Text>
             {options.map((opt) => (
               <Pressable
@@ -82,7 +82,7 @@ export default function OrganizationsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -143,7 +143,7 @@ export default function OrganizationsPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View> :
         organizations.length === 0 ?
-        <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+        <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <Building2 size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
             <Text className="text-slate-500 font-medium">No organizations found.</Text>
           </View> :
@@ -153,7 +153,7 @@ export default function OrganizationsPage() {
               {organizations.length} Workspaces Found
             </Text>
             {organizations.map((org) =>
-          <View key={org.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden">
+          <View key={org.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
                 <View className="flex-row items-start justify-between mb-2">
                   <View className="flex-1 pr-3">
                     <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>{org.name}</Text>

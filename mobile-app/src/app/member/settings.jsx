@@ -91,7 +91,7 @@ export default function MemberSettings() {
       <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider ml-1">
         {label}
       </Text>
-      <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 shadow-sm">
+      <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 px-4 py-3 shadow-sm">
         <Icon size={20} color="#64748b" className="mr-3" />
         <TextInput
           className="flex-1 text-base font-medium text-slate-900 dark:text-white"
@@ -106,7 +106,7 @@ export default function MemberSettings() {
   );
 
   const SectionCard = ({ title, children, description }) => (
-    <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
+    <View className="bg-white dark:bg-slate-900/80 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
       <Text className="text-lg font-black text-slate-900 dark:text-white">{title}</Text>
       {description && <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 mb-4">{description}</Text>}
       {children}
@@ -114,7 +114,7 @@ export default function MemberSettings() {
   );
 
   const StaticField = ({ label, value, icon: Icon, color = "blue" }) => (
-    <View className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl mb-3 border border-slate-100 dark:border-slate-800">
+    <View className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[24px] mb-3 border border-slate-100 dark:border-slate-800">
       <View className={`h-10 w-10 rounded-xl bg-${color}-100 dark:bg-${color}-500/20 items-center justify-center mr-3`}>
         <Icon size={18} className={`text-${color}-600 dark:text-${color}-400`} color="#2563eb" />
       </View>
@@ -131,7 +131,7 @@ export default function MemberSettings() {
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View className="px-5 pt-4 pb-4 flex-row items-center bg-slate-100 dark:bg-slate-950">
-            <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-white dark:bg-slate-900 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 mr-4 active:opacity-70">
+            <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 mr-4 active:opacity-70">
               <ArrowLeft size={20} color="#334155" />
             </Pressable>
             <View>
@@ -142,7 +142,7 @@ export default function MemberSettings() {
 
           <View className="px-5">
             {/* Hero Profile Completion Card */}
-            <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6 flex-row items-center">
+            <View className="bg-white dark:bg-slate-900/80 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6 flex-row items-center">
               <View className="relative">
                 <View className="h-20 w-20 rounded-full bg-blue-100 dark:bg-blue-900/40 items-center justify-center border-4 border-blue-50 dark:border-blue-900">
                   <Text className="text-3xl font-black text-blue-600 dark:text-blue-400">
@@ -171,14 +171,14 @@ export default function MemberSettings() {
             </View>
 
             {error ? (
-              <View className="mb-6 flex-row items-center bg-rose-50 dark:bg-rose-500/10 p-4 rounded-2xl border border-rose-200">
+              <View className="mb-6 flex-row items-center bg-rose-50 dark:bg-rose-500/10 p-4 rounded-[24px] border border-rose-200">
                 <AlertCircle size={20} color="#e11d48" className="mr-3" />
                 <Text className="flex-1 text-sm font-semibold text-rose-700">{error}</Text>
               </View>
             ) : null}
 
             {success ? (
-              <View className="mb-6 flex-row items-center bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl border border-emerald-200">
+              <View className="mb-6 flex-row items-center bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-[24px] border border-emerald-200">
                 <AlertCircle size={20} color="#10b981" className="mr-3" />
                 <Text className="flex-1 text-sm font-semibold text-emerald-700">{success}</Text>
               </View>

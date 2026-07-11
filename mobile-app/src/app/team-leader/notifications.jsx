@@ -21,7 +21,7 @@ export default function NotificationsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -50,7 +50,7 @@ export default function NotificationsPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : notifications.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 mt-4">
+          <View className="flex-1 items-center justify-center py-20 bg-white dark:bg-slate-900/80 rounded-[32px] border border-slate-200 dark:border-slate-800 mt-4 shadow-sm">
             <View className="h-20 w-20 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center mb-6">
               <Bell size={32} className="text-slate-300 dark:text-slate-600" />
             </View>
@@ -70,7 +70,7 @@ export default function NotificationsPage() {
                   key={note.id} 
                   className={`rounded-[24px] p-5 shadow-sm border ${
                     !note.isRead 
-                      ? 'border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900' 
+                      ? 'border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900/80' 
                       : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60'
                   }`}
                 >

@@ -54,19 +54,19 @@ export default function SuperAdminDashboard() {
       >
       
       <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
           <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Total Orgs</Text>
           <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>{summary.get("Organizations") || 0}</Text>
         </View>
-        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
           <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Active Orgs</Text>
           <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>{summary.get("Active Organizations") || 0}</Text>
         </View>
-        <View className="w-[48%] bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-[20px] border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
+        <View className="w-[48%] bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-[24px] border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
           <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">Revenue</Text>
           <Text className="text-2xl font-black text-emerald-700 dark:text-emerald-300">₹{summary.get("Revenue") || 0}</Text>
         </View>
-        <View className="w-[48%] bg-blue-50 dark:bg-blue-500/10 p-4 rounded-[20px] border border-blue-100 dark:border-blue-800/50 shadow-sm">
+        <View className="w-[48%] bg-blue-50 dark:bg-blue-500/10 p-4 rounded-[24px] border border-blue-100 dark:border-blue-800/50 shadow-sm">
           <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-1">Users</Text>
           <Text className="text-2xl font-black text-blue-700 dark:text-blue-300">{summary.get("Users") || 0}</Text>
         </View>

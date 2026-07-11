@@ -183,7 +183,7 @@ export default function TeamLeaderPostsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -235,7 +235,7 @@ export default function TeamLeaderPostsPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : filteredPosts.length === 0 ? (
-          <View className="flex-1 items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 mt-4">
+          <View className="flex-1 items-center justify-center p-12 bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 mt-4 shadow-sm">
             <MessageSquare size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
             <Text className="text-slate-500 font-medium text-center">No posts found.</Text>
           </View>
@@ -250,7 +250,7 @@ export default function TeamLeaderPostsPage() {
               const hasVoted = isPoll && post.pollResults ? post.pollResults.some(res => res.hasVoted) : false;
 
               return (
-                <View key={post.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none">
+                <View key={post.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none">
                   <View className="flex-row items-start justify-between mb-3">
                     <View className="flex-1 pr-4">
                       <View className="flex-row items-center flex-wrap gap-2 mb-2">
@@ -349,7 +349,7 @@ export default function TeamLeaderPostsPage() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50"
         >
-          <View className="bg-white dark:bg-slate-900 rounded-t-[32px] max-h-[90%] p-6">
+          <View className="bg-white dark:bg-slate-900/80 rounded-t-[32px] max-h-[90%] p-6 shadow-sm">
             <View className="flex-row items-center justify-between mb-6">
               <Text className="text-xl font-black text-slate-900 dark:text-white">
                 {editingId ? "Edit Post" : "Create Post"}
@@ -451,7 +451,7 @@ export default function TeamLeaderPostsPage() {
                 )}
 
                 {form.type === "POLL" && (
-                  <View className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-800/30">
+                  <View className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-[24px] border border-amber-100 dark:border-amber-800/30">
                     <Text className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-500 mb-3">Poll Options</Text>
                     <View className="space-y-3">
                       {form.options.map((opt, idx) => (

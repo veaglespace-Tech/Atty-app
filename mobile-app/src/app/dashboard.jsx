@@ -4,7 +4,7 @@ export default function AdminDashboard() {
   return (
     <MobileDashboardShell
       title="Dashboard"
-      subtitle="Your Veagle Attendee workspace is ready on mobile." />);
+      subtitle="Your Veagle Space workspace is ready on mobile." />);
 
 
 }

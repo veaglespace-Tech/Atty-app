@@ -137,7 +137,7 @@ export default function CouponsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -164,7 +164,7 @@ export default function CouponsPage() {
               Create discount codes and promotional offers to help drive subscription sales and upgrades.
             </Text>
             
-            <Pressable onPress={() => handleOpenForm()} className="bg-blue-600 active:bg-blue-700 px-8 py-4 rounded-2xl flex-row items-center justify-center shadow-sm shadow-blue-600/20">
+            <Pressable onPress={() => handleOpenForm()} className="bg-blue-600 active:bg-blue-700 px-8 py-4 rounded-[24px] flex-row items-center justify-center shadow-sm shadow-blue-600/20">
               <Plus size={20} className="text-white mr-2" />
               <Text className="text-white font-bold text-base">Create First Coupon</Text>
             </Pressable>
@@ -172,7 +172,7 @@ export default function CouponsPage() {
         ) : (
           <View className="space-y-4">
             {coupons.map((coupon) => (
-              <View key={coupon.id} className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800">
+              <View key={coupon.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-start justify-between mb-4">
                   <View>
                     <Text className="text-lg font-black tracking-wide text-indigo-600 dark:text-indigo-400 uppercase">{coupon.code}</Text>
@@ -224,7 +224,7 @@ export default function CouponsPage() {
 
       <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowForm(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-white dark:bg-slate-950">
-          <View className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900">
+          <View className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900/80 shadow-sm">
             <Text className="text-lg font-black text-slate-900 dark:text-white">{editingId ? "Edit Coupon" : "Create Coupon"}</Text>
             <Pressable onPress={() => setShowForm(false)} className="h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
               <X size={20} className="text-slate-600 dark:text-slate-400" />
@@ -241,14 +241,14 @@ export default function CouponsPage() {
                   placeholder="e.g. SUMMER50"
                   placeholderTextColor="#94a3b8"
                   autoCapitalize="characters"
-                  className="bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold"
+                  className="bg-slate-50 dark:bg-slate-900/80 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold"
                 />
               </View>
 
               <View className="flex-row gap-4">
                 <View className="flex-1">
                   <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Discount Type</Text>
-                  <View className="flex-row bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                  <View className="flex-row bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl">
                     <Pressable 
                       onPress={() => setFormData({...formData, discountType: "PERCENTAGE"})}
                       className={`flex-1 py-2 rounded-lg items-center ${formData.discountType === "PERCENTAGE" ? "bg-white dark:bg-slate-800 shadow-sm" : ""}`}
@@ -271,7 +271,7 @@ export default function CouponsPage() {
                     placeholder="e.g. 20"
                     placeholderTextColor="#94a3b8"
                     keyboardType="numeric"
-                    className="bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold"
+                    className="bg-slate-50 dark:bg-slate-900/80 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold"
                   />
                 </View>
               </View>
@@ -284,7 +284,7 @@ export default function CouponsPage() {
                   placeholder="Leave empty for unlimited"
                   placeholderTextColor="#94a3b8"
                   keyboardType="numeric"
-                  className="bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
+                  className="bg-slate-50 dark:bg-slate-900/80 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
                 />
               </View>
 
@@ -296,7 +296,7 @@ export default function CouponsPage() {
                     onChangeText={(val) => setFormData({...formData, validFrom: val})}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor="#94a3b8"
-                    className="bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
+                    className="bg-slate-50 dark:bg-slate-900/80 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
                   />
                 </View>
                 <View className="flex-1">
@@ -306,7 +306,7 @@ export default function CouponsPage() {
                     onChangeText={(val) => setFormData({...formData, validUntil: val})}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor="#94a3b8"
-                    className="bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
+                    className="bg-slate-50 dark:bg-slate-900/80 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-medium"
                   />
                 </View>
               </View>
@@ -323,7 +323,7 @@ export default function CouponsPage() {
                   </Pressable>
                 </View>
                 
-                <View className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                <View className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                   {plans.length === 0 ? (
                     <Text className="p-4 text-sm text-slate-500 dark:text-slate-400 text-center">No plans available.</Text>
                   ) : (
@@ -349,7 +349,7 @@ export default function CouponsPage() {
             </View>
           </ScrollView>
 
-          <View className="p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <View className="p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-sm">
             <Pressable 
               onPress={handleSubmit} 
               disabled={isSaving}

@@ -21,7 +21,7 @@ export default function ReportsPage() {
       <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
         <Pressable 
           onPress={() => router.back()} 
-          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900/80 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
         >
           <ChevronLeft size={22} className="text-slate-900 dark:text-white" />
         </Pressable>
@@ -61,7 +61,7 @@ export default function ReportsPage() {
           </Text>
 
           {logs.length === 0 ? (
-            <View className="bg-white dark:bg-slate-900 rounded-[32px] p-8 items-center shadow-sm border border-slate-100 dark:border-slate-800">
+            <View className="bg-white dark:bg-slate-900/80 rounded-[32px] p-8 items-center shadow-sm border border-slate-100 dark:border-slate-800">
               <View className="h-20 w-20 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center mb-5">
                 <FileBarChart size={32} className="text-slate-300 dark:text-slate-600" />
               </View>
@@ -69,7 +69,7 @@ export default function ReportsPage() {
               <Text className="text-sm font-medium text-slate-500 text-center">No attendance records found for this period.</Text>
             </View>
           ) : (
-            <View className="bg-white dark:bg-slate-900 rounded-[32px] p-2 shadow-sm border border-slate-100 dark:border-slate-800">
+            <View className="bg-white dark:bg-slate-900/80 rounded-[32px] p-2 shadow-sm border border-slate-100 dark:border-slate-800">
               {logs.map((log, index) => {
                 const isLast = index === logs.length - 1;
                 const isPresent = log.status.toUpperCase() === 'PRESENT';
@@ -81,7 +81,7 @@ export default function ReportsPage() {
                     className={`p-4 flex-row items-center justify-between ${!isLast ? 'border-b border-slate-100 dark:border-slate-800/60' : ''}`}
                   >
                     <View className="flex-row items-center flex-1">
-                      <View className={`h-12 w-12 rounded-2xl items-center justify-center mr-4 ${isPresent ? 'bg-emerald-50 dark:bg-emerald-500/10' : isAbsent ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-slate-50 dark:bg-slate-800'}`}>
+                      <View className={`h-12 w-12 rounded-[24px] items-center justify-center mr-4 ${isPresent ? 'bg-emerald-50 dark:bg-emerald-500/10' : isAbsent ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-slate-50 dark:bg-slate-800'}`}>
                         {isPresent ? <CheckCircle2 size={20} className="text-emerald-500" /> : isAbsent ? <XCircle size={20} className="text-rose-500" /> : <CalendarDays size={20} className="text-slate-400" />}
                       </View>
                       <View>

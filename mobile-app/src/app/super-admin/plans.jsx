@@ -82,7 +82,7 @@ export default function PlansPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -114,7 +114,7 @@ export default function PlansPage() {
         ) : (
           <View className="space-y-4">
             {plans.map((plan) => (
-              <View key={plan.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5">
+              <View key={plan.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                 <View className="flex-row items-center justify-between mb-4">
                   <View className="flex-row items-center gap-3">
                     <View className="h-12 w-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 items-center justify-center">
@@ -136,7 +136,7 @@ export default function PlansPage() {
                   </View>
                 </View>
 
-                <View className="flex-row items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl mb-4">
+                <View className="flex-row items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[24px] mb-4">
                   <View>
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Price</Text>
                     <Text className="text-lg font-black text-slate-900 dark:text-white">₹{plan.price}</Text>
@@ -171,7 +171,7 @@ export default function PlansPage() {
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6">
+          <View className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 shadow-sm">
             <View className="flex-row items-center justify-between mb-6">
               <Text className="text-xl font-black text-slate-900 dark:text-white">
                 {editingPlan ? "Edit Plan" : "Create New Plan"}

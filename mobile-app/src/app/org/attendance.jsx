@@ -343,14 +343,14 @@ export default function OrgAttendancePage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : records.length === 0 ? (
-          <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <CalendarCheck2 size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
             <Text className="text-slate-500 dark:text-slate-400 font-medium">No attendance logs found.</Text>
-          </View> :
-
-        <View className="gap-4">
-            {records.map((record) =>
-          <View key={record.id} className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
+          </View>
+        ) : (
+          <View className="gap-4">
+            {records.map((record) => (
+              <View key={record.id} className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
                 <View className="flex-row items-start justify-between mb-4">
                   <View className="flex-1 pr-4">
                     <Text className="text-base font-bold text-slate-900 dark:text-white" numberOfLines={1}>

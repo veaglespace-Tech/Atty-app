@@ -81,7 +81,7 @@ export default function MemberDashboard() {
           
           <View className="flex-row items-center gap-3">
             <Link href="./settings" asChild>
-              <Pressable className="h-11 w-11 rounded-full bg-white dark:bg-slate-900 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70">
+              <Pressable className="h-11 w-11 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70">
                 <Settings size={20} color="#64748b" />
               </Pressable>
             </Link>
@@ -109,8 +109,8 @@ export default function MemberDashboard() {
           <View className="flex-row flex-wrap justify-between">
             {menuItems.map((item, index) => (
               <Link key={index} href={`./${item.href}`} asChild>
-                <Pressable className="w-[48%] bg-white dark:bg-slate-900 rounded-[28px] p-5 mb-4 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-70 active:scale-95">
-                  <View className={`h-14 w-14 rounded-[20px] ${item.bg} items-center justify-center mb-4`}>
+                <Pressable className="w-[48%] bg-white dark:bg-slate-900/80 rounded-[28px] p-5 mb-4 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-70 active:scale-95">
+                  <View className={`h-14 w-14 rounded-[24px] ${item.bg} items-center justify-center mb-4`}>
                     {item.icon}
                   </View>
                   <Text className="text-lg font-black text-slate-900 dark:text-white mb-1">

@@ -30,7 +30,7 @@ export default function TeamLeaderRequestsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -101,7 +101,7 @@ function RegistrationRequestsTab({ items, loading, refetch }) {
 
   if (items.length === 0) {
     return (
-      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 mt-4">
+      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 mt-4 shadow-sm">
         <ShieldCheck size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
         <Text className="text-slate-500 font-medium">No pending registration requests</Text>
       </View>);
@@ -112,7 +112,7 @@ function RegistrationRequestsTab({ items, loading, refetch }) {
       {items.map((item) => {
         const busy = actionId === item.id;
         return (
-          <View key={item.id} className="bg-white dark:bg-slate-900 rounded-[20px] p-5 border border-slate-200 dark:border-slate-800">
+          <View key={item.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
             <Text className="text-base font-bold text-slate-900 dark:text-white">{item.name || "Unknown"}</Text>
             <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.email}</Text>
             {item.mobile && <Text className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.mobile}</Text>}
@@ -182,7 +182,7 @@ function AttendanceRequestsTab({ items, loading, refetch }) {
 
   if (items.length === 0) {
     return (
-      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 mt-4">
+      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 mt-4 shadow-sm">
         <FileWarning size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
         <Text className="text-slate-500 font-medium">No pending attendance issues</Text>
       </View>);
@@ -193,7 +193,7 @@ function AttendanceRequestsTab({ items, loading, refetch }) {
       {items.map((item) => {
         const busy = actionId === item.id;
         return (
-          <View key={item.id} className="bg-white dark:bg-slate-900 rounded-[20px] p-5 border border-slate-200 dark:border-slate-800">
+          <View key={item.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
             <Text className="text-base font-bold text-slate-900 dark:text-white">{item.user?.name || "Unknown"}</Text>
             <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.user?.email}</Text>
             

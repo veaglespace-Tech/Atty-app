@@ -18,7 +18,7 @@ export default function NotificationsPage() {
       <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
         <Pressable 
           onPress={() => router.back()} 
-          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900/80 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
         >
           <ChevronLeft size={22} className="text-slate-900 dark:text-white" />
         </Pressable>
@@ -41,7 +41,7 @@ export default function NotificationsPage() {
         </View>
       ) : notifications.length === 0 ? (
         <View className="flex-1 items-center justify-center p-8">
-          <View className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-900 items-center justify-center mb-6">
+          <View className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-900/80 items-center justify-center mb-6">
             <Bell size={40} className="text-slate-300 dark:text-slate-700" />
           </View>
           <Text className="text-2xl font-black text-slate-900 dark:text-white text-center mb-2">Caught Up</Text>
@@ -56,7 +56,7 @@ export default function NotificationsPage() {
               key={note.id} 
               className={`rounded-[28px] p-6 mb-5 shadow-sm border active:opacity-80 active:scale-[0.98] transition-transform ${
                 !note.isRead 
-                  ? 'border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900' 
+                  ? 'border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900/80' 
                   : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50'
               }`}
             >

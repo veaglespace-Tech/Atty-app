@@ -15,7 +15,7 @@ export default function MyTeamsPage() {
       <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
         <Pressable 
           onPress={() => router.back()} 
-          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900/80 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
         >
           <ChevronLeft size={22} className="text-slate-900 dark:text-white" />
         </Pressable>
@@ -42,7 +42,7 @@ export default function MyTeamsPage() {
           {teams.map((team) => (
             <Pressable 
               key={team.id} 
-              className="bg-white dark:bg-slate-900 rounded-[28px] p-6 mb-5 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-90 active:scale-[0.98]"
+              className="bg-white dark:bg-slate-900/80 rounded-[28px] p-6 mb-5 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-90 active:scale-[0.98]"
             >
               <View className="flex-row items-start justify-between mb-5">
                 <View className="flex-1 pr-4">

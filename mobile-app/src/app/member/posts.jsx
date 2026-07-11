@@ -38,7 +38,7 @@ export default function PostsPage() {
       <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
         <Pressable 
           onPress={() => router.back()} 
-          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-slate-900/80 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-95"
         >
           <ChevronLeft size={22} className="text-slate-900 dark:text-white" />
         </Pressable>
@@ -69,7 +69,7 @@ export default function PostsPage() {
             return (
               <View 
                 key={post.id} 
-                className="bg-white dark:bg-slate-900 rounded-[32px] p-6 mb-6 shadow-sm border border-slate-100 dark:border-slate-800"
+                className="bg-white dark:bg-slate-900/80 rounded-[32px] p-6 mb-6 shadow-sm border border-slate-100 dark:border-slate-800"
               >
                 <View className="flex-row items-center justify-between mb-4">
                   <View className={`flex-row items-center px-4 py-2 rounded-full ${config.color}`}>
@@ -90,11 +90,11 @@ export default function PostsPage() {
                 <Text className="text-base font-medium text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">{post.content}</Text>
 
                 {post.metadata?.attachment && (post.metadata.attachment.resourceType === 'image' || post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i)) ? (
-                  <View className="h-56 w-full rounded-2xl overflow-hidden mb-5 border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
+                  <View className="h-56 w-full rounded-[24px] overflow-hidden mb-5 border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
                     <Image source={{ uri: post.metadata.attachment.url }} className="h-full w-full" resizeMode="cover" />
                   </View>
                 ) : post.metadata?.attachment && (
-                  <Pressable className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl mb-5 border border-slate-200 dark:border-slate-700 active:opacity-70 active:scale-[0.98]">
+                  <Pressable className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[24px] mb-5 border border-slate-200 dark:border-slate-700 active:opacity-70 active:scale-[0.98]">
                     <View className="h-10 w-10 bg-white dark:bg-slate-700 rounded-xl items-center justify-center shadow-sm mr-3">
                       <Paperclip size={20} className="text-blue-500 dark:text-blue-400" />
                     </View>
@@ -120,7 +120,7 @@ export default function PostsPage() {
                           key={index}
                           onPress={() => handleVote(post.id, index)}
                           disabled={activeVoteId === post.id || post.poll?.selectedOptionIndex != null}
-                          className={`relative overflow-hidden rounded-2xl border p-4 mb-3 active:scale-[0.98] transition-all ${
+                          className={`relative overflow-hidden rounded-[24px] border p-4 mb-3 active:scale-[0.98] transition-all ${
                             isVoted ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                           }`}
                         >

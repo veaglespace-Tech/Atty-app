@@ -17,7 +17,7 @@ export default function AttendancePage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -35,15 +35,15 @@ export default function AttendancePage() {
         {/* Stats Row */}
         {!isLoading && reports.length > 0 && (
           <View className="flex-row gap-3 mb-6">
-            <View className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+            <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
               <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Present</Text>
               <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Present Days")}</Text>
             </View>
-            <View className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+            <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
               <Text className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Half Days</Text>
               <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Half Days")}</Text>
             </View>
-            <View className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+            <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
               <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Total Hrs</Text>
               <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Worked Hrs")}</Text>
             </View>
@@ -65,7 +65,7 @@ export default function AttendancePage() {
         ) : (
           <View className="space-y-4">
             {reports.map((report, index) => (
-              <View key={report.userId || index} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5">
+              <View key={report.userId || index} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-1">
                     <Text className="text-lg font-black text-slate-900 dark:text-white">{report.member}</Text>

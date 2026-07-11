@@ -91,7 +91,7 @@ export default function ReferralsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -106,18 +106,18 @@ export default function ReferralsPage() {
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40, flexGrow: 1 }}>
         {/* Stats */}
         <View className="flex-row gap-3 mb-6">
-          <View className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+          <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <Text className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">Partners</Text>
             <Text className="text-2xl font-black text-slate-900 dark:text-white">{referralPartners.length}</Text>
           </View>
-          <View className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+          <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">Referred Orgs</Text>
             <Text className="text-2xl font-black text-slate-900 dark:text-white">{totalReferredOrgs}</Text>
           </View>
         </View>
 
         {/* Search */}
-        <View className="mb-6 bg-white dark:bg-slate-900 p-2 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-row items-center">
+        <View className="mb-6 bg-white dark:bg-slate-900/80 p-2 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center shadow-sm">
           <View className="pl-3 pr-2">
             <Search size={18} className="text-slate-400" />
           </View>
@@ -141,7 +141,7 @@ export default function ReferralsPage() {
           </View>
         ) : filteredPartners.length === 0 ? (
           <View className="flex-1 items-center justify-center p-8 py-16">
-            <View className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-900 items-center justify-center mb-6">
+            <View className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-900/80 items-center justify-center mb-6">
               <Gift size={48} className="text-slate-300 dark:text-slate-700" />
             </View>
             <Text className="text-xl font-black text-slate-900 dark:text-white text-center mb-2">No Partners Found</Text>
@@ -150,7 +150,7 @@ export default function ReferralsPage() {
             </Text>
             
             {!searchTerm && (
-              <Pressable onPress={handleOpenForm} className="bg-blue-600 active:bg-blue-700 px-8 py-4 rounded-2xl flex-row items-center justify-center shadow-sm shadow-blue-600/20">
+              <Pressable onPress={handleOpenForm} className="bg-blue-600 active:bg-blue-700 px-8 py-4 rounded-[24px] flex-row items-center justify-center shadow-sm shadow-blue-600/20">
                 <UserPlus size={20} className="text-white mr-2" />
                 <Text className="text-white font-bold text-base">Add New Partner</Text>
               </Pressable>
@@ -159,7 +159,7 @@ export default function ReferralsPage() {
         ) : (
           <View className="space-y-4">
             {filteredPartners.map((partner) => (
-              <View key={partner.id} className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between">
+              <View key={partner.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
                 <View className="flex-1">
                   <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-0.5">{partner.name}</Text>
                   <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">{partner.email}</Text>
@@ -193,7 +193,7 @@ export default function ReferralsPage() {
       {/* Add Partner Modal */}
       <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowForm(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-white dark:bg-slate-950">
-          <View className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900">
+          <View className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900/80 shadow-sm">
             <Text className="text-lg font-black text-slate-900 dark:text-white">Add Referral Partner</Text>
             <Pressable onPress={() => setShowForm(false)} className="h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
               <X size={20} className="text-slate-600 dark:text-slate-400" />
@@ -205,7 +205,7 @@ export default function ReferralsPage() {
               
               <View>
                 <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Full Name *</Text>
-                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
                   <User size={18} className="text-slate-400 mr-3" />
                   <TextInput
                     value={formData.name}
@@ -219,7 +219,7 @@ export default function ReferralsPage() {
 
               <View>
                 <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Email Address *</Text>
-                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
                   <Mail size={18} className="text-slate-400 mr-3" />
                   <TextInput
                     value={formData.email}
@@ -235,7 +235,7 @@ export default function ReferralsPage() {
 
               <View>
                 <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Phone Number <Text className="lowercase tracking-normal font-medium text-slate-400">(optional)</Text></Text>
-                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
                   <Phone size={18} className="text-slate-400 mr-3" />
                   <TextInput
                     value={formData.mobile}
@@ -250,7 +250,7 @@ export default function ReferralsPage() {
 
               <View>
                 <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Referral Code <Text className="lowercase tracking-normal font-medium text-slate-400">(optional)</Text></Text>
-                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1">
                   <Hash size={18} className="text-slate-400 mr-3" />
                   <TextInput
                     value={formData.partnerReferralCode}
@@ -266,7 +266,7 @@ export default function ReferralsPage() {
             </View>
           </ScrollView>
 
-          <View className="p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <View className="p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-sm">
             <Pressable 
               onPress={handleSubmit} 
               disabled={isCreating}

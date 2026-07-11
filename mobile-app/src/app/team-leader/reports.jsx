@@ -124,7 +124,7 @@ export default function TeamLeaderReportsPage() {
   if (selectedMember) {
     return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-        <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => setSelectedMember(null)} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
               <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -152,13 +152,13 @@ export default function TeamLeaderReportsPage() {
               <ActivityIndicator size="large" color="#2563eb" />
             </View>
           ) : memberLogs.length === 0 ? (
-            <View className="py-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 items-center justify-center">
+            <View className="py-8 bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm">
               <Text className="text-sm font-medium text-slate-500">No logs found for this period.</Text>
             </View>
           ) : (
             <View className="space-y-3 pb-12">
               {memberLogs.map((log) => (
-                <View key={log.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
+                <View key={log.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
                   <View className="flex-row items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                     <Text className="text-sm font-black text-slate-900 dark:text-white">{log.date}</Text>
                     <View className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">
@@ -191,7 +191,7 @@ export default function TeamLeaderReportsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-20">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -238,7 +238,7 @@ export default function TeamLeaderReportsPage() {
             <ActivityIndicator size="large" color="#2563eb" />
           </View>
         ) : reports.length === 0 ? (
-          <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <FileText size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
             <Text className="text-slate-500 font-medium text-center px-4">No report data found for the selected period.</Text>
           </View>
@@ -248,7 +248,7 @@ export default function TeamLeaderReportsPage() {
               <Pressable 
                 key={report.id} 
                 onPress={() => setSelectedMember(report)}
-                className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800"
+                className="bg-white dark:bg-slate-900/80 rounded-[24px] p-4 border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800 shadow-sm"
               >
                 <View className="flex-row justify-between items-start mb-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                   <View>
@@ -285,7 +285,7 @@ export default function TeamLeaderReportsPage() {
       {/* Period Modal */}
       <Modal visible={showPeriodModal} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-12">
+          <View className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 pb-12 shadow-sm">
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-xl font-black text-slate-900 dark:text-white">Select Period</Text>
               <Pressable onPress={() => setShowPeriodModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full">
@@ -348,7 +348,7 @@ export default function TeamLeaderReportsPage() {
       {/* Download Modal */}
       <Modal visible={showDownloadModal} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-12">
+          <View className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 pb-12 shadow-sm">
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-xl font-black text-slate-900 dark:text-white">Download Team Report</Text>
               <Pressable onPress={() => setShowDownloadModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full">
@@ -390,7 +390,7 @@ export default function TeamLeaderReportsPage() {
 
 function MetricCard({ label, value, icon }) {
   return (
-    <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+    <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
       <View className="flex-row items-center gap-2 mb-2">
         {icon}
         <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</Text>

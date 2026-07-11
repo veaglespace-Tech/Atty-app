@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -49,28 +49,28 @@ export default function AnalyticsPage() {
             
             {/* Total Summary Row */}
             <View className="flex-row flex-wrap justify-between gap-y-3">
-              <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
                   <Building2 size={14} className="text-blue-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Orgs</Text>
                 </View>
                 <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Organizations Created")}</Text>
               </View>
-              <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
                   <Users size={14} className="text-indigo-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Users</Text>
                 </View>
                 <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Users Registered")}</Text>
               </View>
-              <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
                   <CreditCard size={14} className="text-amber-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Payments</Text>
                 </View>
                 <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Total Payments")}</Text>
               </View>
-              <View className="w-[48%] bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-[20px] border border-emerald-100 dark:border-emerald-800/30">
+              <View className="w-[48%] bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-[24px] border border-emerald-100 dark:border-emerald-800/30">
                 <View className="flex-row items-center gap-2 mb-2">
                   <TrendingUp size={14} className="text-emerald-600" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Total Rev</Text>
@@ -83,7 +83,7 @@ export default function AnalyticsPage() {
             <View>
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4 ml-2">Monthly Trends (6 Months)</Text>
               
-              <View className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden">
+              <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                 {/* Header Row */}
                 <View className="flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-20">Month</Text>

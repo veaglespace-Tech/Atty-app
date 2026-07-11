@@ -45,7 +45,7 @@ export default function PermissionFormModal({ visible, onClose, onSubmit, initia
                     onChangeText={(text) => setFormData(prev => ({ ...prev, key: text.toUpperCase().replace(/\s+/g, "_") }))}
                     placeholder="e.g. USER_DELETE"
                     placeholderTextColor="#94a3b8"
-                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-mono"
+                    className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-mono"
                   />
                 </View>
               )}
@@ -57,7 +57,7 @@ export default function PermissionFormModal({ visible, onClose, onSubmit, initia
                   onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
                   placeholder="e.g. Delete User"
                   placeholderTextColor="#94a3b8"
-                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-bold"
+                  className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-bold"
                 />
               </View>
 
@@ -70,7 +70,7 @@ export default function PermissionFormModal({ visible, onClose, onSubmit, initia
                   placeholderTextColor="#94a3b8"
                   multiline
                   textAlignVertical="top"
-                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 h-28 text-slate-900 dark:text-white font-medium"
+                  className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 h-28 text-slate-900 dark:text-white font-medium"
                 />
               </View>
             </View>

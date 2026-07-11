@@ -70,7 +70,7 @@ export default function BackupPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -82,7 +82,7 @@ export default function BackupPage() {
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         
-        <View className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-6 mb-6 items-center">
+        <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-6 mb-6 items-center shadow-sm">
           <View className="h-20 w-20 rounded-full bg-indigo-50 dark:bg-indigo-900/20 items-center justify-center mb-6">
             <Database size={40} className="text-indigo-500" />
           </View>
@@ -129,7 +129,7 @@ export default function BackupPage() {
           </View>
         </View>
 
-        <View className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-800/30">
+        <View className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-[24px] border border-amber-100 dark:border-amber-800/30">
           <Text className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-1">Important Notice</Text>
           <Text className="text-xs text-amber-700 dark:text-amber-500 leading-5">
             Generating large backups on a mobile device may consume significant memory and data. For very large databases, we recommend using the web dashboard.

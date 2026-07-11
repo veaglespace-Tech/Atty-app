@@ -19,7 +19,7 @@ export default function PermissionsTab({
 
   if (permissions.length === 0) {
     return (
-      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+      <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
         <KeyRound size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
         <Text className="text-slate-500 font-medium text-center px-6">No permissions found in the system.</Text>
       </View>
@@ -29,7 +29,7 @@ export default function PermissionsTab({
   return (
     <View className="space-y-4 pb-12">
       {permissions.map((p) => (
-        <View key={p.id} className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800">
+        <View key={p.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
           <View className="flex-row justify-between items-start mb-2">
             <View className="flex-1 pr-4">
               <Text className="text-lg font-black text-slate-900 dark:text-white">{p.name}</Text>

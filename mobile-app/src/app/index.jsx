@@ -25,11 +25,11 @@ export default function Home() {
           </View>
 
           {/* Heading */}
-          <Text className="text-center text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+          <Text className="mb-2 text-center text-5xl font-black tracking-tight text-slate-900 dark:text-white">
             Veagle
           </Text>
           <Text className="mb-6 text-center text-5xl font-black tracking-tight text-blue-500 dark:text-blue-400">
-            Attendee
+            Space
           </Text>
 
           {/* Subheading */}

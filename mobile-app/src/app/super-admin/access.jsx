@@ -135,7 +135,7 @@ export default function AccessPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -154,7 +154,7 @@ export default function AccessPage() {
         <View className="flex-row bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
           <Pressable
             onPress={() => setActiveTab("PERMISSIONS")}
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg transition-all ${activeTab === "PERMISSIONS" ? "bg-white dark:bg-slate-900 shadow-sm" : "bg-transparent"}`}
+            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg transition-all ${activeTab === "PERMISSIONS" ? "bg-white dark:bg-slate-900/80 shadow-sm" : "bg-transparent"}`}
           >
             <Key size={14} className={activeTab === "PERMISSIONS" ? "text-indigo-600 dark:text-indigo-400 mr-2" : "text-slate-500 mr-2"} />
             <Text className={`text-xs font-black uppercase tracking-widest ${activeTab === "PERMISSIONS" ? "text-slate-900 dark:text-white" : "text-slate-500"}`}>
@@ -163,7 +163,7 @@ export default function AccessPage() {
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("ROLES")}
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg transition-all ${activeTab === "ROLES" ? "bg-white dark:bg-slate-900 shadow-sm" : "bg-transparent"}`}
+            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg transition-all ${activeTab === "ROLES" ? "bg-white dark:bg-slate-900/80 shadow-sm" : "bg-transparent"}`}
           >
             <ShieldCheck size={14} className={activeTab === "ROLES" ? "text-indigo-600 dark:text-indigo-400 mr-2" : "text-slate-500 mr-2"} />
             <Text className={`text-xs font-black uppercase tracking-widest ${activeTab === "ROLES" ? "text-slate-900 dark:text-white" : "text-slate-500"}`}>

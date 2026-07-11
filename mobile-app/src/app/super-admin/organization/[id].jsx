@@ -78,7 +78,7 @@ export default function OrganizationDetailsPage() {
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         
         {/* ORGANIZATION DETAIL HERO CARD */}
-        <View className="bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-5 mb-6">
+        <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-5 mb-6">
           <View className="flex-col md:flex-row md:justify-between gap-6">
             
             {/* Left Side: Title and Badges */}
@@ -132,7 +132,7 @@ export default function OrganizationDetailsPage() {
         {activeTab === "Overview" && (
           <View className="flex-col md:flex-row gap-4">
             {/* AT A GLANCE */}
-            <View className="flex-1 bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6">
+            <View className="flex-1 bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-1">At a Glance</Text>
               <Text className="text-xs text-slate-500 dark:text-slate-400 mb-6">Important account, subscription, usage, and admin details in one place.</Text>
               
@@ -148,7 +148,7 @@ export default function OrganizationDetailsPage() {
             </View>
 
             {/* ACCESS & RISK */}
-            <View className="w-full md:w-80 bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6 mt-4 md:mt-0">
+            <View className="w-full md:w-80 bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mt-4 md:mt-0">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-1">Access & Risk</Text>
               <Text className="text-xs text-slate-500 dark:text-slate-400 mb-6">Use these controls only when the organization should be restricted or restored.</Text>
               
@@ -168,7 +168,7 @@ export default function OrganizationDetailsPage() {
         {activeTab === "Billing" && (
           <View className="space-y-4">
             {org.activeSubscription ? (
-              <View className="bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
+              <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
                 <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Active Subscription</Text>
                 <View className="space-y-3">
                   <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Plan</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription.planName}</Text></View>
@@ -179,7 +179,7 @@ export default function OrganizationDetailsPage() {
               </View>
             ) : null}
             
-            <View className="bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6">
+            <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
               <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Recent Payments</Text>
               {(org.recentPayments && org.recentPayments.length > 0) ? (
                 org.recentPayments.map((payment, index) => (
@@ -207,7 +207,7 @@ export default function OrganizationDetailsPage() {
         )}
 
         {activeTab === "Profile" && (
-          <View className="bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6">
+          <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
             <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-6">Organization Profile</Text>
             <View className="space-y-4">
               <View>
@@ -241,7 +241,7 @@ export default function OrganizationDetailsPage() {
         )}
 
         {activeTab === "Users" && (
-          <View className="bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6">
+          <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
             <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Organization Users</Text>
             {isLoadingUsers ? (
               <ActivityIndicator size="small" color="#3B82F6" />
@@ -269,7 +269,7 @@ export default function OrganizationDetailsPage() {
         )}
 
         {activeTab === "Teams" && (
-          <View className="bg-white dark:bg-[#151E2F] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-6">
+          <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
             <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Organization Teams</Text>
             {isLoadingTeams ? (
               <ActivityIndicator size="small" color="#3B82F6" />
