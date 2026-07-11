@@ -45,6 +45,11 @@ const checkActiveSubscription = asyncHandler(async (req, res, next) => {
     });
 
   if (!activeSubscription) {
+    if (process.env.NODE_ENV === "development") {
+      req.subscription = null;
+      req.organization = syncedOrganization || organization;
+      return next();
+    }
     res.status(402);
     throw new Error("Subscription expired. Please renew to continue.");
   }

@@ -1,149 +1,216 @@
-
-import { ScrollView, Text, View, Pressable } from "react-native";
-import { router, Link } from "expo-router";
-import { LogOut, Settings, BarChart3, CalendarCheck2, Bell } from "lucide-react-native";
+import React, { useState, useRef } from "react";
+import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView } from "react-native";
+import { router, Link, Slot, usePathname } from "expo-router";
+import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
-import { formatRoleLabel } from "@/utils/roles";
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
 
+const TABS = [
+  { title: "Dashboard", icon: <BarChart3 size={18} color="#2563eb" />, href: "dashboard" },
+  { title: "Users", icon: <Users size={18} color="#2563eb" />, href: "users" },
+  { title: "Teams", icon: <Component size={18} color="#2563eb" />, href: "teams" },
+  { title: "Requests", icon: <ClipboardCheck size={18} color="#2563eb" />, href: "registration-requests" },
+  { title: "My Attendance", icon: <CalendarCheck2 size={18} color="#2563eb" />, href: "my-attendance" },
+  { title: "Attendance", icon: <CalendarCheck2 size={18} color="#2563eb" />, href: "attendance" },
+  { title: "Reports", icon: <FileBarChart size={18} color="#2563eb" />, href: "reports" },
+  { title: "Subscription", icon: <CreditCard size={18} color="#2563eb" />, href: "subscription" },
+  { title: "Posts", icon: <MessageSquare size={18} color="#2563eb" />, href: "posts" },
+  { title: "Notifications", icon: <Bell size={18} color="#2563eb" />, href: "notifications" }
+];
+import { BarChart3 } from "lucide-react-native";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-const defaultActions = [
-{
-  title: "Attendance",
-  description: "Check today's attendance status and recent activity.",
-  icon: <CalendarCheck2 size={22} color="#2563eb" />,
-  href: "attendance"
-},
-{
-  title: "Reports",
-  description: "Review summaries, trends, and attendance exports.",
-  icon: <BarChart3 size={22} color="#2563eb" />,
-  href: "reports"
-},
-{
-  title: "Notifications",
-  description: "Read updates from your organization workspace.",
-  icon: <Bell size={22} color="#2563eb" />,
-  href: "notifications"
-},
-{
-  title: "Settings",
-  description: "Manage profile, workspace, and app preferences.",
-  icon: <Settings size={22} color="#2563eb" />,
-  href: "settings"
-}];
-
-
-export default function MobileDashboardShell({
-  title,
-  subtitle,
-  actions = defaultActions,
-  children,
-  refreshControl
-}) {
+export default function MobileDashboardShell() {
   const dispatch = useDispatch();
   const { user } = useAuthSession();
+  const pathname = usePathname();
+  const isSettingsPage = pathname === "/org/settings";
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const onLogout = () => {
     dispatch(logout());
     router.replace("/login");
   };
 
+  const openDrawer = () => {
+    setIsDrawerOpen(true);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const closeDrawer = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -DRAWER_WIDTH,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsDrawerOpen(false);
+    });
+  };
+
   return (
-    <ScrollView
-      className="flex-1 bg-slate-50 dark:bg-slate-950"
-      contentContainerStyle={{ padding: 16, paddingTop: 36, paddingBottom: 40 }}
-      refreshControl={refreshControl}>
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       
-      <View className="mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
-        <View className="p-5">
-          <View className="mb-5 flex-row items-start justify-between gap-4">
-            <View className="flex-1">
-              <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">
-                {formatRoleLabel(user?.currentRole) || "Workspace"}
-              </Text>
-              <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                {title}
-              </Text>
-              <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                {subtitle}
-              </Text>
-            </View>
+      {/* Global Header Bar with Menu Button */}
+      {!isSettingsPage && (
+        <View className="flex-row items-center justify-between px-4 pt-3 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
+          <View className="flex-row items-center gap-3">
             <Pressable
-              onPress={onLogout}
-              className="h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-500/10">
-              
-              <LogOut size={18} color="#e11d48" />
+              onPress={openDrawer}
+              className="h-12 w-12 items-center justify-center rounded-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm active:scale-95 transition-transform">
+              <Menu size={22} className="text-slate-900 dark:text-white" />
             </Pressable>
-          </View>
-
-          <View className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
-            <Text className="text-xs font-black uppercase tracking-widest text-slate-400">
-              Signed in as
-            </Text>
-            <Text className="mt-1 text-base font-black text-slate-900 dark:text-white">
-              {user?.name || "Team Member"}
-            </Text>
-            <Text className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-300">
-              {user?.email || user?.organization?.name || "Veagle Attendee"}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {children && <View className="mb-6">{children}</View>}
-
-      <View className="gap-4">
-        {actions.map((action) => {
-          const ActionContent =
-          <View
-            className="rounded-[24px] border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-            
-              <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-500/10">
-                {action.icon}
+            <View className="flex-row items-center gap-2.5">
+              <View className="h-9 w-9 items-center justify-center rounded-xl bg-blue-600 shadow-sm shadow-blue-500/30 overflow-hidden">
+                {user?.organization?.logoUrl ? (
+                  <Image 
+                    source={{ uri: user.organization.logoUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text className="text-white font-black text-base">
+                    {(user?.organization?.name || "V").charAt(0).toUpperCase()}
+                  </Text>
+                )}
               </View>
-              <Text className="text-lg font-black text-slate-950 dark:text-white">
-                {action.title}
-              </Text>
-              <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                {action.description}
-              </Text>
-            </View>;
+              <View>
+                <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                  {user?.organization?.name || "Veagle"}
+                </Text>
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Workspace
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          <Pressable
+            onPress={() => router.push('/org/settings')}
+            className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 active:scale-95 transition-transform">
+            <User size={18} className="text-slate-700 dark:text-slate-300" />
+          </Pressable>
+        </View>
+      )}
 
+      {/* Renders the current tab's content */}
+      <Slot />
 
-          if (action.href) {
-            // Using absolute paths or relative paths. If href is provided without leading slash,
-            // it will navigate relative to the current route (e.g. from /member/dashboard to /member/attendance).
-            // However, Expo router relative paths can be tricky from nested stacks without _layout, 
-            // so we will just use Link with the href directly. 
-            // The route path string will be appended, e.g. `<Link href={"./attendance"} ...>`
-            return (
-              <Link key={action.title} href={`./${action.href}`} asChild>
-                <Pressable className="active:opacity-70">{ActionContent}</Pressable>
-              </Link>);
+      {/* Side Drawer Modal */}
+      <Modal
+        visible={isDrawerOpen}
+        transparent
+        animationType="none"
+        onRequestClose={closeDrawer}
+      >
+        <View className="flex-1 flex-row">
+          {/* Backdrop */}
+          <TouchableWithoutFeedback onPress={closeDrawer}>
+            <Animated.View 
+              style={{ 
+                opacity: fadeAnim, 
+                backgroundColor: 'rgba(15, 23, 42, 0.65)'
+              }}
+              className="absolute inset-0"
+            />
+          </TouchableWithoutFeedback>
 
-          }
+          {/* Sliding Drawer */}
+          <Animated.View
+            style={{ transform: [{ translateX: slideAnim }], width: DRAWER_WIDTH }}
+            className="h-full shadow-2xl flex-col"
+          >
+            <View className="flex-1 bg-white dark:bg-[#020617] pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
+              <View className="px-6 flex-row items-center justify-between mb-8">
+                <View className="flex-row items-center gap-3">
+                  {user?.organization?.logoUrl && (
+                    <Image 
+                      source={{ uri: user.organization.logoUrl }}
+                      style={{ width: 36, height: 36, borderRadius: 8 }}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View>
+                    <Text className="text-2xl font-black text-slate-900 dark:text-white">
+                      {user?.organization?.name || "Veagle"}
+                    </Text>
+                    <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-1">
+                      Workspace
+                    </Text>
+                  </View>
+                </View>
+                <Pressable 
+                  onPress={closeDrawer}
+                  className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                  <X size={20} className="text-slate-500 dark:text-slate-400" />
+                </Pressable>
+              </View>
 
-          return <View key={action.title}>{ActionContent}</View>;
-        })}
-      </View>
-    </ScrollView>);
+              <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+                <Text className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-2 mb-3">
+                  Navigation
+                </Text>
+                
+                <View className="gap-y-1">
+                  {TABS.map((tab) => (
+                    <Pressable
+                      key={tab.title}
+                      onPress={() => {
+                        closeDrawer();
+                        setTimeout(() => {
+                          router.replace(`/org/${tab.href}`);
+                        }, 200);
+                      }}
+                      className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50 dark:active:bg-slate-800 transition-colors">
+                      <View className="flex-row items-center gap-4">
+                        <View className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 items-center justify-center">
+                          {tab.icon}
+                        </View>
+                        <Text className="text-[15px] font-bold text-slate-700 dark:text-slate-200">
+                          {tab.title}
+                        </Text>
+                      </View>
+                      <ChevronRight size={16} className="text-slate-300 dark:text-slate-600" />
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
 
+              <View className="px-6 pt-6 mt-4 border-t border-slate-100 dark:border-slate-800">
+                <Pressable
+                  onPress={onLogout}
+                  className="flex-row items-center justify-center gap-2 py-3.5 bg-rose-50 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20 active:opacity-70">
+                  <LogOut size={18} className="text-rose-600 dark:text-rose-400" />
+                  <Text className="font-bold text-rose-600 dark:text-rose-400">Sign Out</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    </View>
+  );
 }

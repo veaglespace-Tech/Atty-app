@@ -1,11 +1,8 @@
 import React from "react";
-import { View, Text, ActivityIndicator, RefreshControl } from "react-native";
-import { Building2, CalendarCheck2, FileBarChart, Users, Bell, ClipboardCheck, MessageSquare, Component, Gift, CreditCard } from "lucide-react-native";
-
-
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
+import { View, Text, ActivityIndicator, RefreshControl, ScrollView } from "react-native";
 import { useGetOrgDashboardQuery } from "@/services/api/orgApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { formatRoleLabel } from "@/utils/roles";
 
 export default function OrgDashboard() {
   const { data, isLoading, isFetching, refetch } = useGetOrgDashboardQuery(undefined);
@@ -15,170 +12,126 @@ export default function OrgDashboard() {
   const records = data?.items || [];
 
   return (
-    <MobileDashboardShell
-      title={`${user?.organization?.name || "Organization"} Dashboard`}
-      subtitle="Workspace summary for users, teams, attendance, and subscription usage."
-      refreshControl={
-      <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />
-      }
-      actions={[
-      {
-        title: "My Attendance",
-        description: "Mark your attendance with live GPS.",
-        icon: <CalendarCheck2 size={22} color="#2563eb" />,
-        href: "my-attendance"
-      },
-      {
-        title: "Notifications",
-        description: "View important alerts and organization updates.",
-        icon: <Bell size={22} color="#2563eb" />,
-        href: "notifications"
-      },
-      {
-        title: "Requests",
-        description: "Manage pending member and regularization requests.",
-        icon: <ClipboardCheck size={22} color="#2563eb" />,
-        href: "registration-requests"
-      },
-      {
-        title: "Employees",
-        description: "Review members, roles, and organization access.",
-        icon: <Users size={22} color="#2563eb" />,
-        href: "employees"
-      },
-      {
-        title: "Teams",
-        description: "Manage teams, groups, and department structures.",
-        icon: <Component size={22} color="#2563eb" />,
-        href: "teams"
-      },
-      {
-        title: "Attendance Logs",
-        description: "Monitor daily attendance logs for the entire organization.",
-        icon: <CalendarCheck2 size={22} color="#2563eb" />,
-        href: "attendance"
-      },
-      {
-        title: "Reports",
-        description: "Generate attendance and member reports for the workspace.",
-        icon: <FileBarChart size={22} color="#2563eb" />,
-        href: "reports"
-      },
-      {
-        title: "Posts",
-        description: "Manage organization announcements and feeds.",
-        icon: <MessageSquare size={22} color="#2563eb" />,
-        href: "posts"
-      },
-      {
-        title: "Subscription",
-        description: "Manage your organization subscription plan.",
-        icon: <CreditCard size={22} color="#2563eb" />,
-        href: "subscription"
-      },
-      {
-        title: "Coupons",
-        description: "Manage referral and discount coupons.",
-        icon: <Gift size={22} color="#2563eb" />,
-        href: "coupons"
-      },
-      {
-        title: "Workspace",
-        description: "Update organization profile, plans, and settings.",
-        icon: <Building2 size={22} color="#2563eb" />,
-        href: "workspace"
-      }]
-      }>
-      
-      {isLoading ?
-      <View className="py-8 items-center">
-          <ActivityIndicator size="large" color="#2563eb" />
-        </View> :
-
-      <View>
-          {/* STATS OVERVIEW (Same as Website's Top Cards) */}
-          <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-            {summary.map((item, i) =>
-          <View
-            key={i}
-            className="w-[48%] bg-[#0B1A3A] dark:bg-[#07122C] p-5 rounded-[20px] border border-blue-500/20"
-            style={{
-              shadowColor: "#3b82f6",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 12,
-              elevation: 2
-            }}>
-            
-                <Text
-              className="text-[9px] font-black uppercase tracking-widest text-blue-200/70 mb-3"
-              numberOfLines={1}>
-              
-                  {item.label}
+    <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />
+        }
+      >
+        
+        {/* DASHBOARD WELCOME CARD */}
+        <View className="mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+          <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
+          <View className="p-5">
+            <View className="mb-5 flex-row items-start justify-between gap-4">
+              <View className="flex-1">
+                <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">
+                  {formatRoleLabel(user?.currentRole) || "Workspace"}
                 </Text>
-                <Text
-              className="text-2xl font-black text-white tracking-tight"
-              numberOfLines={1}
-              adjustsFontSizeToFit>
-              
-                  {item.value}
+                <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                  {`${user?.organization?.name || "Organization"} Dashboard`}
                 </Text>
-              </View>
-          )}
-          </View>
-
-          {/* RECORDS TABLE (Same as Website's Records Table) */}
-          <View className="bg-[#0f172a]/95 dark:bg-[#020617]/95 rounded-[24px] border border-slate-800 p-5 overflow-hidden">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">
-                  Records
-                </Text>
-                <Text className="text-[10px] text-slate-500 mt-1">
-                  Detailed entries arranged for easy scanning.
-                </Text>
-              </View>
-              <View className="px-2 py-1 bg-slate-800 rounded-md">
-                <Text className="text-[9px] font-black tracking-widest text-slate-400">
-                  {records.length} ENTRIES
+                <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                  Workspace summary for users, teams, attendance, and subscription usage.
                 </Text>
               </View>
             </View>
-            
-            {records.length === 0 ?
-          <Text className="text-sm text-slate-500 py-4">No recent activity.</Text> :
 
-          <View className="gap-0">
-                {records.slice(0, 5).map((record, idx) =>
-            <View key={idx} className="flex-row items-center justify-between border-b border-slate-800/80 py-4 last:border-0 last:pb-0">
-                    <View className="flex-1 pr-3">
-                      <Text className="text-[13px] font-bold text-slate-200 mb-1" numberOfLines={1}>
-                        {record.member || "Unknown"}
-                      </Text>
-                      <Text className="text-[11px] text-slate-500 font-medium">
-                        {record.date} • {record.role}
-                      </Text>
-                    </View>
-                    <View
-                className={`px-2.5 py-1 rounded-full border ${
-                record.status === 'PRESENT' ?
-                'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                record.status === 'ABSENT' ?
-                'bg-rose-500/10 border-rose-500/20 text-rose-400' :
-                'bg-slate-800 border-slate-700 text-slate-300'}`
-                }>
-                
-                      <Text className="text-[9px] font-black uppercase tracking-[0.15em]">
-                        {record.status}
-                      </Text>
-                    </View>
-                  </View>
-            )}
-              </View>
-          }
           </View>
         </View>
-      }
-    </MobileDashboardShell>);
 
+        {isLoading ? (
+          <View className="py-8 items-center">
+            <ActivityIndicator size="large" color="#2563eb" />
+          </View>
+        ) : (
+          <View>
+            {/* STATS OVERVIEW */}
+            <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
+              {summary.map((item, i) => (
+                <View
+                  key={i}
+                  className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <Text
+                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
+                    numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                  <Text
+                    className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
+                    numberOfLines={1}
+                    adjustsFontSizeToFit>
+                    {item.value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* RECORDS TABLE */}
+            <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    Records
+                  </Text>
+                  <Text className="text-[10px] text-slate-500 mt-1">
+                    Detailed entries arranged for easy scanning.
+                  </Text>
+                </View>
+                <View className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">
+                  <Text className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                    {records.length} ENTRIES
+                  </Text>
+                </View>
+              </View>
+
+              {records.length === 0 ? (
+                <View className="py-12 items-center justify-center">
+                  <Text className="text-slate-400 dark:text-slate-500 font-medium">No recent activity.</Text>
+                </View>
+              ) : (
+                <View className="gap-y-3">
+                  {records.map((record, i) => (
+                    <View
+                      key={i}
+                      className="p-4 rounded-[20px] bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                      <View className="flex-row justify-between items-start mb-2">
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1 mr-4">
+                          {record.title || "Record"}
+                        </Text>
+                        <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                          {record.date || "Today"}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row justify-between items-end mt-1">
+                        <Text className="text-xs text-slate-500 dark:text-slate-400 flex-1">
+                          {record.member || "Unknown"}
+                        </Text>
+                        {record.status && (
+                          <View className={`px-2 py-0.5 rounded ${
+                            record.status === 'Active' ? 'bg-emerald-100/50 dark:bg-emerald-900/30' :
+                            record.status === 'Pending' ? 'bg-amber-100/50 dark:bg-amber-900/30' :
+                            'bg-slate-100 dark:bg-slate-800'
+                          }`}>
+                            <Text className={`text-[10px] font-bold uppercase tracking-wider ${
+                              record.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' :
+                              record.status === 'Pending' ? 'text-amber-600 dark:text-amber-400' :
+                              'text-slate-500 dark:text-slate-400'
+                            }`}>
+                              {record.status}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+    </ScrollView>
+  );
 }

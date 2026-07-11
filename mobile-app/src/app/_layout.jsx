@@ -5,6 +5,12 @@ import { useColorScheme, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot } from 'expo-router';
 import { useEffect } from 'react';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+// Suppress NativeWind v4 strict mode warnings
+try {
+  configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false });
+} catch (e) {}
 
 import { StoreProvider } from '@/components/StoreProvider';
 import RegistrationDraftLifecycle from "@/components/register/RegistrationDraftLifecycle";

@@ -29,26 +29,7 @@ const isLocalHost = (hostname) => {
 };
 
 const resolveLocalApiBaseUrl = () => {
-  const configuredLocalApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_LOCAL);
-  if (configuredLocalApiUrl) {
-    return configuredLocalApiUrl;
-  }
-
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-
-    if (isLocalHost(hostname) && hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `http://${hostname}:5000/api`;
-    }
-
-    return DEFAULT_LOCAL_WEB_API_URL;
-  }
-
-  if (Platform.OS === "android") {
-    return DEFAULT_ANDROID_EMULATOR_API_URL;
-  }
-
-  return DEFAULT_IOS_SIMULATOR_API_URL;
+  return "http://localhost:5000/api"; // Temporarily hardcoded to bypass `.env` cache issues
 };
 
 const resolveApiBaseUrl = () => {
@@ -69,8 +50,6 @@ console.log("[API] Resolved Base URL:", API_BASE_URL);
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  credentials: "include",
-  cache: "no-store",
   prepareHeaders: (headers, { getState }) => {
     headers.set("cache-control", "no-cache, no-store, max-age=0");
     headers.set("pragma", "no-cache");

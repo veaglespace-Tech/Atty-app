@@ -6,11 +6,10 @@ import { useGetOrgAttendanceQuery } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
 
 const MetricCard = ({ label, value, bgClass, textClass }) =>
-<View className={`flex-1 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 ${bgClass}`}>
+  <View className={`flex-1 rounded-[24px] p-5 border border-slate-100 dark:border-slate-800 shadow-sm ${bgClass}`}>
     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">{label}</Text>
-    <Text className={`text-2xl font-black ${textClass}`}>{value}</Text>
+    <Text className={`text-3xl font-black tracking-tight ${textClass}`}>{value}</Text>
   </View>;
-
 
 export default function OrgAttendancePage() {
   const [period, setPeriod] = useState("monthly");
@@ -40,13 +39,9 @@ export default function OrgAttendancePage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
         <View className="flex-row items-center justify-between mb-4">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Organization Logs</Text>
-          <View className="w-10" />
+          <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Attendance Records</Text>
         </View>
 
         <View className="flex-row gap-2 mt-2">
@@ -103,7 +98,7 @@ export default function OrgAttendancePage() {
 
         <View className="gap-4">
             {records.map((record) =>
-          <View key={record.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden">
+          <View key={record.id} className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
                 <View className="flex-row items-start justify-between mb-4">
                   <View className="flex-1 pr-4">
                     <Text className="text-base font-bold text-slate-900 dark:text-white" numberOfLines={1}>
