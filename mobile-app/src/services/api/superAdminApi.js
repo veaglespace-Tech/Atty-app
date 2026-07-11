@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads", "SACoupons"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -25,7 +25,14 @@ export const superAdminApi = createApi({
       }),
     }),
     getSuperAdminOrganizations: builder.query({
-      query: (limit = 2000) => `/super-admin/organizations?limit=${limit}`,
+      query: (params) => {
+        let url = `/super-admin/organizations?limit=${params?.limit || 2000}`;
+        if (params?.search) url += `&search=${encodeURIComponent(params.search)}`;
+        if (params?.subscriptionStatus) url += `&subscriptionStatus=${params.subscriptionStatus}`;
+        if (params?.access) url += `&access=${params.access}`;
+        if (params?.block) url += `&block=${params.block}`;
+        return url;
+      },
       providesTags: ["SAOrganizations"],
     }),
     getSuperAdminOrganizationById: builder.query({
@@ -328,6 +335,33 @@ export const superAdminApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    getSuperAdminCoupons: builder.query({
+      query: () => "/coupons/admin",
+      providesTags: ["SACoupons"],
+    }),
+    createSuperAdminCoupon: builder.mutation({
+      query: (payload) => ({
+        url: "/coupons",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["SACoupons"],
+    }),
+    updateSuperAdminCoupon: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: `/coupons/${id}`,
+        method: "PUT",
+        body: payload,
+      }),
+      invalidatesTags: ["SACoupons"],
+    }),
+    deleteSuperAdminCoupon: builder.mutation({
+      query: (id) => ({
+        url: `/coupons/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SACoupons"],
+    }),
   }),
 });
 
@@ -384,4 +418,8 @@ export const {
   useDownloadDatabaseBackupMutation,
   useExportSuperAdminOrganizationUsersExcelMutation,
   useExportAllSuperAdminUsersExcelMutation,
+  useGetSuperAdminCouponsQuery,
+  useCreateSuperAdminCouponMutation,
+  useUpdateSuperAdminCouponMutation,
+  useDeleteSuperAdminCouponMutation,
 } = superAdminApi;

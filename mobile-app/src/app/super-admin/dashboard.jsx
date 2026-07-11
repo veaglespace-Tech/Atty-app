@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, Text, RefreshControl } from "react-native";
-import { BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database } from "lucide-react-native";
+import { BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings } from "lucide-react-native";
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { useGetSuperAdminDashboardQuery } from "@/services/api/superAdminApi";
 

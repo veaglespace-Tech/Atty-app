@@ -1,9 +1,20 @@
-import React from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useMemo } from "react";
+import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Dimensions } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, BarChart3 } from "lucide-react-native";
+import { ChevronLeft, BarChart3, TrendingUp, Building2, Users, CreditCard } from "lucide-react-native";
+import { useGetSuperAdminAnalyticsQuery } from "@/services/api/superAdminApi";
 
 export default function AnalyticsPage() {
+  const { data, isLoading, isFetching, refetch } = useGetSuperAdminAnalyticsQuery();
+
+  const analytics = useMemo(() => data?.items || [], [data]);
+  const summary = useMemo(() => data?.summary || [], [data]);
+
+  const getSummaryValue = (label) => {
+    const item = summary.find(s => s.label === label);
+    return item ? item.value : 0;
+  };
+
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
@@ -11,17 +22,102 @@ export default function AnalyticsPage() {
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
           </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Analytics</Text>
+          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Platform Analytics</Text>
           <View className="w-10" />
         </View>
       </View>
-      <View className="flex-1 items-center justify-center p-6">
-        <BarChart3 size={64} className="text-slate-300 dark:text-slate-700 mb-6" />
-        <Text className="text-xl font-black text-slate-900 dark:text-white text-center">Analytics Coming Soon</Text>
-        <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center mt-2">
-          See platform usage and growth summaries.
-        </Text>
-      </View>
-    </View>);
 
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
+      >
+        {isLoading && analytics.length === 0 ? (
+          <View className="flex-1 items-center justify-center p-12">
+            <ActivityIndicator size="large" color="#2563eb" />
+          </View>
+        ) : analytics.length === 0 ? (
+          <View className="flex-1 items-center justify-center p-12">
+            <BarChart3 size={64} className="text-slate-300 dark:text-slate-700 mb-6" />
+            <Text className="text-xl font-black text-slate-900 dark:text-white text-center">No Analytics Data</Text>
+            <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center mt-2">
+              There is not enough data to generate analytics yet.
+            </Text>
+          </View>
+        ) : (
+          <View className="space-y-6">
+            
+            {/* Total Summary Row */}
+            <View className="flex-row flex-wrap justify-between gap-y-3">
+              <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <Building2 size={14} className="text-blue-500" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Orgs</Text>
+                </View>
+                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Organizations Created")}</Text>
+              </View>
+              <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <Users size={14} className="text-indigo-500" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Users</Text>
+                </View>
+                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Users Registered")}</Text>
+              </View>
+              <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <CreditCard size={14} className="text-amber-500" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Payments</Text>
+                </View>
+                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Total Payments")}</Text>
+              </View>
+              <View className="w-[48%] bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-[20px] border border-emerald-100 dark:border-emerald-800/30">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <TrendingUp size={14} className="text-emerald-600" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Total Rev</Text>
+                </View>
+                <Text className="text-xl font-black text-emerald-700 dark:text-emerald-300">₹{getSummaryValue("Total Revenue")}</Text>
+              </View>
+            </View>
+
+            {/* Monthly Trend Data */}
+            <View>
+              <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4 ml-2">Monthly Trends (6 Months)</Text>
+              
+              <View className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden">
+                {/* Header Row */}
+                <View className="flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-20">Month</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Orgs</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Users</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 w-20 text-right">Rev</Text>
+                </View>
+                
+                {/* Data Rows */}
+                {analytics.map((item, index) => (
+                  <View 
+                    key={item.month || index} 
+                    className={`flex-row items-center justify-between p-4 ${index !== analytics.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
+                  >
+                    <Text className="text-xs font-bold text-slate-900 dark:text-white w-20">{item.month}</Text>
+                    <View className="flex-1 items-center">
+                      <View className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30">
+                        <Text className="text-xs font-bold text-blue-700 dark:text-blue-400">+{item.organizations}</Text>
+                      </View>
+                    </View>
+                    <View className="flex-1 items-center">
+                      <View className="px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-900/30">
+                        <Text className="text-xs font-bold text-indigo-700 dark:text-indigo-400">+{item.users}</Text>
+                      </View>
+                    </View>
+                    <Text className="text-xs font-black text-emerald-600 dark:text-emerald-400 w-20 text-right">₹{item.revenue}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
 }

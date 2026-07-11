@@ -249,11 +249,12 @@ exports.punchIn = asyncHandler(async (req, res) => {
     },
     select: {
       id: true,
+      punchInAt: true,
       punchOutAt: true,
     },
   });
 
-  if (existingRecord) {
+  if (existingRecord && existingRecord.punchInAt) {
     res.status(409);
     throw new Error(existingRecord.punchOutAt ? "Attendance already completed for today" : "You already punched in for today");
   }
@@ -304,24 +305,37 @@ exports.punchIn = asyncHandler(async (req, res) => {
       dataUrl: selfieImageDataUrl,
     });
 
-    const attendance = await prisma.attendance.create({
-      data: {
-        orgId,
-        teamId: attendanceTarget.teamId,
-        userId,
-        date: today,
-        punchInAt,
-        punchInLongitude: parsedLocation[0],
-        punchInLatitude: parsedLocation[1],
-        punchInLocationMeta: locationPayload?.meta || undefined,
-        punchInSelfieUrl: uploadedSelfie.url,
-        punchInSelfiePublicId: uploadedSelfie.publicId,
-        punchInDistanceMeters: distance,
-        isPunchInValid: isValid,
-        lateMinutes,
-        markedById: userId,
-      },
-    });
+    const payload = {
+      teamId: attendanceTarget.teamId,
+      punchInAt,
+      punchInLongitude: parsedLocation[0],
+      punchInLatitude: parsedLocation[1],
+      punchInLocationMeta: locationPayload?.meta || undefined,
+      punchInSelfieUrl: uploadedSelfie.url,
+      punchInSelfiePublicId: uploadedSelfie.publicId,
+      punchInDistanceMeters: distance,
+      isPunchInValid: isValid,
+      lateMinutes,
+      markedById: userId,
+      status: "PRESENT",
+    };
+
+    let attendance;
+    if (existingRecord) {
+      attendance = await prisma.attendance.update({
+        where: { id: existingRecord.id },
+        data: payload,
+      });
+    } else {
+      attendance = await prisma.attendance.create({
+        data: {
+          orgId,
+          userId,
+          date: today,
+          ...payload,
+        },
+      });
+    }
 
     res.status(201).json({
       success: true,
