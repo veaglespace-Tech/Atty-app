@@ -153,20 +153,41 @@ export default function OrganizationsPage() {
               {organizations.length} Workspaces Found
             </Text>
             {organizations.map((org) =>
-          <View key={org.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
-                <View className="flex-row items-start justify-between mb-2">
+              <View key={org.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
+                <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 pr-3">
                     <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>{org.name}</Text>
-                    <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">{org.code}</Text>
-                  </View>
-                  <View className={`px-2 py-1 rounded-full border ${org.blocked ? 'bg-rose-100 border-rose-200 dark:bg-rose-900/40 dark:border-rose-800/50' : 'bg-emerald-100 border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-800/50'}`}>
-                    <Text className={`text-[10px] font-black uppercase tracking-[0.1em] ${org.blocked ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                      {org.blocked ? "BLOCKED" : "ACTIVE"}
-                    </Text>
+                    <View className="flex-row items-center gap-2 mt-1">
+                      <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">Code: {org.code}</Text>
+                      <Text className="text-xs font-bold text-slate-300 dark:text-slate-600">•</Text>
+                      <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                        {new Date(org.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
                   </View>
                 </View>
                 
-                <View className="flex-row items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 mt-2">
+                <View className="flex-row flex-wrap gap-2 mb-3">
+                  <View className={`px-2 py-1 rounded-md border ${org.subscriptionStatus === 'ACTIVE' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/30' : 'bg-slate-50 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700'}`}>
+                    <Text className={`text-[9px] font-black uppercase tracking-widest ${org.subscriptionStatus === 'ACTIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                      Sub: {org.subscriptionStatus || "TRIAL"}
+                    </Text>
+                  </View>
+
+                  <View className={`px-2 py-1 rounded-md border ${org.active ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/30' : 'bg-slate-50 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700'}`}>
+                    <Text className={`text-[9px] font-black uppercase tracking-widest ${org.active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                      Access: {org.active ? "ACTIVE" : "INACTIVE"}
+                    </Text>
+                  </View>
+
+                  <View className={`px-2 py-1 rounded-md border ${org.blocked ? 'bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800/30' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/30'}`}>
+                    <Text className={`text-[9px] font-black uppercase tracking-widest ${org.blocked ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {org.blocked ? "BLOCKED" : "UNBLOCKED"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
                   <View>
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Admin</Text>
                     <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{org.adminName || "No Admin"}</Text>
@@ -189,9 +210,9 @@ export default function OrganizationsPage() {
                     </View>
                   </View>
                   <Pressable
-                    className="bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl"
+                    className="bg-blue-600 active:bg-blue-700 px-4 py-2 rounded-xl"
                     onPress={() => router.push(`/super-admin/organization/${org.id}`)}>
-                    <Text className="text-xs font-black text-blue-600 dark:text-blue-400">View</Text>
+                    <Text className="text-xs font-black text-white">View</Text>
                   </Pressable>
                 </View>
               </View>
