@@ -11,7 +11,7 @@ import { ROLES, DASHBOARD_ROOT_BY_ROLE } from "@/utils/roles";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
 
-import { BarChart3, Building2, Book, Gift, Database, Inbox, Settings } from "lucide-react-native";
+import { BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield } from "lucide-react-native";
 
 const getTabsForRole = (role) => {
   const commonIconProps = { size: 18, color: "#2563eb" };
@@ -20,16 +20,19 @@ const getTabsForRole = (role) => {
     return [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "Organizations", icon: <Building2 {...commonIconProps} />, href: "organizations" },
+      { title: "Leads", icon: <Users {...commonIconProps} />, href: "leads" },
+      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
       { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
+      { title: "Contacts", icon: <Users {...commonIconProps} />, href: "contacts" },
+      { title: "Referrals", icon: <Users {...commonIconProps} />, href: "referrals" },
       { title: "Plans", icon: <Book {...commonIconProps} />, href: "plans" },
+      { title: "Access", icon: <Shield {...commonIconProps} />, href: "access" },
+      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
+      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
       { title: "Payments", icon: <CreditCard {...commonIconProps} />, href: "payments" },
       { title: "Coupons", icon: <Gift {...commonIconProps} />, href: "coupons" },
       { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
-      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-      { title: "Leads", icon: <Users {...commonIconProps} />, href: "leads" },
-      { title: "Contacts", icon: <Users {...commonIconProps} />, href: "contacts" },
       { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" },
-      { title: "Referrals", icon: <Users {...commonIconProps} />, href: "referrals" },
       { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
     ];
   }
@@ -71,7 +74,7 @@ const getTabsForRole = (role) => {
   ];
 };
 
-export default function MobileDashboardShell() {
+export default function MobileDashboardShell({ children }) {
   const dispatch = useDispatch();
   const { user } = useAuthSession();
   const pathname = usePathname();
@@ -170,7 +173,7 @@ export default function MobileDashboardShell() {
       )}
 
       {/* Renders the current tab's content */}
-      <Slot />
+      {children || <Slot />}
 
       {/* Side Drawer Modal */}
       <Modal
@@ -226,14 +229,14 @@ export default function MobileDashboardShell() {
                 </Text>
                 
                 <View className="gap-y-1">
-                  {getTabsForRole(user?.role).map((tab) => (
+                  {getTabsForRole(user?.currentRole || user?.role).map((tab) => (
                     <Pressable
                       key={tab.title}
                       onPress={() => {
                         closeDrawer();
                         setTimeout(() => {
-                          const basePath = DASHBOARD_ROOT_BY_ROLE[user?.role] || "/member";
-                          router.replace(`${basePath}/${tab.href}`);
+                          const basePath = DASHBOARD_ROOT_BY_ROLE[user?.currentRole || user?.role] || "/member";
+                          router.push(`${basePath}/${tab.href}`);
                         }, 200);
                       }}
                       className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50 dark:active:bg-slate-800 transition-colors">
