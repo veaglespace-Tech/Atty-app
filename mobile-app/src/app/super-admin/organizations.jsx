@@ -1,25 +1,136 @@
-import React, { useMemo } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Alert } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, Building2 } from "lucide-react-native";
+import { ChevronLeft, Building2, Search, ChevronDown, Check } from "lucide-react-native";
 import { useGetSuperAdminOrganizationsQuery } from "@/services/api/superAdminApi";
 
+const SUBSCRIPTION_OPTIONS = ["ALL", "TRIAL", "ACTIVE", "PAST_DUE", "CANCELED", "UNPAID"];
+const ACCESS_OPTIONS = ["ALL", "ACTIVE", "INACTIVE"];
+const BLOCK_OPTIONS = ["ALL", "BLOCKED", "UNBLOCKED"];
+
 export default function OrganizationsPage() {
-  const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationsQuery(undefined);
+  const [search, setSearch] = useState("");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("ALL");
+  const [access, setAccess] = useState("ALL");
+  const [block, setBlock] = useState("ALL");
+  
+  // Filter Modal State
+  const [activeFilter, setActiveFilter] = useState(null); // 'subscription', 'access', 'block' or null
+
+  const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationsQuery({
+    search,
+    subscriptionStatus,
+    access,
+    block,
+  });
 
   const organizations = useMemo(() => data?.items || [], [data]);
   const loading = isLoading || isFetching;
 
+  const renderFilterOptions = () => {
+    let options = [];
+    let currentValue = "";
+    let setValue = null;
+    let title = "";
+
+    if (activeFilter === "subscription") {
+      options = SUBSCRIPTION_OPTIONS;
+      currentValue = subscriptionStatus;
+      setValue = setSubscriptionStatus;
+      title = "Filter by Subscription";
+    } else if (activeFilter === "access") {
+      options = ACCESS_OPTIONS;
+      currentValue = access;
+      setValue = setAccess;
+      title = "Filter by Access";
+    } else if (activeFilter === "block") {
+      options = BLOCK_OPTIONS;
+      currentValue = block;
+      setValue = setBlock;
+      title = "Filter by Block State";
+    }
+
+    return (
+      <Modal visible={!!activeFilter} transparent animationType="fade">
+        <TouchableOpacity 
+          activeOpacity={1} 
+          onPress={() => setActiveFilter(null)}
+          className="flex-1 bg-black/50 justify-end"
+        >
+          <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-12">
+            <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">{title}</Text>
+            {options.map((opt) => (
+              <Pressable
+                key={opt}
+                onPress={() => {
+                  setValue(opt);
+                  setActiveFilter(null);
+                }}
+                className={`py-4 border-b border-slate-100 dark:border-slate-800 flex-row items-center justify-between`}
+              >
+                <Text className={`text-base font-bold ${currentValue === opt ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                  {opt === "ALL" ? "All Options" : opt.replace("_", " ")}
+                </Text>
+                {currentValue === opt && <Check size={20} className="text-blue-600 dark:text-blue-400" />}
+              </Pressable>
+            ))}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
+
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <View className="flex-row items-center justify-between">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+        <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Organizations</Text>
           <View className="w-10" />
         </View>
+
+        <View className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 rounded-xl px-3 border border-slate-200 dark:border-slate-700 mb-3">
+          <Search size={16} className="text-slate-400" />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search organizations..."
+            placeholderTextColor="#94a3b8"
+            className="flex-1 p-2.5 text-slate-900 dark:text-white font-medium outline-none"
+          />
+        </View>
+
+        {/* Filters Row */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+          <Pressable 
+            onPress={() => setActiveFilter("subscription")}
+            className="flex-row items-center border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 mr-2 bg-slate-50 dark:bg-slate-800/50"
+          >
+            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-2">Subscription</Text>
+            <Text className="text-xs font-bold text-slate-900 dark:text-white mr-2">{subscriptionStatus}</Text>
+            <ChevronDown size={14} className="text-slate-400" />
+          </Pressable>
+
+          <Pressable 
+            onPress={() => setActiveFilter("access")}
+            className="flex-row items-center border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 mr-2 bg-slate-50 dark:bg-slate-800/50"
+          >
+            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-2">Access</Text>
+            <Text className="text-xs font-bold text-slate-900 dark:text-white mr-2">{access}</Text>
+            <ChevronDown size={14} className="text-slate-400" />
+          </Pressable>
+
+          <Pressable 
+            onPress={() => setActiveFilter("block")}
+            className="flex-row items-center border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50"
+          >
+            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-2">Block</Text>
+            <Text className="text-xs font-bold text-slate-900 dark:text-white mr-2">{block}</Text>
+            <ChevronDown size={14} className="text-slate-400" />
+          </Pressable>
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -78,10 +189,9 @@ export default function OrganizationsPage() {
                     </View>
                   </View>
                   <Pressable
-                className="bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl"
-                onPress={() => Alert.alert("Organization Actions", "Full editing of organizations on mobile will be available in the next update. Please use the Web Dashboard for full control.")}>
-                
-                    <Text className="text-xs font-black text-blue-600 dark:text-blue-400">Manage</Text>
+                    className="bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl"
+                    onPress={() => router.push(`/super-admin/organization/${org.id}`)}>
+                    <Text className="text-xs font-black text-blue-600 dark:text-blue-400">View</Text>
                   </Pressable>
                 </View>
               </View>
@@ -89,6 +199,8 @@ export default function OrganizationsPage() {
           </View>
         }
       </ScrollView>
-    </View>);
-
+      
+      {renderFilterOptions()}
+    </View>
+  );
 }

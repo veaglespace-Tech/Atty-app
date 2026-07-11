@@ -1,0 +1,80 @@
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Home, Building2, Users, CreditCard, Settings } from 'lucide-react-native';
+import { useColorScheme } from 'react-native';
+
+export default function SuperAdminLayout() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: '#2563eb',
+        tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
+        tabBarStyle: {
+          backgroundColor: isDark ? '#020617' : '#ffffff',
+          borderTopColor: isDark ? '#1e293b' : '#f1f5f9',
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: 'bold',
+        }
+      }}>
+        
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="organizations"
+        options={{
+          title: 'Orgs',
+          tabBarIcon: ({ color }) => <Building2 size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="users"
+        options={{
+          title: 'Users',
+          tabBarIcon: ({ color }) => <Users size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="payments"
+        options={{
+          title: 'Payments',
+          tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen name="access" options={{ href: null }} />
+      <Tabs.Screen name="organization/[id]" options={{ href: null }} />
+      <Tabs.Screen name="analytics" options={{ href: null }} />
+      <Tabs.Screen name="attendance" options={{ href: null }} />
+      <Tabs.Screen name="backup" options={{ href: null }} />
+      <Tabs.Screen name="contacts" options={{ href: null }} />
+      <Tabs.Screen name="coupons" options={{ href: null }} />
+      <Tabs.Screen name="leads" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="plans" options={{ href: null }} />
+      <Tabs.Screen name="posts" options={{ href: null }} />
+      <Tabs.Screen name="referrals" options={{ href: null }} />
+    </Tabs>
+  );
+}

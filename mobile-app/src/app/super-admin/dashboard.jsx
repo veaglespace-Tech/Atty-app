@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, Text, RefreshControl } from "react-native";
-import { BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database } from "lucide-react-native";
+import { BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings } from "lucide-react-native";
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { useGetSuperAdminDashboardQuery } from "@/services/api/superAdminApi";
 
@@ -34,7 +34,8 @@ export default function SuperAdminDashboard() {
       { title: "Payments", description: "Review orders, invoices, coupons, and subscription state.", icon: <CreditCard size={22} color="#2563eb" />, href: "payments" },
       { title: "Coupons", description: "Manage referral and discount coupons.", icon: <Gift size={22} color="#2563eb" />, href: "coupons" },
       { title: "Analytics", description: "See platform usage and growth summaries.", icon: <BarChart3 size={22} color="#2563eb" />, href: "analytics" },
-      { title: "Backup", description: "Manage system backups and exports.", icon: <Database size={22} color="#2563eb" />, href: "backup" }]
+      { title: "Backup", description: "Manage system backups and exports.", icon: <Database size={22} color="#2563eb" />, href: "backup" },
+      { title: "Settings", description: "Manage profile, workspace, and app preferences.", icon: <Settings size={22} color="#2563eb" />, href: "settings" }]
       }>
       
       <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">

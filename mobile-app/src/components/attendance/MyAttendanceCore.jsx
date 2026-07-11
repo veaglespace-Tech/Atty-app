@@ -223,12 +223,16 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
               <View className="flex-row items-center justify-between mb-3">
                 <Text className="text-base font-bold text-slate-900 dark:text-white">{record.date}</Text>
                 <View className={`px-2 py-1 rounded-full border ${
-            record.status === 'PRESENT' ? 'bg-emerald-100 border-emerald-200 text-emerald-700 dark:bg-emerald-900/40 dark:border-emerald-800/50 dark:text-emerald-400' :
-            record.status === 'ABSENT' ? 'bg-rose-100 border-rose-200 text-rose-700 dark:bg-rose-900/40 dark:border-rose-800/50 dark:text-rose-400' :
-            record.status === 'REGULARIZED' ? 'bg-blue-100 border-blue-200 text-blue-700 dark:bg-blue-900/40 dark:border-blue-800/50 dark:text-blue-400' :
-            'bg-slate-100 border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300'}`
+            record.status === 'PRESENT' ? 'bg-emerald-100 border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-800/50' :
+            record.status === 'ABSENT' ? 'bg-rose-100 border-rose-200 dark:bg-rose-900/40 dark:border-rose-800/50' :
+            record.status === 'REGULARIZED' ? 'bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:border-blue-800/50' :
+            'bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`
             }>
-                  <Text className="text-[10px] font-black uppercase tracking-[0.1em]">{record.status}</Text>
+                  <Text className={`text-[10px] font-black uppercase tracking-[0.1em] ${
+            record.status === 'PRESENT' ? 'text-emerald-700 dark:text-emerald-400' :
+            record.status === 'ABSENT' ? 'text-rose-700 dark:text-rose-400' :
+            record.status === 'REGULARIZED' ? 'text-blue-700 dark:text-blue-400' :
+            'text-slate-700 dark:text-slate-300'}`}>{record.status}</Text>
                 </View>
               </View>
               <View className="flex-row border-t border-slate-100 dark:border-slate-800 pt-3">
