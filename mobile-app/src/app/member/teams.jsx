@@ -2,12 +2,23 @@ import React from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, MapPin, Users } from "lucide-react-native";
-import { useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
+import { useGetMemberDashboardQuery } from "@/services/api/memberApi";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyTeamsPage() {
-  const { data: teamsData, isLoading } = useGetTeamLeaderTeamsQuery(200);
-  const teams = Array.isArray(teamsData?.items) ? teamsData.items : [];
+  const { data: dashboardData, isLoading } = useGetMemberDashboardQuery();
+  
+  // Extract team info from the member's dashboard attendance items
+  const firstItemWithTeam = dashboardData?.items?.find(item => item.teamId && item.teamName);
+  const teams = firstItemWithTeam ? [{
+    id: firstItemWithTeam.teamId,
+    name: firstItemWithTeam.teamName,
+    leaderName: "Assigned Leader", // Member endpoint doesn't return this
+    isActive: true,
+    memberCount: "-", // Member endpoint doesn't return this
+    attendanceRadius: "-", // Member endpoint doesn't return this
+    location: false
+  }] : [];
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
@@ -47,7 +58,7 @@ export default function MyTeamsPage() {
               <View className="flex-row items-start justify-between mb-5">
                 <View className="flex-1 pr-4">
                   <Text className="text-xl font-black text-slate-900 dark:text-white leading-tight mb-1">{team.name}</Text>
-                  <Text className="text-sm font-semibold text-slate-500">Leader: {team.leaderName || "Unassigned"}</Text>
+                  <Text className="text-sm font-semibold text-slate-500">Leader: {team.leaderName}</Text>
                 </View>
                 <View className={`px-3 py-1.5 rounded-full ${team.isActive ? 'bg-emerald-100 dark:bg-emerald-500/20' : 'bg-slate-200 dark:bg-slate-800'}`}>
                   <Text className={`text-[10px] font-black uppercase tracking-widest ${team.isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>

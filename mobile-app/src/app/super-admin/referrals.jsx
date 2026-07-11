@@ -159,7 +159,11 @@ export default function ReferralsPage() {
         ) : (
           <View className="space-y-4">
             {filteredPartners.map((partner) => (
-              <View key={partner.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
+              <Pressable 
+                key={partner.id} 
+                onPress={() => router.push(`/super-admin/referrals/${partner.id}`)}
+                className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between active:opacity-80 active:scale-[0.98] shadow-sm"
+              >
                 <View className="flex-1">
                   <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-0.5">{partner.name}</Text>
                   <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">{partner.email}</Text>
@@ -184,7 +188,7 @@ export default function ReferralsPage() {
                     <Trash2 size={16} className="text-rose-600 dark:text-rose-400" />
                   </Pressable>
                 </View>
-              </View>
+              </Pressable>
             ))}
           </View>
         )}
