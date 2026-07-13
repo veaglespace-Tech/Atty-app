@@ -321,11 +321,11 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
           <div className="flex min-w-0 items-center justify-between gap-3 relative z-10">
             <div className="flex min-w-0 items-center gap-4">
               {user?.organization?.logoUrl && (
-                <div className="hidden lg:flex -my-3.5 sm:-my-4 h-[90px] sm:h-[110px] w-auto max-w-[320px] shrink-0 items-center justify-start overflow-hidden">
+                <div className="hidden lg:flex -my-3.5 sm:-my-4 -ml-4 sm:-ml-6 h-[90px] sm:h-[110px] w-auto max-w-[320px] shrink-0 items-center justify-start overflow-hidden">
                   <img
                     src={user.organization.logoUrl}
                     alt="Organization Logo"
-                    className="h-full w-auto object-contain"
+                    className="h-full w-auto object-contain object-left"
                   />
                 </div>
               )}
