@@ -126,12 +126,12 @@ const normalizePermissionList = (permissions = []) => {
 
 const getDefaultPermissionsForRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || [])];
+  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || ROLE_DEFAULT_PERMISSIONS["MEMBER"])];
 };
 
 const getAssignablePermissionsByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
+  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || ALL_PERMISSIONS)];
 };
 
 const resolveUserPermissions = (userOrRole, orgIdOrPermissions = null) => {
