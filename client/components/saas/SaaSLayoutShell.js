@@ -318,8 +318,18 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto visible-scrollbar">
         <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200/50 bg-white/70 px-4 py-3.5 shadow-[0_8px_32px_rgba(59,130,246,0.06)] backdrop-blur-2xl transition-all duration-500 dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/20 sm:px-6 sm:py-4">
-          <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center justify-between gap-3 relative z-10">
             <div className="flex min-w-0 items-center gap-4">
+              {user?.organization?.logoUrl && (
+                <div className="hidden lg:flex -my-3.5 sm:-my-4 h-[90px] sm:h-[110px] w-auto max-w-[320px] shrink-0 items-center justify-start overflow-hidden">
+                  <img
+                    src={user.organization.logoUrl}
+                    alt="Organization Logo"
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
+              )}
+              
               <button
                 type="button"
                 onClick={() => setMobileNavOpen((prev) => !prev)}
@@ -332,16 +342,6 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                   className={cn("transition-transform", mobileNavOpen ? "rotate-180" : "")}
                 />
               </button>
-              
-              {user?.organization?.logoUrl && (
-                <div className="hidden lg:flex h-12 max-w-[180px] shrink-0 items-center justify-start overflow-hidden">
-                  <img
-                    src={user.organization.logoUrl}
-                    alt="Organization Logo"
-                    className="h-full w-auto object-contain"
-                  />
-                </div>
-              )}
             </div>
 
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">

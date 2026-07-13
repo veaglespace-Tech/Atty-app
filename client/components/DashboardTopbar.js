@@ -37,18 +37,20 @@ export default function DashboardTopbar() {
     <header className="light-glow-card-static sticky top-4 z-20 mb-8 overflow-hidden rounded-[2rem] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.10),transparent_24%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
 
-      <div className="relative">
+      {user?.organization?.logoUrl && (
+        <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[240px] z-0 overflow-hidden pointer-events-none">
+          <img
+            src={user.organization.logoUrl}
+            alt="Organization Logo"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/95 dark:to-slate-900/95" />
+        </div>
+      )}
+
+      <div className="relative z-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            {user?.organization?.logoUrl && (
-              <div className="hidden lg:flex h-12 max-w-[180px] shrink-0 items-center justify-start overflow-hidden">
-                <img
-                  src={user.organization.logoUrl}
-                  alt="Organization Logo"
-                  className="h-full w-auto object-contain"
-                />
-              </div>
-            )}
+          <div className="flex items-center gap-4 lg:ml-[210px]">
             <div className="hidden min-w-[260px] flex-1 md:block">
               <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
                 <div

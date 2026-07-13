@@ -1,4 +1,5 @@
 const rateLimit = require("express-rate-limit");
+const { ipKeyGenerator } = require("express-rate-limit");
 const { ensureEnv } = require("./env");
 
 const runtimeEnv = ensureEnv();
@@ -41,8 +42,8 @@ const roleRateLimiter = rateLimit({
         return 100;
     }
   },
-  keyGenerator: (req) => {
-    return req.user ? req.user.id.toString() : req.ip;
+  keyGenerator: (req, res) => {
+    return req.user ? req.user.id.toString() : ipKeyGenerator(req, res);
   },
   standardHeaders: true,
   legacyHeaders: false,
