@@ -218,7 +218,9 @@ export default function OrgUserDetailPage() {
       role: normalizeRole(user.role),
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
-      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      permissions: Array.isArray(user.permissions)
+        ? user.permissions
+        : getDefaultPermissionsForRole(normalizeRole(user.role)),
     });
   }, [user]);
 
@@ -247,6 +249,7 @@ export default function OrgUserDetailPage() {
         mobileCountryCode: form.mobileCountryCode,
         mobile: toDigitsOnly(form.mobile),
         role: form.role,
+        permissions: form.permissions,
         ...(canUpdateStatus ? { status: form.approvalStatus } : {}),
       }).unwrap();
 

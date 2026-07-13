@@ -155,7 +155,9 @@ export default function SuperAdminUserDetailPage() {
       role: user.role || "MEMBER",
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
-      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      permissions: Array.isArray(user.permissions)
+        ? user.permissions
+        : getDefaultPermissionsForRole(user.role || "MEMBER"),
     });
   }, [user]);
 
@@ -189,6 +191,7 @@ export default function SuperAdminUserDetailPage() {
         emergencyContact: normalizeTextInput(form.emergencyContact),
         currentAddress: normalizeTextInput(form.currentAddress),
         permanentAddress: normalizeTextInput(form.permanentAddress),
+        permissions: form.permissions,
       }).unwrap();
 
       setMessage("User profile updated successfully");

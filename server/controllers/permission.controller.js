@@ -105,16 +105,18 @@ exports.getRolePermissions = asyncHandler(async (req, res) => {
   const roles = dbRoles.map(r => r.code);
   const cache = getRolePermissionsCache();
   
+  const allDbPermissions = await prisma.permission.findMany();
+  
   const mapping = roles.map((role) => {
-    let rolePermissions = cache.get(role);
-    if (!rolePermissions) {
-      rolePermissions = ROLE_DEFAULT_PERMISSIONS[role] || ROLE_DEFAULT_PERMISSIONS["MEMBER"] || [];
+    let rolePermissionsKeys = cache.get(role);
+    if (!rolePermissionsKeys) {
+      rolePermissionsKeys = ROLE_DEFAULT_PERMISSIONS[role] || ROLE_DEFAULT_PERMISSIONS["MEMBER"] || [];
     }
     
     return {
       role,
-      permissions: rolePermissions.map(key => 
-        DEFAULT_PERMISSION_DEFINITIONS.find(p => p.key === key)
+      permissions: rolePermissionsKeys.map(key => 
+        allDbPermissions.find(p => p.key === key)
       ).filter(Boolean),
     };
   });

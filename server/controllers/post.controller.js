@@ -305,12 +305,27 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
     };
   }
 
+  let joinedAt = null;
+  if (userRole !== "SUPER_ADMIN" && orgId) {
+    const membership = await prisma.organizationMember.findUnique({
+      where: { userId_orgId: { userId: Number(req.user.id), orgId: Number(orgId) } },
+      select: { createdAt: true }
+    });
+    if (membership) {
+      joinedAt = membership.createdAt;
+    }
+  }
+
   const where = {
     OR: [{ orgId: Number(orgId) }, { orgId: null }],
     isActive: true,
     deletedAt: null,
     ...(teamFilter || {}),
   };
+
+  if (joinedAt) {
+    where.createdAt = { gte: joinedAt };
+  }
 
   if (type) {
     const normalizedType = normalizePostType(type);

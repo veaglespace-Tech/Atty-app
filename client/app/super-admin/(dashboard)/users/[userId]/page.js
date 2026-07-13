@@ -156,7 +156,9 @@ export default function SuperAdminUserDetailStandalonePage() {
       role: user.role || "MEMBER",
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
-      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      permissions: Array.isArray(user.permissions)
+        ? user.permissions
+        : getDefaultPermissionsForRole(user.role || "MEMBER"),
     });
   }, [user]);
 
@@ -192,6 +194,7 @@ export default function SuperAdminUserDetailStandalonePage() {
         currentAddress: normalizeTextInput(form.currentAddress),
         permanentAddress: normalizeTextInput(form.permanentAddress),
         bloodGroup: normalizeTextInput(form.bloodGroup),
+        permissions: form.permissions,
       }).unwrap();
 
       setMessage("User profile updated successfully");

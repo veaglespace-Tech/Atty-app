@@ -856,11 +856,20 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
   const userId = Number(req.user.id);
   const limit = parseLimit(req.query.limit, 100, 500);
 
+  const membership = await prisma.organizationMember.findUnique({
+    where: { userId_orgId: { userId, orgId } },
+    select: { createdAt: true }
+  });
+
   const where = {
     orgId,
     isActive: true,
     deletedAt: null,
   };
+
+  if (membership?.createdAt) {
+    where.createdAt = { gte: membership.createdAt };
+  }
 
   // Gracefully handle missing user_notification_read table (P2022)
   let posts, total, unreadCount;
