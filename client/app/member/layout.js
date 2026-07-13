@@ -4,9 +4,9 @@ import { PERMISSIONS } from "@/utils/roles";
 const navItems = [
   { label: "Dashboard", href: "/member/dashboard" },
   { label: "Attendance", href: "/member/attendance" },
-  { label: "Teams", href: "/member/teams", permission: PERMISSIONS.TEAM_VIEW },
-  { label: "Posts", href: "/member/posts", permission: PERMISSIONS.POST_CREATE },
-  { label: "Reports", href: "/member/reports", permission: PERMISSIONS.REPORTS_VIEW },
+  { label: "Teams", href: "/member/teams", permission: PERMISSIONS.TEAM.VIEW_ALL },
+  { label: "Posts", href: "/member/posts", permission: PERMISSIONS.POSTS.CREATE },
+  { label: "Reports", href: "/member/reports", permission: PERMISSIONS.REPORTS.VIEW },
   { label: "Notifications", href: "/member/notifications" },
 ];
 

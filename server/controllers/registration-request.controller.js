@@ -5,7 +5,7 @@ const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { createOrganizationMembership } = require("../services/organization-member.service");
 const { ensureOrganizationId } = require("../services/common.service");
 const { assertPermission } = require("../services/access.service");
-const { PERMISSION_KEYS } = require("../constants/permissions");
+const { PERMISSIONS } = require("../constants/permissions");
 const { validatePasswordComplexity } = require("../utils/validation");
 const { assertWithinPlanUserLimit } = require("../services/organization-plan.service");
 
@@ -107,12 +107,13 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
   const {
     name,
     email,
+    password,
     mobile,
     mobileCountryCode,
-    password,
-    gender,
-    city,
     emergencyContact,
+    gender,
+    bloodGroup,
+    city,
     currentAddress,
     permanentAddress,
   } = req.body;
@@ -211,6 +212,7 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
           permanentAddress: normalizedPermanentAddress,
           password: hashedPassword,
           gender: normalizedGender || null,
+          bloodGroup: bloodGroup || null,
           city: normalizedCity,
           status: "PENDING",
           reviewedById: null,
@@ -231,6 +233,7 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
           permanentAddress: normalizedPermanentAddress,
           password: hashedPassword,
           gender: normalizedGender || null,
+          bloodGroup: bloodGroup || null,
           city: normalizedCity,
           expiresAt,
         },
@@ -252,7 +255,7 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
  */
 exports.getOrgRegistrationRequests = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_STATUS_UPDATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.UPDATE_STATUS, orgId);
 
   const requests = await prisma.registrationRequest.findMany({
     where: {
@@ -276,7 +279,7 @@ exports.getOrgRegistrationRequests = asyncHandler(async (req, res) => {
  */
 exports.acceptRegistrationRequest = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.CREATE, orgId);
 
   const requestId = ensureValidRequestId(req.params.id);
   const request = await prisma.registrationRequest.findFirst({
@@ -319,6 +322,7 @@ exports.acceptRegistrationRequest = asyncHandler(async (req, res) => {
         currentAddress: request.currentAddress,
         permanentAddress: request.permanentAddress,
         password: request.password,
+        bloodGroup: request.bloodGroup,
         role: "MEMBER",
         status: "APPROVED",
         isActive: true,
@@ -362,7 +366,7 @@ exports.acceptRegistrationRequest = asyncHandler(async (req, res) => {
  */
 exports.rejectRegistrationRequest = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.CREATE, orgId);
 
   const requestId = ensureValidRequestId(req.params.id);
   const { note } = req.body;

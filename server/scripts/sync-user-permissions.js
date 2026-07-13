@@ -6,8 +6,6 @@ async function syncUserPermissions() {
   
   try {
     for (const [role, defaultPermissions] of Object.entries(ROLE_DEFAULT_PERMISSIONS)) {
-      if (role !== "TEAM_LEADER") continue; // We only really care about TEAM_LEADER right now based on our changes
-      
       const users = await prisma.user.findMany({
         where: { role: role }
       });

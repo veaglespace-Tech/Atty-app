@@ -25,6 +25,7 @@ export default function DashboardTopbar() {
     try {
       await userSignOut().unwrap();
     } catch (_) {
+
       // Client logout should still continue.
     }
 
@@ -38,29 +39,40 @@ export default function DashboardTopbar() {
 
       <div className="relative">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="hidden min-w-[260px] flex-1 md:block">
-            <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
-              <div
-                className={cn(
-                  "absolute right-3 top-3 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
-                  roleTheme.header
-                )}
-              >
-                {roleLabel}
-              </div>
-              <div className="flex items-center gap-3">
-                <UserAvatar
-                  src={user?.profileImageUrl}
-                  name={displayName}
-                  className="h-12 w-12 rounded-2xl text-sm"
-                  fallbackClassName={roleTheme.accent}
-                  sizes="48px"
+          <div className="flex items-center gap-4">
+            {user?.organization?.logoUrl && (
+              <div className="hidden lg:flex h-12 max-w-[180px] shrink-0 items-center justify-start overflow-hidden">
+                <img
+                  src={user.organization.logoUrl}
+                  alt="Organization Logo"
+                  className="h-full w-auto object-contain"
                 />
-                <div className="min-w-0">
-                  <p className="truncate text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
-                    {displayName}
-                  </p>
-                  <p className="brand-copy-sm mt-1 truncate text-xs">{identityLabel}</p>
+              </div>
+            )}
+            <div className="hidden min-w-[260px] flex-1 md:block">
+              <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
+                <div
+                  className={cn(
+                    "absolute right-3 top-3 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
+                    roleTheme.header
+                  )}
+                >
+                  {roleLabel}
+                </div>
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    src={user?.profileImageUrl}
+                    name={displayName}
+                    className="h-12 w-12 rounded-2xl text-sm"
+                    fallbackClassName={roleTheme.accent}
+                    sizes="48px"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                      {displayName}
+                    </p>
+                    <p className="brand-copy-sm mt-1 truncate text-xs">{identityLabel}</p>
+                  </div>
                 </div>
               </div>
             </div>

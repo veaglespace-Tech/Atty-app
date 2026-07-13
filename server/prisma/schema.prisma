@@ -55,7 +55,7 @@ model ArchiveUser {
   mobile            String?
   mobileCountryCode String?
   password          String?
-  role              UserRole?
+  role              String?
   permissions       Json?
   status            UserStatus?
   isActive          Boolean?
@@ -189,6 +189,8 @@ model Organization {
   referredByPartnerId  Int?
   agreementPdfUrl      String?
   agreementPdfPublicId String?
+  logoUrl              String?
+  logoPublicId         String?
   attendances          Attendance[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
@@ -215,7 +217,7 @@ model OrganizationMember {
   id           Int          @id @default(autoincrement())
   userId       Int
   orgId        Int
-  role         UserRole     @default(MEMBER)
+  role         String       @default("MEMBER")
   isActive     Boolean      @default(true)
   joinedAt     DateTime     @default(now())
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -408,6 +410,7 @@ model RegistrationRequest {
   permanentAddress  String?
   password          String
   gender            String?
+  bloodGroup        String?
   city              String?
   status            RegistrationRequestStatus @default(PENDING)
   reviewedById      Int?
@@ -449,7 +452,7 @@ model SupportTicket {
   userId    Int?
   name      String
   email     String
-  role      UserRole            @default(MEMBER)
+  role      String              @default("MEMBER")
   subject   String              @default("Support Query")
   message   String              @db.Text
   status    SupportTicketStatus @default(OPEN)
@@ -514,7 +517,8 @@ model User {
   currentAddress              String?
   permanentAddress            String?
   password                    String
-  role                        UserRole                    @default(MEMBER)
+  bloodGroup                  String?
+  role                        String                      @default("MEMBER")
   permissions                 Json?
   resetTokenHash              String?
   resetTokenExpiry            DateTime?
@@ -570,7 +574,7 @@ model Permission {
 
 model RolePermission {
   id           Int        @id @default(autoincrement())
-  role         UserRole
+  role         String
   permissionId Int
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
@@ -695,12 +699,16 @@ enum DiscountType {
   FLAT_AMOUNT
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ORG_ADMIN
-  SUB_ADMIN
-  TEAM_LEADER
-  MEMBER
+model Role {
+  code          String    @id
+  name          String
+  description   String?
+  dashboardPath String    @default("/member")
+  isSystem      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("role")
 }
 
 enum UserStatus {

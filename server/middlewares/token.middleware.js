@@ -70,6 +70,26 @@ const buildBypassUser = (req) => {
 const resolveAuthenticatedUser = async (token) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_KEY);
+    
+    // Fast path: Token has been optimized with resolved permissions and roles
+    if (decoded.permissions && decoded.role) {
+      return {
+        id: Number(decoded.id),
+        _id: Number(decoded.id),
+        name: decoded.name || "",
+        email: decoded.email || "",
+        role: decoded.role,
+        currentRole: decoded.role,
+        orgId: decoded.orgId,
+        organizationId: decoded.orgId,
+        permissions: decoded.permissions,
+        isActive: true,
+        status: "APPROVED",
+        deletedAt: null,
+      };
+    }
+
+    // Slow path: Legacy token, fetch from database
     const user = await prisma.user.findUnique({
       where: { id: Number(decoded.id) },
       include: {

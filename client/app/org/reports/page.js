@@ -173,12 +173,12 @@ export default function OrgReportsPage() {
   const meta = data?.meta || {}
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary])
 
-  const canDownload = Boolean(meta?.canDownload) && !isFreePlan && hasPermission(authUser, PERMISSIONS.REPORTS_DOWNLOAD)
+  const canDownload = Boolean(meta?.canDownload) && !isFreePlan && hasPermission(authUser, PERMISSIONS.REPORTS.DOWNLOAD)
   const planName = meta?.planName || authUser?.organization?.plan?.name || "TRIAL"
   const planCode = meta?.planCode || authUser?.organization?.plan?.code || ""
   const downloadRestrictedReason = isFreePlan 
     ? "Download locked on free plan." 
-    : !hasPermission(authUser, PERMISSIONS.REPORTS_DOWNLOAD)
+    : !hasPermission(authUser, PERMISSIONS.REPORTS.DOWNLOAD)
       ? "You do not have permission to download reports."
       : (meta?.downloadRestrictedReason || "Report downloads are available only on paid plans.")
   const loading = isLoading || isFetching

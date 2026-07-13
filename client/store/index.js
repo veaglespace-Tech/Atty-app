@@ -15,6 +15,7 @@ import { utilityApi } from "@/services/api/utilityApi";
 import { postApi } from "@/services/api/postApi";
 import { attyApi } from "@/services/api/attyApi";
 import { partnerReferralApi } from "@/services/api/partnerReferralApi";
+import { roleApi } from "@/services/api/roleApi";
 
 export const store = configureStore({
   reducer: {
@@ -33,6 +34,7 @@ export const store = configureStore({
     [postApi.reducerPath]: postApi.reducer,
     [attyApi.reducerPath]: attyApi.reducer,
     [partnerReferralApi.reducerPath]: partnerReferralApi.reducer,
+    [roleApi.reducerPath]: roleApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -52,6 +54,7 @@ export const store = configureStore({
       utilityApi.middleware,
       postApi.middleware,
       attyApi.middleware,
-      partnerReferralApi.middleware
+      partnerReferralApi.middleware,
+      roleApi.middleware
     ),
 });

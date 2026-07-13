@@ -8,7 +8,7 @@ const normalizePartnerReferralCode = (value) =>
 
 exports.createReferralPartner = asyncHandler(async (req, res) => {
   const { name, email, mobile, partnerReferralCode } = req.body;
-  
+
   if (!name || !email) {
     res.status(400);
     throw new Error("Name and Email are required");
@@ -76,7 +76,7 @@ exports.getReferralPartnerById = asyncHandler(async (req, res) => {
 exports.updateReferralPartner = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, email, mobile, partnerReferralCode, isActive } = req.body;
-  
+
   const partner = await prisma.referralPartner.findUnique({ where: { id: Number(id) } });
   if (!partner) {
     res.status(404);
@@ -92,7 +92,7 @@ exports.updateReferralPartner = asyncHandler(async (req, res) => {
 
   if (updateData.email || updateData.partnerReferralCode) {
     const exists = await prisma.referralPartner.findFirst({
-      where: { 
+      where: {
         id: { not: Number(id) },
         OR: [
           ...(updateData.email ? [{ email: updateData.email }] : []),
@@ -123,16 +123,16 @@ exports.deleteReferralPartner = asyncHandler(async (req, res) => {
 
 exports.getPublicPartnerStats = asyncHandler(async (req, res) => {
   const { email, partnerReferralCode } = req.body;
-  
+
   if (!email || !partnerReferralCode) {
     res.status(400);
     throw new Error("Email and Referral Code are required.");
   }
 
   const partner = await prisma.referralPartner.findFirst({
-    where: { 
-      email: email.trim(), 
-      partnerReferralCode: partnerReferralCode.trim().toUpperCase() 
+    where: {
+      email: email.trim(),
+      partnerReferralCode: partnerReferralCode.trim().toUpperCase()
     },
     include: {
       referredOrganizations: {
@@ -160,13 +160,13 @@ exports.getPublicPartnerStats = asyncHandler(async (req, res) => {
     throw new Error("This referral partner account is inactive.");
   }
 
-  res.status(200).json({ 
-    success: true, 
+  res.status(200).json({
+    success: true,
     data: {
       ...partner,
       _config: {
         referralLinkBase: process.env.PARTNER_REFERRAL_LINK_BASE || null
       }
-    } 
+    }
   });
 });

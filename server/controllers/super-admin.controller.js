@@ -2656,6 +2656,10 @@ exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
     userPayload.permanentAddress = req.body.permanentAddress ? truncateText(req.body.permanentAddress, 191) : null;
   }
 
+  if (req.body?.bloodGroup !== undefined) {
+    userPayload.bloodGroup = req.body.bloodGroup ? truncateText(req.body.bloodGroup, 10) : null;
+  }
+
   if (req.body?.role !== undefined) {
     const role = normalizeRole(req.body.role);
     userPayload.role = role;

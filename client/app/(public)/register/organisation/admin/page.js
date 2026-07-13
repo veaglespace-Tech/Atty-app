@@ -82,6 +82,7 @@ const registrationSchema = z
       .max(80, "City is too long")
       .regex(PLACE_NAME_REGEX, "Enter a valid city"),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
+    bloodGroup: z.string().optional(),
     role: z.string().default(ROLES.ORG_ADMIN),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -103,8 +104,10 @@ const adminDefaultValues = {
   confirmPassword: "",
   city: "",
   gender: "MALE",
+  bloodGroup: "",
   role: ROLES.ORG_ADMIN,
 };
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const browserAutofillBlockProps = {
   autoComplete: "on",
 };
@@ -140,6 +143,10 @@ export default function AdminRegistration() {
   const genderValue = useWatch({
     control,
     name: "gender",
+  });
+  const bloodGroupValue = useWatch({
+    control,
+    name: "bloodGroup",
   });
 
   const onSubmit = async (values) => {
@@ -204,6 +211,7 @@ export default function AdminRegistration() {
       mobileCountryCode:
         storedAdmin.mobileCountryCode || adminDefaultValues.mobileCountryCode,
       gender: storedAdmin.gender || adminDefaultValues.gender,
+      bloodGroup: storedAdmin.bloodGroup || adminDefaultValues.bloodGroup,
       role: storedAdmin.role || adminDefaultValues.role,
     });
   }, [reset, router]);
@@ -323,6 +331,35 @@ export default function AdminRegistration() {
           {errors.gender ? (
             <p className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">
               {errors.gender.message}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-1.5 md:col-span-2">
+          <label className="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 dark:text-slate-300">
+            Blood Group
+          </label>
+          <div className="relative group">
+            <select
+              {...register("bloodGroup")}
+              className={`${fieldClassName} appearance-none !pl-4 cursor-pointer ${errors.bloodGroup ? errorFieldClassName : normalFieldClassName}`}
+            >
+              <option value="" disabled>
+                Select your blood group
+              </option>
+              {BLOOD_GROUPS.map((bg) => (
+                <option key={bg} value={bg}>
+                  {bg}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400 group-focus-within:text-blue-600">
+              <ChevronRight className="h-4 w-4 rotate-90" />
+            </div>
+          </div>
+          {errors.bloodGroup ? (
+            <p className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">
+              {errors.bloodGroup.message}
             </p>
           ) : null}
         </div>

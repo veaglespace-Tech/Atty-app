@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import {
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
+  useUpdateOrgLogoMutation,
 } from "@/services/api/orgApi";
 import {
   PERSON_NAME_REGEX,
@@ -91,6 +92,8 @@ const getSettingsSchema = (isAdmin) => z.object({
     ),
   emergencyContact: isAdmin ? z.string().trim().optional() : z.string().trim().min(1, "Emergency mobile is required"),
   currentAddress: z.string().trim().min(1, "Full address is required"),
+  permanentAddress: z.string().trim().optional(),
+  bloodGroup: z.string().trim().optional(),
 });
 
 const labelClassName = "brand-kicker mb-1.5 ml-1 block";
@@ -118,6 +121,8 @@ const getFormDefaults = (user) => ({
   mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode) || "",
   emergencyContact: user?.emergencyContact || "",
   currentAddress: user?.currentAddress || "",
+  permanentAddress: user?.permanentAddress || "",
+  bloodGroup: user?.bloodGroup || "",
 });
 
 function DetailCard({ icon: Icon, label, value }) {
@@ -500,6 +505,198 @@ function TimeSettings() {
   );
 }
 
+function OrgLogoSettings() {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const [updateOrgLogo, { isLoading }] = useUpdateOrgLogoMutation();
+  const [logoDataUrl, setLogoDataUrl] = useState("");
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  const logoInputRef = useRef(null);
+
+  const currentLogoUrl = user?.organization?.logoUrl || "";
+  const previewLogoUrl = logoDataUrl || (removeLogo ? "" : currentLogoUrl);
+  const hasPendingChange = Boolean(logoDataUrl) || removeLogo;
+
+  const compressImage = (file) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        const MAX_DIM = 512;
+        
+        if (width > height && width > MAX_DIM) {
+          height *= MAX_DIM / width;
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width *= MAX_DIM / height;
+          height = MAX_DIM;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Failed to read the selected image."));
+    });
+
+  const onLogoSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!ACCEPTED_PROFILE_IMAGE_TYPES.has(file.type)) {
+      setLogoError("Upload a JPG, PNG, WEBP, or GIF image.");
+      return;
+    }
+
+    try {
+      const nextDataUrl = await compressImage(file);
+      setLogoDataUrl(nextDataUrl);
+      setRemoveLogo(false);
+      setLogoError("");
+    } catch (error) {
+      setLogoError(error.message || "Failed to prepare the selected image.");
+    }
+  };
+
+  const toggleLogoRemoval = () => {
+    setLogoError("");
+    if (removeLogo) {
+      setRemoveLogo(false);
+      return;
+    }
+    if (logoDataUrl) {
+      setLogoDataUrl("");
+      return;
+    }
+    if (currentLogoUrl) {
+      setRemoveLogo(true);
+    }
+  };
+
+  const handleSave = async () => {
+    setLogoError("");
+    try {
+      const payload = {};
+      if (logoDataUrl) {
+        payload.logoDataUrl = logoDataUrl;
+      } else if (removeLogo) {
+        payload.removeLogo = true;
+      }
+
+      const response = await updateOrgLogo(payload).unwrap();
+      const updatedLogoUrl = response?.data?.logoUrl || null;
+
+      if (user) {
+        const updatedUser = {
+          ...user,
+          organization: {
+            ...(user.organization || {}),
+            logoUrl: updatedLogoUrl,
+          },
+        };
+        dispatch(setCurrentUser(updatedUser));
+      }
+
+      setLogoDataUrl("");
+      setRemoveLogo(false);
+      
+      dispatch(
+        addNotification({
+          type: "success",
+          message: response?.message || "Organization logo updated successfully.",
+        })
+      );
+    } catch (error) {
+      if (error?.data?.message) {
+        setLogoError(error.data.message);
+      } else {
+        setLogoError(error?.message || "Failed to update organization logo.");
+      }
+    }
+  };
+
+  return (
+    <div className="light-glow-card-static rounded-[1.75rem] p-6 text-left">
+      <div className="flex items-center gap-3">
+        <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
+          <ImageUp size={18} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">
+            Organization Logo
+          </h3>
+          <p className="brand-copy-sm mt-1">Upload a logo to appear in the dashboard navigation.</p>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-5">
+        <div className="brand-panel-soft rounded-[1.5rem] p-4 flex flex-col sm:flex-row gap-4 items-center">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] bg-slate-100 dark:bg-slate-800 shadow-inner">
+            {previewLogoUrl ? (
+              <img src={previewLogoUrl} alt="Org Logo Preview" className="h-full w-full object-cover" />
+            ) : (
+              <Building2 className="h-8 w-8 text-slate-400" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={onLogoSelected}
+            />
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="brand-btn brand-btn-secondary brand-btn-sm"
+              >
+                <ImageUp size={14} />
+                {previewLogoUrl ? "Change Logo" : "Upload Logo"}
+              </button>
+
+              {(removeLogo || logoDataUrl || currentLogoUrl) ? (
+                <button
+                  type="button"
+                  onClick={toggleLogoRemoval}
+                  className="brand-btn brand-btn-secondary brand-btn-sm"
+                >
+                  <Trash2 size={14} />
+                  {removeLogo ? "Keep Current Logo" : logoDataUrl ? "Clear Selection" : "Remove Logo"}
+                </button>
+              ) : null}
+            </div>
+
+            {logoError && (
+              <p className="mt-2 text-xs font-semibold text-rose-500">{logoError}</p>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isLoading || !hasPendingChange}
+          className="brand-btn brand-btn-primary brand-btn-md w-full justify-center"
+        >
+          {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          Save Logo Update
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function WorkspaceSettingsPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -519,12 +716,15 @@ export default function WorkspaceSettingsPage() {
   const referralCode = user?.organization?.referralCode || null;
   const workspaceCity = user?.city || user?.organization?.city || null;
   const [copiedReferral, setCopiedReferral] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
 
   const referralLinkUrl = typeof window !== "undefined" && referralCode ? `${window.location.origin}/register/user?ref=${referralCode}` : "";
   const canManageLocationSettings =
     !isSuperAdmin &&
     Boolean(organizationId) &&
-    hasPermission(user, PERMISSIONS.LOCATION_SET);
+    hasPermission(user, PERMISSIONS.LOCATION.MANAGE);
+  const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
+  const canSkipEmergencyContact = hasPermission(user, PERMISSIONS.USERS.CREATE) || isSuperAdmin;
 
   const {
     control,
@@ -534,7 +734,7 @@ export default function WorkspaceSettingsPage() {
     setValue,
     formState: { errors, isDirty },
   } = useForm({
-    resolver: zodResolver(getSettingsSchema(isSuperAdmin || effectiveRole === ROLES.ORG_ADMIN)),
+    resolver: zodResolver(getSettingsSchema(canSkipEmergencyContact)),
     mode: "onChange",
     defaultValues: getFormDefaults(user),
   });
@@ -563,10 +763,12 @@ export default function WorkspaceSettingsPage() {
       { key: "name", label: "Full Name" },
       { key: "email", label: "Email Address" },
       { key: "mobile", label: "Mobile Number" },
-      ...(!(isSuperAdmin || effectiveRole === ROLES.ORG_ADMIN)
+      ...(!canSkipEmergencyContact
         ? [{ key: "emergencyContact", label: "Emergency Contact" }]
         : []),
       { key: "currentAddress", label: "Current Address" },
+      { key: "permanentAddress", label: "Permanent Address" },
+      { key: "bloodGroup", label: "Blood Group" },
       { key: "profileImageUrl", label: "Profile Image" },
     ];
     
@@ -585,7 +787,7 @@ export default function WorkspaceSettingsPage() {
       percentage: Math.round((filled / fields.length) * 100),
       missing,
     };
-  }, [user, effectiveRole, isSuperAdmin]);
+  }, [user, effectiveRole, isSuperAdmin, canSkipEmergencyContact]);
 
   const detailCards = useMemo(
     () => [
@@ -703,6 +905,8 @@ export default function WorkspaceSettingsPage() {
 
     payload.emergencyContact = values.emergencyContact;
     payload.currentAddress = values.currentAddress;
+    payload.permanentAddress = values.permanentAddress;
+    payload.bloodGroup = values.bloodGroup;
 
     if (profileImageDataUrl) {
       payload.profileImageDataUrl = profileImageDataUrl;
@@ -791,44 +995,18 @@ export default function WorkspaceSettingsPage() {
   };
 
   return (
-    <section className="space-y-6 pb-24">
+    <section className="pb-32 max-w-5xl mx-auto space-y-6">
+      {/* Header Profile Summary */}
       <div className="light-glow-card-static rounded-[1.75rem] p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <div className="relative flex items-center justify-center shrink-0 h-20 w-20">
               <svg className="absolute inset-0 h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="46"
-                  stroke="currentColor"
-                  strokeWidth="6"
-                  fill="transparent"
-                  className="text-slate-100 dark:text-slate-800/50"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="46"
-                  stroke="currentColor"
-                  strokeWidth="6"
-                  fill="transparent"
-                  strokeLinecap="round"
-                  strokeDasharray="289.02"
-                  strokeDashoffset={289.02 - (completionState.percentage / 100) * 289.02}
-                  className={cn(
-                    "transition-all duration-1000 ease-out",
-                    completionState.percentage === 100 ? "text-blue-500" : "text-orange-500"
-                  )}
-                />
+                <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100 dark:text-slate-800/50" />
+                <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="6" fill="transparent" strokeLinecap="round" strokeDasharray="289.02" strokeDashoffset={289.02 - (completionState.percentage / 100) * 289.02} className={cn("transition-all duration-1000 ease-out", completionState.percentage === 100 ? "text-blue-500" : "text-orange-500")} />
               </svg>
               <div className="relative z-10 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-white dark:bg-slate-950">
-                <UserAvatar
-                  src={previewProfileImageUrl}
-                  name={previewName}
-                  className="h-16 w-16 !rounded-full text-2xl"
-                  sizes="64px"
-                />
+                <UserAvatar src={previewProfileImageUrl} name={previewName} className="h-16 w-16 !rounded-full text-2xl" sizes="64px" />
               </div>
               {completionState.percentage === 100 ? (
                 <div className="absolute -bottom-1 -right-1 z-20 flex items-center justify-center rounded-full bg-white dark:bg-slate-950 p-[2px]">
@@ -841,356 +1019,259 @@ export default function WorkspaceSettingsPage() {
               )}
             </div>
             <div className="mt-1">
-              <p className="brand-kicker">Account Settings</p>
-              <h2 className="brand-section-title mt-1.5">{previewName}</h2>
-              <p className="brand-copy-sm mt-1.5">
-                Edit your profile details and keep your workspace preferences in sync.
+              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{previewName}</h2>
+              <p className="brand-copy-sm mt-1 flex items-center gap-2">
+                {previewEmail} &bull; {roleLabel}
               </p>
               {completionState.missing.length > 0 && (
-                <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-400">
-                  Missing fields: {completionState.missing.join(", ")}
+                <p className="mt-2 inline-block rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">
+                  Missing: {completionState.missing.join(", ")}
                 </p>
               )}
             </div>
           </div>
-
-          <div className="brand-chip self-start">
-            {roleLabel}
-          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {detailCards.map((item) => (
-          <DetailCard key={item.label} icon={item.icon} label={item.label} value={item.value} />
+      {/* Modern Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-px dark:border-slate-800 no-scrollbar">
+        {[
+          { id: "personal", label: "Personal Info", icon: User },
+          { id: "contact", label: "Contact & Address", icon: MapPin },
+          { id: "security", label: "Security & Workspace", icon: ShieldCheck },
+          ...(canManageLocationSettings || canManageOrgSettings ? [{ id: "organization", label: "Organization Settings", icon: Building2 }] : []),
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition-all",
+              activeTab === tab.id
+                ? "border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:text-slate-300"
+            )}
+          >
+            <tab.icon size={16} className={cn(activeTab === tab.id ? "text-blue-500 dark:text-blue-400" : "text-slate-400")} />
+            {tab.label}
+          </button>
         ))}
       </div>
 
-      <div className="flex flex-col gap-4">
-        <div className="light-glow-card-static rounded-[1.75rem] p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="brand-kicker flex items-center gap-2">
-                Editable Profile
-                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black tracking-widest uppercase", canSubmit ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400")}>
-                  {canSubmit ? "Unsaved Changes" : "Up to Date"}
-                </span>
-              </h3>
-              <p className="brand-copy-sm mt-2">
-                Update your personal details here. Changes appear across the dashboard right away.
-              </p>
-            </div>
-          </div>
-
-
-
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
-            <div className="brand-panel-soft rounded-[1.5rem] p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <UserAvatar
-                  src={previewProfileImageUrl}
-                  name={previewName}
-                  className="h-24 w-24 rounded-[2rem] text-3xl"
-                  sizes="96px"
-                />
-
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative">
+        {activeTab === "personal" && (
+          <div className="grid gap-6">
+            {/* Profile Photo Card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Profile Photo</h3>
+              <p className="brand-copy-sm mt-1 mb-6">Upload a clear square image to personalize your workspace profile.</p>
+              
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                <UserAvatar src={previewProfileImageUrl} name={previewName} className="h-24 w-24 rounded-[2rem] text-3xl shadow-sm" sizes="96px" />
                 <div className="min-w-0 flex-1">
-                  <p className="brand-kicker">Profile Photo</p>
-                  <p className="brand-copy-sm mt-2">
-                    Upload a clear square image to personalize your workspace profile.
-                  </p>
-
-                  <input
-                    ref={profileImageInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    className="hidden"
-                    onChange={onProfileImageSelected}
-                  />
-
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => profileImageInputRef.current?.click()}
-                      className="brand-btn brand-btn-secondary brand-btn-md"
-                    >
-                      <ImageUp size={16} />
-                      {previewProfileImageUrl ? "Change Photo" : "Upload Photo"}
+                  <input ref={profileImageInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={onProfileImageSelected} />
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" onClick={() => profileImageInputRef.current?.click()} className="brand-btn brand-btn-secondary brand-btn-md">
+                      <ImageUp size={16} /> {previewProfileImageUrl ? "Change Photo" : "Upload Photo"}
                     </button>
-
-                    {removeProfileImage || profileImageDataUrl || currentProfileImageUrl ? (
-                      <button
-                        type="button"
-                        onClick={toggleProfileImageRemoval}
-                        className="brand-btn brand-btn-secondary brand-btn-md"
-                      >
-                        <Trash2 size={16} />
-                        {removeProfileImage
-                          ? "Keep Current Photo"
-                          : profileImageDataUrl
-                            ? "Clear Selection"
-                            : "Remove Photo"}
+                    {(removeProfileImage || profileImageDataUrl || currentProfileImageUrl) ? (
+                      <button type="button" onClick={toggleProfileImageRemoval} className="brand-btn brand-btn-secondary brand-btn-md">
+                        <Trash2 size={16} /> {removeProfileImage ? "Keep Current Photo" : profileImageDataUrl ? "Clear Selection" : "Remove Photo"}
                       </button>
                     ) : null}
                   </div>
-
-                  <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-300">
-                    {removeProfileImage
-                      ? "Your current profile photo will be removed when you save."
-                      : profileImageDataUrl
-                        ? "New profile photo is ready. Save changes to publish it."
-                        : previewProfileImageUrl
-                          ? "This profile photo appears anywhere your account avatar is shown."
-                          : "Supported formats: JPG, PNG, WEBP, GIF. Maximum size: 10 MB."}
+                  <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {removeProfileImage ? "Your current profile photo will be removed when you save." : profileImageDataUrl ? "New profile photo is ready. Save changes to publish it." : "Supported formats: JPG, PNG, WEBP, GIF. Max: 10 MB."}
                   </p>
-
-                  {profileImageError ? (
-                    <p className="mt-2 text-xs font-semibold text-rose-500">
-                      {profileImageError}
-                    </p>
-                  ) : null}
+                  {profileImageError && <p className="mt-2 text-xs font-semibold text-rose-500">{profileImageError}</p>}
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-1">
-                <label htmlFor="settings-name" className={labelClassName}>
-                  Full Name
-                </label>
-                <input
-                  id="settings-name"
-                  type="text"
-                  placeholder="Your full name"
-                  aria-invalid={errors.name ? "true" : "false"}
-                  className={cn(inputClassName, errors.name ? errorInputClassName : "")}
-                  {...register("name")}
-                />
-                {errors.name ? (
-                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
-                    {errors.name.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="md:col-span-1">
-                <label htmlFor="settings-email" className={labelClassName}>
-                  Email Address
-                </label>
-                <input
-                  id="settings-email"
-                  type="email"
-                  placeholder="name@company.com"
-                  aria-invalid={errors.email ? "true" : "false"}
-                  className={cn(inputClassName, errors.email ? errorInputClassName : "")}
-                  {...register("email")}
-                />
-                {errors.email ? (
-                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
-                    {errors.email.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <CountryPhoneField
-                label="Mobile Number"
-                countryCode={formValues.mobileCountryCode || ""}
-                phone={formValues.mobile || ""}
-                onCountryCodeChange={(event) =>
-                  setValue("mobileCountryCode", event.target.value, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  })
-                }
-                onPhoneChange={(event) =>
-                  setValue("mobile", event.target.value.replace(/[^\d]/g, ""), {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  })
-                }
-                countryCodeError={errors.mobileCountryCode?.message}
-                phoneError={errors.mobile?.message}
-                helpText="Select the country code, then enter your mobile number."
-                containerClassName="md:col-span-1"
-                labelClassName={labelClassName}
-              />
-              <input type="hidden" {...register("mobileCountryCode")} />
-              <input type="hidden" {...register("mobile")} />
-
-              {!(isSuperAdmin || effectiveRole === ROLES.ORG_ADMIN) && (
-                <div className="md:col-span-1">
-                  <label htmlFor="settings-emergencyContact" className={labelClassName}>
-                    Emergency Contact
-                  </label>
-                  <input
-                    id="settings-emergencyContact"
-                    type="text"
-                    placeholder="E.g., +91 9876543210"
-                    aria-invalid={errors.emergencyContact ? "true" : "false"}
-                    className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")}
-                    {...register("emergencyContact")}
-                  />
-                  {errors.emergencyContact ? (
-                    <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
-                      {errors.emergencyContact.message}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-
-              <div className="md:col-span-2">
-                <label htmlFor="settings-currentAddress" className={labelClassName}>
-                  Full Address
-                </label>
-                <input
-                  id="settings-currentAddress"
-                  type="text"
-                  placeholder="Enter your full address"
-                  aria-invalid={errors.currentAddress ? "true" : "false"}
-                  className={cn(inputClassName, errors.currentAddress ? errorInputClassName : "")}
-                  {...register("currentAddress")}
-                />
-                {errors.currentAddress ? (
-                  <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
-                    {errors.currentAddress.message}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="brand-panel-soft grid gap-4 rounded-[1.5rem] p-4">
-              <div className="grid gap-4 md:grid-cols-2">
+            {/* Basic Details Card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Basic Details</h3>
+              <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <p className="brand-kicker">Role</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
-                    {roleLabel}
-                  </p>
+                  <label htmlFor="settings-name" className={labelClassName}>Full Name</label>
+                  <input id="settings-name" type="text" placeholder="Your full name" aria-invalid={errors.name ? "true" : "false"} className={cn(inputClassName, errors.name ? errorInputClassName : "")} {...register("name")} />
+                  {errors.name && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.name.message}</p>}
                 </div>
                 <div>
-                  <p className="brand-kicker">Workspace Code</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
-                    {isSuperAdmin ? "Platform-wide" : formatValue(workspaceCode, "Not available")}
-                  </p>
-                </div>
-              </div>
-              {!isSuperAdmin && referralCode ? (
-                <div className="brand-panel-soft rounded-[1.25rem] p-4">
-                  <p className="brand-kicker">My Referral Link</p>
-                  <div className="mt-2 flex flex-col gap-3">
-                    <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold tracking-wider text-blue-600 dark:text-blue-400" suppressHydrationWarning>
-                      {referralLinkUrl ? (
-                        <a href={referralLinkUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                          {referralLinkUrl}
-                        </a>
-                      ) : (
-                        referralCode
-                      )}
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const joinLink = `${window.location.origin}/register/user?ref=${referralCode}`;
-                          navigator.clipboard.writeText(joinLink);
-                          setCopiedReferral(true);
-                          setTimeout(() => setCopiedReferral(false), 2000);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-all hover:border-blue-300 hover:text-blue-600 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
-                      >
-                        {copiedReferral ? <Check size={12} /> : <Copy size={12} />}
-                        {copiedReferral ? "Copied!" : "Copy Link"}
-                      </button>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                    Share this link so new members can request to join your organization.
-                  </p>
-                </div>
-              ) : null}
-              <p className="brand-copy-sm text-xs">
-                Role and workspace scope are managed by the platform or organization admin.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={resetForm}
-                disabled={isSaving || !canSubmit}
-                className="brand-btn brand-btn-secondary brand-btn-md"
-              >
-                <RotateCcw size={16} />
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving || !canSubmit}
-                className="brand-btn brand-btn-primary brand-btn-md"
-              >
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <PreferenceCard
-            icon={LockKeyhole}
-            title="Security"
-            value="Your account is protected by role-based access and secure sessions."
-            className="h-full"
-          >
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={sendResetPasswordLink}
-                disabled={sendingResetLink}
-                className="brand-btn brand-btn-secondary brand-btn-md w-full"
-              >
-                {sendingResetLink ? <Loader2 size={16} className="animate-spin" /> : <LockKeyhole size={16} />}
-                Send Reset Password Link
-              </button>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-300">
-                A secure reset link will be sent to {previewEmail}. Use it to set a new password.
-              </p>
-
-            </div>
-          </PreferenceCard>
-
-          <div className="light-glow-card-static rounded-[1.75rem] p-6 h-full">
-            <h3 className="brand-kicker">Workspace Details</h3>
-            <div className="mt-4 grid gap-4">
-              <div className="brand-panel-soft rounded-[1.5rem] p-5">
-                <p className="brand-kicker">Location</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <MapPin size={18} className="text-blue-600 dark:text-blue-300" />
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {formatValue(workspaceCity, "Not set")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="brand-panel-soft rounded-[1.5rem] p-5">
-                <p className="brand-kicker">Workspace</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <Globe size={18} className="text-blue-600 dark:text-blue-300" />
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {isSuperAdmin ? "Global Control Panel" : "Organization Workspace"}
-                  </p>
+                  <label htmlFor="settings-bloodGroup" className={labelClassName}>Blood Group</label>
+                  <select id="settings-bloodGroup" aria-invalid={errors.bloodGroup ? "true" : "false"} className={cn(inputClassName, errors.bloodGroup ? errorInputClassName : "")} {...register("bloodGroup")}>
+                    <option value="">Select Blood Group</option>
+                    <option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option>
+                    <option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option>
+                  </select>
+                  {errors.bloodGroup && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.bloodGroup.message}</p>}
                 </div>
               </div>
             </div>
           </div>
+        )}
 
+        {activeTab === "contact" && (
+          <div className="grid gap-6">
+            {/* Contact Details Card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Contact Information</h3>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label htmlFor="settings-email" className={labelClassName}>Email Address</label>
+                  <input id="settings-email" type="email" placeholder="name@company.com" aria-invalid={errors.email ? "true" : "false"} className={cn(inputClassName, errors.email ? errorInputClassName : "")} {...register("email")} />
+                  {errors.email && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.email.message}</p>}
+                </div>
+                <div>
+                  <CountryPhoneField
+                    label="Mobile Number"
+                    countryCode={formValues.mobileCountryCode || ""}
+                    phone={formValues.mobile || ""}
+                    onCountryCodeChange={(e) => setValue("mobileCountryCode", e.target.value, { shouldValidate: true, shouldDirty: true })}
+                    onPhoneChange={(e) => setValue("mobile", e.target.value.replace(/[^\d]/g, ""), { shouldValidate: true, shouldDirty: true })}
+                    countryCodeError={errors.mobileCountryCode?.message}
+                    phoneError={errors.mobile?.message}
+                    helpText=""
+                    labelClassName={labelClassName}
+                  />
+                  <input type="hidden" {...register("mobileCountryCode")} />
+                  <input type="hidden" {...register("mobile")} />
+                </div>
+                {!canSkipEmergencyContact && (
+                  <div className="md:col-span-2">
+                    <label htmlFor="settings-emergencyContact" className={labelClassName}>Emergency Contact</label>
+                    <input id="settings-emergencyContact" type="text" placeholder="E.g., +91 9876543210" aria-invalid={errors.emergencyContact ? "true" : "false"} className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")} {...register("emergencyContact")} />
+                    {errors.emergencyContact && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.emergencyContact.message}</p>}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Address Details Card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Address Details</h3>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label htmlFor="settings-currentAddress" className={labelClassName}>Current Address</label>
+                  <input id="settings-currentAddress" type="text" placeholder="Enter your current address" aria-invalid={errors.currentAddress ? "true" : "false"} className={cn(inputClassName, errors.currentAddress ? errorInputClassName : "")} {...register("currentAddress")} />
+                  {errors.currentAddress && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.currentAddress.message}</p>}
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="settings-permanentAddress" className={labelClassName}>Permanent Address</label>
+                  <input id="settings-permanentAddress" type="text" placeholder="Enter your permanent address" aria-invalid={errors.permanentAddress ? "true" : "false"} className={cn(inputClassName, errors.permanentAddress ? errorInputClassName : "")} {...register("permanentAddress")} />
+                  {errors.permanentAddress && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.permanentAddress.message}</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "security" && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Security Section */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6 h-full flex flex-col">
+              <div className="flex items-start gap-3">
+                <div className="brand-icon-shell flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
+                  <LockKeyhole size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">Security</p>
+                  <p className="brand-copy-sm mt-1">Your account is protected by role-based access and secure sessions.</p>
+                </div>
+              </div>
+              <div className="mt-8 space-y-4 flex-1 flex flex-col justify-end">
+                <button type="button" onClick={sendResetPasswordLink} disabled={sendingResetLink} className="brand-btn brand-btn-secondary brand-btn-md w-full">
+                  {sendingResetLink ? <Loader2 size={16} className="animate-spin" /> : <LockKeyhole size={16} />}
+                  Send Reset Password Link
+                </button>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center">
+                  A secure reset link will be sent to {previewEmail}.
+                </p>
+              </div>
+            </div>
+
+            {/* Workspace details read-only card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6 h-full flex flex-col justify-between">
+              <div>
+                <h3 className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white mb-2">Workspace Context</h3>
+                <p className="brand-copy-sm mb-5">Role and workspace scope are managed by the platform or organization admin.</p>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Role</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{roleLabel}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Workspace</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{isSuperAdmin ? "Platform-wide" : formatValue(workspaceCode, "Not available")}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Location</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{formatValue(workspaceCity, "Not set")}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Referral Link */}
+            {!isSuperAdmin && referralCode && (
+              <div className="light-glow-card-static rounded-[1.75rem] p-6 lg:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">Referral Link</h3>
+                  <p className="text-sm text-slate-500 mt-1 truncate max-w-sm">{referralLinkUrl || referralCode}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const joinLink = `${window.location.origin}/register/user?ref=${referralCode}`;
+                    navigator.clipboard.writeText(joinLink);
+                    setCopiedReferral(true);
+                    setTimeout(() => setCopiedReferral(false), 2000);
+                  }}
+                  className="brand-btn brand-btn-secondary brand-btn-md shrink-0 w-full sm:w-auto"
+                >
+                  {copiedReferral ? <Check size={16} /> : <Copy size={16} />} {copiedReferral ? "Copied!" : "Copy Link"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sticky Save Bar */}
+        {(activeTab === "personal" || activeTab === "contact") && (
+          <div
+            className={cn(
+              "fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[0_18px_40px_rgba(30,112,209,0.15)] border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-6 transition-all duration-500",
+              canSubmit ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="hidden sm:block min-w-[200px]">
+              <p className="text-sm font-bold text-slate-900 dark:text-white">Unsaved Changes</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Please save your profile updates.</p>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button type="button" onClick={resetForm} disabled={isSaving} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+                Cancel
+              </button>
+              <button type="submit" disabled={isSaving} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
+              </button>
+            </div>
+          </div>
+        )}
+      </form>
+
+      {/* Organization Settings */}
+      {activeTab === "organization" && (canManageLocationSettings || canManageOrgSettings) && (
+        <div className="space-y-6">
           {canManageLocationSettings && (
-            <div className="space-y-4 lg:col-span-2">
+            <>
               <LocationSettings />
               <TimeSettings />
-            </div>
+            </>
           )}
+          {canManageOrgSettings && <OrgLogoSettings />}
         </div>
-      </div>
+      )}
     </section>
   );
 }

@@ -1,17 +1,17 @@
 const asyncHandler = require("express-async-handler");
-const { PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS } = require("../constants/permissions");
+const { ALL_PERMISSIONS, ROLE_DEFAULT_PERMISSIONS } = require("../constants/permissions");
 
 const toPermissionName = (key) =>
   String(key || "")
-    .split("_")
-    .map((segment) => segment.charAt(0) + segment.slice(1).toLowerCase())
+    .split(/[:_]/)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
     .join(" ");
 
-const DEFAULT_PERMISSION_DEFINITIONS = Object.values(PERMISSION_KEYS).map((key) => ({
+const DEFAULT_PERMISSION_DEFINITIONS = ALL_PERMISSIONS.map((key) => ({
   id: key,
   key,
   name: toPermissionName(key),
-  description: `Permission to ${String(key).toLowerCase().replace(/_/g, " ")}`,
+  description: `Permission to ${String(key).toLowerCase().replace(/[:_]/g, " ")}`,
 }));
 
 // @desc    Get all permissions

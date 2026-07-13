@@ -20,10 +20,10 @@ const {
   reportPdfUserSelect,
 } = require("../services/prisma-selects.service")
 const { isFreePlan } = require("../services/organization-plan.service")
-const { buildAttendanceDetailedPdf } = require("../utils/pdf-report")
+const { buildGenericTablePdf } = require("../utils/pdf-report")
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service")
 const { assertPermission } = require("../services/access.service")
-const { PERMISSION_KEYS } = require("../constants/permissions")
+const { PERMISSIONS } = require("../constants/permissions")
 const xlsx = require("xlsx")
 
 const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"])
@@ -160,24 +160,22 @@ const buildAttendanceExcelBuffer = ({
   rows,
 }) => {
   const columns = [
-    { key: "entryNo", label: "No.", width: 42 },
-    { key: "date", label: "Date", width: 80 },
-    { key: "userId", label: "Member ID", width: 68 },
-    { key: "userName", label: "Member Name", width: 120 },
-    { key: "contact", label: "Contact", width: 92 },
-    { key: "email", label: "Email", width: 132 },
-    { key: "punchIn", label: "Punch In", width: 70 },
-    { key: "punchOut", label: "Punch Out", width: 70 },
-    { key: "totalHours", label: "Worked Hrs", width: 88 },
-    { key: "presentHours", label: "Present Hrs", width: 96 },
-    { key: "absent", label: "Is Absent", width: 64 },
+    { key: "id", label: "ID", width: 50 },
+    { key: "member", label: "Member", width: 120 },
+    { key: "role", label: "Role", width: 100 },
+    { key: "presentDays", label: "Present Days", width: 90 },
+    { key: "halfDays", label: "Half Days", width: 90 },
+    { key: "absentDays", label: "Absent Days", width: 90 },
+    { key: "workedHours", label: "Worked Hrs", width: 100 },
   ]
+
+  const totalWorkedMinutes = summary?.find((s) => s.label === "Worked Hrs")?.value || "00:00"
 
   const infoLines = [
     `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
     `Period: ${String(periodLabel || "Report").toUpperCase()} | Range: ${rangeFrom} to ${rangeTo}`,
-    `Records: ${Number(summary?.totalRecords || 0)} | Present Entries: ${Number(summary?.presentEntries || 0)} | Absent Entries: ${Number(summary?.absentEntries || 0)}`,
-    `Worked Hrs: ${formatHoursValue(summary?.totalWorkedMinutes || 0, { fromMinutes: true })} | Present Hrs: ${formatHoursValue(summary?.totalPresentMinutes || 0, { fromMinutes: true })}`,
+    `Total Members: ${rows.length}`,
+    `Total Worked Hrs: ${totalWorkedMinutes}`,
   ]
 
   const sheetData = [
@@ -370,7 +368,7 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
 
 exports.getOrgReports = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId)
+  assertPermission(res, req.user, PERMISSIONS.REPORTS.VIEW, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -411,7 +409,7 @@ exports.getOrgReports = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId)
+  assertPermission(res, req.user, PERMISSIONS.REPORTS.DOWNLOAD, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -423,7 +421,7 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
       where: { id: orgId },
       select: organizationSubscriptionSelect,
     }),
-    buildOrganizationPdfReportData({
+    buildOrganizationReportData({
       orgId,
       rangeFrom: range.from,
       rangeTo: range.to,
@@ -432,14 +430,23 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
 
   assertReportDownloadAccess({ organization, res })
 
-  const pdfBuffer = await buildAttendanceDetailedPdf({
-    organizationName: organization?.name || "Organization",
-    organizationCode: organization?.organizationCode || "",
-    periodLabel: String(range.periodLabel || "Report").toUpperCase(),
-    rangeFrom: range.from,
-    rangeTo: range.to,
-    summary: reportData.summary,
-    rows: reportData.rows,
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "Organization Attendance Report",
+    subtitleLines: [
+      `Organization: ${organization?.name || "-"} (${organization?.organizationCode || "-"})`,
+      `Period: ${String(range.periodLabel || "Report")} | ${range.from} to ${range.to}`,
+    ],
+    summaryCards: reportData.summary,
+    columns: [
+      { key: "id", label: "ID", width: 50 },
+      { key: "member", label: "Member", width: 120 },
+      { key: "role", label: "Role", width: 100 },
+      { key: "presentDays", label: "Present", width: 70, align: "center" },
+      { key: "halfDays", label: "Half Day", width: 70, align: "center" },
+      { key: "absentDays", label: "Absent", width: 70, align: "center" },
+      { key: "workedHours", label: "Worked Hrs", width: 80, align: "center" },
+    ],
+    rows: reportData.items,
   })
 
   const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-")
@@ -452,7 +459,7 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
 
 exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId)
+  assertPermission(res, req.user, PERMISSIONS.REPORTS.DOWNLOAD, orgId)
   const range = resolveReportRange({
     period: req.query.period || "monthly",
     fromInput: req.query.from,
@@ -464,7 +471,7 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
       where: { id: orgId },
       select: organizationSubscriptionSelect,
     }),
-    buildOrganizationPdfReportData({
+    buildOrganizationReportData({
       orgId,
       rangeFrom: range.from,
       rangeTo: range.to,
@@ -479,7 +486,7 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
     rangeFrom: range.from,
     rangeTo: range.to,
     summary: reportData.summary,
-    rows: reportData.rows,
+    rows: reportData.items,
   })
 
   const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-")
@@ -492,7 +499,7 @@ exports.downloadOrgReportsExcel = asyncHandler(async (req, res) => {
 
 exports.getOrgSubscription = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res)
-  assertPermission(res, req.user, PERMISSION_KEYS.SUBSCRIPTION_VIEW, orgId)
+  assertPermission(res, req.user, PERMISSIONS.SUBSCRIPTION.VIEW, orgId)
   const limit = parseLimit(req.query.limit, 25, 200)
   const { activeSubscription } = await syncOrganizationSubscriptionState({ organizationId: orgId, now: new Date() })
 

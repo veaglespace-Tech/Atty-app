@@ -317,7 +317,7 @@ exports.payuSuccess = asyncHandler(async (req, res) => {
       const adminRole = normalizeRole("ORG_ADMIN");
       
       console.log("[PayU Success Callback] Creating user...");
-      const newUser = await tx.user.create({ data: { name: truncateText(admin.name, 120) || "Admin User", email: adminEmail, mobile: adminPhone.e164, mobileCountryCode: adminPhone.countryCode, password: hashedPw, role: adminRole, orgId: newOrg.id, status: "APPROVED", isActive: true } });
+      const newUser = await tx.user.create({ data: { name: truncateText(admin.name, 120) || "Admin User", email: adminEmail, mobile: adminPhone.e164, mobileCountryCode: adminPhone.countryCode, password: hashedPw, bloodGroup: admin.bloodGroup || null, role: adminRole, orgId: newOrg.id, status: "APPROVED", isActive: true } });
       await createOrganizationMembership(tx, { userId: newUser.id, orgId: newOrg.id, role: adminRole, isActive: true });
       
       console.log("[PayU Success Callback] Creating subscription...");
@@ -705,7 +705,7 @@ exports.verifyAndRegister = asyncHandler(async (req, res) => {
       const newOrg = await tx.organization.create({ data: { organizationCode: orgCode, referralCode: refCode, referredByPartnerId, name: truncateText(organization.name, 120) || "Organization", email: organizationEmail, phone: organizationPhone.e164, phoneCountryCode: organizationPhone.countryCode, address: truncateText(organization.address, 191) || null, city: truncateText(organization.city, 120) || null, state: truncateText(organization.state, 120) || null, country: organization.country || "India", longitude, latitude, subscriptionStatus: "TRIAL", subscriptionExpiry: expiryDate, planId: dbPlan ? dbPlan.id : null, isActive: true } });
       const hashedPw = await bcrypt.hash(admin.password, 10);
       const adminRole = normalizeRole("ORG_ADMIN");
-      const newUser = await tx.user.create({ data: { name: truncateText(admin.name, 120) || "Admin", email: adminEmail, mobile: adminPhone.e164, mobileCountryCode: adminPhone.countryCode, password: hashedPw, role: adminRole, orgId: newOrg.id, status: "APPROVED", isActive: true } });
+      const newUser = await tx.user.create({ data: { name: truncateText(admin.name, 120) || "Admin", email: adminEmail, mobile: adminPhone.e164, mobileCountryCode: adminPhone.countryCode, password: hashedPw, bloodGroup: admin.bloodGroup || null, role: adminRole, orgId: newOrg.id, status: "APPROVED", isActive: true } });
       await createOrganizationMembership(tx, { userId: newUser.id, orgId: newOrg.id, role: adminRole, isActive: true });
       const sub = await tx.subscription.create({ data: { orgId: newOrg.id, planId: dbPlan ? dbPlan.id : null, planName: resolvedPlan.name, planCode: normalizedPlanCode, amount: Number(resolvedPlan.price), status: "ACTIVE", startDate: new Date(), endDate: expiryDate, paymentGateway: PAYMENT_GATEWAYS.FREE_TRIAL, paymentOrderId: refId, createdById: newUser.id, activeKey: `ORG_${newOrg.id}` } });
       await tx.payment.create({ data: { orgId: newOrg.id, userId: newUser.id, subscriptionId: sub.id, planName: resolvedPlan.name, planCode: normalizedPlanCode, amount: 0, gateway: PAYMENT_GATEWAYS.FREE_TRIAL, paymentOrderId: refId, status: "SUCCESS" } });

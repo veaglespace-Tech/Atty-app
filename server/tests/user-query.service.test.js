@@ -11,13 +11,13 @@ describe("user management role mapping", () => {
       isActive: true,
       role: "MEMBER",
       permissions: [
-        "TEAM_VIEW",
-        "ATTENDANCE_VIEW",
-        "ATTENDANCE_MANAGE",
-        "REPORTS_VIEW",
-        "USERS_CREATE",
-        "USERS_STATUS_UPDATE",
-        "USERS_ACTIVE_TOGGLE",
+        "team:view:all",
+        "attendance:view:all",
+        "attendance:manage",
+        "reports:view",
+        "users:create",
+        "users:update_status",
+        "users:toggle_active",
       ],
       memberships: [
         {

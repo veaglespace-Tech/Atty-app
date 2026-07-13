@@ -220,6 +220,13 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgAttendance"],
     }),
+    updateOrgLogo: builder.mutation({
+      query: (payload) => ({
+        url: "/org/settings/logo",
+        method: "PATCH",
+        body: payload,
+      }),
+    }),
     getOrgUserAttendanceLogs: builder.query({
       query: ({ userId, params = "" }) => `/org/users/${userId}/attendance/logs${params ? `?${params}` : ""}`,
       providesTags: (result, error, { userId }) => [{ type: "OrgUserAttendance", id: userId }],
@@ -286,6 +293,7 @@ export const {
   useDownloadOrgAttendanceExcelMutation,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
+  useUpdateOrgLogoMutation,
   useGetOrgUserAttendanceLogsQuery,
   useDownloadOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,

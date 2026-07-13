@@ -13,6 +13,7 @@ const {
 const {
   assertPermission,
 } = require("../services/access.service");
+const { getTeamViewCondition, canViewTeam } = require("../policies");
 const { normalizeCoordinatesInput } = require("../services/location.service");
 const { mapTeamRecord, buildTeamSummary } = require("../services/team-query.service");
 const {
@@ -24,7 +25,7 @@ const {
   teamListSelect,
   teamDetailSelect,
 } = require("../services/prisma-selects.service");
-const { PERMISSION_KEYS, hasPermission } = require("../constants/permissions");
+const { PERMISSIONS, hasPermission } = require("../constants/permissions");
 const { assertWithinPlanTeamLimit } = require("../services/organization-plan.service");
 
 const ensureOrgTeam = async ({ req, res, teamId }) => {
@@ -117,8 +118,8 @@ const getTeamPatchPermissionState = (req, orgId) => {
     body?.isActive !== undefined;
   const hasAttendanceFields =
     body?.attendanceRadius !== undefined || Boolean(normalizeCoordinatesInput(body));
-  const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE, orgId);
-  const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE, orgId);
+  const canUpdateTeam = hasPermission(req.user, PERMISSIONS.TEAM.UPDATE, orgId);
+  const canManageAttendance = hasPermission(req.user, PERMISSIONS.ATTENDANCE.MANAGE, orgId);
 
   return {
     canUpdateTeam,
@@ -139,13 +140,20 @@ const getTeamPatchPermissionState = (req, orgId) => {
 
 exports.getOrgTeams = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  
+  const abacCondition = getTeamViewCondition(req.user, orgId);
+  if (!abacCondition) {
+    res.status(403);
+    throw new Error("Missing required permission to view teams");
+  }
+
   const limit = parseLimit(req.query.limit, 300, 2000);
 
   const teams = await prisma.team.findMany({
     where: {
       orgId,
       deletedAt: null,
+      ...abacCondition,
     },
     select: teamListSelect,
     orderBy: [{ name: "asc" }, { createdAt: "asc" }],
@@ -170,7 +178,12 @@ exports.getOrgTeamById = asyncHandler(async (req, res) => {
     res,
     teamId: req.params.teamId,
   });
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, team.orgId || ensureOrganizationId(req, res));
+  
+  const orgId = team.orgId || ensureOrganizationId(req, res);
+  if (!(await canViewTeam(req.user, team.id, orgId))) {
+    res.status(403);
+    throw new Error("Missing required permission to view this team");
+  }
 
   const fullTeam = await prisma.team.findUnique({
     where: { id: team.id },
@@ -189,7 +202,11 @@ exports.getOrgTeamMembers = asyncHandler(async (req, res) => {
     res,
     teamId: req.params.teamId,
   });
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  
+  if (!(await canViewTeam(req.user, team.id, orgId))) {
+    res.status(403);
+    throw new Error("Missing required permission to view members of this team");
+  }
 
   const members = await prisma.teamMember.findMany({
     where: {
@@ -242,12 +259,12 @@ exports.getOrgTeamMembers = asyncHandler(async (req, res) => {
 
 exports.createOrgTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.CREATE, orgId);
   await assertWithinPlanTeamLimit({ orgId, res });
 
   const canAssignMembers = (() => {
     try {
-      assertPermission(res, req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId);
+      assertPermission(res, req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId);
       return true;
     } catch (_) {
       return false;
@@ -365,7 +382,7 @@ exports.patchOrgTeam = asyncHandler(async (req, res) => {
 
   const canAssignMembers =
     patchPermissionState.canUpdateTeam &&
-    hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId);
+    hasPermission(req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId);
 
   const { payload, memberIds, leaderId, hasMemberIds, hasLeaderId } =
     normalizeTeamPayload({
@@ -466,7 +483,7 @@ exports.deleteOrgTeam = asyncHandler(async (req, res) => {
     res,
     teamId: req.params.teamId,
   });
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_DELETE, ensureOrganizationId(req, res));
+  assertPermission(res, req.user, PERMISSIONS.TEAM.DELETE, ensureOrganizationId(req, res));
 
   await prisma.$transaction(async (tx) => {
     await softDeleteTeamRecord({

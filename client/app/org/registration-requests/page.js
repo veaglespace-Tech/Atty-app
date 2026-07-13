@@ -403,6 +403,9 @@ function RegistrationRequestsTab({ items, loading, refetch }) {
                   {item.gender && (
                     <DetailRow icon={User} label={item.gender.charAt(0) + item.gender.slice(1).toLowerCase()} />
                   )}
+                  {item.bloodGroup && (
+                    <DetailRow icon={User} label={`Blood Group: ${item.bloodGroup}`} />
+                  )}
                   {item.city && <DetailRow icon={MapPin} label={item.city} />}
                   {item.currentAddress && (
                     <DetailRow icon={Home} label={`Current: ${item.currentAddress}`} wrap />

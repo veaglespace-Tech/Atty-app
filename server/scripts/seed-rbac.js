@@ -1,13 +1,13 @@
 const prisma = require("../lib/prisma");
-const { PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS } = require("../constants/permissions");
+const { ALL_PERMISSIONS, ROLE_DEFAULT_PERMISSIONS } = require("../constants/permissions");
 
 async function seedRBAC() {
   console.log("Seeding RBAC data...");
 
-  const permissions = Object.keys(PERMISSION_KEYS).map((key) => ({
-    key: PERMISSION_KEYS[key],
-    name: key.split("_").map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(" "),
-    description: `Permission to ${key.toLowerCase().replace(/_/g, " ")}`,
+  const permissions = ALL_PERMISSIONS.map((key) => ({
+    key: key,
+    name: key.split(":").map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" "),
+    description: `Permission to ${key.toLowerCase().replace(/:/g, " ")}`,
   }));
 
   try {

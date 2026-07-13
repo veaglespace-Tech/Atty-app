@@ -45,8 +45,10 @@ app.use(
     extended: true 
   })
 );
+const path = require("path");
 app.use(cookieParser());
 app.use("/api/auth/login", loginRateLimiter);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/healthz", (req, res) => {
   res.status(200).json({
@@ -88,6 +90,7 @@ app.use("/api/atty", require("./routes/atty.route"));
 app.use("/api/contact", require("./routes/contact.route"));
 app.use("/api/coupons", require("./routes/coupon.route"));
 app.use("/api/partner-referral", require("./routes/partner-referral.route"));
+app.use("/api/roles", require("./routes/role.route"));
 
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "resource not found" });

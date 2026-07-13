@@ -173,7 +173,7 @@ export default function TeamLeaderAttendancePage() {
 
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary]);
   const showSelfAttendance = normalizeRole(currentRole) === ROLES.TEAM_LEADER;
-  const canManageAttendanceSettings = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
+  const canManageAttendanceSettings = hasPermission(authUser, PERMISSIONS.LOCATION.MANAGE);
 
   const geoPermissionMessage = useMemo(() => {
     switch (geoPermissionState) {

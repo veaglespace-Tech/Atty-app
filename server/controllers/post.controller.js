@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
-const { PERMISSION_KEYS } = require("../constants/permissions");
+const { PERMISSIONS } = require("../constants/permissions");
 const {
   parseBoolean,
   parseLimit,
@@ -158,7 +158,7 @@ const serializePost = (post, currentUserId) => {
 exports.createPost = asyncHandler(async (req, res) => {
   const { title, content, type, metadata, teamId } = req.body;
   const orgId = resolveOrganizationId(req.user);
-  assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.POSTS.CREATE, orgId);
   const normalizedType = normalizePostType(type, "NOTIFICATION");
 
   const normalizedTitle = truncateText(title, 191);
@@ -356,7 +356,7 @@ exports.updatePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { title, content, type, metadata, isActive } = req.body;
   const orgId = resolveOrganizationId(req.user);
-  assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.POSTS.CREATE, orgId);
 
   const existing = await prisma.post.findUnique({
     where: { id: Number(id) },
@@ -582,7 +582,7 @@ exports.voteOnPostPoll = asyncHandler(async (req, res) => {
 exports.deletePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const orgId = resolveOrganizationId(req.user);
-  assertPermission(res, req.user, PERMISSION_KEYS.POST_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.POSTS.CREATE, orgId);
 
   const existing = await prisma.post.findUnique({
     where: { id: Number(id) },

@@ -26,43 +26,41 @@ const MENU_ITEMS = [
     label: "Overview",
     Icon: LayoutDashboard,
     href: "/dashboard",
-    roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
     colorClass: "text-blue-500 dark:text-blue-400",
   },
   {
     label: "Attendance",
     Icon: CalendarCheck,
     href: "/dashboard/attendance",
-    roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
+    permission: PERMISSIONS.ATTENDANCE.VIEW_ALL,
     colorClass: "text-indigo-500 dark:text-indigo-400",
   },
   {
     label: "Employees",
     Icon: Users,
     href: "/dashboard/employees",
-    roles: [ROLES.ADMIN, ROLES.SUBADMIN],
+    permission: PERMISSIONS.USERS.VIEW,
     colorClass: "text-cyan-500 dark:text-cyan-400",
   },
   {
     label: "Reports",
     Icon: BarChart3,
     href: "/dashboard/reports",
-    roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER],
+    permission: PERMISSIONS.REPORTS.VIEW,
     colorClass: "text-purple-500 dark:text-purple-400",
   },
   {
     label: "Posts",
     Icon: Newspaper,
     href: "/dashboard/posts",
-    roles: [ROLES.ADMIN, ROLES.SUBADMIN, ROLES.TEAM_LEADER, ROLES.MEMBER],
-    permission: PERMISSIONS.POST_CREATE,
+    permission: PERMISSIONS.POSTS.CREATE,
     colorClass: "text-sky-500 dark:text-sky-400",
   },
   {
     label: "Billing",
     Icon: CreditCard,
     href: "/dashboard/billing",
-    roles: [ROLES.ADMIN],
+    permission: PERMISSIONS.SUBSCRIPTION.VIEW,
     colorClass: "text-violet-500 dark:text-violet-400",
   },
 ];
@@ -77,11 +75,9 @@ export default function Sidebar() {
   const filteredItems = useMemo(
     () =>
       MENU_ITEMS.filter(
-        (item) =>
-          item.roles.includes(userRole) &&
-          (!item.permission || hasPermission(user, item.permission))
+        (item) => !item.permission || hasPermission(user, item.permission)
       ),
-    [user, userRole]
+    [user]
   );
   const settingsActive = pathname === settingsHref;
   const prefetchedRoutes = useMemo(

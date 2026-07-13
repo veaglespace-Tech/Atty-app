@@ -15,9 +15,9 @@ import {
   useDownloadOrgUsersPdfMutation,
   useGetOrgUsersQuery,
 } from "@/services/api/orgApi";
+import { useGetRolesQuery } from "@/services/api/roleApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import {
-  ORG_MANAGED_ROLE_OPTIONS,
   PERMISSION_GROUPS,
   ROLES,
   formatPermissionLabel,
@@ -85,10 +85,25 @@ export default function OrgUsersPage() {
   ] = useCreateOrgUserMutation();
   const [downloadUsersExcelMutation] = useDownloadOrgUsersExcelMutation();
   const [downloadUsersPdfMutation] = useDownloadOrgUsersPdfMutation();
-  const manageableRoleOptions = useMemo(
-    () => getManagedRoleOptions(authUser?.currentRole),
-    [authUser?.currentRole]
-  );
+  const { data: rolesData } = useGetRolesQuery();
+  const allRoles = useMemo(() => rolesData?.data || [], [rolesData]);
+
+  const manageableRoleOptions = useMemo(() => {
+    const roleCode = authUser?.currentRole;
+    if (roleCode === ROLES.SUPER_ADMIN || roleCode === ROLES.ORG_ADMIN) {
+      return allRoles
+        .filter((r) => r.code !== ROLES.SUPER_ADMIN && r.code !== ROLES.ORG_ADMIN)
+        .map((r) => ({ label: r.name, value: r.code }));
+    }
+    if (roleCode === ROLES.SUB_ADMIN) {
+      return allRoles
+        .filter((r) => r.code === ROLES.TEAM_LEADER || r.code === ROLES.MEMBER)
+        .map((r) => ({ label: r.name, value: r.code }));
+    }
+    return allRoles
+      .filter((r) => r.code === ROLES.MEMBER)
+      .map((r) => ({ label: r.name, value: r.code }));
+  }, [allRoles, authUser?.currentRole]);
 
   const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
   const summary = useMemo(() => (Array.isArray(usersData?.summary) ? usersData.summary : []), [usersData]);
@@ -496,7 +511,7 @@ export default function OrgUsersPage() {
                 className={`${fieldClassName} dashboard-select-control`}
               >
                 <option value="ALL">All Roles</option>
-                {ORG_MANAGED_ROLE_OPTIONS.map((roleOption) => (
+                {manageableRoleOptions.map((roleOption) => (
                   <option key={roleOption.value} value={roleOption.value}>
                     {roleOption.label}
                   </option>

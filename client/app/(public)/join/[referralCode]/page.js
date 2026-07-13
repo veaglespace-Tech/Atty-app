@@ -78,6 +78,7 @@ const joinSchema = z
       .regex(/[!@#$%^&*(),.?\":{}|<>]/, "Password must contain at least one special character"),
     confirmPassword: z.string(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
+    bloodGroup: z.string().optional(),
     city: z
       .string()
       .trim()
@@ -117,6 +118,8 @@ const normalFieldClassName = "border-slate-200 hover:border-slate-300 dark:borde
 const errorFieldClassName =
   "border-red-400 bg-red-50/70 focus:border-red-500 focus:ring-red-500/10 dark:border-red-300 dark:bg-white";
 
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 export default function JoinPage() {
   const { referralCode } = useParams();
   const router = useRouter();
@@ -148,6 +151,7 @@ export default function JoinPage() {
       password: "",
       confirmPassword: "",
       gender: "MALE",
+      bloodGroup: "",
       city: "",
       emergencyContact: "",
       currentAddress: "",
@@ -328,6 +332,18 @@ export default function JoinPage() {
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
+            </select>
+          </Field>
+
+          <Field label="Blood Group" error={errors.bloodGroup?.message}>
+            <select
+              {...register("bloodGroup")}
+              className={`${fieldClassName} appearance-none cursor-pointer ${errors.bloodGroup ? errorFieldClassName : normalFieldClassName}`}
+            >
+              <option value="" disabled>Select Blood Group</option>
+              {BLOOD_GROUPS.map((bg) => (
+                <option key={bg} value={bg}>{bg}</option>
+              ))}
             </select>
           </Field>
 

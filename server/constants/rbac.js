@@ -45,12 +45,20 @@ function normalizeRole(role) {
     LEGACY_ROLE_MAP[rawRole] ||
     LEGACY_ROLE_MAP[normalizedWithUnderscore] ||
     LEGACY_ROLE_MAP[compact] ||
-    "MEMBER"
+    normalizedWithUnderscore
   );
 }
 
+
+let rolePathCache = {};
+function updateRoleCache(code, path) {
+  rolePathCache[code] = path;
+}
 function getDashboardPathByRole(role) {
   const normalizedRole = normalizeRole(role);
+  if (rolePathCache[normalizedRole]) {
+    return rolePathCache[normalizedRole];
+  }
   const root = ROLE_ROUTE_PREFIX[normalizedRole] || ROLE_ROUTE_PREFIX.MEMBER;
   return `${root}/dashboard`;
 }
@@ -62,4 +70,6 @@ module.exports = {
   ORG_SCOPED_ROLES,
   normalizeRole,
   getDashboardPathByRole,
+  updateRoleCache,
+  rolePathCache
 };

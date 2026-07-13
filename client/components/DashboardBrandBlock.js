@@ -3,9 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 export default function DashboardBrandBlock() {
   const pathname = usePathname();
+  const { user } = useAuthSession();
+
+  const currentRole = user?.currentRole;
+  const isSuperAdminRole = currentRole === "SUPER_ADMIN";
+  const orgLogoUrl = user?.organization?.logoUrl;
+  const orgName = user?.organization?.name || "Workspace";
+
+
 
   return (
     <Link
@@ -14,7 +23,7 @@ export default function DashboardBrandBlock() {
       className="group flex w-full items-center justify-center rounded-[1.5rem] transition-transform duration-300 hover:scale-[1.01]"
     >
       <div className="flex flex-col items-center text-center">
-        <div key={pathname} className="brand-logo-reveal relative mx-auto flex h-16 w-16 items-center justify-center md:h-20 md:w-20">
+        <div key="veagle" className="brand-logo-reveal relative mx-auto flex h-16 w-16 items-center justify-center md:h-20 md:w-20">
           <div className="brand-logo-orbit page-shell-orb-tertiary absolute inset-0 rounded-full blur-xl" />
           <div className="brand-logo-spotlight relative h-full w-full">
             <Image

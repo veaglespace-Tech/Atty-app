@@ -10,6 +10,7 @@ const navItems = [
   { label: "Referrals", href: "/super-admin/referrals" },
   { label: "Plans", href: "/super-admin/plans" },
   { label: "Access", href: "/super-admin/access" },
+  { label: "Roles", href: "/super-admin/roles" },
   { label: "Posts", href: "/super-admin/posts" },
   { label: "Notifications", href: "/super-admin/notifications" },
   { label: "Payments", href: "/super-admin/payments" },

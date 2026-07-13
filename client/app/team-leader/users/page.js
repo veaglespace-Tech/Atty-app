@@ -43,7 +43,7 @@ export default function TeamLeaderUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
 
-  const canCreateUser = hasPermission(authUser, PERMISSIONS.USERS_CREATE);
+  const canCreateUser = hasPermission(authUser, PERMISSIONS.USERS.CREATE);
 
   const [form, setForm] = useState({
     name: "",
@@ -56,6 +56,7 @@ export default function TeamLeaderUsersPage() {
     permissions: getDefaultPermissionsForRole(ROLES.MEMBER),
   });
 
+  const { data: rolesData } = useGetRolesQuery();
   const {
     data: usersData,
     isLoading,
@@ -66,7 +67,16 @@ export default function TeamLeaderUsersPage() {
   const [createUserMutation] = useCreateOrgUserMutation();
 
   const actorRole = normalizeRole(authUser?.currentRole);
-  const manageableRoleOptions = useMemo(() => getManagedRoleOptions(actorRole), [actorRole]);
+  const allRoles = useMemo(() => rolesData?.data || [], [rolesData]);
+  const manageableRoleOptions = useMemo(() => {
+    if (actorRole === "SUPER_ADMIN" || actorRole === "ORG_ADMIN") {
+      return allRoles.filter(r => r.code !== "SUPER_ADMIN" && r.code !== "ORG_ADMIN").map(r => ({ label: r.name, value: r.code }));
+    }
+    if (actorRole === "SUB_ADMIN") {
+      return allRoles.filter(r => r.code === "TEAM_LEADER" || r.code === "MEMBER").map(r => ({ label: r.name, value: r.code }));
+    }
+    return allRoles.filter(r => r.code === "MEMBER").map(r => ({ label: r.name, value: r.code }));
+  }, [allRoles, actorRole]);
   const assignablePermissions = useMemo(() => getAssignablePermissionsByRole(actorRole), [actorRole]);
   const permissionGroups = useMemo(
     () =>

@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
-const { PERMISSION_KEYS, hasPermission, resolveUserPermissions } = require("../constants/permissions");
+const { PERMISSIONS, hasPermission, resolveUserPermissions } = require("../constants/permissions");
 const { resolveUserRole } = require("../utils/membership");
 const {
   ensureOrganizationId,
@@ -46,19 +46,19 @@ const MODULES = [
     key: "TEAMS",
     label: "Teams",
     path: "/team-leader/teams",
-    permission: PERMISSION_KEYS.TEAM_VIEW,
+    permission: PERMISSIONS.TEAM.VIEW_OWN,
   },
   {
     key: "ATTENDANCE",
     label: "Attendance",
     path: "/team-leader/attendance",
-    permission: PERMISSION_KEYS.ATTENDANCE_VIEW,
+    permission: PERMISSIONS.ATTENDANCE.VIEW_TEAM,
   },
   {
     key: "REPORTS",
     label: "Reports",
     path: "/team-leader/reports",
-    permission: PERMISSION_KEYS.REPORTS_VIEW,
+    permission: PERMISSIONS.REPORTS.VIEW,
   },
 ];
 
@@ -127,9 +127,9 @@ const getTeamPatchPermissionState = (req, orgId) => {
     body?.isActive !== undefined;
   const hasAttendanceFields =
     body?.attendanceRadius !== undefined || Boolean(normalizeCoordinatesInput(body));
-  const canUpdateTeam = hasPermission(req.user, PERMISSION_KEYS.TEAM_UPDATE, orgId);
-  const canManageAttendance = hasPermission(req.user, PERMISSION_KEYS.ATTENDANCE_MANAGE, orgId);
-  const canSetLocation = hasPermission(req.user, PERMISSION_KEYS.LOCATION_SET, orgId);
+  const canUpdateTeam = hasPermission(req.user, PERMISSIONS.TEAM.UPDATE, orgId);
+  const canManageAttendance = hasPermission(req.user, PERMISSIONS.ATTENDANCE.MANAGE, orgId);
+  const canSetLocation = hasPermission(req.user, PERMISSIONS.LOCATION.MANAGE, orgId);
 
   return {
     canUpdateTeam,
@@ -323,7 +323,7 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_OWN, orgId);
   const limit = parseLimit(req.query.limit, 300, 2000);
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
@@ -368,7 +368,7 @@ exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
 exports.getTeamLeaderTeamById = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const teamId = Number(req.params.teamId);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_OWN, orgId);
 
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
@@ -397,9 +397,9 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
   const isForAssignment = req.query.assignable === 'true';
   
   if (isForAssignment) {
-    assertPermission(res, req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId);
+    assertPermission(res, req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId);
   } else {
-    assertPermission(res, req.user, PERMISSION_KEYS.USERS_VIEW, orgId);
+    assertPermission(res, req.user, PERMISSIONS.USERS.VIEW, orgId);
   }
 
   const limit = parseLimit(req.query.limit, 500, 2000);
@@ -470,10 +470,10 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
 
 exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.CREATE, orgId);
   await assertWithinPlanTeamLimit({ orgId, res });
 
-  const canAssignMembers = hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId);
+  const canAssignMembers = hasPermission(req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId);
   const name = truncateText(req.body?.name, 120);
   if (!name) {
     res.status(400);
@@ -653,7 +653,7 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
 
   if (
     (hasMemberIds || hasLeaderId) &&
-    !hasPermission(req.user, PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS, orgId)
+    !hasPermission(req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId)
   ) {
     res.status(403);
     throw new Error("Missing required permission");
@@ -726,7 +726,7 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
 
 exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_DELETE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.DELETE, orgId);
   const teamId = parseId(req.params.teamId);
   if (!teamId) {
     res.status(400);
@@ -767,7 +767,7 @@ exports.deleteTeamLeaderTeam = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW, orgId);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_TEAM, orgId);
   const limit = parseLimit(req.query.limit, 500, 2500);
 
   const accessibleTeams = await getAccessibleTeams({
@@ -832,7 +832,7 @@ exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_VIEW, orgId);
+  assertPermission(res, req.user, PERMISSIONS.REPORTS.VIEW, orgId);
 
   const to = todayKey();
   const fromDate = new Date();
@@ -1113,7 +1113,7 @@ const buildAttendanceExcelBuffer = ({
 
 exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId);
+  assertPermission(res, req.user, PERMISSIONS.REPORTS.DOWNLOAD, orgId);
   const range = resolveTeamLeaderReportRange(req);
 
   const accessibleTeamIds = await getAccessibleTeamIds({
@@ -1167,7 +1167,7 @@ exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
 
 exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.REPORTS_DOWNLOAD, orgId);
+  assertPermission(res, req.user, PERMISSIONS.REPORTS.DOWNLOAD, orgId);
   const range = resolveTeamLeaderReportRange(req);
 
   const accessibleTeamIds = await getAccessibleTeamIds({

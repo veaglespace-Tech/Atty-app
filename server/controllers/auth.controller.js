@@ -10,6 +10,7 @@ const {
   resolveOrganizationId,
   resolveUserRole,
 } = require("../utils/membership");
+const { resolveUserPermissions } = require("../constants/permissions");
 const { createOrganizationMembership } = require("../services/organization-member.service");
 const { truncateText } = require("../services/common.service");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
@@ -871,6 +872,7 @@ const serializeSessionUser = (user, organization = null) => {
           state: org.state || null,
           country: org.country || null,
           subscriptionStatus: org.subscriptionStatus || null,
+          logoUrl: org.logoUrl || null,
           plan: org.plan
             ? {
                 id: org.plan.id,
@@ -1300,9 +1302,21 @@ exports.login = asyncHandler(async (req, res) => {
       : hydratedUser;
 
   const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
-  const token = jwt.sign({ id: user.id }, process.env.JWT_KEY, {
-    expiresIn: tokenTTL,
-  });
+  const resolvedPermissions = resolveUserPermissions(sessionUser, org?.id);
+  const token = jwt.sign(
+    { 
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      permissions: resolvedPermissions,
+      role: currentRole,
+      orgId: org?.id || null
+    }, 
+    process.env.JWT_KEY, 
+    {
+      expiresIn: tokenTTL,
+    }
+  );
 
   const redirectPath =
     currentRole === "ORG_ADMIN" && org?.subscriptionStatus === "EXPIRED"
@@ -1459,12 +1473,20 @@ exports.updateMe = asyncHandler(async (req, res) => {
   );
   const hasEmergencyContact = Object.prototype.hasOwnProperty.call(requestBody, "emergencyContact");
   const hasCurrentAddress = Object.prototype.hasOwnProperty.call(requestBody, "currentAddress");
+  const hasPermanentAddress = Object.prototype.hasOwnProperty.call(requestBody, "permanentAddress");
+  const hasBloodGroup = Object.prototype.hasOwnProperty.call(requestBody, "bloodGroup");
 
   if (hasEmergencyContact) {
     payload.emergencyContact = requestBody.emergencyContact;
   }
   if (hasCurrentAddress) {
     payload.currentAddress = requestBody.currentAddress;
+  }
+  if (hasPermanentAddress) {
+    payload.permanentAddress = requestBody.permanentAddress;
+  }
+  if (hasBloodGroup) {
+    payload.bloodGroup = requestBody.bloodGroup;
   }
 
   if (hasName) {

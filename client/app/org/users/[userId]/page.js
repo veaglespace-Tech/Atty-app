@@ -21,6 +21,7 @@ import {
   useDownloadOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,
 } from "@/services/api/orgApi";
+import { useGetRolesQuery } from "@/services/api/roleApi";
 import {
   PERMISSION_GROUPS,
   PERMISSIONS,
@@ -145,6 +146,8 @@ export default function OrgUserDetailPage() {
     refetch,
   } = useGetOrgUserByIdQuery(userId, { skip: !Number.isFinite(userId) || userId <= 0 });
 
+  const { data: rolesData } = useGetRolesQuery();
+
   const [patchUserMutation] = usePatchOrgUserMutation();
   const [downloadOrgUserProfilePdf, { isLoading: downloadingProfilePdf }] =
     useDownloadOrgUserProfilePdfMutation();
@@ -177,10 +180,16 @@ export default function OrgUserDetailPage() {
     .join(", ");
 
   const actorRole = normalizeRole(authUser?.currentRole);
-  const manageableRoleOptions = useMemo(
-    () => getManagedRoleOptions(actorRole),
-    [actorRole]
-  );
+  const allRoles = useMemo(() => rolesData?.data || [], [rolesData]);
+  const manageableRoleOptions = useMemo(() => {
+    if (actorRole === "SUPER_ADMIN" || actorRole === "ORG_ADMIN") {
+      return allRoles.filter(r => r.code !== "SUPER_ADMIN" && r.code !== "ORG_ADMIN").map(r => ({ label: r.name, value: r.code }));
+    }
+    if (actorRole === "SUB_ADMIN") {
+      return allRoles.filter(r => r.code === "TEAM_LEADER" || r.code === "MEMBER").map(r => ({ label: r.name, value: r.code }));
+    }
+    return allRoles.filter(r => r.code === "MEMBER").map(r => ({ label: r.name, value: r.code }));
+  }, [allRoles, actorRole]);
   const assignablePermissions = useMemo(
     () => getAssignablePermissionsByRole(actorRole),
     [actorRole]
@@ -195,10 +204,10 @@ export default function OrgUserDetailPage() {
     [assignablePermissions]
   );
 
-  const canUpdateStatus = hasPermission(authUser, PERMISSIONS.USERS_STATUS_UPDATE);
-  const canToggleAccess = hasPermission(authUser, PERMISSIONS.USERS_ACTIVE_TOGGLE);
-  const canEditUser = hasPermission(authUser, PERMISSIONS.USERS_CREATE);
-  const canDownloadProfilePdf = hasPermission(authUser, PERMISSIONS.TEAM_VIEW);
+  const canUpdateStatus = hasPermission(authUser, PERMISSIONS.USERS.UPDATE_STATUS);
+  const canToggleAccess = hasPermission(authUser, PERMISSIONS.USERS.TOGGLE_ACTIVE);
+  const canEditUser = hasPermission(authUser, PERMISSIONS.USERS.CREATE);
+  const canDownloadProfilePdf = hasPermission(authUser, PERMISSIONS.TEAM.VIEW_ALL);
 
   useEffect(() => {
     if (!user) return;
@@ -479,9 +488,10 @@ export default function OrgUserDetailPage() {
           <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
           <DetailTile label="Email" value={toDisplayText(user.email)} />
           <DetailTile label="Mobile" value={userMobileLabel} />
-          {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+          {!hasPermission(user, PERMISSIONS.USERS.CREATE) && (
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
+          <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(joiningDate)} />

@@ -186,8 +186,8 @@ export default function OrgAttendancePage() {
   const authUser = useSelector((state) => state.auth.user);
   const isFreePlan = authUser?.organization?.plan?.code === "FREE_7D_TRIAL" || authUser?.organization?.planCode === "FREE_7D_TRIAL";
   const currentRole = authUser?.currentRole;
-  const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
-  const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
+  const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION.MANAGE);
+  const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE.MANAGE);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);

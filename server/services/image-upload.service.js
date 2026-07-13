@@ -1,5 +1,7 @@
 const ImageKit = require("imagekit");
 const { v2: cloudinary } = require("cloudinary");
+const fs = require("fs");
+const path = require("path");
 
 const SUPPORTED_IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
@@ -140,22 +142,21 @@ const uploadImageDataUrl = async ({
   uploadFailureMessage = "Failed to upload image.",
   errorFactory = createImageUploadError,
 }) => {
-  ensureImageKitConfigured({
-    missingConfigMessage,
-    errorFactory,
-  });
-
-  const normalizedDataUrl = parseImageDataUrl({
-    value: dataUrl,
-    maxBytes,
-    invalidMessage,
-    unsupportedMessage,
-    emptyMessage,
-    tooLargeMessage,
-    errorFactory,
-  }).dataUrl;
-
   try {
+    ensureImageKitConfigured({
+      missingConfigMessage,
+      errorFactory,
+    });
+
+    const normalizedDataUrl = parseImageDataUrl({
+      value: dataUrl,
+      maxBytes,
+      invalidMessage,
+      unsupportedMessage,
+      emptyMessage,
+      tooLargeMessage,
+      errorFactory,
+    }).dataUrl;
     const fileName = publicId ? `${publicId}.jpg` : `img-${Date.now()}.jpg`;
     
     // ImageKit expects folder names to start with a slash, e.g., "/profile-images"
@@ -181,13 +182,60 @@ const uploadImageDataUrl = async ({
       publicId: result.fileId || null,
     };
   } catch (error) {
-    throw errorFactory(error?.message || uploadFailureMessage, 502);
+    console.warn("ImageKit upload failed, falling back to local storage:", error?.message);
+    
+    try {
+      const fileName = publicId ? `${publicId}.jpg` : `img-${Date.now()}.jpg`;
+      const normalizedFolder = folder ? folder.replace(/^\//, "") : "misc";
+      const uploadsDir = path.join(__dirname, "../uploads", normalizedFolder);
+      
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      
+      const parsedData = parseImageDataUrl({
+        value: dataUrl,
+        maxBytes,
+        invalidMessage,
+        unsupportedMessage,
+        emptyMessage,
+        tooLargeMessage,
+        errorFactory,
+      });
+      
+      const base64Data = parsedData.dataUrl.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+      
+      const filePath = path.join(uploadsDir, fileName);
+      fs.writeFileSync(filePath, buffer);
+      
+      const backendUrl = process.env.API_URL || "http://localhost:5000";
+      return {
+        url: `${backendUrl}/uploads/${normalizedFolder}/${fileName}`,
+        publicId: `local-${normalizedFolder}-${fileName}`,
+      };
+    } catch (localError) {
+      throw errorFactory(localError?.message || uploadFailureMessage, 502);
+    }
   }
 };
 
 const deleteImage = async (publicId) => {
   const normalizedPublicId = String(publicId || "").trim();
   if (!normalizedPublicId) return;
+
+  if (normalizedPublicId.startsWith("local-")) {
+    try {
+      const parts = normalizedPublicId.split("-");
+      const folder = parts[1] || "misc";
+      const fileName = parts.slice(2).join("-");
+      const filePath = path.join(__dirname, "../uploads", folder, fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error("Failed to delete local image:", error?.message || error);
+    }
+    return;
+  }
 
   // Detect if it is a Cloudinary publicId (which contains folders/slashes, e.g., "veagle-attendee/...")
   const isCloudinary = normalizedPublicId.includes("/");
@@ -207,6 +255,10 @@ const deleteImage = async (publicId) => {
       console.error("Failed to delete legacy image from Cloudinary:", error?.message || error);
     }
   } else {
+    if (!hasImageKitConfig()) {
+       console.warn(`Cannot delete ImageKit image ${normalizedPublicId}: ImageKit config is missing.`);
+       return;
+    }
     ensureImageKitConfigured();
     try {
       await imageKitInstance.deleteFile(normalizedPublicId);

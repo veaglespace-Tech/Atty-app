@@ -66,7 +66,8 @@ export default function Navbar() {
         window.removeEventListener("storage", checkPartnerAuth);
       };
     } else {
-      setIsPartnerLoggedIn(false);
+      const timer = setTimeout(() => setIsPartnerLoggedIn(false), 0);
+      return () => clearTimeout(timer);
     }
   }, [pathname]);
 

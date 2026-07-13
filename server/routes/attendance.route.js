@@ -13,6 +13,7 @@ const { verifyToken } = require("../middlewares/token.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
 const { validateBody } = require("../middlewares/validation.middleware");
+const { enforceAbac } = require("../middlewares/abac.middleware");
 const { resolveLocationPayload } = require("../services/location.service");
 
 const attendanceLocationSchema = z
@@ -56,8 +57,8 @@ router.use(checkActiveSubscription);
 router.post("/punch-in", validateBody(attendanceLocationSchema), punchIn);
 router.post("/punch-out", validateBody(attendanceLocationSchema), punchOut);
 router.get("/me", getMyAttendance);
-router.get("/", getAttendance);
-router.get("/summary", getAttendanceSummary);
+router.get("/", enforceAbac("team"), getAttendance);
+router.get("/summary", enforceAbac("team"), getAttendanceSummary);
 router.post("/regularize", requestRegularization);
 
 module.exports = router;

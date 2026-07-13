@@ -18,7 +18,7 @@ const {
 const {
   attendanceRecordSelect,
 } = require("../services/prisma-selects.service");
-const { PERMISSION_KEYS } = require("../constants/permissions");
+const { PERMISSIONS } = require("../constants/permissions");
 const xlsx = require("xlsx");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const { buildUserAttendancePayload } = require("../services/attendance-query.service");
@@ -47,7 +47,7 @@ const toMinutesFromTime = (hhmm) => {
 
 exports.getOrgAttendance = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
 
   const payload = await buildOrgAttendancePayload({
     orgId,
@@ -63,7 +63,7 @@ exports.getOrgAttendance = asyncHandler(async (req, res) => {
 
 exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
@@ -96,7 +96,7 @@ exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
 
 exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.LOCATION_SET);
+  assertPermission(res, req.user, PERMISSIONS.LOCATION.MANAGE);
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
@@ -181,7 +181,7 @@ exports.updateOrgAttendanceSettings = asyncHandler(async (req, res) => {
 
 exports.getOrgUserAttendanceLogs = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
   
   const userId = Number(req.params.userId);
   const payload = await buildUserAttendancePayload({
@@ -196,7 +196,7 @@ exports.getOrgUserAttendanceLogs = asyncHandler(async (req, res) => {
 
 exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
   
   const userId = Number(req.params.userId);
   const payload = await buildUserAttendancePayload({
@@ -264,7 +264,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
 
 exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
   
   const userId = Number(req.params.userId);
   const payload = await buildUserAttendancePayload({
@@ -325,7 +325,7 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
 
 exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
   
   const payload = await buildOrgAttendancePayload({
     orgId,
@@ -385,7 +385,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
 
 exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
   
   const payload = await buildOrgAttendancePayload({
     orgId,
@@ -446,7 +446,7 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
 
 exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
 
   const logId = Number(req.params.id);
 
@@ -468,7 +468,7 @@ exports.getOrgAttendanceLogById = asyncHandler(async (req, res) => {
 exports.getOrgRegularizationRequests = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   // Ensure only authorized people can view this
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
 
   const requests = await prisma.attendanceRegularization.findMany({
     where: { orgId },
@@ -488,7 +488,7 @@ exports.getOrgRegularizationRequests = asyncHandler(async (req, res) => {
 
 exports.approveRegularizationRequest = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW); // Adjust permission if needed
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL); // Adjust permission if needed
 
   const { id } = req.params;
   const adminId = Number(req.user.id);
@@ -549,7 +549,7 @@ exports.approveRegularizationRequest = asyncHandler(async (req, res) => {
 
 exports.rejectRegularizationRequest = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.ATTENDANCE_VIEW); 
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL); 
 
   const { id } = req.params;
   const adminId = Number(req.user.id);

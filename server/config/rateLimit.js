@@ -24,4 +24,31 @@ const loginRateLimiter = rateLimit({
   },
 });
 
-module.exports = { apiRateLimiter, loginRateLimiter };
+const roleRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: async (req, res) => {
+    if (!req.user) return 100;
+    const role = req.user.currentRole || req.user.role;
+    switch (role) {
+      case "SUPER_ADMIN":
+      case "ORG_ADMIN":
+        return 1000;
+      case "SUB_ADMIN":
+      case "TEAM_LEADER":
+        return 300;
+      case "MEMBER":
+      default:
+        return 100;
+    }
+  },
+  keyGenerator: (req) => {
+    return req.user ? req.user.id.toString() : req.ip;
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Rate limit exceeded for your role. Please try again later.",
+  }
+});
+
+module.exports = { apiRateLimiter, loginRateLimiter, roleRateLimiter };

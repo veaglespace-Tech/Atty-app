@@ -18,10 +18,11 @@ import {
 import {
   PERMISSION_GROUPS,
   PERMISSIONS,
+  ROLES,
   formatPermissionLabel,
   formatRoleLabel,
   getDefaultPermissionsForRole,
-  ROLES,
+  hasPermission,
 } from "@/utils/roles";
 import { getLocalPhoneNumber } from "@/utils/phone";
 import {
@@ -31,14 +32,9 @@ import {
   validateManagedUserForm,
 } from "@/utils/formValidation";
 
+import { useGetRolesQuery } from "@/services/api/roleApi";
+
 const STATUS_OPTIONS = ["APPROVED", "PENDING", "REJECTED", "BLOCKED"];
-const ROLE_OPTIONS = [
-  { value: "MEMBER", label: "Member" },
-  { value: "TEAM_LEADER", label: "Team Leader" },
-  { value: "SUB_ADMIN", label: "Sub Admin" },
-  { value: "ORG_ADMIN", label: "Admin" },
-  { value: "SUPER_ADMIN", label: "Super Admin" },
-];
 
 const toDisplayText = (value, fallback = "-") => {
   const text = String(value ?? "").trim();
@@ -122,6 +118,9 @@ export default function SuperAdminUserDetailPage() {
   } = useGetSuperAdminUserByIdQuery(userId, { skip: !Number.isFinite(userId) || userId <= 0 });
 
   const [patchUserMutation] = usePatchSuperAdminUserMutation();
+  const { data: rolesData } = useGetRolesQuery();
+  const allRoles = useMemo(() => rolesData?.data || [], [rolesData]);
+  const ROLE_OPTIONS = useMemo(() => allRoles.map(r => ({ value: r.code, label: r.name })), [allRoles]);
 
   const user = userData?.item || null;
   const organization = user?.organization || null;
@@ -356,9 +355,10 @@ export default function SuperAdminUserDetailPage() {
           <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
           <DetailTile label="Email" value={toDisplayText(user.email)} />
           <DetailTile label="Mobile" value={userMobileLabel} />
-          {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+          {!hasPermission(user, PERMISSIONS.USERS.CREATE) && (
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
+          <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(user.createdAt)} />
@@ -428,7 +428,7 @@ export default function SuperAdminUserDetailPage() {
               inputClassName="py-2 text-sm font-medium text-slate-800 dark:bg-slate-900 dark:text-white"
             />
 
-            {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+            {!hasPermission(user, PERMISSIONS.USERS.CREATE) && (
               <div className="space-y-2 sm:col-span-2">
                 <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Emergency Contact</label>
                 <input

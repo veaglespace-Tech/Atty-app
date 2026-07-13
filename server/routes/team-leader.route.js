@@ -16,6 +16,7 @@ const {
 const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
+const { enforceAbac } = require("../middlewares/abac.middleware");
 
 router.use(
   userProtected,
@@ -25,13 +26,13 @@ router.use(
 
 router.get("/dashboard", getTeamLeaderDashboard);
 router.get("/teams", getTeamLeaderTeams);
-router.get("/teams/:teamId", getTeamLeaderTeamById);
+router.get("/teams/:teamId", enforceAbac("team"), getTeamLeaderTeamById);
 router.post("/teams", createTeamLeaderTeam);
-router.patch("/teams/:teamId", patchTeamLeaderTeam);
-router.delete("/teams/:teamId", deleteTeamLeaderTeam);
+router.patch("/teams/:teamId", enforceAbac("team"), patchTeamLeaderTeam);
+router.delete("/teams/:teamId", enforceAbac("team"), deleteTeamLeaderTeam);
 router.get("/users", getTeamLeaderUsers);
-router.get("/attendance", getTeamLeaderAttendance);
-router.get("/reports", getTeamLeaderReports);
+router.get("/attendance", enforceAbac("team"), getTeamLeaderAttendance);
+router.get("/reports", enforceAbac("team"), getTeamLeaderReports);
 router.get("/reports/pdf", downloadTeamLeaderReportsPdf);
 router.get("/reports/excel", downloadTeamLeaderReportsExcel);
 

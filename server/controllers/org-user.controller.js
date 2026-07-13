@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { normalizeRole } = require("../constants/rbac");
 const {
-  PERMISSION_KEYS,
+  PERMISSIONS,
   getDefaultPermissionsForRole,
   normalizePermissionList,
 } = require("../constants/permissions");
@@ -260,10 +260,10 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
     res,
     req.user,
     [
-      PERMISSION_KEYS.USERS_CREATE,
-      PERMISSION_KEYS.TEAM_CREATE,
-      PERMISSION_KEYS.TEAM_UPDATE,
-      PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS,
+      PERMISSIONS.USERS.CREATE,
+      PERMISSIONS.TEAM.CREATE,
+      PERMISSIONS.TEAM.UPDATE,
+      PERMISSIONS.TEAM.ASSIGN_MEMBERS,
     ],
     orgId
   );
@@ -309,7 +309,7 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
 
 exports.getOrgUserById = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_ALL, orgId);
   const { user } = await ensureOrgTargetUser({
     req,
     res,
@@ -343,7 +343,7 @@ exports.getOrgUserById = asyncHandler(async (req, res) => {
 
 exports.downloadOrgUserProfilePdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.TEAM_VIEW, orgId);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_ALL, orgId);
 
   const { user } = await ensureOrgTargetUser({
     req,
@@ -408,7 +408,7 @@ exports.downloadOrgUserProfilePdf = asyncHandler(async (req, res) => {
 
 exports.patchOrgUser = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.CREATE, orgId);
   const { user } = await ensureOrgTargetUser({
     req,
     res,
@@ -554,7 +554,7 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
 
 exports.createOrgUser = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_CREATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.CREATE, orgId);
   await assertWithinPlanUserLimit({ orgId, res });
 
   const name = truncateText(req.body?.name, 120);
@@ -705,7 +705,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
 
 exports.updateOrgUserStatus = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_STATUS_UPDATE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.UPDATE_STATUS, orgId);
   const status = normalizeStatus(req.body?.status || "");
   if (!USER_STATUS.has(status)) {
     res.status(400);
@@ -768,7 +768,7 @@ exports.updateOrgUserStatus = asyncHandler(async (req, res) => {
 
 exports.toggleOrgUserActive = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_ACTIVE_TOGGLE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.TOGGLE_ACTIVE, orgId);
   const isActive = parseBoolean(req.body?.isActive, null);
   if (isActive === null) {
     res.status(400);
@@ -807,7 +807,7 @@ exports.toggleOrgUserActive = asyncHandler(async (req, res) => {
 
 exports.deleteOrgUser = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSION_KEYS.USERS_DELETE, orgId);
+  assertPermission(res, req.user, PERMISSIONS.USERS.DELETE, orgId);
   const { user } = await ensureOrgTargetUser({
     req,
     res,
@@ -1094,7 +1094,7 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
   assertAnyPermission(
     res,
     req.user,
-    [PERMISSION_KEYS.USERS_CREATE, PERMISSION_KEYS.TEAM_VIEW],
+    [PERMISSIONS.USERS.CREATE, PERMISSIONS.TEAM.VIEW_ALL],
     orgId
   );
 
@@ -1171,7 +1171,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   assertAnyPermission(
     res,
     req.user,
-    [PERMISSION_KEYS.USERS_CREATE, PERMISSION_KEYS.TEAM_VIEW],
+    [PERMISSIONS.USERS.CREATE, PERMISSIONS.TEAM.VIEW_ALL],
     orgId
   );
 

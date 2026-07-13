@@ -17,10 +17,12 @@ import {
 } from "@/services/api/superAdminApi";
 import {
   PERMISSION_GROUPS,
+  PERMISSIONS,
   ROLES,
   formatPermissionLabel,
   formatRoleLabel,
   getDefaultPermissionsForRole,
+  hasPermission,
 } from "@/utils/roles";
 
 import { getLocalPhoneNumber } from "@/utils/phone";
@@ -31,14 +33,9 @@ import {
   validateManagedUserForm,
 } from "@/utils/formValidation";
 
+import { useGetRolesQuery } from "@/services/api/roleApi";
+
 const STATUS_OPTIONS = ["APPROVED", "PENDING", "REJECTED", "BLOCKED"];
-const ROLE_OPTIONS = [
-  { value: "MEMBER", label: "Member" },
-  { value: "TEAM_LEADER", label: "Team Leader" },
-  { value: "SUB_ADMIN", label: "Sub Admin" },
-  { value: "ORG_ADMIN", label: "Admin" },
-  { value: "SUPER_ADMIN", label: "Super Admin" },
-];
 
 const toDisplayText = (value, fallback = "-") => {
   const text = String(value ?? "").trim();
@@ -104,6 +101,7 @@ export default function SuperAdminUserDetailStandalonePage() {
     emergencyContact: "",
     currentAddress: "",
     permanentAddress: "",
+    bloodGroup: "",
     role: "MEMBER",
     approvalStatus: "APPROVED",
     active: true,
@@ -120,6 +118,9 @@ export default function SuperAdminUserDetailStandalonePage() {
   });
 
   const [patchUserMutation] = usePatchSuperAdminUserMutation();
+  const { data: rolesData } = useGetRolesQuery();
+  const allRoles = useMemo(() => rolesData?.data || [], [rolesData]);
+  const ROLE_OPTIONS = useMemo(() => allRoles.map(r => ({ value: r.code, label: r.name })), [allRoles]);
 
   const user = userData?.item || null;
   const organization = user?.organization || null;
@@ -151,6 +152,7 @@ export default function SuperAdminUserDetailStandalonePage() {
       emergencyContact: user.emergencyContact || "",
       currentAddress: user.currentAddress || "",
       permanentAddress: user.permanentAddress || "",
+      bloodGroup: user.bloodGroup || "",
       role: user.role || "MEMBER",
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
@@ -189,6 +191,7 @@ export default function SuperAdminUserDetailStandalonePage() {
         emergencyContact: normalizeTextInput(form.emergencyContact),
         currentAddress: normalizeTextInput(form.currentAddress),
         permanentAddress: normalizeTextInput(form.permanentAddress),
+        bloodGroup: normalizeTextInput(form.bloodGroup),
       }).unwrap();
 
       setMessage("User profile updated successfully");
@@ -356,9 +359,10 @@ export default function SuperAdminUserDetailStandalonePage() {
 
           <DetailTile label="Email" value={toDisplayText(user.email)} />
           <DetailTile label="Mobile" value={userMobileLabel} />
-          {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+          {!hasPermission(user, PERMISSIONS.USERS.CREATE) && (
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
+          <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(user.createdAt)} />
@@ -428,7 +432,7 @@ export default function SuperAdminUserDetailStandalonePage() {
               inputClassName="py-2 text-sm font-medium text-slate-800 dark:bg-slate-900 dark:text-white"
             />
 
-            {!(user.role === ROLES.SUPER_ADMIN || user.role === ROLES.ORG_ADMIN) && (
+            {!hasPermission(user, PERMISSIONS.USERS.CREATE) && (
               <div className="space-y-2 sm:col-span-2">
                 <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Emergency Contact</label>
                 <input
@@ -457,6 +461,25 @@ export default function SuperAdminUserDetailStandalonePage() {
                 rows={2}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Blood Group</label>
+              <select
+                value={form.bloodGroup}
+                onChange={(event) => setForm((prev) => ({ ...prev, bloodGroup: event.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
             </div>
 
             <div className="space-y-2">

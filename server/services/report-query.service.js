@@ -1,7 +1,7 @@
 const prisma = require("../lib/prisma");
 const { minutesToHoursValue, toSummaryItem } = require("./common.service");
 const { reportUserSelect } = require("./prisma-selects.service");
-const { resolveUserRole } = require("../utils/membership");
+const { mapUserForManagement } = require("./user-query.service");
 
 const compareReportEntries = (left, right) => {
   const leftName = String(left?.member || "").trim().toLowerCase();
@@ -60,9 +60,12 @@ const buildAttendanceReport = async ({
     select: {
       id: true,
       name: true,
+      role: true,
+      orgId: true,
+      permissions: true,
       memberships: {
         where: { orgId: Number(orgId) },
-        select: { role: true },
+        select: { role: true, orgId: true, isActive: true },
       },
     },
   });
@@ -127,7 +130,7 @@ const buildAttendanceReport = async ({
     reportMap.set(userId, {
       id: userId,
       member: user?.name || "Unknown",
-      role: resolveUserRole(user, orgId) || "MEMBER",
+      role: mapUserForManagement(user, orgId).role,
       presentDays: 0,
       halfDays: 0,
       absentDays: 0,

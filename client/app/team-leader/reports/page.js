@@ -181,10 +181,10 @@ export default function TeamLeaderReportsPage() {
   const summaryMap = useMemo(() => summaryMapFromArray(summary), [summary])
 
   const authUser = useSelector((state) => state.auth.user)
-  const canDownload = Boolean(meta?.canDownload) && hasPermission(authUser, PERMISSIONS.REPORTS_DOWNLOAD)
+  const canDownload = Boolean(meta?.canDownload) && hasPermission(authUser, PERMISSIONS.REPORTS.DOWNLOAD)
   const planName = meta?.planName || "TRIAL"
   const planCode = meta?.planCode || ""
-  const downloadRestrictedReason = !hasPermission(authUser, PERMISSIONS.REPORTS_DOWNLOAD) 
+  const downloadRestrictedReason = !hasPermission(authUser, PERMISSIONS.REPORTS.DOWNLOAD) 
     ? "You do not have permission to download reports." 
     : (meta?.downloadRestrictedReason || "Report downloads are available only on paid plans.")
 

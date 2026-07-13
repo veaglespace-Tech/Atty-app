@@ -1,7 +1,7 @@
 const { normalizeRole } = require("../constants/rbac");
 const {
   ALL_PERMISSIONS,
-  PERMISSION_KEYS,
+  PERMISSIONS,
   ROLE_DEFAULT_PERMISSIONS,
   resolveUserPermissions,
 } = require("../constants/permissions");
@@ -26,15 +26,15 @@ const inferManagedUserRole = (user, resolvedRole, resolvedPermissions = []) => {
   }
 
   const hasAdminControls =
-    permissionSet.has(PERMISSION_KEYS.USERS_CREATE) ||
-    permissionSet.has(PERMISSION_KEYS.USERS_STATUS_UPDATE) ||
-    permissionSet.has(PERMISSION_KEYS.USERS_ACTIVE_TOGGLE) ||
-    permissionSet.has(PERMISSION_KEYS.USERS_DELETE) ||
-    permissionSet.has(PERMISSION_KEYS.SUBSCRIPTION_VIEW) ||
-    permissionSet.has(PERMISSION_KEYS.TEAM_CREATE) ||
-    permissionSet.has(PERMISSION_KEYS.TEAM_UPDATE) ||
-    permissionSet.has(PERMISSION_KEYS.TEAM_DELETE) ||
-    permissionSet.has(PERMISSION_KEYS.TEAM_ASSIGN_MEMBERS);
+    permissionSet.has(PERMISSIONS.USERS.CREATE) ||
+    permissionSet.has(PERMISSIONS.USERS.UPDATE_STATUS) ||
+    permissionSet.has(PERMISSIONS.USERS.TOGGLE_ACTIVE) ||
+    permissionSet.has(PERMISSIONS.USERS.DELETE) ||
+    permissionSet.has(PERMISSIONS.SUBSCRIPTION.VIEW) ||
+    permissionSet.has(PERMISSIONS.TEAM.CREATE) ||
+    permissionSet.has(PERMISSIONS.TEAM.UPDATE) ||
+    permissionSet.has(PERMISSIONS.TEAM.DELETE) ||
+    permissionSet.has(PERMISSIONS.TEAM.ASSIGN_MEMBERS);
 
   if (hasAdminControls) {
     return "SUB_ADMIN";

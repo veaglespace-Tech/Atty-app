@@ -1,58 +1,122 @@
 const { normalizeRole } = require("./rbac");
 const { resolveUserRole } = require("../utils/membership");
 
-const PERMISSION_KEYS = Object.freeze({
-  TEAM_VIEW: "TEAM_VIEW",
-  TEAM_CREATE: "TEAM_CREATE",
-  TEAM_UPDATE: "TEAM_UPDATE",
-  TEAM_DELETE: "TEAM_DELETE",
-  TEAM_ASSIGN_MEMBERS: "TEAM_ASSIGN_MEMBERS",
-  ATTENDANCE_VIEW: "ATTENDANCE_VIEW",
-  ATTENDANCE_MANAGE: "ATTENDANCE_MANAGE",
-  REPORTS_VIEW: "REPORTS_VIEW",
-  REPORTS_DOWNLOAD: "REPORTS_DOWNLOAD",
-  USERS_VIEW: "USERS_VIEW",
-  USERS_CREATE: "USERS_CREATE",
-  USERS_STATUS_UPDATE: "USERS_STATUS_UPDATE",
-  USERS_ACTIVE_TOGGLE: "USERS_ACTIVE_TOGGLE",
-  USERS_DELETE: "USERS_DELETE",
-  SUBSCRIPTION_VIEW: "SUBSCRIPTION_VIEW",
-  LOCATION_SET: "LOCATION_SET",
-  POST_CREATE: "POST_CREATE",
+const PERMISSIONS = Object.freeze({
+  TEAM: {
+    VIEW_ALL: "team:view:all",
+    VIEW_OWN: "team:view:own",
+    CREATE: "team:create",
+    UPDATE: "team:update",
+    DELETE: "team:delete",
+    ASSIGN_MEMBERS: "team:assign_members",
+  },
+  ATTENDANCE: {
+    VIEW_ALL: "attendance:view:all",
+    VIEW_TEAM: "attendance:view:team",
+    VIEW_OWN: "attendance:view:own",
+    MANAGE: "attendance:manage",
+  },
+  REPORTS: {
+    VIEW: "reports:view",
+    DOWNLOAD: "reports:download",
+  },
+  USERS: {
+    VIEW: "users:view",
+    CREATE: "users:create",
+    UPDATE_STATUS: "users:update_status",
+    TOGGLE_ACTIVE: "users:toggle_active",
+    DELETE: "users:delete",
+  },
+  POSTS: {
+    VIEW: "posts:view",
+    CREATE: "posts:create",
+    UPDATE: "posts:update",
+    DELETE: "posts:delete",
+  },
+  SUBSCRIPTION: {
+    VIEW: "subscription:view",
+    MANAGE: "subscription:manage",
+  },
+  LOCATION: {
+    VIEW: "location:view",
+    MANAGE: "location:manage",
+  },
+  ROLES: {
+    VIEW: "roles:view",
+    MANAGE: "roles:manage",
+  }
 });
 
-const ALL_PERMISSIONS = Object.freeze(Object.values(PERMISSION_KEYS));
+// Helper to flatten the object into an array
+const extractPermissions = (obj) => {
+  let perms = [];
+  for (const key in obj) {
+    if (typeof obj[key] === "string") {
+      perms.push(obj[key]);
+    } else {
+      perms.push(...extractPermissions(obj[key]));
+    }
+  }
+  return perms;
+};
+
+const ALL_PERMISSIONS = Object.freeze(extractPermissions(PERMISSIONS));
 
 const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
   SUPER_ADMIN: ALL_PERMISSIONS,
   ORG_ADMIN: ALL_PERMISSIONS,
-  SUB_ADMIN: Object.freeze([PERMISSION_KEYS.ATTENDANCE_VIEW]),
-  TEAM_LEADER: Object.freeze([
-    PERMISSION_KEYS.ATTENDANCE_VIEW,
-    PERMISSION_KEYS.LOCATION_SET,
-    PERMISSION_KEYS.REPORTS_VIEW,
-    PERMISSION_KEYS.REPORTS_DOWNLOAD,
-    PERMISSION_KEYS.TEAM_VIEW,
-    PERMISSION_KEYS.USERS_VIEW
+  SUB_ADMIN: Object.freeze([
+    PERMISSIONS.TEAM.VIEW_ALL,
+    PERMISSIONS.TEAM.CREATE,
+    PERMISSIONS.TEAM.UPDATE,
+    PERMISSIONS.TEAM.ASSIGN_MEMBERS,
+    PERMISSIONS.ATTENDANCE.VIEW_ALL,
+    PERMISSIONS.ATTENDANCE.MANAGE,
+    PERMISSIONS.REPORTS.VIEW,
+    PERMISSIONS.REPORTS.DOWNLOAD,
+    PERMISSIONS.USERS.VIEW,
+    PERMISSIONS.USERS.CREATE,
+    PERMISSIONS.USERS.UPDATE_STATUS,
+    PERMISSIONS.USERS.TOGGLE_ACTIVE,
+    PERMISSIONS.POSTS.VIEW,
+    PERMISSIONS.POSTS.CREATE,
+    PERMISSIONS.POSTS.UPDATE,
+    PERMISSIONS.SUBSCRIPTION.VIEW,
+    PERMISSIONS.LOCATION.VIEW,
+    PERMISSIONS.LOCATION.MANAGE,
+    PERMISSIONS.ROLES.VIEW,
   ]),
-  MEMBER: Object.freeze([PERMISSION_KEYS.ATTENDANCE_VIEW]),
+  TEAM_LEADER: Object.freeze([
+    PERMISSIONS.TEAM.VIEW_OWN,
+    PERMISSIONS.ATTENDANCE.VIEW_TEAM,
+    PERMISSIONS.ATTENDANCE.MANAGE,
+    PERMISSIONS.REPORTS.VIEW,
+    PERMISSIONS.REPORTS.DOWNLOAD,
+    PERMISSIONS.USERS.VIEW,
+    PERMISSIONS.POSTS.VIEW,
+    PERMISSIONS.POSTS.CREATE,
+    PERMISSIONS.SUBSCRIPTION.VIEW,
+    PERMISSIONS.LOCATION.VIEW
+  ]),
+  MEMBER: Object.freeze([
+    PERMISSIONS.ATTENDANCE.VIEW_OWN,
+    PERMISSIONS.POSTS.VIEW
+  ]),
 });
 
 const ASSIGNABLE_PERMISSIONS_BY_ROLE = Object.freeze({
   ORG_ADMIN: ALL_PERMISSIONS,
   SUB_ADMIN: ALL_PERMISSIONS,
-  TEAM_LEADER: Object.freeze([]),
-  MEMBER: Object.freeze([]),
+  TEAM_LEADER: ALL_PERMISSIONS,
+  MEMBER: ALL_PERMISSIONS,
   SUPER_ADMIN: ALL_PERMISSIONS,
 });
 
-
-
 const normalizePermission = (permission) => {
   if (!permission) return null;
-  const normalized = String(permission).toUpperCase().trim().replace(/[\s-]+/g, "_");
-  // Allow if it's in the hardcoded list OR if it follows the pattern (for DB permissions)
-  return /^[A-Z0-9_]+$/.test(normalized) ? normalized : null;
+  const normalized = String(permission).toLowerCase().trim();
+  // Allow a-z, 0-9, underscores, and colons
+  return /^[a-z0-9_:]+$/.test(normalized) ? normalized : null;
 };
 
 const normalizePermissionList = (permissions = []) => {
@@ -105,11 +169,19 @@ const hasPermission = (user, permission, orgId = null) => {
   if (!normalizedPermission) return false;
 
   const resolvedPermissions = resolveUserPermissions(user, orgId);
-  return resolvedPermissions.includes(normalizedPermission);
+  if (resolvedPermissions.includes(normalizedPermission)) return true;
+
+  return resolvedPermissions.some((p) => {
+    if (p.endsWith("*")) {
+      const prefix = p.slice(0, -1);
+      return normalizedPermission.startsWith(prefix);
+    }
+    return false;
+  });
 };
 
 module.exports = {
-  PERMISSION_KEYS,
+  PERMISSIONS,
   ALL_PERMISSIONS,
   ROLE_DEFAULT_PERMISSIONS,
   ASSIGNABLE_PERMISSIONS_BY_ROLE,

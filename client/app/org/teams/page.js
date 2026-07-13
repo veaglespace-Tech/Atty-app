@@ -60,10 +60,10 @@ const selectorChipClassName =
 export default function OrgTeamsPage() {
   const router = useRouter();
   const authUser = useSelector((state) => state.auth.user);
-  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM_CREATE);
-  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
-  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM_DELETE);
-  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
+  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM.CREATE);
+  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM.UPDATE);
+  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM.DELETE);
+  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM.ASSIGN_MEMBERS);
   const [submitting, setSubmitting] = useState(false);
   const [actionTeamId, setActionTeamId] = useState("");
   const [createOpen, setCreateOpen] = useState(false);

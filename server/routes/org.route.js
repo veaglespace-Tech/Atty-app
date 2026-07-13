@@ -52,6 +52,7 @@ const {
   downloadOrgReportsExcel,
   getOrgSubscription,
 } = require("../controllers/org-dashboard.controller");
+const { updateOrgLogo } = require("../controllers/org-settings.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
@@ -70,6 +71,8 @@ router.use(
   checkActiveSubscription,
   allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER")
 );
+
+router.patch("/settings/logo", allowRoles("ORG_ADMIN", "SUB_ADMIN"), updateOrgLogo);
 
 router.get("/dashboard", getOrgDashboard);
 router.get("/reports", getOrgReports);

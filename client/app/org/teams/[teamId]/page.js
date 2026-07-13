@@ -35,9 +35,9 @@ export default function OrgTeamDetailPage() {
   const router = useRouter();
   const authUser = useSelector((state) => state.auth.user);
   const teamId = Number(params?.teamId);
-  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
-  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM_DELETE);
-  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
+  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM.UPDATE);
+  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM.DELETE);
+  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM.ASSIGN_MEMBERS);
 
   const [savingBasics, setSavingBasics] = useState(false);
   const [savingLeader, setSavingLeader] = useState(false);

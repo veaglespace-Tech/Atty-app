@@ -97,11 +97,11 @@ const detectLocation = () =>
 export default function TeamLeaderTeamsPage() {
   const router = useRouter();
   const authUser = useSelector((state) => state.auth.user);
-  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM_CREATE);
-  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM_UPDATE);
-  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM_DELETE);
-  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
-  const canManageAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
+  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM.CREATE);
+  const canUpdateTeams = hasPermission(authUser, PERMISSIONS.TEAM.UPDATE);
+  const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM.DELETE);
+  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM.ASSIGN_MEMBERS);
+  const canManageAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE.MANAGE);
   const [submitting, setSubmitting] = useState(false);
   const [actionTeamId, setActionTeamId] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
