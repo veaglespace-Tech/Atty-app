@@ -842,6 +842,7 @@ const serializeSessionUser = (user, organization = null) => {
     emergencyContact: normalized.emergencyContact || null,
     currentAddress: normalized.currentAddress || null,
     permanentAddress: normalized.permanentAddress || null,
+    bloodGroup: normalized.bloodGroup || null,
     profileImageUrl: normalized.profileImageUrl || null,
     memberships: normalized.memberships.map((membership) => ({
       orgId: membership.orgId,
