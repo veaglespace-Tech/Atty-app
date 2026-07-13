@@ -11,7 +11,7 @@ export default function RolesTab({
   return (
     <View className="space-y-6 pb-12">
       {roleMappings.map((rm) => (
-        <View key={rm.role} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <View key={rm.role} className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-5 shadow-sm">
           <View className="flex-row items-center gap-3 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <View className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3">
               <Shield size={24} className="text-indigo-600 dark:text-indigo-400" />
@@ -33,7 +33,7 @@ export default function RolesTab({
                   className={`flex-row items-center justify-between rounded-[24px] border p-4 ${
                     isAssigned
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-900/20'
-                      : 'border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50'
+                      : 'border-slate-100 bg-slate-50/50 dark:border-[#1E293B] dark:bg-[#0A0F1C]'
                   } ${readOnlyFallback ? 'opacity-70' : ''}`}
                 >
                   <View className="flex-row items-center gap-3 flex-1 pr-2">

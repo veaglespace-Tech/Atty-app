@@ -1,16 +1,17 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Alert, TextInput } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Alert, TextInput, Modal } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, Users, Trash2, Mail, Phone, MapPin, Search } from "lucide-react-native";
+import { ChevronLeft, Users, Trash2, Mail, Phone, MapPin, Search, Eye, X } from "lucide-react-native";
 import { useGetSuperAdminLeadsQuery, useDeleteSuperAdminLeadMutation } from "@/services/api/superAdminApi";
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
+  const [selectedLead, setSelectedLead] = useState(null);
   const { data, isLoading, isFetching, refetch } = useGetSuperAdminLeadsQuery();
   const [deleteLead, { isLoading: isDeleting }] = useDeleteSuperAdminLeadMutation();
 
   const leads = useMemo(() => {
-    let filtered = data?.items || [];
+    let filtered = data?.data || data?.items || [];
     if (search.trim() !== "") {
       const q = search.toLowerCase();
       filtered = filtered.filter(l => 
@@ -92,14 +93,21 @@ export default function LeadsPage() {
                 <View className="flex-row items-start justify-between mb-4">
                   <View className="flex-1 pr-4">
                     <Text className="text-lg font-black text-slate-900 dark:text-white mb-1">{lead.name}</Text>
-                    <Text className="text-xs font-bold text-slate-500">Admin: {lead.adminName}</Text>
+                    <Text className="text-xs font-bold text-slate-500">Admin: {lead.adminName !== "-" ? lead.adminName : "(Not provided)"}</Text>
                   </View>
-                  <Pressable 
-                    disabled={isDeleting}
-                    onPress={() => handleDelete(lead.id, lead.name)}
-                    className="h-10 w-10 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-500/10">
-                    <Trash2 size={18} className="text-rose-600 dark:text-rose-400" />
-                  </Pressable>
+                  <View className="flex-row items-center gap-2">
+                    <Pressable 
+                      onPress={() => setSelectedLead(lead)}
+                      className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-500/10">
+                      <Eye size={18} className="text-blue-600 dark:text-blue-400" />
+                    </Pressable>
+                    <Pressable 
+                      disabled={isDeleting}
+                      onPress={() => handleDelete(lead.id, lead.name)}
+                      className="h-10 w-10 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-500/10">
+                      <Trash2 size={18} className="text-rose-600 dark:text-rose-400" />
+                    </Pressable>
+                  </View>
                 </View>
 
                 <View className="space-y-2 mb-4">
@@ -133,6 +141,101 @@ export default function LeadsPage() {
           </View>
         )}
       </ScrollView>
+
+      {/* Lead Details Modal */}
+      <Modal visible={!!selectedLead} transparent animationType="slide">
+        <View className="flex-1 bg-black/60 justify-end">
+          <View className="bg-white dark:bg-slate-900 rounded-t-3xl overflow-hidden max-h-[90%]">
+            <View className="flex-row items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+              <Text className="text-lg font-black text-slate-900 dark:text-white">Lead Details</Text>
+              <Pressable 
+                onPress={() => setSelectedLead(null)}
+                className="h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"
+              >
+                <X size={18} className="text-slate-500" />
+              </Pressable>
+            </View>
+            
+            <ScrollView className="p-5" contentContainerStyle={{ paddingBottom: 40 }}>
+              {selectedLead && (
+                <View className="space-y-6">
+                  {/* Organization Details */}
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Organization Details</Text>
+                    <View className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                      <View>
+                        <Text className="text-xs font-semibold text-slate-500 mb-0.5">Name</Text>
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.name}</Text>
+                      </View>
+                      <View>
+                        <Text className="text-xs font-semibold text-slate-500 mb-0.5">Email</Text>
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.email}</Text>
+                      </View>
+                      <View>
+                        <Text className="text-xs font-semibold text-slate-500 mb-0.5">Phone</Text>
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.phone || "-"}</Text>
+                      </View>
+                      <View className="flex-row flex-wrap gap-y-3">
+                        <View className="w-1/2 pr-2">
+                          <Text className="text-xs font-semibold text-slate-500 mb-0.5">City</Text>
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.city || "-"}</Text>
+                        </View>
+                        <View className="w-1/2 pr-2">
+                          <Text className="text-xs font-semibold text-slate-500 mb-0.5">State</Text>
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.state || "-"}</Text>
+                        </View>
+                        <View className="w-1/2 pr-2">
+                          <Text className="text-xs font-semibold text-slate-500 mb-0.5">Country</Text>
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.country || "-"}</Text>
+                        </View>
+                      </View>
+                      <View>
+                        <Text className="text-xs font-semibold text-slate-500 mb-0.5">Address</Text>
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.address || "-"}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Admin Info */}
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Admin Info</Text>
+                    {selectedLead.adminName === "-" && selectedLead.adminEmail === "-" ? (
+                      <View className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center justify-center">
+                        <Text className="text-xs font-medium text-slate-500 italic">User did not proceed to the admin setup step.</Text>
+                      </View>
+                    ) : (
+                      <View className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                        <View>
+                          <Text className="text-xs font-semibold text-slate-500 mb-0.5">Name</Text>
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.adminName !== "-" ? selectedLead.adminName : "-"}</Text>
+                        </View>
+                        <View>
+                          <Text className="text-xs font-semibold text-slate-500 mb-0.5">Email</Text>
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.adminEmail !== "-" ? selectedLead.adminEmail : "-"}</Text>
+                        </View>
+                        <View>
+                          <Text className="text-xs font-semibold text-slate-500 mb-0.5">Phone</Text>
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white">{selectedLead.adminPhone !== "-" ? selectedLead.adminPhone : "-"}</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Registration Date */}
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Registration Date</Text>
+                    <View className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <Text className="text-sm font-bold text-slate-900 dark:text-white">
+                        {new Date(selectedLead.createdAt).toLocaleString()}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

@@ -4021,7 +4021,13 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     const orgUsers = userRows.filter((u) => u.orgId === org.id);
     if (orgUsers.length === 0) continue;
 
-    const safeSheetName = (org.name || "Org").slice(0, 28);
+    const safeSheetNameBase = (org.name || "Org").replace(/[\][*\/\\\?:]/g, "").slice(0, 25);
+    let safeSheetName = safeSheetNameBase;
+    let counter = 1;
+    while (workbook.getWorksheet(safeSheetName)) {
+      safeSheetName = `${safeSheetNameBase} ${counter}`;
+      counter++;
+    }
     const sheet = workbook.addWorksheet(safeSheetName);
 
     sheet.addRow([`${org.name} — User Directory`]);

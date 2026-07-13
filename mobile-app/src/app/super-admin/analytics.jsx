@@ -49,33 +49,26 @@ export default function AnalyticsPage() {
             
             {/* Total Summary Row */}
             <View className="flex-row flex-wrap justify-between gap-y-3">
-              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <View className="w-full bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
-                  <Building2 size={14} className="text-blue-500" />
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Orgs</Text>
+                  <Building2 size={16} className="text-blue-500" />
+                  <Text className="text-xs font-black uppercase tracking-widest text-slate-500">Organizations</Text>
                 </View>
-                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Organizations Created")}</Text>
+                <Text className="text-3xl font-black text-slate-900 dark:text-white">{getSummaryValue("Organizations")}</Text>
               </View>
-              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
                   <Users size={14} className="text-indigo-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Users</Text>
                 </View>
-                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Users Registered")}</Text>
+                <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Users")}</Text>
               </View>
-              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
                   <CreditCard size={14} className="text-amber-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Payments</Text>
                 </View>
-                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Total Payments")}</Text>
-              </View>
-              <View className="w-[48%] bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-[24px] border border-emerald-100 dark:border-emerald-800/30">
-                <View className="flex-row items-center gap-2 mb-2">
-                  <TrendingUp size={14} className="text-emerald-600" />
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Total Rev</Text>
-                </View>
-                <Text className="text-xl font-black text-emerald-700 dark:text-emerald-300">₹{getSummaryValue("Total Revenue")}</Text>
+                <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Payments")}</Text>
               </View>
             </View>
 
@@ -86,10 +79,11 @@ export default function AnalyticsPage() {
               <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                 {/* Header Row */}
                 <View className="flex-row items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-20">Month</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-16">Month</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Orgs</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Users</Text>
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 w-20 text-right">Rev</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Pays</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 w-16 text-right">Rev</Text>
                 </View>
                 
                 {/* Data Rows */}
@@ -98,18 +92,23 @@ export default function AnalyticsPage() {
                     key={item.month || index} 
                     className={`flex-row items-center justify-between p-4 ${index !== analytics.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
                   >
-                    <Text className="text-xs font-bold text-slate-900 dark:text-white w-20">{item.month}</Text>
+                    <Text className="text-[11px] font-bold text-slate-900 dark:text-white w-16">{item.month}</Text>
                     <View className="flex-1 items-center">
                       <View className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30">
-                        <Text className="text-xs font-bold text-blue-700 dark:text-blue-400">+{item.organizations}</Text>
+                        <Text className="text-[10px] font-bold text-blue-700 dark:text-blue-400">{item.organizations}</Text>
                       </View>
                     </View>
                     <View className="flex-1 items-center">
                       <View className="px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-900/30">
-                        <Text className="text-xs font-bold text-indigo-700 dark:text-indigo-400">+{item.users}</Text>
+                        <Text className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400">{item.users}</Text>
                       </View>
                     </View>
-                    <Text className="text-xs font-black text-emerald-600 dark:text-emerald-400 w-20 text-right">₹{item.revenue}</Text>
+                    <View className="flex-1 items-center">
+                      <View className="px-2 py-1 rounded bg-amber-50 dark:bg-amber-900/30">
+                        <Text className="text-[10px] font-bold text-amber-700 dark:text-amber-400">{item.payments}</Text>
+                      </View>
+                    </View>
+                    <Text className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 w-16 text-right" numberOfLines={1}>₹{item.revenue}</Text>
                   </View>
                 ))}
               </View>

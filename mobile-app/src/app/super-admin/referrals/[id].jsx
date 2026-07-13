@@ -163,9 +163,10 @@ export default function ReferralPartnerDetailsPage() {
             ) : (
               <View className="space-y-4 mt-2">
                 {referredOrganizations.map((org, index) => (
-                  <View 
+                  <Pressable 
                     key={org.id} 
-                    className={`flex-row items-center justify-between ${index !== referredOrganizations.length - 1 ? 'border-b border-slate-100 dark:border-slate-800 pb-4 mb-1' : ''}`}
+                    onPress={() => router.push(`/super-admin/organization/${org.id}`)}
+                    className={`flex-row items-center justify-between active:opacity-70 ${index !== referredOrganizations.length - 1 ? 'border-b border-slate-100 dark:border-slate-800 pb-4 mb-1' : ''}`}
                   >
                     <View className="flex-row items-center flex-1">
                       <View className="h-12 w-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 items-center justify-center mr-4 border border-blue-100 dark:border-blue-500/20">
@@ -189,7 +190,7 @@ export default function ReferralPartnerDetailsPage() {
                         </Text>
                       </View>
                     </View>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             )}

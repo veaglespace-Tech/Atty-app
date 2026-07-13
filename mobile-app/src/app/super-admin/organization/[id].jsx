@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Receipt, Users as UsersIcon, ShieldAlert, Mail, Phone, MapPin, User, Briefcase, Building2 } from "lucide-react-native";
-import { useGetSuperAdminOrganizationByIdQuery, useGetSuperAdminOrganizationUsersQuery, useGetSuperAdminOrganizationTeamsQuery } from "@/services/api/superAdminApi";
+import { useGetSuperAdminOrganizationByIdQuery, useGetSuperAdminOrganizationUsersQuery, useGetSuperAdminOrganizationTeamsQuery, useExportSuperAdminOrganizationUsersExcelMutation } from "@/services/api/superAdminApi";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 export default function OrganizationDetailsPage() {
   const { id } = useLocalSearchParams();
@@ -11,6 +12,19 @@ export default function OrganizationDetailsPage() {
 
   const { data: usersData, isLoading: isLoadingUsers } = useGetSuperAdminOrganizationUsersQuery(id, { skip: activeTab !== "Users" });
   const { data: teamsData, isLoading: isLoadingTeams } = useGetSuperAdminOrganizationTeamsQuery(id, { skip: activeTab !== "Teams" });
+  
+  const [exportOrgUsersExcel, { isLoading: isExporting }] = useExportSuperAdminOrganizationUsersExcelMutation();
+
+  const handleExportUsers = async () => {
+    try {
+      const blob = await exportOrgUsersExcel(id).unwrap();
+      const safeOrgName = (data?.item?.name || "Organization").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      await downloadAndShareBlob(blob, `users_${safeOrgName}.xlsx`);
+    } catch (err) {
+      console.error("Failed to export users:", err);
+      alert("Failed to export users to Excel.");
+    }
+  };
 
   const org = data?.item;
 
@@ -242,7 +256,19 @@ export default function OrganizationDetailsPage() {
 
         {activeTab === "Users" && (
           <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
-            <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Organization Users</Text>
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">Organization Users</Text>
+              {usersData?.items?.length > 0 && (
+                <Pressable
+                  onPress={handleExportUsers}
+                  disabled={isExporting}
+                  className={`flex-row items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 ${isExporting ? 'opacity-50' : ''}`}
+                >
+                  {isExporting ? <ActivityIndicator size="small" color="#64748b" className="mr-2" /> : null}
+                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Export Excel</Text>
+                </Pressable>
+              )}
+            </View>
             {isLoadingUsers ? (
               <ActivityIndicator size="small" color="#3B82F6" />
             ) : usersData?.items?.length > 0 ? (
