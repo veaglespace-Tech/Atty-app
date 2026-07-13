@@ -113,6 +113,8 @@ const updateMeSchema = z
     mobileCountryCode: z.union([z.string().trim().min(1, "Country code is required"), z.literal("")]).optional(),
     emergencyContact: z.string().trim().optional(),
     currentAddress: z.string().trim().optional(),
+    permanentAddress: z.string().trim().optional(),
+    bloodGroup: z.string().trim().optional(),
     profileImageDataUrl: z
       .string()
       .trim()
