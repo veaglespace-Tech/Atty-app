@@ -374,12 +374,12 @@ export const getUserRoleForOrg = (user, orgId = null) => {
 
 export const getDefaultPermissionsForRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || [])];
+  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || ROLE_DEFAULT_PERMISSIONS[ROLES.MEMBER])];
 };
 
 export const getAssignablePermissionsByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
+  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || ALL_PERMISSIONS)];
 };
 
 export const getManagedRoleOptions = (actorRole) => {
