@@ -145,12 +145,34 @@ exports.updateRolePermissions = asyncHandler(async (req, res) => {
   }
 
   // Verify all permissions exist in DB
-  const permissionKeys = permissions.map(p => typeof p === 'string' ? p : p.key);
+  // Elements in permissions can be objects (with .key or .id), string keys, or integer IDs.
+  const permissionKeys = [];
+  const permissionIdsNum = [];
+  
+  for (const p of permissions) {
+    if (typeof p === "string") {
+      permissionKeys.push(p);
+    } else if (typeof p === "number") {
+      permissionIdsNum.push(p);
+    } else if (p && typeof p === "object") {
+      if (p.key) permissionKeys.push(p.key);
+      else if (p.id) {
+        if (typeof p.id === "number") permissionIdsNum.push(p.id);
+        else permissionKeys.push(String(p.id));
+      }
+    }
+  }
+
   const dbPermissions = await prisma.permission.findMany({
-    where: { key: { in: permissionKeys } }
+    where: { 
+      OR: [
+        { key: { in: permissionKeys } },
+        { id: { in: permissionIdsNum } }
+      ]
+    }
   });
 
-  if (dbPermissions.length !== permissionKeys.length) {
+  if (dbPermissions.length !== permissions.length) {
     res.status(400);
     throw new Error("One or more permissions are invalid");
   }
