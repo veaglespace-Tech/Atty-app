@@ -124,8 +124,20 @@ const normalizePermissionList = (permissions = []) => {
   return [...new Set(permissions.map(normalizePermission).filter(Boolean))];
 };
 
+// Dynamic role permissions cache populated from the DB
+const rolePermissionsCache = new Map();
+
+const updateRolePermissionsCache = (role, permissions) => {
+  rolePermissionsCache.set(role, permissions);
+};
+
+const getRolePermissionsCache = () => rolePermissionsCache;
+
 const getDefaultPermissionsForRole = (role) => {
   const normalizedRole = normalizeRole(role);
+  if (rolePermissionsCache.has(normalizedRole)) {
+    return rolePermissionsCache.get(normalizedRole);
+  }
   return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || ROLE_DEFAULT_PERMISSIONS["MEMBER"])];
 };
 
@@ -191,4 +203,6 @@ module.exports = {
   getAssignablePermissionsByRole,
   resolveUserPermissions,
   hasPermission,
+  updateRolePermissionsCache,
+  getRolePermissionsCache,
 };

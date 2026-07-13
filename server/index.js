@@ -20,6 +20,7 @@ const {
   startAttendanceAutoCloseScheduler,
   stopAttendanceAutoCloseScheduler,
 } = require("./services/attendance-auto-close.service");
+const { initializeRolePermissions } = require("./services/permission.service");
 const app = express();
 
 // Trust Nginx/Cloudflare proxy
@@ -141,6 +142,8 @@ const startServer = async () => {
   console.log("mysql/prisma connecting...");
   await prisma.$connect();
   console.log("mysql/prisma connected");
+  
+  await initializeRolePermissions();
 
   await listen(PORT);
   startAttendanceAutoCloseScheduler();

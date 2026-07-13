@@ -857,7 +857,9 @@ const serializeSessionUser = (user, organization = null) => {
         }
       : null,
     currentRole: normalized.currentRole || null,
-    permissions: normalized.permissions,
+    permissions: Array.isArray(normalized.permissions) 
+      ? normalized.permissions 
+      : resolveUserPermissions(normalized, normalized.currentMembership?.orgId),
     status: normalized.status,
     isActive: normalized.isActive !== false,
     organizationId: normalized.organizationId || null,
