@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const { ALL_PERMISSIONS, ROLE_DEFAULT_PERMISSIONS } = require("../constants/permissions");
+const prisma = require("../lib/prisma");
 
 const toPermissionName = (key) =>
   String(key || "")
@@ -52,13 +53,19 @@ exports.deletePermission = asyncHandler(async (req, res) => {
 // @route   GET /api/super-admin/roles/permissions
 // @access  SuperAdmin
 exports.getRolePermissions = asyncHandler(async (req, res) => {
-  const roles = ["SUPER_ADMIN", "ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"];
-  const mapping = roles.map((role) => ({
-    role,
-    permissions: (ROLE_DEFAULT_PERMISSIONS[role] || []).map(key => 
-      DEFAULT_PERMISSION_DEFINITIONS.find(p => p.key === key)
-    ).filter(Boolean),
-  }));
+  const dbRoles = await prisma.role.findMany({ select: { code: true } });
+  const roles = dbRoles.map(r => r.code);
+  
+  const mapping = roles.map((role) => {
+    // Custom roles fallback to MEMBER permissions if not strictly defined
+    const rolePermissions = ROLE_DEFAULT_PERMISSIONS[role] || ROLE_DEFAULT_PERMISSIONS["MEMBER"] || [];
+    return {
+      role,
+      permissions: rolePermissions.map(key => 
+        DEFAULT_PERMISSION_DEFINITIONS.find(p => p.key === key)
+      ).filter(Boolean),
+    };
+  });
 
   res.status(200).json({
     success: true,
