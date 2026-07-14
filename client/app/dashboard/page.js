@@ -68,7 +68,7 @@ export default function Dashboard() {
 
   const statCards = isManager
     ? [
-        { icon: Users, label: "Total Members", value: stats?.totalMembers || "0", tone: "blue" },
+        { icon: Users, label: "Total Members", value: stats?.subscription?.maxUsers && stats.subscription.maxUsers !== "Unlimited" ? `${stats?.approvedMembers ?? stats?.totalMembers ?? "0"}/${stats.subscription.maxUsers}` : stats?.totalMembers || "0", tone: "blue" },
         { icon: ShieldCheck, label: "Team Leaders", value: stats?.totalTLs || "0", tone: "indigo" },
         { icon: Clock, label: "Present Today", value: stats?.presentToday || "0", tone: "emerald" },
         {

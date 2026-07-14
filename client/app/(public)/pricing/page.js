@@ -5,12 +5,14 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
+  CheckCircle2,
   Crown,
   Loader2,
   ShieldCheck,
   Star,
   Zap,
   ChevronRight,
+  X,
 } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -340,7 +342,12 @@ export default function PricingPage() {
     setAppliedCoupon(null);
     
     try {
-      const res = await fetch(`${API_BASE_URL}/coupons/validate/${encodeURIComponent(couponCode.trim())}`);
+      const orgId = user?.orgId || user?.organization?.id || "";
+      const queryParams = new URLSearchParams();
+      if (orgId) queryParams.append("orgId", orgId);
+      if (checkoutModalPlan?.code) queryParams.append("planCode", checkoutModalPlan.code);
+      const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+      const res = await fetch(`${API_BASE_URL}/coupons/validate/${encodeURIComponent(couponCode.trim())}${query}`);
       const data = await res.json();
       if (data.success) {
         setAppliedCoupon(data.data);
@@ -688,7 +695,7 @@ export default function PricingPage() {
                     {isOrgAdminRenewal ? (
                       <button
                         type="button"
-                        onClick={() => handleRenewPlan(selectedPlan, null)}
+                        onClick={() => setCheckoutModalPlan(selectedPlan)}
                         disabled={Boolean(processingPlanCode)}
                         className="group/btn flex w-full items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 py-5 font-black text-slate-950 shadow-[0_18px_44px_rgba(15,23,42,0.10)] transition-all duration-500 hover:-translate-y-1 hover:bg-blue-600 hover:text-white hover:shadow-[0_24px_60px_rgba(59,130,246,0.18)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-100"
                       >
@@ -752,6 +759,144 @@ export default function PricingPage() {
         </div>
       </div>
       
+      {checkoutModalPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md animate-in zoom-in-95 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+            <button
+              onClick={() => {
+                setCheckoutModalPlan(null);
+                removeCoupon();
+              }}
+              className="absolute right-6 top-6 text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X size={24} />
+            </button>
+
+            <h3 className="mb-1 text-2xl font-black text-slate-950 dark:text-white">
+              Checkout
+            </h3>
+            <p className="mb-6 text-sm font-medium text-slate-500 dark:text-slate-400">
+              Review your plan and apply a coupon.
+            </p>
+
+            <div className="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="mb-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                    {checkoutModalPlan.name}
+                  </span>
+                  <span className={appliedCoupon ? "font-semibold text-slate-400 line-through" : "font-black text-slate-950 dark:text-white"}>
+                    Rs. {Number(checkoutModalPlan.price).toLocaleString("en-IN")}
+                  </span>
+                </div>
+                {appliedCoupon && (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        Discount ({appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}%` : 'Flat'})
+                      </span>
+                      <span className="font-black text-emerald-600 dark:text-emerald-400">
+                        - Rs. {(appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1 border-t border-slate-200 pt-2 dark:border-slate-700">
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        Discounted Price
+                      </span>
+                      <span className="font-black text-slate-950 dark:text-white text-lg">
+                        Rs. {Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue)).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="flex items-center justify-between text-sm mt-1">
+                  <span className="font-bold text-slate-500 dark:text-slate-400">
+                    GST ({gstRate}%)
+                  </span>
+                  <span className="font-bold text-slate-500 dark:text-slate-400">
+                    + Rs. {((Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon ? (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue) : 0))) * (gstRate / 100)).toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+                  <span className="font-black text-slate-950 dark:text-white text-lg">
+                    Total Payable
+                  </span>
+                  <span className="font-black text-blue-600 dark:text-blue-400 text-xl">
+                    Rs. {((Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon ? (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue) : 0))) * (1 + gstRate / 100)).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  Have a coupon code?
+                </label>
+                {!appliedCoupon ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="Enter code"
+                      className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm uppercase transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!couponCode.trim() || isApplyingCoupon}
+                      onClick={handleApplyCoupon}
+                      className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500"
+                    >
+                      {isApplyingCoupon ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2
+                        size={16}
+                        className="text-emerald-600 dark:text-emerald-400"
+                      />
+                      <span className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+                        {appliedCoupon.code} Applied
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-xs font-bold text-red-600 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="mt-2 text-xs font-medium text-red-500">
+                    {couponError}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleRenewPlan(checkoutModalPlan, appliedCoupon?.code)}
+              disabled={Boolean(processingPlanCode)}
+              className="group/btn flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 py-4 font-black text-white shadow-[0_8px_20px_rgba(37,99,235,0.2)] transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.3)] disabled:pointer-events-none disabled:opacity-70 dark:shadow-[0_8px_20px_rgba(59,130,246,0.15)]"
+            >
+              {processingPlanCode === checkoutModalPlan.code ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" /> Processing...
+                </>
+              ) : (
+                "Proceed to Payment"
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

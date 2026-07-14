@@ -468,6 +468,11 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       throw new Error("Invalid status");
     }
     userPayload.status = status;
+    
+    if (status === "APPROVED" && user.status !== "APPROVED") {
+      await assertWithinPlanUserLimit({ orgId, res });
+    }
+    
     if (status === "REJECTED") {
       userPayload.isActive = false;
       membershipPayload.isActive = false;
@@ -555,12 +560,14 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
 exports.createOrgUser = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSIONS.USERS.CREATE, orgId);
-  await assertWithinPlanUserLimit({ orgId, res });
 
   const name = truncateText(req.body?.name, 120);
   const email = normalizeEmail(req.body?.email);
   const role = normalizeRole(req.body?.role || "MEMBER");
   const status = normalizeStatus(req.body?.status || "APPROVED");
+  if (status === "APPROVED") {
+    await assertWithinPlanUserLimit({ orgId, res });
+  }
   const hasPermissions = Object.prototype.hasOwnProperty.call(req.body || {}, "permissions");
 
   if (!name || !email || !req.body?.mobile) {

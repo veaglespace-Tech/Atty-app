@@ -963,24 +963,10 @@ exports.register = asyncHandler(async (req, res) => {
       throw new Error("This organization is not available for new registrations");
     }
 
-    const maxUsers = Number(targetOrg.plan?.memberLimit || targetOrg.plan?.maxUsers || 0);
-    if (maxUsers > 0) {
-      const userCount = await prisma.user.count({
-        where: {
-          memberships: {
-            some: {
-              orgId: targetOrg.id,
-            },
-          },
-          deletedAt: null,
-        },
-      });
-
-      if (userCount >= maxUsers) {
-        res.status(403);
-        throw new Error(`User limit reached for this organization's plan (${maxUsers} users). Please contact your administrator.`);
-      }
-    }
+    // Limit check removed for public registration:
+    // Public registrations always create users with status="PENDING".
+    // We now allow unlimited PENDING users so admins can approve them later
+    // up to the organization's plan limit.
 
     const userExists = await prisma.user.findUnique({
       where: {

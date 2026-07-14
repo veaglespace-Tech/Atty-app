@@ -60,6 +60,7 @@ const assertWithinPlanUserLimit = async ({ orgId, res, additionalUsers = 1 }) =>
           },
         },
         deletedAt: null,
+        status: "APPROVED",
       },
     });
 

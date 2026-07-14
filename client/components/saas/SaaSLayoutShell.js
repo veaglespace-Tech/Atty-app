@@ -320,16 +320,6 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200/50 bg-white/70 px-4 py-3.5 shadow-[0_8px_32px_rgba(59,130,246,0.06)] backdrop-blur-2xl transition-all duration-500 dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/20 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center justify-between gap-3 relative z-10">
             <div className="flex min-w-0 items-center gap-4">
-              {user?.organization?.logoUrl && (
-                <div className="hidden lg:flex -my-3.5 sm:-my-4 -ml-4 sm:-ml-6 h-[90px] sm:h-[110px] w-auto max-w-[320px] shrink-0 items-center justify-start overflow-hidden">
-                  <img
-                    src={user.organization.logoUrl}
-                    alt="Organization Logo"
-                    className="h-full w-auto object-contain object-left"
-                  />
-                </div>
-              )}
-              
               <button
                 type="button"
                 onClick={() => setMobileNavOpen((prev) => !prev)}
@@ -344,7 +334,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               </button>
             </div>
 
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3 w-full">
               <div className="brand-panel-soft hidden min-w-[320px] max-w-[420px] rounded-[1.5rem] border border-slate-200/80 bg-white px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] lg:block">
                 <div className="flex items-center gap-3">
                   <UserAvatar
@@ -376,11 +366,21 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               <button
                 type="button"
                 onClick={onLogout}
-                className="brand-btn brand-btn-danger brand-btn-md rounded-2xl px-3 py-2.5 sm:px-4"
+                className="brand-btn brand-btn-danger brand-btn-md rounded-2xl px-3 py-2.5 sm:px-4 shrink-0"
               >
                 <LogOut size={16} />
                 <span className="hidden sm:inline">Logout</span>
               </button>
+
+              {user?.organization?.logoUrl && (
+                <div className="hidden lg:flex shrink-0 h-[92px] items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white/90 shadow-[0_12px_36px_rgba(59,130,246,0.15)] hover:shadow-[0_16px_48px_rgba(59,130,246,0.25)] transition-all duration-300 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/90 dark:shadow-[0_12px_40px_rgba(2,6,23,0.4)] dark:hover:shadow-[0_16px_50px_rgba(59,130,246,0.15)] ml-3">
+                  <img
+                    src={user.organization.logoUrl}
+                    alt="Organization Logo"
+                    className="h-full w-auto max-w-[240px] object-contain transition-transform duration-300 hover:scale-[1.02]"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </header>

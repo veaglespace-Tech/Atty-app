@@ -9,7 +9,7 @@ exports.getStats = asyncHandler(async (req, res) => {
   const role = resolveUserRole(req.user, orgId);
 
   if (role === "ORG_ADMIN" || role === "SUB_ADMIN") {
-    const [orgData, totalMembers, totalTLs, presentToday] = await Promise.all([
+    const [orgData, totalMembers, totalTLs, presentToday, approvedMembers] = await Promise.all([
       prisma.organization.findUnique({
         where: {
           id: orgId,
@@ -57,6 +57,18 @@ exports.getStats = asyncHandler(async (req, res) => {
           status: { in: ["PRESENT", "HALF_DAY"] },
         },
       }),
+      prisma.user.count({
+        where: {
+          memberships: {
+            some: {
+              orgId,
+              isActive: true,
+            },
+          },
+          status: "APPROVED",
+          deletedAt: null,
+        },
+      }),
     ]);
 
     const maxUsers = Number(orgData?.plan?.maxUsers || orgData?.plan?.memberLimit || 0);
@@ -68,12 +80,13 @@ exports.getStats = asyncHandler(async (req, res) => {
       maxUsers: maxUsers > 0 ? maxUsers : "Unlimited",
       usagePercentage:
         maxUsers > 0
-          ? Math.round((totalMembers / maxUsers) * 100)
+          ? Math.round((approvedMembers / maxUsers) * 100)
           : 0,
     };
 
     res.status(200).json({
       totalMembers,
+      approvedMembers,
       totalTLs,
       presentToday,
       subscription,

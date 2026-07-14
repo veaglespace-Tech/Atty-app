@@ -307,7 +307,7 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
   const limit = parseLimit(req.query.limit, 50, 500)
   const today = todayKey()
 
-  const [organization, totalUsers, totalTeams, presentToday, recentAttendance] =
+  const [organization, totalUsers, approvedUsers, totalTeams, presentToday, recentAttendance] =
     await Promise.all([
       prisma.organization.findUnique({
         where: { id: orgId },
@@ -318,6 +318,14 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
           orgId,
           deletedAt: null,
           isActive: true,
+        },
+      }),
+      prisma.user.count({
+        where: {
+          orgId,
+          deletedAt: null,
+          isActive: true,
+          status: "APPROVED",
         },
       }),
       prisma.team.count({
@@ -347,10 +355,13 @@ exports.getOrgDashboard = asyncHandler(async (req, res) => {
       }),
     ])
 
+  const maxUsers = Number(organization?.plan?.memberLimit || organization?.plan?.maxUsers || 0);
+  const usersDisplay = maxUsers > 0 ? `${approvedUsers}/${maxUsers}` : totalUsers;
+
   res.status(200).json({
     success: true,
     summary: [
-      toSummaryItem("Total Users", totalUsers),
+      toSummaryItem("Total Users", usersDisplay),
       toSummaryItem("Total Teams", totalTeams),
       toSummaryItem("Present Today", presentToday),
       toSummaryItem("Subscription Status", organization?.subscriptionStatus || "TRIAL"),

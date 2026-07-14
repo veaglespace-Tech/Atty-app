@@ -156,6 +156,8 @@ const organizationDashboardSelect = {
   plan: {
     select: {
       name: true,
+      maxUsers: true,
+      memberLimit: true,
     },
   },
 };

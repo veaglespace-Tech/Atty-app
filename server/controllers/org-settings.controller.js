@@ -71,3 +71,48 @@ exports.updateOrgLogo = asyncHandler(async (req, res) => {
     },
   });
 });
+
+exports.updateOrgDetails = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  const { name, email, phone, phoneCountryCode, address, city, state, country } = req.body;
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+
+  if (!organization) {
+    res.status(404);
+    throw new Error("Organization not found.");
+  }
+
+  // Ensure email uniqueness if email is being updated
+  if (email && email !== organization.email) {
+    const existingOrgWithEmail = await prisma.organization.findUnique({
+      where: { email },
+    });
+    if (existingOrgWithEmail) {
+      res.status(400);
+      throw new Error("This email is already in use by another organization.");
+    }
+  }
+
+  const updatedOrg = await prisma.organization.update({
+    where: { id: orgId },
+    data: {
+      ...(name && { name }),
+      ...(email && { email }),
+      ...(phone !== undefined && { phone }),
+      ...(phoneCountryCode !== undefined && { phoneCountryCode }),
+      ...(address !== undefined && { address }),
+      ...(city !== undefined && { city }),
+      ...(state !== undefined && { state }),
+      ...(country && { country }),
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Organization details updated successfully.",
+    data: updatedOrg,
+  });
+});

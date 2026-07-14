@@ -194,10 +194,22 @@ exports.deleteCoupon = async (req, res) => {
 exports.validateCoupon = async (req, res) => {
   try {
     const { code } = req.params;
-    const { planCode } = req.query;
+    const { planCode, orgId } = req.query;
     
     if (!code) {
       return res.status(400).json({ success: false, message: 'Coupon code is required' });
+    }
+
+    if (orgId) {
+      const pastPaidSubscriptionsCount = await prisma.subscription.count({
+        where: {
+          orgId: Number(orgId),
+          amount: { gt: 0 },
+        },
+      });
+      if (pastPaidSubscriptionsCount > 0) {
+        return res.status(400).json({ success: false, message: 'Coupons can only be applied when upgrading from a Free Trial plan for the first time.' });
+      }
     }
 
     const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });

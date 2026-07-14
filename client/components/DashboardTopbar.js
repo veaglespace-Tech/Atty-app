@@ -37,60 +37,58 @@ export default function DashboardTopbar() {
     <header className="light-glow-card-static sticky top-4 z-20 mb-8 overflow-hidden rounded-[2rem] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.10),transparent_24%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
 
-      {user?.organization?.logoUrl && (
-        <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[240px] z-0 overflow-hidden pointer-events-none">
-          <img
-            src={user.organization.logoUrl}
-            alt="Organization Logo"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/95 dark:to-slate-900/95" />
-        </div>
-      )}
+
 
       <div className="relative z-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-4 lg:ml-[210px]">
-            <div className="hidden min-w-[260px] flex-1 md:block">
-              <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
-                <div
-                  className={cn(
-                    "absolute right-3 top-3 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
-                    roleTheme.header
-                  )}
-                >
-                  {roleLabel}
-                </div>
-                <div className="flex items-center gap-3">
-                  <UserAvatar
-                    src={user?.profileImageUrl}
-                    name={displayName}
-                    className="h-12 w-12 rounded-2xl text-sm"
-                    fallbackClassName={roleTheme.accent}
-                    sizes="48px"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
-                      {displayName}
-                    </p>
-                    <p className="brand-copy-sm mt-1 truncate text-xs">{identityLabel}</p>
-                  </div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <div className="hidden min-w-[260px] md:block">
+            <div className="brand-panel-soft relative max-w-md rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 py-3 pr-24 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)]">
+              <div
+                className={cn(
+                  "absolute right-3 top-3 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] backdrop-blur-md",
+                  roleTheme.header
+                )}
+              >
+                {roleLabel}
+              </div>
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  src={user?.profileImageUrl}
+                  name={displayName}
+                  className="h-12 w-12 rounded-2xl text-sm"
+                  fallbackClassName={roleTheme.accent}
+                  sizes="48px"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-left text-sm font-semibold tracking-[0.01em] text-slate-900 dark:text-white">
+                    {displayName}
+                  </p>
+                  <p className="brand-copy-sm mt-1 truncate text-xs">{identityLabel}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="ml-auto grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-3 md:w-auto">
-            <ThemeToggle showLabel className="min-w-0 justify-center sm:w-auto" />
-            <button
-              type="button"
-              onClick={onLogout}
-              className="brand-btn brand-btn-danger brand-btn-md rounded-2xl px-3 py-2.5 sm:px-4"
-            >
-              <LogOut size={18} />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          </div>
+          <ThemeToggle showLabel className="min-w-0 justify-center sm:w-auto" />
+          
+          <button
+            type="button"
+            onClick={onLogout}
+            className="brand-btn brand-btn-danger brand-btn-md rounded-[1.25rem] px-3 py-2.5 sm:px-4 shrink-0"
+          >
+            <LogOut size={18} />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
+
+          {user?.organization?.logoUrl && (
+            <div className="hidden h-[74px] shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] md:flex">
+              <img
+                src={user.organization.logoUrl}
+                alt="Organization Logo"
+                className="h-full w-auto max-w-[120px] object-contain py-2"
+              />
+            </div>
+          )}
         </div>
 
         <div className="mt-3 md:hidden">

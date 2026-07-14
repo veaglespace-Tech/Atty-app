@@ -48,6 +48,7 @@ import {
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
   useUpdateOrgLogoMutation,
+  useUpdateOrgDetailsMutation,
 } from "@/services/api/orgApi";
 import {
   PERSON_NAME_REGEX,
@@ -697,6 +698,158 @@ function OrgLogoSettings() {
   );
 }
 
+function OrgDetailsSettings() {
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const organization = user?.organization;
+  const [updateOrgDetails, { isLoading: isUpdating }] = useUpdateOrgDetailsMutation();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isDirty },
+    reset,
+  } = useForm({
+    resolver: zodResolver(
+      z.object({
+        name: z.string().trim().min(1, "Organization Name is required"),
+        email: z.string().trim().min(1, "Email is required").email("Enter a valid email"),
+        mobileCountryCode: z.string().trim().optional(),
+        phone: z.string().trim().optional(),
+        address: z.string().trim().optional(),
+        city: z.string().trim().optional(),
+        state: z.string().trim().optional(),
+        country: z.string().trim().optional(),
+      })
+    ),
+    defaultValues: {
+      name: organization?.name || "",
+      email: organization?.email || "",
+      mobileCountryCode: organization?.phoneCountryCode || "",
+      phone: organization?.phone || "",
+      address: organization?.address || "",
+      city: organization?.city || "",
+      state: organization?.state || "",
+      country: organization?.country || "India",
+    },
+  });
+
+  const formValues = watch();
+
+  const onSubmit = async (values) => {
+    try {
+      const payload = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        phoneCountryCode: values.mobileCountryCode,
+        address: values.address,
+        city: values.city,
+        state: values.state,
+        country: values.country,
+      };
+
+      const result = await updateOrgDetails(payload).unwrap();
+      
+      const updatedUser = {
+        ...user,
+        organization: {
+          ...user.organization,
+          ...result.data,
+        }
+      };
+      dispatch(setCurrentUser(updatedUser));
+      reset(values);
+      
+      dispatch(
+        addNotification({
+          type: "success",
+          message: "Organization details updated successfully.",
+        })
+      );
+    } catch (error) {
+      if (!error?.status) {
+        dispatch(
+          addNotification({
+            type: "error",
+            message: error?.message || "Failed to update organization details.",
+          })
+        );
+      }
+    }
+  };
+
+  return (
+    <div className="light-glow-card-static rounded-[1.75rem] p-6">
+      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Organization Details</h3>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <label htmlFor="org-name" className={labelClassName}>Organization Name</label>
+            <input id="org-name" type="text" aria-invalid={errors.name ? "true" : "false"} className={cn(inputClassName, errors.name ? errorInputClassName : "")} {...register("name")} />
+            {errors.name && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.name.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="org-email" className={labelClassName}>Organization Email</label>
+            <input id="org-email" type="email" aria-invalid={errors.email ? "true" : "false"} className={cn(inputClassName, errors.email ? errorInputClassName : "")} {...register("email")} />
+            {errors.email && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.email.message}</p>}
+          </div>
+          <div>
+            <CountryPhoneField
+              label="Contact Number"
+              countryCode={formValues.mobileCountryCode || ""}
+              phone={formValues.phone || ""}
+              onCountryCodeChange={(e) => setValue("mobileCountryCode", e.target.value, { shouldValidate: true, shouldDirty: true })}
+              onPhoneChange={(e) => setValue("phone", e.target.value.replace(/[^\d]/g, ""), { shouldValidate: true, shouldDirty: true })}
+              countryCodeError={errors.mobileCountryCode?.message}
+              phoneError={errors.phone?.message}
+              helpText=""
+              labelClassName={labelClassName}
+            />
+            <input type="hidden" {...register("mobileCountryCode")} />
+            <input type="hidden" {...register("phone")} />
+          </div>
+          <div>
+            <label htmlFor="org-country" className={labelClassName}>Country</label>
+            <input id="org-country" type="text" aria-invalid={errors.country ? "true" : "false"} className={cn(inputClassName, errors.country ? errorInputClassName : "")} {...register("country")} />
+            {errors.country && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.country.message}</p>}
+          </div>
+          <div className="md:col-span-2">
+            <label htmlFor="org-address" className={labelClassName}>Street Address</label>
+            <input id="org-address" type="text" aria-invalid={errors.address ? "true" : "false"} className={cn(inputClassName, errors.address ? errorInputClassName : "")} {...register("address")} />
+            {errors.address && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.address.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="org-city" className={labelClassName}>City</label>
+            <input id="org-city" type="text" aria-invalid={errors.city ? "true" : "false"} className={cn(inputClassName, errors.city ? errorInputClassName : "")} {...register("city")} />
+            {errors.city && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.city.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="org-state" className={labelClassName}>State / Province</label>
+            <input id="org-state" type="text" aria-invalid={errors.state ? "true" : "false"} className={cn(inputClassName, errors.state ? errorInputClassName : "")} {...register("state")} />
+            {errors.state && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.state.message}</p>}
+          </div>
+        </div>
+        
+        {isDirty && (
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button type="button" onClick={() => reset()} disabled={isUpdating} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+                Cancel
+              </button>
+              <button type="submit" disabled={isUpdating} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
+              </button>
+            </div>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
+
 export default function WorkspaceSettingsPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -1037,7 +1190,6 @@ export default function WorkspaceSettingsPage() {
       <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-px dark:border-slate-800 no-scrollbar">
         {[
           { id: "personal", label: "Personal Info", icon: User },
-          { id: "contact", label: "Contact & Address", icon: MapPin },
           { id: "security", label: "Security & Workspace", icon: ShieldCheck },
           ...(canManageLocationSettings || canManageOrgSettings ? [{ id: "organization", label: "Organization Settings", icon: Building2 }] : []),
         ].map((tab) => (
@@ -1108,11 +1260,7 @@ export default function WorkspaceSettingsPage() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {activeTab === "contact" && (
-          <div className="grid gap-6">
             {/* Contact Details Card */}
             <div className="light-glow-card-static rounded-[1.75rem] p-6">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Contact Information</h3>
@@ -1263,13 +1411,18 @@ export default function WorkspaceSettingsPage() {
       {/* Organization Settings */}
       {activeTab === "organization" && (canManageLocationSettings || canManageOrgSettings) && (
         <div className="space-y-6">
+          {canManageOrgSettings && (
+            <>
+              <OrgDetailsSettings />
+              <OrgLogoSettings />
+            </>
+          )}
           {canManageLocationSettings && (
             <>
               <LocationSettings />
               <TimeSettings />
             </>
           )}
-          {canManageOrgSettings && <OrgLogoSettings />}
         </div>
       )}
     </section>

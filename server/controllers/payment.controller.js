@@ -471,7 +471,20 @@ const resolveRenewalContext = async ({ organizationId, planCode, couponCode }) =
   let discountAmount = 0;
   let couponId = null;
   let discountedPrice = selPrice;
+  const pastPaidSubscriptionsCount = await prisma.subscription.count({
+    where: {
+      orgId: Number(organizationId),
+      amount: { gt: 0 },
+    },
+  });
+  const isFirstTimePaidUpgrade = pastPaidSubscriptionsCount === 0;
+
   if (couponCode && !freeTrialPlan) {
+    if (!isFirstTimePaidUpgrade) {
+      const err = new Error("Coupons can only be applied when upgrading from a Free Trial plan for the first time.");
+      err.statusCode = 400;
+      throw err;
+    }
     const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } });
     let isCouponValid = false;
     if (coupon) {
@@ -488,7 +501,16 @@ const resolveRenewalContext = async ({ organizationId, planCode, couponCode }) =
       const isPlanValid = !coupon.applicablePlanCodes || (Array.isArray(coupon.applicablePlanCodes) && coupon.applicablePlanCodes.includes(plan.code));
       
       if (isValidDate && !isNotStarted && !isMaxUsesReached && isPlanValid) {
-        isCouponValid = true; } else { console.log("Coupon validation failed:", { isValidDate, isNotStarted, isMaxUsesReached, isPlanValid, planCode: plan.code, applicablePlanCodes: coupon.applicablePlanCodes });
+        isCouponValid = true; 
+      } else { 
+        const errorReason = [];
+        if (!isValidDate) errorReason.push("Expired");
+        if (isNotStarted) errorReason.push("Not yet started");
+        if (isMaxUsesReached) errorReason.push("Usage limit reached");
+        if (!isPlanValid) errorReason.push(`Not valid for plan ${plan.code}`);
+        const err = new Error(`Coupon rejected: ${errorReason.join(', ')}`);
+        err.statusCode = 400;
+        throw err;
       }
     }
 
