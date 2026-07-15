@@ -186,6 +186,18 @@ export const attendanceApi = createApi({
         body: payload,
       }),
     }),
+    reachedHome: builder.mutation({
+      query: (payload) => ({
+        url: "/attendance/reached-home",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: [
+        { type: "Attendance", id: "LIST" },
+        { type: "Attendance", id: "SELF" },
+        { type: "Attendance", id: "SUMMARY" },
+      ],
+    }),
   }),
 });
 
@@ -196,5 +208,6 @@ export const {
   usePunchInMutation,
   usePunchOutMutation,
   useRequestRegularizationMutation,
+  useReachedHomeMutation,
 } = attendanceApi;
 
