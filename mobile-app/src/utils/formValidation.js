@@ -21,6 +21,19 @@ export const isNotCommonEmailTypo = (email) => {
   ];
   return !commonTypoDomains.includes(domain);
 };
+
+const DISPOSABLE_DOMAINS = [
+  "mailinator.com", "10minutemail.com", "tempmail.com", 
+  "guerrillamail.com", "trashmail.com", "yopmail.com", 
+  "sharklasers.com", "maildrop.cc", "fakeinbox.com", 
+  "temp-mail.org"
+];
+
+export const isNotDisposableEmail = (email) => {
+  const normalized = String(email || "").trim().toLowerCase();
+  const domain = normalized.split("@")[1] || "";
+  return !DISPOSABLE_DOMAINS.includes(domain);
+};
 export const PERSON_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
 export const ORGANIZATION_NAME_REGEX = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}\s&().,'/-]{1,119}$/u;
 export const PLACE_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,79}$/u;
@@ -65,10 +78,22 @@ export const validateOptionalText = ({ value, label, max = TEXT_AREA_MAX }) => {
 export const validateEmailInput = (value, label = "Email") => {
   const normalized = normalizeEmailInput(value);
   if (!normalized) return `${label} is required`;
+  if (normalized.length > 254) return "Email address is too long";
   if (!EMAIL_REGEX.test(normalized)) return `Enter a valid ${label.toLowerCase()}`;
+  
+  const [local, domain] = normalized.split("@");
+  if (local.length > 64) return "Local part of email is too long";
+  if (local.includes("..") || domain.includes("..")) return "Email cannot contain consecutive dots";
+  if (/^[0-9.]+$/.test(domain) || /^\[.*\]$/.test(domain)) return "IP addresses are not allowed in email domains";
+  
   if (!isNotCommonEmailTypo(normalized)) {
     return "It looks like there might be a typo in your email address. Please double-check it.";
   }
+  
+  if (!isNotDisposableEmail(normalized)) {
+    return "Disposable or temporary email addresses are not allowed.";
+  }
+  
   return null;
 };
 
