@@ -67,7 +67,7 @@ export const validateEmailInput = (value, label = "Email") => {
   if (!normalized) return `${label} is required`;
   if (!EMAIL_REGEX.test(normalized)) return `Enter a valid ${label.toLowerCase()}`;
   if (!isNotCommonEmailTypo(normalized)) {
-    return "Did you misspell the domain? Please enter a valid email address.";
+    return "It looks like there might be a typo in your email address. Please double-check it.";
   }
   return null;
 };
