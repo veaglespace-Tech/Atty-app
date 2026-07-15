@@ -2691,36 +2691,52 @@ exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
     userPayload.permissions = req.body.permissions;
   }
 
-  await prisma.$transaction(async (tx) => {
-    if (Object.keys(userPayload).length > 0) {
-      await tx.user.update({
-        where: { id: userId },
-        data: userPayload,
-      });
-    }
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (Object.keys(userPayload).length > 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: userPayload,
+        });
+      }
 
-    if (user.orgId && Object.keys(membershipPayload).length > 0) {
-      const memberObj = await tx.organizationMember.findUnique({
-        where: {
-          userId_orgId: {
-            userId: userId,
-            orgId: user.orgId,
-          },
-        },
-      });
-      if (memberObj) {
-        await tx.organizationMember.update({
+      if (user.orgId && Object.keys(membershipPayload).length > 0) {
+        const memberObj = await tx.organizationMember.findUnique({
           where: {
             userId_orgId: {
               userId: userId,
               orgId: user.orgId,
             },
           },
-          data: membershipPayload,
         });
+        if (memberObj) {
+          await tx.organizationMember.update({
+            where: {
+              userId_orgId: {
+                userId: userId,
+                orgId: user.orgId,
+              },
+            },
+            data: membershipPayload,
+          });
+        }
       }
+    });
+  } catch (error) {
+    if (error.code === "P2002") {
+      res.status(400);
+      const target = error.meta?.target;
+      const targetStr = Array.isArray(target) ? target.join(",") : String(target || "");
+      if (targetStr.toLowerCase().includes("email")) {
+        throw new Error("This email is already registered to another user.");
+      }
+      if (targetStr.toLowerCase().includes("mobile")) {
+        throw new Error("This mobile number is already registered to another user.");
+      }
+      throw new Error("A user with this unique information already exists.");
     }
-  });
+    throw error;
+  }
 
   const updated = await prisma.user.findUnique({
     where: { id: userId },
