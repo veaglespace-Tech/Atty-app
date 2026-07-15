@@ -2,23 +2,10 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const PERSON_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
 const ORGANIZATION_NAME_REGEX = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}\s&().,'/-]{1,119}$/u;
 
-const isNotCommonEmailTypo = (email) => {
-  const normalized = String(email || "").trim().toLowerCase();
-  const domain = normalized.split("@")[1] || "";
-  const commonTypoDomains = [
-    "gmail.co", "gamil.com", "gmai.com", "gmail.con", "g.com", "gml.com",
-    "yahoo.co", "yaho.com", "yahoo.con",
-    "hotmail.co", "hotmai.com", "hotmail.con",
-    "outlook.co", "outlook.con",
-    "icloud.co"
-  ];
-  return !commonTypoDomains.includes(domain);
-};
+const { validateEmailAdvanced } = require("./advancedEmailValidation");
 
-const validateEmail = (email) => {
-  if (!email || typeof email !== "string") return false;
-  const normalized = email.trim().toLowerCase();
-  return EMAIL_REGEX.test(normalized) && isNotCommonEmailTypo(normalized);
+const validateEmail = async (email) => {
+  return await validateEmailAdvanced(email, false); // Disable DNS checks to prevent timeouts or errors in restricted environments
 };
 
 const validatePersonName = (name) => {

@@ -1356,6 +1356,26 @@ export default function WorkspaceSettingsPage() {
                     <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Location</span>
                     <span className="text-sm font-bold text-slate-900 dark:text-white">{formatValue(workspaceCity, "Not set")}</span>
                   </div>
+                  {!isSuperAdmin && referralCode && (
+                    <div className="flex justify-between items-center p-3.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                      <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Referral Code</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{referralCode}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralCode);
+                            setCopiedReferral(true);
+                            setTimeout(() => setCopiedReferral(false), 2000);
+                          }}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                          title="Copy Code"
+                        >
+                          {copiedReferral ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

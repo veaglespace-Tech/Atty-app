@@ -46,9 +46,10 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
     throw new Error("Organization name contains unsupported characters");
   }
 
-  if (!validateEmail(orgEmail)) {
+  const orgEmailValidation = await validateEmail(orgEmail);
+  if (!orgEmailValidation.valid) {
     res.status(400);
-    throw new Error("Invalid organization email address");
+    throw new Error(`Organization Email: ${orgEmailValidation.error}`);
   }
 
   if (!validatePersonName(adminName)) {
@@ -56,9 +57,10 @@ exports.onboardOrganization = asyncHandler(async (req, res) => {
     throw new Error("Admin name can only include letters, spaces, dots, or hyphens");
   }
 
-  if (!validateEmail(adminEmail)) {
+  const adminEmailValidation = await validateEmail(adminEmail);
+  if (!adminEmailValidation.valid) {
     res.status(400);
-    throw new Error("Invalid admin email address");
+    throw new Error(`Admin Email: ${adminEmailValidation.error}`);
   }
 
   if (!validatePasswordComplexity(adminPassword)) {

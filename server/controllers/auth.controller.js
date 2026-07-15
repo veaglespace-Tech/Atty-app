@@ -928,9 +928,10 @@ exports.register = asyncHandler(async (req, res) => {
       throw new Error("Full name can only include letters, spaces, dots, or hyphens");
     }
 
-    if (!validateEmail(userData.email)) {
+    const emailValidation = await validateEmail(userData.email);
+    if (!emailValidation.valid) {
       res.status(400);
-      throw new Error("Invalid email address");
+      throw new Error(emailValidation.error);
     }
 
     if (!validatePasswordComplexity(userData.password)) {
@@ -1062,9 +1063,10 @@ exports.register = asyncHandler(async (req, res) => {
     throw new Error("Full name can only include letters, spaces, dots, or hyphens");
   }
 
-  if (!validateEmail(email)) {
+  const emailValidation = await validateEmail(email);
+  if (!emailValidation.valid) {
     res.status(400);
-    throw new Error("Invalid email address");
+    throw new Error(emailValidation.error);
   }
 
   if (!validatePasswordComplexity(password)) {
@@ -1498,9 +1500,10 @@ exports.updateMe = asyncHandler(async (req, res) => {
       throw new Error("Email is required");
     }
 
-    if (!validateEmail(email)) {
+    const emailValidation = await validateEmail(email);
+    if (!emailValidation.valid) {
       res.status(400);
-      throw new Error("Invalid email address");
+      throw new Error(emailValidation.error);
     }
 
     if (email !== existingUser.email) {

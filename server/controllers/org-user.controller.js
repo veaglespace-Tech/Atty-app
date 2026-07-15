@@ -580,9 +580,10 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
     throw new Error("Full name can only include letters, spaces, dots, or hyphens");
   }
 
-  if (!validateEmail(email)) {
+  const emailValidation = await validateEmail(email);
+  if (!emailValidation.valid) {
     res.status(400);
-    throw new Error("Invalid email address");
+    throw new Error(emailValidation.error);
   }
 
   if (!USER_STATUS.has(status)) {

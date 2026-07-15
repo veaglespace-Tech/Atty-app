@@ -5,8 +5,8 @@ const { sendContactInquiryNotifications } = require("../services/contact-inquiry
 const sendEmail = require("../utils/email");
 const { normalizeEmail } = require("../utils/contact");
 
+const { validateEmail } = require("../utils/validation");
 const CONTACT_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const CONTACT_SUBJECT_MAX = 120;
 const CONTACT_MESSAGE_MAX = 500;
 
@@ -77,7 +77,7 @@ const ensureLength = ({ value, label, min, max }) => {
   }
 };
 
-const parseContactInquiryPayload = (body = {}) => {
+const parseContactInquiryPayload = async (body = {}) => {
   const name = normalizeSingleLineText(body.name);
   const email = normalizeEmail(body.email);
   const subject = normalizeSingleLineText(body.subject);
@@ -98,8 +98,9 @@ const parseContactInquiryPayload = (body = {}) => {
   if (!email) {
     throw new Error("Email address is required");
   }
-  if (email.length > 191 || !EMAIL_REGEX.test(email)) {
-    throw new Error("Enter a valid email address");
+  const emailValidation = await validateEmail(email);
+  if (email.length > 191 || !emailValidation.valid) {
+    throw new Error(emailValidation.error || "Enter a valid email address");
   }
 
   ensureLength({
@@ -298,7 +299,7 @@ exports.submitContactInquiry = asyncHandler(async (req, res) => {
   let payload;
 
   try {
-    payload = parseContactInquiryPayload(req.body);
+    payload = await parseContactInquiryPayload(req.body);
   } catch (error) {
     res.status(400);
     throw error;
