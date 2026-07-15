@@ -45,7 +45,17 @@ function allowRoles(...roles) {
 
     const accessibleRoles = resolveAccessibleRoles(req.user);
 
-    if (!accessibleRoles.some((role) => normalizedAllowedRoles.includes(role))) {
+    let hasAccess = accessibleRoles.some((role) => normalizedAllowedRoles.includes(role));
+
+    if (!hasAccess && normalizedAllowedRoles.includes("MEMBER")) {
+      const { ALL_ROLES } = require("../constants/rbac");
+      const hasCustomRole = accessibleRoles.some((role) => !ALL_ROLES.includes(role));
+      if (hasCustomRole) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
       res.status(403);
       throw new Error("You do not have permission to access this resource");
     }
