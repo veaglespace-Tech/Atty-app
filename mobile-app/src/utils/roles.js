@@ -4,6 +4,7 @@ export const ROLES = {
   SUB_ADMIN: "SUB_ADMIN",
   TEAM_LEADER: "TEAM_LEADER",
   MEMBER: "MEMBER",
+  LIFE_MEMBER: "LIFE_MEMBER",
 
   // Backward-compatible aliases used by existing dashboard code.
   ADMIN: "ORG_ADMIN",
@@ -22,6 +23,8 @@ export const ROLE_ALIASES = Object.freeze({
   TEAM_LEADER: ROLES.TEAM_LEADER,
   TEAMLEAD: ROLES.TEAM_LEADER,
   MEMBER: ROLES.MEMBER,
+  LIFEMEMBER: ROLES.LIFE_MEMBER,
+  LIFE_MEMBER: ROLES.LIFE_MEMBER,
 });
 
 export const DASHBOARD_ROOT_BY_ROLE = Object.freeze({
@@ -30,6 +33,7 @@ export const DASHBOARD_ROOT_BY_ROLE = Object.freeze({
   [ROLES.SUB_ADMIN]: "/org",
   [ROLES.TEAM_LEADER]: "/team-leader",
   [ROLES.MEMBER]: "/member",
+  [ROLES.LIFE_MEMBER]: "/member",
 });
 
 export const ROLE_LABELS = Object.freeze({
@@ -38,6 +42,7 @@ export const ROLE_LABELS = Object.freeze({
   [ROLES.SUB_ADMIN]: "Sub Admin",
   [ROLES.TEAM_LEADER]: "Team Leader",
   [ROLES.MEMBER]: "Member",
+  [ROLES.LIFE_MEMBER]: "Life Member",
 });
 
 export const LOGIN_ROLE_OPTIONS = Object.freeze([
@@ -46,10 +51,12 @@ export const LOGIN_ROLE_OPTIONS = Object.freeze([
   { value: ROLES.SUB_ADMIN, label: ROLE_LABELS[ROLES.SUB_ADMIN] },
   { value: ROLES.TEAM_LEADER, label: ROLE_LABELS[ROLES.TEAM_LEADER] },
   { value: ROLES.MEMBER, label: ROLE_LABELS[ROLES.MEMBER] },
+  { value: ROLES.LIFE_MEMBER, label: ROLE_LABELS[ROLES.LIFE_MEMBER] },
 ]);
 
 export const ORG_MANAGED_ROLE_OPTIONS = Object.freeze([
   { value: ROLES.MEMBER, label: ROLE_LABELS[ROLES.MEMBER] },
+  { value: ROLES.LIFE_MEMBER, label: ROLE_LABELS[ROLES.LIFE_MEMBER] },
   { value: ROLES.TEAM_LEADER, label: ROLE_LABELS[ROLES.TEAM_LEADER] },
   { value: ROLES.SUB_ADMIN, label: ROLE_LABELS[ROLES.SUB_ADMIN] },
   { value: ROLES.ORG_ADMIN, label: ROLE_LABELS[ROLES.ORG_ADMIN] },
@@ -186,6 +193,10 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.LOCATION.MANAGE
   ]),
   [ROLES.MEMBER]: Object.freeze([
+    PERMISSIONS.ATTENDANCE.VIEW_OWN,
+    PERMISSIONS.POSTS.VIEW
+  ]),
+  [ROLES.LIFE_MEMBER]: Object.freeze([
     PERMISSIONS.ATTENDANCE.VIEW_OWN,
     PERMISSIONS.POSTS.VIEW
   ]),
