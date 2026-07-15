@@ -14,6 +14,7 @@ const {
   todayKey,
   truncateText,
   formatHoursValue,
+  formatReportLocation,
 } = require("../services/common.service");
 const { assertPermission, assertRoleScope } = require("../services/access.service");
 const { normalizeCoordinatesInput } = require("../services/location.service");
@@ -1039,7 +1040,7 @@ const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds
       totalHours: formatHoursValue(totalMinutesWorked, { fromMinutes: true }),
       presentHours: formatHoursValue(presentMinutes, { fromMinutes: true }),
       absent: isAbsent ? "YES" : "NO",
-      reachedHomeLocation: record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-",
+      reachedHomeLocation: record.reachedHomeAt ? formatReportLocation(record.reachedHomeLocationMeta, record.reachedHomeLatitude, record.reachedHomeLongitude) : "-",
     };
   });
 

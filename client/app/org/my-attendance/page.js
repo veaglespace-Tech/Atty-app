@@ -68,6 +68,7 @@ const formatPunchLocation = (record) => {
 export default function MyAttendancePage() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const currentRole = user?.currentRole;
   const [actionLoading, setActionLoading] = useState("");
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [message, setMessage] = useState("");
@@ -244,15 +245,17 @@ export default function MyAttendancePage() {
             Punch Out
           </button>
 
-          <button
-            type="button"
-            onClick={() => submitPunch("home")}
-            disabled={!canReachedHome || actionLoading !== ""}
-            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
-          >
-            {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <MapPinned size={16} />}
-            Reached Home
-          </button>
+          {currentRole !== "ORG_ADMIN" && (
+            <button
+              type="button"
+              onClick={() => submitPunch("home")}
+              disabled={!canReachedHome || actionLoading !== ""}
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+            >
+              {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <MapPinned size={16} />}
+              Reached Home
+            </button>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -348,8 +351,12 @@ export default function MyAttendancePage() {
                     <HistoryDetail label="Punch In" value={formatDateTime(record.punchInAt)} />
                     <HistoryDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
                     <HistoryDetail label="Location" value={formatPunchLocation(record)} />
-                    <HistoryDetail label="Reached Home" value={formatDateTime(record.reachedHomeAt)} />
-                    <HistoryDetail label="R.H. Location" value={record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-"} />
+                    {currentRole !== "ORG_ADMIN" && (
+                      <>
+                        <HistoryDetail label="Reached Home" value={formatDateTime(record.reachedHomeAt)} />
+                        <HistoryDetail label="R.H. Location" value={record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-"} />
+                      </>
+                    )}
                     <HistoryDetail label="Worked Hrs" value={formatWorkedHours(record)} />
                     <HistoryDetail
                       label="Selfie Proof"
@@ -374,8 +381,12 @@ export default function MyAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">R.H. Loc.</th>
+                    {currentRole !== "ORG_ADMIN" && (
+                      <>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">R.H. Loc.</th>
+                      </>
+                    )}
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
@@ -389,8 +400,12 @@ export default function MyAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-"}</td>
+                      {currentRole !== "ORG_ADMIN" && (
+                        <>
+                          <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
+                          <td className="px-3 py-2 text-slate-700">{record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-"}</td>
+                        </>
+                      )}
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}

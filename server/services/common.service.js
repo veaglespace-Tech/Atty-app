@@ -190,6 +190,15 @@ const toPdfTime = (value) => {
   });
 };
 
+const formatReportLocation = (meta, lat, lng) => {
+  if (meta?.displayText) return meta.displayText;
+  if (meta?.areaLabel) return meta.areaLabel;
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
+  }
+  return "-";
+};
+
 module.exports = {
   clamp,
   parsePositiveInt,
@@ -213,4 +222,5 @@ module.exports = {
   formatHoursValue,
   normalizeQueryValue,
   toPdfTime,
+  formatReportLocation,
 };

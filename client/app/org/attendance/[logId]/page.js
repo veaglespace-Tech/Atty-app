@@ -168,6 +168,25 @@ export default function OrgAttendanceLogDetailPage() {
             </div>
           </div>
 
+          {/* Reached Home Info */}
+          {record.reachedHomeAt && (
+            <div className="dashboard-detail-tile p-5 space-y-3">
+              <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Reached Home Details</h5>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Time</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{formatDate(record.reachedHomeAt)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Location</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate" title={record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || formatCoordinates(record.reachedHomeCoordinates)}>
+                    {record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || formatCoordinates(record.reachedHomeCoordinates) || "Unknown"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Selfie Proof */}
           <div className="dashboard-detail-tile p-5 space-y-3">
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Selfie Verification</h5>

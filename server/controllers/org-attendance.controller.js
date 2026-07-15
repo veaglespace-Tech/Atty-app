@@ -22,7 +22,7 @@ const { PERMISSIONS } = require("../constants/permissions");
 const xlsx = require("xlsx");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const { buildUserAttendancePayload } = require("../services/attendance-query.service");
-const { normalizeQueryValue, toPdfTime } = require("../services/common.service");
+const { normalizeQueryValue, toPdfTime, formatReportLocation } = require("../services/common.service");
 
 const { buildExportWorkbookBuffer } = require("../utils/excel-report");
 
@@ -228,11 +228,12 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
       { key: "entryNo", label: "No.", width: 40, align: "left" },
       { key: "date", label: "Date", width: 90 },
       { key: "status", label: "Status", width: 80, align: "center" },
-      { key: "punchIn", label: "Punch In", width: 110, align: "center" },
-      { key: "punchOut", label: "Punch Out", width: 110, align: "center" },
-      { key: "reachedHome", label: "Reached Home", width: 110, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 90, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 90, align: "center" },
+      { key: "reachedHome", label: "R. Home", width: 90, align: "center" },
+      { key: "reachedHomeLocation", label: "R. Home Loc", width: 90 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
-      { key: "geoValid", label: "Geo Valid", width: 70, align: "center" },
+      { key: "geoValid", label: "Geo Valid", width: 60, align: "center" },
     ],
     rows: payload.items.map((item, index) => {
       let geoValid = "Yes";
@@ -249,6 +250,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
@@ -314,7 +316,7 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? new Date(item.punchInAt).toLocaleString("en-IN") : "-",
         punchOut: item.punchOutAt ? new Date(item.punchOutAt).toLocaleString("en-IN") : "-",
         reachedHome: item.reachedHomeAt ? new Date(item.reachedHomeAt).toLocaleString("en-IN") : "-",
-        reachedHomeLocation: item.reachedHomeLocationMeta?.displayText || item.reachedHomeLocationMeta?.areaLabel || "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
@@ -363,9 +365,10 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
       { key: "user", label: "Member", width: 100 },
       { key: "date", label: "Date", width: 80 },
       { key: "status", label: "Status", width: 70, align: "center" },
-      { key: "punchIn", label: "Punch In", width: 90, align: "center" },
-      { key: "punchOut", label: "Punch Out", width: 90, align: "center" },
-      { key: "reachedHome", label: "Reached Home", width: 90, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 70, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 70, align: "center" },
+      { key: "reachedHome", label: "R. Home", width: 70, align: "center" },
+      { key: "reachedHomeLocation", label: "R. Home Loc", width: 90 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 70, align: "center" },
     ],
     rows: payload.items.map((item, index) => {
@@ -377,6 +380,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
       };
     }),
@@ -443,7 +447,7 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
         workedHoursLabel: item.workedHours.toFixed(2),
         punchInLocation: item.punchInLocationMeta?.displayText || item.punchInLocationMeta?.areaLabel || "-",
         punchOutLocation: item.punchOutLocationMeta?.displayText || item.punchOutLocationMeta?.areaLabel || "-",
-        reachedHomeLocation: item.reachedHomeLocationMeta?.displayText || item.reachedHomeLocationMeta?.areaLabel || "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
       };
     }),
   });

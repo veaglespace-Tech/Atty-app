@@ -8,6 +8,7 @@ const {
   toSummaryItem,
   todayKey,
   toPdfTime,
+  formatReportLocation,
 } = require("../services/common.service");
 const {
   buildAttendanceWhere,
@@ -227,11 +228,12 @@ exports.downloadMemberAttendancePdf = asyncHandler(async (req, res) => {
       { key: "entryNo", label: "No.", width: 40, align: "left" },
       { key: "date", label: "Date", width: 90 },
       { key: "status", label: "Status", width: 80, align: "center" },
-      { key: "punchIn", label: "Punch In", width: 110, align: "center" },
-      { key: "punchOut", label: "Punch Out", width: 110, align: "center" },
-      { key: "reachedHome", label: "Reached Home", width: 110, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 90, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 90, align: "center" },
+      { key: "reachedHome", label: "R. Home", width: 90, align: "center" },
+      { key: "reachedHomeLocation", label: "R. Home Loc", width: 90 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
-      { key: "geoValid", label: "Geo Valid", width: 70, align: "center" },
+      { key: "geoValid", label: "Geo Valid", width: 60, align: "center" },
     ],
     rows: payload.items.map((item, index) => {
       let geoValid = "Yes";
@@ -248,6 +250,7 @@ exports.downloadMemberAttendancePdf = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
@@ -312,7 +315,7 @@ exports.downloadMemberAttendanceExcel = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? new Date(item.punchInAt).toLocaleString("en-IN") : "-",
         punchOut: item.punchOutAt ? new Date(item.punchOutAt).toLocaleString("en-IN") : "-",
         reachedHome: item.reachedHomeAt ? new Date(item.reachedHomeAt).toLocaleString("en-IN") : "-",
-        reachedHomeLocation: item.reachedHomeLocationMeta?.displayText || item.reachedHomeLocationMeta?.areaLabel || "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };

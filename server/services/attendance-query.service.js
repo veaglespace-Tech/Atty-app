@@ -20,6 +20,10 @@ const mapAttendanceRecord = (record = {}) => {
     Number.isFinite(record.punchOutLongitude) && Number.isFinite(record.punchOutLatitude)
       ? [record.punchOutLongitude, record.punchOutLatitude]
       : null;
+  const reachedHomeCoordinates =
+    Number.isFinite(record.reachedHomeLongitude) && Number.isFinite(record.reachedHomeLatitude)
+      ? [record.reachedHomeLongitude, record.reachedHomeLatitude]
+      : null;
 
   return {
     id: record.id,
@@ -45,6 +49,7 @@ const mapAttendanceRecord = (record = {}) => {
     reachedHomeAt: record.reachedHomeAt,
     reachedHomeLatitude: record.reachedHomeLatitude,
     reachedHomeLongitude: record.reachedHomeLongitude,
+    reachedHomeCoordinates,
     reachedHomeLocationMeta: record.reachedHomeLocationMeta,
     punchInSelfieUrl: record.punchInSelfieUrl || null,
     punchOutSelfieUrl: record.punchOutSelfieUrl || null,
