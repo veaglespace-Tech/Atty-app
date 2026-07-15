@@ -6,7 +6,7 @@ const isNotCommonEmailTypo = (email) => {
   const normalized = String(email || "").trim().toLowerCase();
   const domain = normalized.split("@")[1] || "";
   const commonTypoDomains = [
-    "gmail.co", "gamil.com", "gmai.com", "gmail.con",
+    "gmail.co", "gamil.com", "gmai.com", "gmail.con", "g.com", "gml.com",
     "yahoo.co", "yaho.com", "yahoo.con",
     "hotmail.co", "hotmai.com", "hotmail.con",
     "outlook.co", "outlook.con",
