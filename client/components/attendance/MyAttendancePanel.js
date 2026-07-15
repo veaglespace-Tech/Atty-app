@@ -10,11 +10,13 @@ import {
   Timer,
   UserCheck,
   XCircle,
+  Home,
 } from "lucide-react";
 import {
   useGetMyAttendanceQuery,
   usePunchInMutation,
   usePunchOutMutation,
+  useReachedHomeMutation,
 } from "@/services/api/attendanceApi";
 import dynamic from "next/dynamic";
 
@@ -147,6 +149,8 @@ export default function MyAttendancePanel({
     };
   };
 
+  const [reachedHomeMutation] = useReachedHomeMutation();
+
   const submitPunch = async (type, selfieImageDataUrl) => {
     try {
       setActionLoading(type);
@@ -154,22 +158,32 @@ export default function MyAttendancePanel({
       setMessage("");
 
       const locationPayload = await resolvePunchLocationPayload();
-      const response =
-        type === "in"
-          ? await punchInMutation({
-              userLocation: locationPayload.coordinates,
-              location: locationPayload.location,
-              selfieImageDataUrl,
-            }).unwrap()
-          : await punchOutMutation({
-              userLocation: locationPayload.coordinates,
-              location: locationPayload.location,
-              selfieImageDataUrl,
-            }).unwrap();
+      
+      let response;
+      if (type === "in") {
+        response = await punchInMutation({
+          userLocation: locationPayload.coordinates,
+          location: locationPayload.location,
+          selfieImageDataUrl,
+        }).unwrap();
+      } else if (type === "out") {
+        response = await punchOutMutation({
+          userLocation: locationPayload.coordinates,
+          location: locationPayload.location,
+          selfieImageDataUrl,
+        }).unwrap();
+      } else if (type === "home") {
+        response = await reachedHomeMutation({
+          userLocation: locationPayload.coordinates,
+          location: locationPayload.location,
+        }).unwrap();
+      }
 
-      setMessage(
-        response?.message || (type === "in" ? "Punch in successful" : "Punch out successful")
-      );
+      let successMsg = "Punch out successful";
+      if (type === "in") successMsg = "Punch in successful";
+      if (type === "home") successMsg = "Reached home marked successfully";
+
+      setMessage(response?.message || successMsg);
       setPendingPunchType("");
       await Promise.all([refetch(), runExternalRefresh()]);
     } catch (err) {
@@ -181,6 +195,7 @@ export default function MyAttendancePanel({
 
   const canPunchIn = !todayRecord?.punchInAt;
   const canPunchOut = Boolean(todayRecord?.punchInAt) && !todayRecord?.punchOutAt;
+  const canReachedHome = Boolean(todayRecord?.punchOutAt) && !todayRecord?.reachedHomeAt;
 
   return (
     <section className="space-y-4">
@@ -227,6 +242,16 @@ export default function MyAttendancePanel({
             {actionLoading === "out" ? <Loader2 size={16} className="animate-spin" /> : <Timer size={16} />}
             Punch Out
           </button>
+
+          <button
+            type="button"
+            onClick={() => submitPunch("home")}
+            disabled={!canReachedHome || actionLoading !== ""}
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+          >
+            {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <Home size={16} />}
+            Reached Home
+          </button>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -253,11 +278,12 @@ export default function MyAttendancePanel({
           </p>
         ) : null}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Snapshot label="Date" value={todayRecord?.date || todayKey()} />
           <Snapshot label="Today Status" value={todayStatusValue} />
           <Snapshot label="Punch In" value={formatDateTime(todayRecord?.punchInAt)} />
           <Snapshot label="Punch Out" value={formatDateTime(todayRecord?.punchOutAt)} />
+          <Snapshot label="Reached Home" value={formatDateTime(todayRecord?.reachedHomeAt)} />
         </div>
       </div>
 
@@ -316,6 +342,7 @@ export default function MyAttendancePanel({
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <HistoryDetail label="Punch In" value={formatDateTime(record.punchInAt)} />
                     <HistoryDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
+                    <HistoryDetail label="Reached Home" value={formatDateTime(record.reachedHomeAt)} />
                     <HistoryDetail label="Location" value={formatPunchLocation(record)} />
                     <HistoryDetail label="Worked Hrs" value={formatWorkedHours(record)} />
                     <HistoryDetail
@@ -340,6 +367,7 @@ export default function MyAttendancePanel({
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
@@ -353,6 +381,7 @@ export default function MyAttendancePanel({
                       <td className="px-3 py-2 text-slate-700">{record.status}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">

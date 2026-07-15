@@ -99,6 +99,10 @@ model Attendance {
   notes                  String           @default("")
   punchInLocationMeta    Json?
   punchOutLocationMeta   Json?
+  reachedHomeAt          DateTime?
+  reachedHomeLatitude    Float?
+  reachedHomeLongitude   Float?
+  reachedHomeLocationMeta Json?
   punchInSelfieUrl       String?
   punchInSelfiePublicId  String?
   punchOutSelfieUrl      String?

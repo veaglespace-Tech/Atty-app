@@ -681,3 +681,65 @@ exports.requestRegularization = asyncHandler(async (req, res) => {
     data: newRequest,
   });
 });
+
+exports.markReachedHome = asyncHandler(async (req, res) => {
+  const input = req.validatedBody || req.body || {};
+  const locationPayload = resolveLocationPayload(input);
+  const parsedLocation = locationPayload?.coordinates;
+  const userId = Number(req.user.id);
+  const orgId = ensureOrganizationId(req, res);
+  const today = todayKey();
+
+  if (!parsedLocation || parsedLocation.length !== 2) {
+    res.status(400);
+    throw new Error("Location coordinates are required");
+  }
+
+  const attendance = await prisma.attendance.findFirst({
+    where: {
+      orgId,
+      userId,
+      date: today,
+      deletedAt: null,
+    },
+  });
+
+  if (!attendance) {
+    res.status(400);
+    throw new Error("Cannot mark reached home. No attendance record found for today.");
+  }
+
+  if (!attendance.punchOutAt) {
+    res.status(400);
+    throw new Error("You must punch out before marking reached home.");
+  }
+
+  if (attendance.reachedHomeAt) {
+    res.status(400);
+    throw new Error("You have already marked reached home for today.");
+  }
+
+  const reachedHomeAt = new Date();
+
+  await prisma.attendance.update({
+    where: { id: attendance.id },
+    data: {
+      reachedHomeAt,
+      reachedHomeLongitude: parsedLocation[0],
+      reachedHomeLatitude: parsedLocation[1],
+      reachedHomeLocationMeta: locationPayload?.location || null,
+    },
+  });
+
+  const payload = await buildSelfAttendancePayload({
+    orgId,
+    userId,
+    limit: 45,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Reached home marked successfully",
+    ...payload,
+  });
+});

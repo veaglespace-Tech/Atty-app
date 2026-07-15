@@ -1035,9 +1035,11 @@ const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds
       date: record.date || "-",
       punchIn: toPdfTime(record.punchInAt),
       punchOut: toPdfTime(record.punchOutAt),
+      reachedHome: toPdfTime(record.reachedHomeAt),
       totalHours: formatHoursValue(totalMinutesWorked, { fromMinutes: true }),
       presentHours: formatHoursValue(presentMinutes, { fromMinutes: true }),
       absent: isAbsent ? "YES" : "NO",
+      reachedHomeLocation: record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-",
     };
   });
 
@@ -1070,9 +1072,11 @@ const buildAttendanceExcelBuffer = ({
     { key: "email", label: "Email", width: 132 },
     { key: "punchIn", label: "Punch In", width: 70 },
     { key: "punchOut", label: "Punch Out", width: 70 },
+    { key: "reachedHome", label: "Reached Home", width: 70 },
     { key: "totalHours", label: "Worked Hrs", width: 88 },
     { key: "presentHours", label: "Present Hrs", width: 96 },
     { key: "absent", label: "Is Absent", width: 64 },
+    { key: "reachedHomeLocation", label: "Reached Home Location", width: 200 },
   ];
 
   const infoLines = [

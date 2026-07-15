@@ -132,6 +132,23 @@ export default function AttendanceDetailModal({ selectedRecord, onClose }) {
               </div>
             </div>
 
+            {/* Reached Home Info */}
+            <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
+              <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home Details</h5>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Time</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{formatDate(selectedRecord.reachedHomeAt)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                    {selectedRecord.reachedHomeLocationMeta?.displayText || selectedRecord.reachedHomeLocationMeta?.areaLabel || formatCoordinates(selectedRecord.reachedHomeCoordinates)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Selfie Proof */}
             <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/20 rounded-2xl p-3.5 space-y-2.5">
               <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Verification</h5>

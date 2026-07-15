@@ -24,9 +24,10 @@ const TABLE_COLUMNS = [
   { key: "date", label: "Date", width: 70, align: "center" },
   { key: "punchIn", label: "In", width: 50, align: "center" },
   { key: "punchOut", label: "Out", width: 50, align: "center" },
-  { key: "totalHours", label: "Worked Hrs", width: 72, align: "center" },
-  { key: "presentHours", label: "Present Hrs", width: 68, align: "center" },
-  { key: "absent", label: "Absent", width: 54, align: "center" },
+  { key: "reachedHome", label: "Home", width: 50, align: "center" },
+  { key: "totalHours", label: "Tot Hrs", width: 50, align: "center" },
+  { key: "presentHours", label: "Prs Hrs", width: 50, align: "center" },
+  { key: "absent", label: "Abs", width: 40, align: "center" },
 ];
 
 const normalizeText = (value) => String(value === null || value === undefined ? "" : value).trim();

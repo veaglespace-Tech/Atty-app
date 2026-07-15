@@ -230,6 +230,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
       { key: "status", label: "Status", width: 80, align: "center" },
       { key: "punchIn", label: "Punch In", width: 110, align: "center" },
       { key: "punchOut", label: "Punch Out", width: 110, align: "center" },
+      { key: "reachedHome", label: "Reached Home", width: 110, align: "center" },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
       { key: "geoValid", label: "Geo Valid", width: 70, align: "center" },
     ],
@@ -247,6 +248,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
@@ -292,6 +294,8 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
       { key: "status", label: "Status", width: 68 },
       { key: "punchIn", label: "Punch In Time", width: 120 },
       { key: "punchOut", label: "Punch Out Time", width: 120 },
+      { key: "reachedHome", label: "Reached Home Time", width: 120 },
+      { key: "reachedHomeLocation", label: "Reached Home Location", width: 250 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 88 },
       { key: "geoValid", label: "Geo Valid", width: 64 },
     ],
@@ -309,6 +313,8 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? new Date(item.punchInAt).toLocaleString("en-IN") : "-",
         punchOut: item.punchOutAt ? new Date(item.punchOutAt).toLocaleString("en-IN") : "-",
+        reachedHome: item.reachedHomeAt ? new Date(item.reachedHomeAt).toLocaleString("en-IN") : "-",
+        reachedHomeLocation: item.reachedHomeLocationMeta?.displayText || item.reachedHomeLocationMeta?.areaLabel || "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
@@ -359,6 +365,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
       { key: "status", label: "Status", width: 70, align: "center" },
       { key: "punchIn", label: "Punch In", width: 90, align: "center" },
       { key: "punchOut", label: "Punch Out", width: 90, align: "center" },
+      { key: "reachedHome", label: "Reached Home", width: 90, align: "center" },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 70, align: "center" },
     ],
     rows: payload.items.map((item, index) => {
@@ -369,6 +376,7 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
       };
     }),
@@ -417,9 +425,11 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
       { key: "status", label: "Status", width: 80 },
       { key: "punchIn", label: "Punch In", width: 110 },
       { key: "punchOut", label: "Punch Out", width: 110 },
+      { key: "reachedHome", label: "Reached Home", width: 110 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 90 },
       { key: "punchInLocation", label: "Punch In Location", width: 200 },
       { key: "punchOutLocation", label: "Punch Out Location", width: 200 },
+      { key: "reachedHomeLocation", label: "Reached Home Location", width: 200 },
     ],
     rows: payload.items.map((item, index) => {
       return {
@@ -429,9 +439,11 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         punchInLocation: item.punchInLocationMeta?.displayText || item.punchInLocationMeta?.areaLabel || "-",
         punchOutLocation: item.punchOutLocationMeta?.displayText || item.punchOutLocationMeta?.areaLabel || "-",
+        reachedHomeLocation: item.reachedHomeLocationMeta?.displayText || item.reachedHomeLocationMeta?.areaLabel || "-",
       };
     }),
   });
