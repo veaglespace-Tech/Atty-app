@@ -12,7 +12,13 @@ export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 export const isNotCommonEmailTypo = (email) => {
   const normalized = String(email || "").trim().toLowerCase();
   const domain = normalized.split("@")[1] || "";
-  const commonTypoDomains = ["gmail.co", "yahoo.co", "hotmail.co", "outlook.co", "icloud.co"];
+  const commonTypoDomains = [
+    "gmail.co", "gamil.com", "gmai.com", "gmail.con",
+    "yahoo.co", "yaho.com", "yahoo.con",
+    "hotmail.co", "hotmai.com", "hotmail.con",
+    "outlook.co", "outlook.con",
+    "icloud.co"
+  ];
   return !commonTypoDomains.includes(domain);
 };
 export const PERSON_NAME_REGEX = /^[\p{L}][\p{L}\p{M}\s.'-]{1,119}$/u;
@@ -61,7 +67,7 @@ export const validateEmailInput = (value, label = "Email") => {
   if (!normalized) return `${label} is required`;
   if (!EMAIL_REGEX.test(normalized)) return `Enter a valid ${label.toLowerCase()}`;
   if (!isNotCommonEmailTypo(normalized)) {
-    return "Did you mean .com or .co.in? Please enter a valid email address.";
+    return "Did you misspell the domain? Please enter a valid email address.";
   }
   return null;
 };

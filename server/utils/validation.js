@@ -5,7 +5,13 @@ const ORGANIZATION_NAME_REGEX = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}\s&().,'/-]{1,119}
 const isNotCommonEmailTypo = (email) => {
   const normalized = String(email || "").trim().toLowerCase();
   const domain = normalized.split("@")[1] || "";
-  const commonTypoDomains = ["gmail.co", "yahoo.co", "hotmail.co", "outlook.co", "icloud.co"];
+  const commonTypoDomains = [
+    "gmail.co", "gamil.com", "gmai.com", "gmail.con",
+    "yahoo.co", "yaho.com", "yahoo.con",
+    "hotmail.co", "hotmai.com", "hotmail.con",
+    "outlook.co", "outlook.con",
+    "icloud.co"
+  ];
   return !commonTypoDomains.includes(domain);
 };
 
