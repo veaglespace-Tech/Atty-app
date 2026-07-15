@@ -81,7 +81,7 @@ const reachedHomeLocationSchema = z
   });
 
 router.use(verifyToken);
-router.use(allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"));
+router.use(allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"));
 router.use(checkActiveSubscription);
 
 router.post("/punch-in", validateBody(attendanceLocationSchema), punchIn);

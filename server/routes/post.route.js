@@ -20,8 +20,8 @@ router.get("/:id/poll-results", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADE
 router.post("/:id/vote", voteOnPostPoll);
 
 // Post management (Gated by permission in controller)
-router.post("/", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"), createPost);
-router.patch("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"), updatePost);
-router.delete("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"), deletePost);
+router.post("/", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"), createPost);
+router.patch("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"), updatePost);
+router.delete("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"), deletePost);
 
 module.exports = router;

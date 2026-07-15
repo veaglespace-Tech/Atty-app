@@ -6,7 +6,7 @@ const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
 
 router.use(verifyToken);
-router.use(allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"));
+router.use(allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"));
 router.use(checkActiveSubscription);
 
 router.get("/stats", getStats);

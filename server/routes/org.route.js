@@ -63,13 +63,13 @@ router.use(userProtected);
 
 router.get(
   "/subscription",
-  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"),
+  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"),
   getOrgSubscription
 );
 
 router.use(
   checkActiveSubscription,
-  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER")
+  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER")
 );
 
 router.patch("/settings/logo", allowRoles("ORG_ADMIN", "SUB_ADMIN"), updateOrgLogo);

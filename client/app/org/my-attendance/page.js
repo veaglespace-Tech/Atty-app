@@ -13,7 +13,7 @@ import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfie
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
-import { usePunchInMutation, usePunchOutMutation } from "@/services/api/attendanceApi";
+import { usePunchInMutation, usePunchOutMutation, useReachedHomeMutation } from "@/services/api/attendanceApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
@@ -85,6 +85,7 @@ export default function MyAttendancePage() {
   } = useGetMemberAttendanceQuery(DASHBOARD_FETCH_LIMITS.MEMBER_ATTENDANCE, { skip: !user });
   const [punchInMutation] = usePunchInMutation();
   const [punchOutMutation] = usePunchOutMutation();
+  const [reachedHomeMutation] = useReachedHomeMutation();
 
   const records = useMemo(
     () => (Array.isArray(attendanceData?.items) ? attendanceData.items : []),
@@ -153,22 +154,31 @@ export default function MyAttendancePage() {
       setMessage("");
 
       const locationPayload = await resolvePunchLocationPayload();
-      const response =
-        type === "in"
-          ? await punchInMutation({
-              userLocation: locationPayload.coordinates,
-              location: locationPayload.location,
-              selfieImageDataUrl,
-            }).unwrap()
-          : await punchOutMutation({
-              userLocation: locationPayload.coordinates,
-              location: locationPayload.location,
-              selfieImageDataUrl,
-            }).unwrap();
+      let response;
+      if (type === "in") {
+        response = await punchInMutation({
+          userLocation: locationPayload.coordinates,
+          location: locationPayload.location,
+          selfieImageDataUrl,
+        }).unwrap();
+      } else if (type === "out") {
+        response = await punchOutMutation({
+          userLocation: locationPayload.coordinates,
+          location: locationPayload.location,
+          selfieImageDataUrl,
+        }).unwrap();
+      } else if (type === "home") {
+        response = await reachedHomeMutation({
+          userLocation: locationPayload.coordinates,
+          location: locationPayload.location,
+        }).unwrap();
+      }
 
-      setMessage(
-        response?.message || (type === "in" ? "Punch in successful" : "Punch out successful")
-      );
+      let successMsg = "Punch out successful";
+      if (type === "in") successMsg = "Punch in successful";
+      if (type === "home") successMsg = "Reached home marked successfully";
+
+      setMessage(response?.message || successMsg);
       setPendingPunchType("");
       await fetchAttendance();
     } catch (err) {
@@ -187,6 +197,7 @@ export default function MyAttendancePage() {
 
   const canPunchIn = !todayRecord?.punchInAt;
   const canPunchOut = Boolean(todayRecord?.punchInAt) && !todayRecord?.punchOutAt;
+  const canReachedHome = Boolean(todayRecord?.punchOutAt) && !todayRecord?.reachedHomeAt;
 
   return (
     <section className="space-y-6">
@@ -231,6 +242,16 @@ export default function MyAttendancePage() {
           >
             {actionLoading === "out" ? <Loader2 size={16} className="animate-spin" /> : <Timer size={16} />}
             Punch Out
+          </button>
+
+          <button
+            type="button"
+            onClick={() => submitPunch("home")}
+            disabled={!canReachedHome || actionLoading !== ""}
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+          >
+            {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <MapPinned size={16} />}
+            Reached Home
           </button>
         </div>
 
@@ -327,6 +348,8 @@ export default function MyAttendancePage() {
                     <HistoryDetail label="Punch In" value={formatDateTime(record.punchInAt)} />
                     <HistoryDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
                     <HistoryDetail label="Location" value={formatPunchLocation(record)} />
+                    <HistoryDetail label="Reached Home" value={formatDateTime(record.reachedHomeAt)} />
+                    <HistoryDetail label="R.H. Location" value={record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-"} />
                     <HistoryDetail label="Worked Hrs" value={formatWorkedHours(record)} />
                     <HistoryDetail
                       label="Selfie Proof"
@@ -351,6 +374,8 @@ export default function MyAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">R.H. Loc.</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
@@ -364,6 +389,8 @@ export default function MyAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
+                      <td className="px-3 py-2 text-slate-700">{record.reachedHomeLocationMeta?.displayText || record.reachedHomeLocationMeta?.areaLabel || "-"}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}

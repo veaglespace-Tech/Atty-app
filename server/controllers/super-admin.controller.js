@@ -3502,6 +3502,7 @@ exports.downloadSuperAdminUserAttendancePdf = asyncHandler(async (req, res) => {
       { key: "status", label: "Status", width: 80, align: "center" },
       { key: "punchIn", label: "Punch In", width: 110, align: "center" },
       { key: "punchOut", label: "Punch Out", width: 110, align: "center" },
+      { key: "reachedHome", label: "Reached Home", width: 110, align: "center" },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
       { key: "geoValid", label: "Geo Valid", width: 70, align: "center" },
     ],
@@ -3519,6 +3520,7 @@ exports.downloadSuperAdminUserAttendancePdf = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
@@ -3561,6 +3563,8 @@ exports.downloadSuperAdminUserAttendanceExcel = asyncHandler(async (req, res) =>
       { key: "status", label: "Status", width: 68 },
       { key: "punchIn", label: "Punch In Time", width: 120 },
       { key: "punchOut", label: "Punch Out Time", width: 120 },
+      { key: "reachedHome", label: "Reached Home Time", width: 120 },
+      { key: "reachedHomeLocation", label: "Reached Home Location", width: 250 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 88 },
       { key: "geoValid", label: "Geo Valid", width: 64 },
     ],
@@ -3578,6 +3582,8 @@ exports.downloadSuperAdminUserAttendanceExcel = asyncHandler(async (req, res) =>
         status: item.status,
         punchIn: item.punchInAt ? new Date(item.punchInAt).toLocaleString("en-IN") : "-",
         punchOut: item.punchOutAt ? new Date(item.punchOutAt).toLocaleString("en-IN") : "-",
+        reachedHome: item.reachedHomeAt ? new Date(item.reachedHomeAt).toLocaleString("en-IN") : "-",
+        reachedHomeLocation: item.reachedHomeLocationMeta?.displayText || item.reachedHomeLocationMeta?.areaLabel || "-",
         workedHoursLabel: item.workedHours.toFixed(2),
         geoValid,
       };
