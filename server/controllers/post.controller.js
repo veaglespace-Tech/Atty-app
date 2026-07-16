@@ -309,10 +309,10 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
   if (userRole !== "SUPER_ADMIN" && orgId) {
     const membership = await prisma.organizationMember.findUnique({
       where: { userId_orgId: { userId: Number(req.user.id), orgId: Number(orgId) } },
-      select: { createdAt: true }
+      select: { joinedAt: true }
     });
     if (membership) {
-      joinedAt = membership.createdAt;
+      joinedAt = membership.joinedAt;
     }
   }
 
