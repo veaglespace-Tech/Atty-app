@@ -1268,6 +1268,58 @@ exports.login = asyncHandler(async (req, res) => {
     }
   }
 
+  if (currentRole === "SUPER_ADMIN") {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.verificationSession.create({
+      data: {
+        purpose: "SUPER_ADMIN_LOGIN",
+        email: normalizedEmail,
+        phoneE164: user.mobile || "",
+        nationalNumber: "", // Required by schema
+        status: "EMAIL_PENDING",
+        emailOtpHash: otpHash,
+        emailOtpExpiresAt: expiresAt,
+        contactOtpExpiresAt: expiresAt, // Required by schema
+        expiresAt: expiresAt,
+      }
+    });
+
+    try {
+      const emailHtml = buildEmailTemplate({
+        title: "Super Admin Login Verification",
+        intro: [
+          "You are attempting to log in as a Super Admin.",
+          "Please use the verification code below to complete your login."
+        ],
+        sections: [
+          {
+            rows: [
+              { label: "Verification Code", value: otp }
+            ]
+          }
+        ],
+        notice: "This code will expire in 10 minutes. If you did not request this login, please change your password immediately.",
+      });
+      await sendEmail({
+        email: normalizedEmail,
+        subject: "Super Admin Login Verification",
+        html: emailHtml,
+      });
+    } catch (e) {
+      console.error("Failed to send 2FA OTP email:", e);
+    }
+
+    return res.status(200).json({
+      success: true,
+      requires2FA: true,
+      message: "An OTP has been sent to your registered email address.",
+      email: normalizedEmail,
+    });
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
     data: {
@@ -1299,30 +1351,149 @@ exports.login = asyncHandler(async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      permissions: resolvedPermissions,
       role: currentRole,
-      orgId: org?.id || null
-    }, 
-    process.env.JWT_KEY, 
+      orgId: org?.id || null,
+      permissions: resolvedPermissions,
+    },
+    process.env.JWT_KEY,
     {
       expiresIn: tokenTTL,
     }
   );
 
-  const redirectPath =
-    currentRole === "ORG_ADMIN" && org?.subscriptionStatus === "EXPIRED"
-      ? "/org/subscription"
-      : getDashboardPathByRole(currentRole);
+  res.cookie("token", token, getSessionCookieOptions(rememberMe));
+
+  res.status(200).json({
+    success: true,
+    message: "Logged in successfully",
+    user: serializeSessionUser(sessionUser, org),
+    token,
+  });
+});
+
+exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
+  const { email, password, otp, rememberMe } = req.body || {};
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail || !password || !otp) {
+    res.status(400);
+    throw new Error("Email, password, and OTP are required");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: authUserInclude,
+  });
+
+  if (!user) {
+    res.status(401);
+    throw new Error("Invalid credentials");
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    res.status(401);
+    throw new Error("Invalid credentials");
+  }
+
+  let authContext;
+  try {
+    authContext = resolveAuthMembership({
+      user,
+      loginAs: "SUPER_ADMIN",
+    });
+  } catch (error) {
+    res.status(error.statusCode || 401);
+    throw new Error(error.message || "Unauthorized role");
+  }
+
+  const currentRole = authContext.role;
+  if (currentRole !== "SUPER_ADMIN") {
+    res.status(403);
+    throw new Error("Access denied. Super Admin role required.");
+  }
+
+  // Verify OTP
+  const session = await prisma.verificationSession.findFirst({
+    where: {
+      email: normalizedEmail,
+      purpose: "SUPER_ADMIN_LOGIN",
+      status: "EMAIL_PENDING",
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!session) {
+    res.status(400);
+    throw new Error("OTP session expired or invalid. Please login again.");
+  }
+
+  const isOtpValid = await bcrypt.compare(String(otp), session.emailOtpHash);
+  if (!isOtpValid) {
+    // Increment attempts
+    await prisma.verificationSession.update({
+      where: { id: session.id },
+      data: { emailOtpAttempts: session.emailOtpAttempts + 1 }
+    });
+    res.status(400);
+    throw new Error("Invalid OTP");
+  }
+
+  // Mark session consumed
+  await prisma.verificationSession.update({
+    where: { id: session.id },
+    data: {
+      status: "VERIFIED",
+      emailVerifiedAt: new Date(),
+      consumedAt: new Date(),
+    }
+  });
+
+  // Proceed with login completion
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+    include: authUserWriteInclude,
+  });
+
+  const hydratedUser = mergeSessionUserState({
+    previousUser: user,
+    nextUser: updatedUser,
+    organization: null,
+  });
+
+  const sessionUser = {
+    ...hydratedUser,
+    orgId: null,
+    organization: null,
+  };
+
+  const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
+  const resolvedPermissions = resolveUserPermissions(sessionUser, null);
+  const token = jwt.sign(
+    { 
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: currentRole,
+      orgId: null,
+      permissions: resolvedPermissions,
+    },
+    process.env.JWT_KEY,
+    { expiresIn: tokenTTL }
+  );
 
   res.cookie("token", token, getSessionCookieOptions(rememberMe));
 
   res.status(200).json({
     success: true,
-    message: "Login successful",
-    user: serializeSessionUser(sessionUser, org),
-    redirectPath,
+    message: "Super Admin logged in successfully",
+    user: serializeSessionUser(sessionUser, null),
+    token,
   });
 });
+
 
 exports.searchOrganizations = asyncHandler(async (req, res) => {
   const query = String(req.query.query || "").trim();

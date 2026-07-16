@@ -12,6 +12,7 @@ const {
   validateResetPasswordToken,
   resetPassword,
   saveLead,
+  verifySuperAdminOtp,
 } = require("../controllers/auth.controller");
 const {
   validateReferralCode,
@@ -146,6 +147,7 @@ router.post("/join/:referralCode", submitJoinRequest);
 router.post("/register", validateBody(registerSchema), register);
 router.post("/save-lead", saveLead);
 router.post("/login", validateBody(loginSchema), login);
+router.post("/verify-super-admin-otp", verifySuperAdminOtp);
 router.post("/forgot-password", validateBody(forgotPasswordSchema), forgotPassword);
 router.post(
   "/reset-password/validate",
