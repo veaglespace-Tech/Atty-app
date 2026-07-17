@@ -18,8 +18,7 @@ import {
   useDownloadOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,
 } from "@/services/api/orgApi";
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 import {
   PERMISSIONS, PERMISSION_GROUPS, ROLES,
   formatPermissionLabel, formatRoleLabel,
@@ -221,19 +220,7 @@ export default function OrgUserDetailPage() {
               onPress={async () => {
                 try {
                   const blob = await downloadProfilePdf(userId).unwrap();
-                  const reader = new FileReader();
-                  reader.onloadend = async () => {
-                    try {
-                      const base64data = reader.result.split(',')[1];
-                      const filename = `user-profile-${userId}.pdf`;
-                      const uri = FileSystem.documentDirectory + filename;
-                      await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-                      if (await Sharing.isAvailableAsync()) {
-                        await Sharing.shareAsync(uri);
-                      }
-                    } catch (e) { Alert.alert("Error", "Failed to save PDF to device."); }
-                  };
-                  reader.readAsDataURL(blob);
+                  await downloadAndShareBlob(blob, `user-profile-${userId}.pdf`);
                 } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
               }}
               disabled={downloadingProfilePdf}
@@ -343,19 +330,7 @@ export default function OrgUserDetailPage() {
                 onPress={async () => {
                   try {
                     const blob = await downloadAttendancePdf({ userId, params: `period=${period}` }).unwrap();
-                    const reader = new FileReader();
-                    reader.onloadend = async () => {
-                      try {
-                        const base64data = reader.result.split(',')[1];
-                        const filename = `user-attendance-${userId}-${period}.pdf`;
-                        const uri = FileSystem.documentDirectory + filename;
-                        await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-                        if (await Sharing.isAvailableAsync()) {
-                          await Sharing.shareAsync(uri);
-                        }
-                      } catch (e) { Alert.alert("Error", "Failed to save PDF to device."); }
-                    };
-                    reader.readAsDataURL(blob);
+                    await downloadAndShareBlob(blob, `user-attendance-${userId}-${period}.pdf`);
                   } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
                 }}
                 disabled={downloadingAttendancePdf}
@@ -367,19 +342,7 @@ export default function OrgUserDetailPage() {
                 onPress={async () => {
                   try {
                     const blob = await downloadAttendanceExcel({ userId, params: `period=${period}` }).unwrap();
-                    const reader = new FileReader();
-                    reader.onloadend = async () => {
-                      try {
-                        const base64data = reader.result.split(',')[1];
-                        const filename = `user-attendance-${userId}-${period}.xlsx`;
-                        const uri = FileSystem.documentDirectory + filename;
-                        await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-                        if (await Sharing.isAvailableAsync()) {
-                          await Sharing.shareAsync(uri);
-                        }
-                      } catch (e) { Alert.alert("Error", "Failed to save Excel to device."); }
-                    };
-                    reader.readAsDataURL(blob);
+                    await downloadAndShareBlob(blob, `user-attendance-${userId}-${period}.xlsx`);
                   } catch (e) { Alert.alert("Error", "Failed to download Excel"); }
                 }}
                 disabled={downloadingAttendanceExcel}

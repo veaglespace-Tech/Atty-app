@@ -1,11 +1,11 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Building2, Users, CreditCard, Settings } from 'lucide-react-native';
-import { useColorScheme } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function SuperAdminLayout() {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   return (

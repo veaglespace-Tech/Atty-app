@@ -4,9 +4,8 @@ import { router } from "expo-router";
 import { ChevronLeft, FileBarChart, FileText, Download, FileBox, FileArchive, Search, X } from "lucide-react-native";
 import { useGetOrgReportsQuery, useGetOrgAttendanceQuery, useDownloadOrgReportPdfMutation, useDownloadOrgReportExcelMutation } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import { Alert, ActivityIndicator } from "react-native";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const PERIODS = [
   { value: "daily", label: "Daily" },
@@ -131,23 +130,7 @@ export default function OrgReportsPage() {
             onPress={async () => {
               try {
                 const blob = await downloadPdf(queryString).unwrap();
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                  try {
-                    const base64data = reader.result.split(',')[1];
-                    const filename = `report-${period}.pdf`;
-                    const uri = FileSystem.documentDirectory + filename;
-                    await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-                    if (await Sharing.isAvailableAsync()) {
-                      await Sharing.shareAsync(uri);
-                    } else {
-                      Alert.alert("Success", "PDF downloaded successfully.");
-                    }
-                  } catch (e) {
-                    Alert.alert("Error", "Failed to save PDF to device.");
-                  }
-                };
-                reader.readAsDataURL(blob);
+                await downloadAndShareBlob(blob, `report-${period}.pdf`);
               } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
             }}
             disabled={downloadingPdf || downloadingExcel}
@@ -160,23 +143,7 @@ export default function OrgReportsPage() {
             onPress={async () => {
               try {
                 const blob = await downloadExcel(queryString).unwrap();
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                  try {
-                    const base64data = reader.result.split(',')[1];
-                    const filename = `report-${period}.xlsx`;
-                    const uri = FileSystem.documentDirectory + filename;
-                    await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-                    if (await Sharing.isAvailableAsync()) {
-                      await Sharing.shareAsync(uri);
-                    } else {
-                      Alert.alert("Success", "Excel downloaded successfully.");
-                    }
-                  } catch (e) {
-                    Alert.alert("Error", "Failed to save Excel to device.");
-                  }
-                };
-                reader.readAsDataURL(blob);
+                await downloadAndShareBlob(blob, `report-${period}.xlsx`);
               } catch (e) { Alert.alert("Error", "Failed to download Excel"); }
             }}
             disabled={downloadingPdf || downloadingExcel}
