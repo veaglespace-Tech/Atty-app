@@ -640,9 +640,9 @@ export default function SettingsScreen() {
           className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900 active:scale-95 transition-transform">
           <ChevronLeft size={20} className="text-slate-700 dark:text-slate-300" />
         </Pressable>
-        <View className="flex-1">
-          <Text className="text-xl font-black text-slate-900 dark:text-white">
-            Account Settings
+        <View className="flex-1 flex-row items-center">
+          <Text className="text-xl font-black text-slate-900 dark:text-white truncate">
+            Settings
           </Text>
         </View>
         <ThemeToggle />

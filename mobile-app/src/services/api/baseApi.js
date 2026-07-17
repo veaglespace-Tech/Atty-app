@@ -6,7 +6,7 @@ import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
 import { router } from "expo-router";
 
-const DEFAULT_LOCAL_WEB_API_URL = "http://localhost:5000/api";
+const DEFAULT_LOCAL_WEB_API_URL = "http://127.0.0.1:5000/api";
 const DEFAULT_ANDROID_EMULATOR_API_URL = "http://192.168.0.112:5000/api";
 const DEFAULT_IOS_SIMULATOR_API_URL = "http://192.168.0.112:5000/api";
 const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");

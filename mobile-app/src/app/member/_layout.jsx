@@ -3,9 +3,13 @@ import { Tabs } from 'expo-router';
 import { Home, CalendarCheck2, Users, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 
+import { useAuthSession } from "@/hooks/useAuthSession";
+import { hasPermission, PERMISSIONS } from "@/utils/roles";
+
 export default function MemberLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { user } = useAuthSession();
 
   return (
     <Tabs
@@ -15,10 +19,18 @@ export default function MemberLayout() {
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
         tabBarStyle: {
-          backgroundColor: isDark ? '#020617' : '#ffffff', // slate-950 or white
-          borderTopColor: isDark ? '#1e293b' : '#f1f5f9',
-          elevation: 0,
-          shadowOpacity: 0,
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          right: 20,
+          backgroundColor: isDark ? 'rgba(2, 6, 23, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+          borderTopColor: 'transparent',
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.1,
+          shadowRadius: 20,
+          borderRadius: 32,
           height: 64,
           paddingBottom: 8,
           paddingTop: 8,
@@ -47,6 +59,7 @@ export default function MemberLayout() {
         options={{
           title: 'Teams',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
+          href: hasPermission(user, PERMISSIONS.TEAM_VIEW) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -59,6 +72,7 @@ export default function MemberLayout() {
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

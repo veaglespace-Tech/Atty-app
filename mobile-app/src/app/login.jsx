@@ -74,7 +74,7 @@ export default function LoginPage() {
     if (!storedCredentials) return;
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Login to Veagle Space',
+        promptMessage: 'Login to Veagle Attendee',
         fallbackLabel: 'Use Password',
       });
       if (result.success) {
@@ -113,7 +113,7 @@ export default function LoginPage() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <AuthPageShell
           eyebrow="Team Login"
-          title="Welcome to Veagle Space"
+          title="Welcome to Veagle Attendee"
           description="Sign in to manage attendance, check-ins, and your daily work in one place."
           footer={null}>
           

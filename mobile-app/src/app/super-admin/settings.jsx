@@ -132,9 +132,8 @@ export default function SuperAdminSettings() {
             <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="h-10 w-10 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 mr-4 active:opacity-70">
               <ArrowLeft size={20} color="#334155" />
             </Pressable>
-            <View className="flex-1">
-              <Text className="text-xl font-black text-slate-900 dark:text-white">Account Settings</Text>
-              <Text className="text-xs font-semibold text-slate-500">Edit profile and preferences</Text>
+            <View className="flex-1 flex-row items-center">
+              <Text className="text-xl font-black text-slate-900 dark:text-white truncate">Settings</Text>
             </View>
             <ThemeToggle />
           </View>

@@ -129,7 +129,7 @@ export default function PricingPage() {
                   </View>
 
                   <Pressable 
-                    onPress={() => Alert.alert("Purchase Plan", "Please purchase the plan from our website or contact Veagle Space support.")}
+                    onPress={() => Alert.alert("Purchase Plan", "Please purchase the plan from our website or contact Veagle Attendee support.")}
                     className={`w-full py-4 rounded-2xl items-center justify-center active:scale-95 transition-transform ${
                       isPopular ? 'bg-blue-600' : 'bg-slate-900 dark:bg-white'
                     }`}

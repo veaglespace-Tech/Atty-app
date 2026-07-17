@@ -1,5 +1,8 @@
 
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { cn } from "@/lib/utils";
 
@@ -37,9 +40,19 @@ export default function AuthPageShell({
   maxWidthClassName = "max-w-xl",
   cardClassName = ""
 }) {
+  const router = useRouter();
+
   return (
     <View className={authPageShellClassName}>
       <View className="absolute left-0 right-0 top-0 h-56 bg-blue-50 dark:bg-slate-900" />
+      <SafeAreaView style={{ position: 'absolute', top: 16, left: 16, zIndex: 50 }}>
+        <Pressable 
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/')} 
+          className="h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-slate-800/80 shadow-sm border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
+        >
+          <ArrowLeft size={20} className="text-slate-700 dark:text-slate-300" />
+        </Pressable>
+      </SafeAreaView>
 
       <View className={cn("w-full self-center", maxWidthClassName)}>
         <View className={cn(authCardClassName, cardClassName)}>
@@ -49,8 +62,9 @@ export default function AuthPageShell({
             {eyebrow || title || description ?
             <View className="mb-8 items-center">
                 <Image 
-                  source={require('../../../assets/images/icon.png')}
-                  style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 16 }}
+                  source={require('../../../assets/images/logo1-clean.webp')}
+                  className="animate-flip-y"
+                  style={{ width: 64, height: 64, marginBottom: 16 }}
                   resizeMode="contain"
                 />
                 {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}

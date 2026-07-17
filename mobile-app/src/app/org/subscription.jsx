@@ -43,7 +43,7 @@ export default function SubscriptionPage() {
   };
 
   const handlePurchase = (plan) => {
-    Alert.alert("Purchase Plan", "Please purchase the plan from our website or contact Veagle Space support.");
+    Alert.alert("Purchase Plan", "Please purchase the plan from our website or contact Veagle Attendee support.");
   };
 
   return (

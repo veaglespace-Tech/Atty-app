@@ -1,20 +1,19 @@
 import React, { useState, useRef } from "react";
 import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
-import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell } from "lucide-react-native";
+import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
-import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES } from "@/utils/roles";
+import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission } from "@/utils/roles";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.8;
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer
 
-import { BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield } from "lucide-react-native";
-
-const getTabsForRole = (rawRole) => {
-  const role = ROLE_ALIASES[rawRole?.toUpperCase()] || rawRole;
+const getTabsForRole = (user) => {
+  if (!user) return [];
+  const role = ROLE_ALIASES[(user.currentRole || user.role)?.toUpperCase()] || (user.currentRole || user.role);
   const commonIconProps = { size: 18, color: "#2563eb" };
   
   if (role === ROLES.SUPER_ADMIN) {
@@ -28,52 +27,91 @@ const getTabsForRole = (rawRole) => {
       { title: "Referrals", icon: <Users {...commonIconProps} />, href: "referrals" },
       { title: "Plans", icon: <Book {...commonIconProps} />, href: "plans" },
       { title: "Access", icon: <Shield {...commonIconProps} />, href: "access" },
+      { title: "Roles", icon: <Shield {...commonIconProps} />, href: "roles" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
       { title: "Payments", icon: <CreditCard {...commonIconProps} />, href: "payments" },
       { title: "Coupons", icon: <Gift {...commonIconProps} />, href: "coupons" },
       { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
-      { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" },
-      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
+      { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" }
     ];
   }
   
   if (role === ROLES.ORG_ADMIN || role === ROLES.SUB_ADMIN) {
-    return [
+    const tabs = [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-      { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
-      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
-      { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" },
-      { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
-      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" },
-      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
+      { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
     ];
+    if (hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE)) {
+      tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
+    }
+    if (hasPermission(user, PERMISSIONS.USERS_CREATE)) {
+      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
+    }
+    if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+    }
+    if (hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW)) {
+      tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    }
+    if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
+      tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
+    }
+    if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+      tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
+    }
+    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION_VIEW)) {
+      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
+    }
+    return tabs;
   }
   
   if (role === ROLES.TEAM_LEADER) {
-    return [
-      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-      { title: "My Team", icon: <Users {...commonIconProps} />, href: "teams" },
-      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Requests", icon: <Inbox {...commonIconProps} />, href: "requests" },
-      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" }
+    const tabs = [
+      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" }
     ];
+    // We map TEAM_VIEW_OWN to TEAM_VIEW as per roles.js
+    if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+    }
+    tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    if (hasPermission(user, PERMISSIONS.USERS_VIEW)) {
+      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
+    }
+    if (hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE)) {
+      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "requests" });
+    }
+    if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
+      tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
+    }
+    if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+      tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
+    }
+    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION_VIEW)) {
+      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
+    }
+    tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    return tabs;
   }
   
   // MEMBER fallback
-  return [
+  const tabs = [
     { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-    { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-    { title: "My Teams", icon: <Component {...commonIconProps} />, href: "teams" },
-    { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-    { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-    { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
+    { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" }
   ];
+  if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+    tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+  }
+  if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
+    tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
+  }
+  if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+    tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
+  }
+  tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+  
+  return tabs;
 };
 
 export default function MobileDashboardShell({ children }) {
@@ -138,7 +176,8 @@ export default function MobileDashboardShell({ children }) {
             <View className="flex-row items-center gap-2.5">
               <View className="h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
                 <Image 
-                  source={require('../../../assets/images/logo-glow.png')}
+                  source={require('../../../assets/images/logo1-clean.webp')}
+                  className="animate-flip-y"
                   style={{ width: '100%', height: '100%' }}
                   resizeMode="contain"
                 />
@@ -147,16 +186,13 @@ export default function MobileDashboardShell({ children }) {
                 <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight tracking-tight">
                   Veagle <Text className="text-blue-500">Attendee</Text>
                 </Text>
-                <Text className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                  Workspace
-                </Text>
               </View>
             </View>
           </View>
           
           <Pressable
             onPress={() => router.push('/org/settings')}
-            className="flex-row items-center gap-2 bg-slate-50 dark:bg-slate-800/50 pl-1.5 pr-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
+            className="flex-row items-center justify-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
           >
             {user?.avatar || user?.profilePicture ? (
               <Image source={{ uri: user.avatar || user.profilePicture }} style={{ width: 26, height: 26, borderRadius: 13 }} />
@@ -167,9 +203,6 @@ export default function MobileDashboardShell({ children }) {
                 </Text>
               </View>
             )}
-            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              {user?.firstName || user?.name || "Profile"}
-            </Text>
           </Pressable>
         </View>
       )}
@@ -205,16 +238,14 @@ export default function MobileDashboardShell({ children }) {
               <View className="px-6 flex-row items-center justify-between mb-8">
                 <View className="flex-row items-center gap-3">
                   <Image 
-                    source={require('../../../assets/images/logo-glow.png')}
+                    source={require('../../../assets/images/logo1-clean.webp')}
+                    className="animate-flip-y"
                     style={{ width: 36, height: 36 }}
                     resizeMode="contain"
                   />
                   <View>
                     <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                       Veagle <Text className="text-blue-500">Attendee</Text>
-                    </Text>
-                    <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-1">
-                      Workspace
                     </Text>
                   </View>
                 </View>
@@ -231,7 +262,7 @@ export default function MobileDashboardShell({ children }) {
                 </Text>
                 
                 <View className="gap-y-1">
-                  {getTabsForRole(user?.currentRole || user?.role).map((tab) => (
+                  {getTabsForRole(user).map((tab) => (
                     <Pressable
                       key={tab.title}
                       onPress={() => {

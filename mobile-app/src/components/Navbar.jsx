@@ -68,13 +68,14 @@ export default function Navbar() {
               <Pressable className="flex-row items-center gap-2">
                 <View className="h-10 w-10 items-center justify-center">
                   <Image
-                    source={require("../../assets/images/logo-glow.png")}
+                    source={require("../../assets/images/logo1-clean.webp")}
+                    className="animate-flip-y"
                     style={{ width: "100%", height: "100%", resizeMode: "contain" }}
                     contentFit="contain" />
                   
                 </View>
                 <Text className="text-xl font-black text-slate-900 dark:text-white">
-                  Veagle <Text className="text-blue-500">Space</Text>
+                  Veagle <Text className="text-blue-500">Attendee</Text>
                 </Text>
               </Pressable>
             </Link>
