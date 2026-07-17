@@ -13,7 +13,7 @@ export default function AdminDashboard() {
 =======
     <MobileDashboardShell
       title="Dashboard"
-      subtitle="Your Veagle Space workspace is ready on mobile." />);
+      subtitle="Your Veagle Attendee workspace is ready on mobile." />);
 
 
 >>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)

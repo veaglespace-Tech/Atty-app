@@ -100,6 +100,11 @@ const resolveMembership = (user, orgId = null) => {
 };
 
 const resolveAccessibleRoles = (user, orgId = null) => {
+  const directRole = normalizeRole(user?.role);
+  if (directRole === "SUPER_ADMIN" && user?.isActive !== false) {
+    return ["SUPER_ADMIN"];
+  }
+
   const memberships = normalizeMemberships(user?.memberships);
   const targetOrgId = resolveOrganizationId(user, orgId);
 
@@ -123,7 +128,6 @@ const resolveAccessibleRoles = (user, orgId = null) => {
     return activeMembershipRoles;
   }
 
-  const directRole = normalizeRole(user?.role);
   if (directRole && user?.isActive !== false) {
     return [directRole];
   }
