@@ -92,7 +92,7 @@ export default function SuperAdminLayout() {
       <Tabs.Screen name="contacts/[id]" options={{ href: null }} />
       <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="leads" options={{ href: null }} />
-      <Tabs.Screen name="notifications/index" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="plans/[id]" options={{ href: null }} />
