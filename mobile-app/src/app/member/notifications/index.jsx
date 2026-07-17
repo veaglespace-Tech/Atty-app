@@ -3,6 +3,7 @@ import { View, Text, Pressable, FlatList, ActivityIndicator } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Bell, CheckCircle2 } from "lucide-react-native";
 import { useGetOrgNotificationsQuery, useMarkAllNotificationsAsReadMutation } from "@/services/api/orgApi";
+
 import NotificationCard from "@/components/notifications/NotificationCard";
 
 export default function NotificationsPage() {

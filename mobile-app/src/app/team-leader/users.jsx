@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, Users, UserCircle2, Search, Plus, X } from "lucide-react-native";
+import {  ChevronLeft, Users, UserCircle2, Search, Plus, X  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderUsersQuery } from "@/services/api/teamLeaderApi";
 import { useCreateOrgUserMutation } from "@/services/api/orgApi";
 import { getDefaultPermissionsForRole } from "@/utils/roles";
 
-export default function TeamLeaderUsersPage() {
+export default function TeamLeaderUsersPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [modalVisible, setModalVisible] = useState(false);
@@ -67,16 +70,16 @@ export default function TeamLeaderUsersPage() {
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+            <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Team Members</Text>
           <Pressable onPress={() => setModalVisible(true)} className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30">
-            <Plus size={20} className="text-blue-600 dark:text-blue-400" />
+            <Plus size={20} color={isDark ? "#60a5fa" : "#2563eb"} />
           </Pressable>
         </View>
 
         <View className="flex-row items-center gap-2 mb-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
-          <Search size={16} className="text-slate-400 ml-2" />
+          <Search size={16} color={isDark ? "#94a3b8" : "#94a3b8"} style={{marginLeft:8}} />
           <TextInput
             value={searchTerm}
             onChangeText={setSearchTerm}
@@ -150,7 +153,7 @@ export default function TeamLeaderUsersPage() {
       </ScrollView>
 
       {/* Add User Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
+      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => {}}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1 justify-end bg-black/50"

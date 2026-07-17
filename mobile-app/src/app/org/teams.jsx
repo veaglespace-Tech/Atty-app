@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { View, Text, Pressable, ScrollView, RefreshControl, TextInput, Modal, ActivityIndicator, Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, Search, Users, Plus, User, ShieldCheck, X, UsersRound, RefreshCw, Power, Trash2 } from "lucide-react-native";
@@ -153,14 +154,14 @@ export default function OrgTeamsPage() {
             </Text>
           </View>
 
-          <View className="divide-y divide-slate-100 dark:divide-slate-800/80 border-t border-slate-100 dark:border-slate-800/80">
+          <View>
             {filteredTeams.length === 0 ? (
                <View className="py-16 items-center justify-center">
                  <Users size={48} className="text-slate-200 dark:text-slate-700" />
                  <Text className="text-slate-500 font-semibold mt-4">No teams match your search.</Text>
                </View>
             ) : (
-              filteredTeams.map(team => <TeamCard key={team.id} team={team} />)
+              filteredTeams.map((team, index) => <TeamCard key={team.id} team={team} index={index} />)
             )}
           </View>
         </View>
@@ -303,7 +304,7 @@ export default function OrgTeamsPage() {
   );
 }
 
-function TeamCard({ team }) {
+function TeamCard({ team, index = 0 }) {
   const [deleteTeam] = useDeleteOrgTeamMutation();
   const [patchTeam] = usePatchOrgTeamMutation();
 
@@ -335,10 +336,11 @@ function TeamCard({ team }) {
   };
 
   return (
-    <Pressable onPress={() => router.push(`/org/team/${team.id}`)} className="p-5 bg-white dark:bg-[#0f172a] active:bg-slate-50 dark:active:bg-slate-900/50 transition-colors">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1">
-          <Text className="text-base font-black text-slate-900 dark:text-white" numberOfLines={1}>
+    <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()}>
+      <Pressable onPress={() => router.push(`/org/team/${team.id}`)} className="p-5 mb-3 mx-4 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 transition-colors">
+        <View className="flex-row items-start justify-between gap-3">
+          <View className="flex-1">
+            <Text className="text-base font-black text-slate-900 dark:text-white" numberOfLines={1}>
             {team.name}
           </Text>
         </View>
@@ -386,6 +388,7 @@ function TeamCard({ team }) {
           </Text>
         </Pressable>
       </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }

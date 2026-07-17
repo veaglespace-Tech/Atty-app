@@ -386,7 +386,7 @@ export default function AttendancePage() {
       </ScrollView>
 
       {/* Rows Per Page Modal */}
-      <Modal visible={isRowsModalOpen} transparent animationType="fade">
+      <Modal visible={isRowsModalOpen} transparent animationType="fade" onRequestClose={() => {}}>
         <Pressable 
           className="flex-1 bg-black/50 justify-center p-6" 
           onPress={() => setIsRowsModalOpen(false)}
@@ -415,7 +415,7 @@ export default function AttendancePage() {
       </Modal>
 
       {/* Organizations Modal */}
-      <Modal visible={isOrgModalOpen} transparent animationType="fade">
+      <Modal visible={isOrgModalOpen} transparent animationType="fade" onRequestClose={() => {}}>
         <Pressable 
           className="flex-1 bg-black/50 justify-center p-6" 
           onPress={() => setIsOrgModalOpen(false)}
@@ -444,7 +444,7 @@ export default function AttendancePage() {
       </Modal>
 
       {/* Period Modal */}
-      <Modal visible={isPeriodModalOpen} transparent animationType="fade">
+      <Modal visible={isPeriodModalOpen} transparent animationType="fade" onRequestClose={() => {}}>
         <Pressable 
           className="flex-1 bg-black/50 justify-center p-6" 
           onPress={() => setIsPeriodModalOpen(false)}

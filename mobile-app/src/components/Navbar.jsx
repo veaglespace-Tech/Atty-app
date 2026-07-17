@@ -8,7 +8,9 @@ import { logout } from "@/store/slices/authSlice";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useUserSignOutMutation } from "@/services/api/authApi";
 import { formatRoleLabel, resolveDashboardPath } from "@/utils/roles";
+import { useColorScheme } from "nativewind";
 import ThemeToggle from "@/components/ThemeToggle";
+import AnimatedLogo from "./AnimatedLogo";
 
 const NAV_LINKS = [
 { href: "/", label: "Home" },
@@ -24,6 +26,8 @@ export default function Navbar() {
   const { user, token, hydrated } = useAuthSession();
   const [isOpen, setIsOpen] = useState(false);
   const [userSignOut] = useUserSignOutMutation();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const isAuthReady = hydrated;
   const isLoggedIn = Boolean(isAuthReady && token && user);
@@ -66,13 +70,8 @@ export default function Navbar() {
           <View className="flex-row h-16 items-center justify-between">
             <Link href="/" asChild>
               <Pressable className="flex-row items-center gap-2">
-                <View className="h-10 w-10 items-center justify-center">
-                  <Image
-                    source={require("../../assets/images/logo1-clean.webp")}
-                    className="animate-flip-y"
-                    style={{ width: "100%", height: "100%", resizeMode: "contain" }}
-                    contentFit="contain" />
-                  
+                <View className="h-9 w-9 items-center justify-center rounded-xl overflow-hidden bg-slate-900/5 dark:bg-white/5 border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
+                  <AnimatedLogo className="w-full h-full" />
                 </View>
                 <Text className="text-xl font-black text-slate-900 dark:text-white">
                   Veagle <Text className="text-blue-500">Attendee</Text>
@@ -106,19 +105,13 @@ export default function Navbar() {
                     </Pressable>
                   </Link>
                   <Pressable onPress={onLogout} className="px-3 py-3">
-                    <LogOut size={18} className="text-slate-500" />
+                    <LogOut size={18} color="#64748b" />
                   </Pressable>
                 </> :
-
               <>
                   <Link href="/login" asChild>
-                    <Pressable className="px-4 py-3">
-                      <Text className="font-bold text-slate-500">Login</Text>
-                    </Pressable>
-                  </Link>
-                  <Link href="/register" asChild>
-                    <Pressable className="rounded-2xl bg-blue-600 px-4 py-3">
-                      <Text className="font-black text-white">Get Started</Text>
+                    <Pressable className="rounded-2xl bg-blue-600 px-6 py-3">
+                      <Text className="font-black text-white">Login</Text>
                     </Pressable>
                   </Link>
                 </>
@@ -131,9 +124,9 @@ export default function Navbar() {
               className="p-2 md:hidden">
               
               {isOpen ?
-              <X size={26} className="text-slate-600 dark:text-slate-300" /> :
+              <X size={26} color={isDark ? "#cbd5e1" : "#475569"} /> :
 
-              <Menu size={26} className="text-slate-600 dark:text-slate-300" />
+              <Menu size={26} color={isDark ? "#cbd5e1" : "#475569"} />
               }
             </Pressable>
           </View>
@@ -141,7 +134,7 @@ export default function Navbar() {
       </View>
 
       {/* Mobile Menu Overlay */}
-      <Modal visible={isOpen} transparent={true} animationType="fade">
+      <Modal visible={isOpen} transparent={true} animationType="fade" onRequestClose={() => {}}>
         <Pressable onPress={closeMenu} className="flex-1 bg-black/50" />
         <View className="absolute bottom-0 top-16 left-0 right-0 bg-white dark:bg-slate-950 p-4 shadow-xl">
           <ScrollView contentContainerStyle={{ gap: 24 }}>
@@ -164,7 +157,7 @@ export default function Navbar() {
                     
                       {link.label}
                     </Text>
-                    <ChevronRight size={18} className="text-slate-400" />
+                    <ChevronRight size={18} color={isDark ? "#94a3b8" : "#94a3b8"} />
                   </Pressable>
                 </Link>
               )}
@@ -193,22 +186,15 @@ export default function Navbar() {
                   onPress={onLogout}
                   className="flex-row items-center justify-center gap-2 rounded-2xl bg-rose-50 p-5">
                   
-                    <LogOut size={20} className="text-rose-600" />
+                    <LogOut size={20} color="#e11d48" />
                     <Text className="font-black text-rose-600">Logout</Text>
                   </Pressable>
                 </> :
-
               <View className="gap-4">
                   <Link href="/login" asChild onPress={closeMenu}>
-                    <Pressable className="flex-row items-center justify-center gap-2 rounded-2xl bg-slate-50 p-5 dark:bg-slate-800">
-                      <LogIn size={20} className="text-slate-900 dark:text-white" />
-                      <Text className="font-black text-slate-900 dark:text-white">Login</Text>
-                    </Pressable>
-                  </Link>
-                  <Link href="/register" asChild onPress={closeMenu}>
                     <Pressable className="flex-row items-center justify-center gap-2 rounded-2xl bg-blue-600 p-5">
-                      <UserPlus size={20} color="white" />
-                      <Text className="font-black text-white">Register Now</Text>
+                      <LogIn size={20} color="white" />
+                      <Text className="font-black text-white">Login</Text>
                     </Pressable>
                   </Link>
                 </View>

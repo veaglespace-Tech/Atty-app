@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, TouchableOpacity, Alert, Pressable } from "react-native";
-import { Search, Check } from "lucide-react-native";
+import {  Search, Check  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetAllSuperAdminUsersQuery, useExportAllSuperAdminUsersExcelMutation } from "@/services/api/superAdminApi";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 import { ROLES } from "@/utils/roles";
@@ -13,7 +14,9 @@ import PaginationFooter from "@/components/super-admin/users/PaginationFooter";
 
 const PAGE_SIZE_OPTIONS = [12, 24, 48, 96];
 
-export default function UsersPage() {
+export default function UsersPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 

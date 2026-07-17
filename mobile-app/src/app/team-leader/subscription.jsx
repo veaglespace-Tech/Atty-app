@@ -86,12 +86,7 @@ export default function SubscriptionPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Subscription</Text>
-        </View>
-      </View>
-      
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
@@ -201,7 +196,7 @@ export default function SubscriptionPage() {
       </ScrollView>
 
       {payuData && (
-        <Modal visible={true} animationType="slide">
+        <Modal visible={true} animationType="slide" onRequestClose={() => {}}>
           <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
             <View className="flex-row items-center justify-between border-b border-slate-200 px-4 py-3 bg-white">
               <Text className="font-black text-slate-900">Secure Checkout</Text>

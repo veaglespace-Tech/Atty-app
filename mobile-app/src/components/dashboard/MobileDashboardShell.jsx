@@ -3,13 +3,14 @@ import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFee
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield } from "lucide-react-native";
 import { useDispatch } from "react-redux";
+import { useColorScheme } from "nativewind";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
 import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission } from "@/utils/roles";
-
+import AnimatedLogo from '../AnimatedLogo.jsx';
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer 
 
 const getTabsForRole = (user) => {
   if (!user) return [];
@@ -115,6 +116,8 @@ const getTabsForRole = (user) => {
 };
 
 export default function MobileDashboardShell({ children }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const dispatch = useDispatch();
   const { user } = useAuthSession();
   const pathname = usePathname();
@@ -171,20 +174,20 @@ export default function MobileDashboardShell({ children }) {
             <Pressable
               onPress={openDrawer}
               className="h-12 w-12 items-center justify-center rounded-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm active:scale-95 transition-transform">
-              <Menu size={22} className="text-slate-900 dark:text-white" />
+              <Menu size={22} color={isDark ? "#ffffff" : "#0f172a"} />
             </Pressable>
             <View className="flex-row items-center gap-2.5">
               <View className="h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
-                <Image 
-                  source={require('../../../assets/images/logo1-clean.webp')}
-                  className="animate-flip-y"
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
+                <AnimatedLogo 
+                  className="w-full h-full" 
                 />
               </View>
-              <View>
+              <View className="flex-row items-baseline gap-1">
                 <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight tracking-tight">
-                  Veagle <Text className="text-blue-500">Attendee</Text>
+                  Veagle
+                </Text>
+                <Text className="text-lg font-black text-blue-500 leading-tight tracking-tight">
+                  Attendee
                 </Text>
               </View>
             </View>
@@ -237,22 +240,22 @@ export default function MobileDashboardShell({ children }) {
             <View className="flex-1 bg-white dark:bg-[#020617] pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8">
                 <View className="flex-row items-center gap-3">
-                  <Image 
-                    source={require('../../../assets/images/logo1-clean.webp')}
-                    className="animate-flip-y"
+                  <AnimatedLogo 
                     style={{ width: 36, height: 36 }}
-                    resizeMode="contain"
                   />
-                  <View>
+                  <View className="flex-row items-baseline gap-1.5">
                     <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      Veagle <Text className="text-blue-500">Attendee</Text>
+                      Veagle
+                    </Text>
+                    <Text className="text-2xl font-black text-blue-500 tracking-tight">
+                      Attendee
                     </Text>
                   </View>
                 </View>
                 <Pressable 
                   onPress={closeDrawer}
                   className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                  <X size={20} className="text-slate-500 dark:text-slate-400" />
+                  <X size={20} color={isDark ? "#94a3b8" : "#64748b"} />
                 </Pressable>
               </View>
 
@@ -283,7 +286,7 @@ export default function MobileDashboardShell({ children }) {
                           {tab.title}
                         </Text>
                       </View>
-                      <ChevronRight size={16} className="text-slate-300 dark:text-slate-600" />
+                      <ChevronRight size={16} color={isDark ? "#475569" : "#cbd5e1"} />
                     </Pressable>
                   ))}
                 </View>
@@ -293,7 +296,7 @@ export default function MobileDashboardShell({ children }) {
                 <Pressable
                   onPress={onLogout}
                   className="flex-row items-center justify-center gap-2 py-3.5 bg-rose-50 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20 active:opacity-70">
-                  <LogOut size={18} className="text-rose-600 dark:text-rose-400" />
+                  <LogOut size={18} color={isDark ? "#fb7185" : "#e11d48"} />
                   <Text className="font-bold text-rose-600 dark:text-rose-400">Sign Out</Text>
                 </Pressable>
               </View>

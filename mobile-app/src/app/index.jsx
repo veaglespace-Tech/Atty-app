@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react-native';
 import { Button } from '@/components/ui/Button';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthSession } from '@/hooks/useAuthSession';
+import AnimatedLogo from '../components/AnimatedLogo.jsx';
 import { resolveDashboardPath } from '@/utils/roles';
 
 export default function Home() {
@@ -25,28 +26,31 @@ export default function Home() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
         <View className="flex-1 items-center justify-center px-6 py-16">
           
-          {/* Decorative blurred blobs for background effects similar to Next.js */}
-          <View className="absolute -left-10 top-1/4 h-64 w-64 rounded-full bg-cyan-300/20 dark:bg-cyan-300/10 blur-3xl" />
-          <View className="absolute -right-10 bottom-1/4 h-64 w-64 rounded-full bg-blue-500/20 dark:bg-blue-400/10 blur-3xl" />
 
           {/* Logo */}
           <View className="mb-8 h-24 w-24 items-center justify-center">
-            <Image
-              source={require("../../assets/images/logo1-clean.webp")}
-              className="animate-flip-y"
-              style={{ width: "100%", height: "100%", resizeMode: "contain" }}
-              contentFit="contain"
+            <AnimatedLogo
+              style={{ width: "100%", height: "100%" }}
             />
           </View>
 
           {/* Heading */}
-          <Text 
-            adjustsFontSizeToFit 
-            numberOfLines={1} 
-            className="mb-4 text-center text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white"
-          >
-            Veagle <Text className="text-blue-500 dark:text-blue-400">Attendee</Text>
-          </Text>
+          <View className="flex-row items-baseline gap-2 mb-4 justify-center">
+            <Text 
+              adjustsFontSizeToFit 
+              numberOfLines={1} 
+              className="text-center text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white"
+            >
+              Veagle
+            </Text>
+            <Text 
+              adjustsFontSizeToFit 
+              numberOfLines={1} 
+              className="text-center text-4xl sm:text-5xl font-black tracking-tight text-blue-500 dark:text-blue-400"
+            >
+              Attendee
+            </Text>
+          </View>
 
           {/* Eyebrow Component Equivalent */}
           <View className="mb-6 rounded-full bg-blue-50 dark:bg-blue-500/10 px-4 py-2 border border-blue-100 dark:border-blue-500/20">

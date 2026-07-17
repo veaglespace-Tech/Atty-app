@@ -514,7 +514,7 @@ export default function OrganizationDetailsPage() {
         )}
       </ScrollView>
 
-      <Modal visible={showExtendModal} animationType="fade" transparent>
+      <Modal visible={showExtendModal} animationType="fade" transparent onRequestClose={() => {}}>
         <View className="flex-1 bg-black/50 justify-center items-center p-4">
           <View className="bg-white dark:bg-[#1E293B] rounded-[24px] p-6 w-full max-w-sm">
             <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">Extend Plan</Text>

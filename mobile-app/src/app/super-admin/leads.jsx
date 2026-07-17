@@ -171,7 +171,7 @@ export default function LeadsPage() {
       </ScrollView>
 
       {/* Lead Details Modal */}
-      <Modal visible={!!selectedLead} transparent animationType="slide">
+      <Modal visible={!!selectedLead} transparent animationType="slide" onRequestClose={() => {}}>
         <View className="flex-1 bg-black/60 justify-end">
           <View className="bg-white dark:bg-slate-900 rounded-t-3xl overflow-hidden max-h-[90%]">
             <View className="flex-row items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Alert, TextInput, Platform, Modal } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, Users, CheckCircle2, XCircle, Timer, Loader2 } from "lucide-react-native";
+import {  ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, Users, CheckCircle2, XCircle, Timer, Loader2  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderReportsQuery, useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation, useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 import { useSelector } from "react-redux";
 import * as FileSystem from 'expo-file-system/legacy';
@@ -26,7 +27,9 @@ const formatHoursValue = (val) => {
   return typeof val === "number" ? val.toFixed(2) : String(val);
 };
 
-export default function TeamLeaderReportsPage() {
+export default function TeamLeaderReportsPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const authUser = useSelector((state) => state.auth.user);
   
   const [period, setPeriod] = useState("monthly");
@@ -135,7 +138,7 @@ export default function TeamLeaderReportsPage() {
         <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => setSelectedMember(null)} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-              <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+              <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
             </Pressable>
             <View className="flex-1 items-center">
               <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">{selectedMember.member}</Text>
@@ -202,7 +205,7 @@ export default function TeamLeaderReportsPage() {
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+            <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Team Reports</Text>
           <Pressable 
@@ -311,7 +314,7 @@ export default function TeamLeaderReportsPage() {
       </ScrollView>
 
       {/* Period Modal */}
-      <Modal visible={showPeriodModal} transparent animationType="slide">
+      <Modal visible={showPeriodModal} transparent animationType="slide" onRequestClose={() => {}}>
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 pb-12 shadow-sm">
             <View className="flex-row justify-between items-center mb-6">
@@ -374,7 +377,7 @@ export default function TeamLeaderReportsPage() {
       </Modal>
 
       {/* Download Modal */}
-      <Modal visible={showDownloadModal} transparent animationType="slide">
+      <Modal visible={showDownloadModal} transparent animationType="slide" onRequestClose={() => {}}>
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 pb-12 shadow-sm">
             <View className="flex-row justify-between items-center mb-6">

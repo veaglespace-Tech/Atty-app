@@ -160,7 +160,7 @@ export default function TeamLeaderAttendancePage() {
       </ScrollView>
 
       {/* My Attendance Modal for Team Leader's personal punch in/out */}
-      <Modal visible={showMyAttendance} animationType="slide" presentationStyle="pageSheet">
+      <Modal visible={showMyAttendance} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => {}}>
         <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
           <View className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900/80 shadow-sm">
             <Text className="text-lg font-black text-slate-900 dark:text-white">My Attendance</Text>

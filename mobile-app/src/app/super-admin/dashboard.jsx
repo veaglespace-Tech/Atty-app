@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, RefreshControl, ScrollView, Modal, Pressable, TouchableOpacity } from "react-native";
-import { BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react-native";
+import {  BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings, ChevronLeft, ChevronRight, ChevronDown  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetSuperAdminDashboardQuery } from "@/services/api/superAdminApi";
 
 
-export default function SuperAdminDashboard() {
+export default function SuperAdminDashboard(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { data, isLoading, isFetching, refetch } = useGetSuperAdminDashboardQuery(undefined);
 
   const [page, setPage] = useState(1);

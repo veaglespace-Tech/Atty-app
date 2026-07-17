@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, MapPin, Users, X, User } from "lucide-react-native";
+import {  ChevronLeft, MapPin, Users, X, User  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderTeamsQuery, useGetTeamLeaderTeamByIdQuery } from "@/services/api/teamLeaderApi";
+
 function TeamDetailsModal({ team, visible, onClose }) {
   const { data, isLoading } = useGetTeamLeaderTeamByIdQuery(team?.id, { skip: !team });
   const members = Array.isArray(data?.members) ? data.members : [];
@@ -59,7 +61,9 @@ function TeamDetailsModal({ team, visible, onClose }) {
   );
 }
 
-export default function MyTeamsPage() {
+export default function MyTeamsPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { data: teamsData, isLoading } = useGetTeamLeaderTeamsQuery("limit=50");
   const [selectedTeam, setSelectedTeam] = useState(null);
   

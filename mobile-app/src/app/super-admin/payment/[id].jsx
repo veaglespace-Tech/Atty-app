@@ -166,7 +166,7 @@ export default function PaymentDetailPage() {
     const options = isPayment ? PAYMENT_STATUS_OPTIONS : SUBSCRIPTION_STATUS_OPTIONS;
     
     return (
-      <Modal visible={!!activePicker} transparent animationType="fade">
+      <Modal visible={!!activePicker} transparent animationType="fade" onRequestClose={() => {}}>
         <TouchableOpacity activeOpacity={1} onPress={() => setActivePicker(null)} className="flex-1 bg-black/50 justify-end">
           <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-12">
             <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">

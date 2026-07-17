@@ -2,13 +2,17 @@ import React from "react";
 import { View, Text, ScrollView, Pressable, Alert, Dimensions, Platform } from "react-native";
 import { Link } from "expo-router";
 import * as Linking from 'expo-linking';
-import { PhoneCall, Component, MessageSquare, FileBarChart, Bell, ChevronRight } from "lucide-react-native";
+import {  PhoneCall, Component, MessageSquare, FileBarChart, Bell, ChevronRight  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 import { useAuthSession } from "@/hooks/useAuthSession";
+
 const { width } = Dimensions.get("window");
 
-export default function MemberDashboard() {
+export default function MemberDashboard(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { user } = useAuthSession();
 
   const handleSOS = () => {
@@ -55,7 +59,7 @@ export default function MemberDashboard() {
   ];
 
   return (
-    
+    <>
       <ScrollView 
         className="flex-1" 
         contentContainerStyle={{ paddingBottom: 60 }}
@@ -127,6 +131,6 @@ export default function MemberDashboard() {
           </View>
         </View>
       </ScrollView>
-    
+    </>
   );
 }

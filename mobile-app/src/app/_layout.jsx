@@ -1,7 +1,8 @@
 import '../global.css';
+import '@/lib/lucide-interop';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme, StyleSheet } from 'react-native';
+import { useColorScheme, StyleSheet, LogBox } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot } from 'expo-router';
 import { useEffect } from 'react';
@@ -12,8 +13,12 @@ try {
   configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false });
 } catch (e) {}
 
+LogBox.ignoreLogs([
+  '"shadow*" style props are deprecated. Use "boxShadow".',
+  'Image: style.resizeMode is deprecated. Please use props.resizeMode.',
+]);
+
 import { StoreProvider } from '@/components/StoreProvider';
-import RegistrationDraftLifecycle from "@/components/register/RegistrationDraftLifecycle";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,7 +34,6 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <StoreProvider>
         <SafeAreaView style={styles.container}>
-          <RegistrationDraftLifecycle />
           <Slot />
         </SafeAreaView>
       </StoreProvider>

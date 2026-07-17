@@ -1,10 +1,13 @@
 import React, { useMemo } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, Component, Users, MapPin, ShieldCheck, ShieldAlert } from "lucide-react-native";
+import {  ChevronLeft, Component, Users, MapPin, ShieldCheck, ShieldAlert  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 
-export default function TeamLeaderTeamsPage() {
+export default function TeamLeaderTeamsPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { data, isLoading, isFetching, refetch } = useGetTeamLeaderTeamsQuery(100);
 
   const teams = useMemo(() => data?.items || data?.teams || [], [data]);
@@ -15,7 +18,7 @@ export default function TeamLeaderTeamsPage() {
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+            <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">My Teams</Text>
           <View className="w-10" />

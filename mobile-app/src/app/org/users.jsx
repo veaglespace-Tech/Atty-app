@@ -336,16 +336,16 @@ export default function OrgUsersPage() {
         ) : null}
 
         {/* USER LIST */}
-        <View className="bg-white dark:bg-[#0f172a] rounded-[24px] border border-slate-200 dark:border-slate-800/80 overflow-hidden mx-4 mt-8 mb-8">
+        <View className="mt-8 mb-8">
           {filteredUsers.length === 0 ? (
             <View className="py-16 items-center justify-center">
               <User size={48} className="text-slate-200 dark:text-slate-700" />
               <Text className="text-slate-500 font-semibold mt-4">No users found.</Text>
             </View>
           ) : (
-            <View className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {filteredUsers.map((user) => (
-                <OrgUserTableRow key={user.id} user={user} />
+            <View>
+              {filteredUsers.map((user, idx) => (
+                <OrgUserTableRow key={user.id} user={user} index={idx} />
               ))}
             </View>
           )}

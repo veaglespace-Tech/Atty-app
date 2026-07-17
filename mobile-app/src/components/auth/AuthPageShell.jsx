@@ -2,9 +2,11 @@
 import { View, Text, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import {  ArrowLeft  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { cn } from "@/lib/utils";
+import AnimatedLogo from '../AnimatedLogo.jsx';
 
 export const authPageShellClassName =
 "flex-1 justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950";
@@ -31,15 +33,9 @@ export const authFieldErrorClassName =
 
 
 
-export default function AuthPageShell({
-  eyebrow,
-  title,
-  description,
-  children,
-  footer = null,
-  maxWidthClassName = "max-w-xl",
-  cardClassName = ""
-}) {
+export default function AuthPageShell(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const router = useRouter();
 
   return (
@@ -50,7 +46,7 @@ export default function AuthPageShell({
           onPress={() => router.canGoBack() ? router.back() : router.replace('/')} 
           className="h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-slate-800/80 shadow-sm border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
         >
-          <ArrowLeft size={20} className="text-slate-700 dark:text-slate-300" />
+          <ArrowLeft size={20} color={isDark ? "#cbd5e1" : "#334155"} />
         </Pressable>
       </SafeAreaView>
 
@@ -61,11 +57,8 @@ export default function AuthPageShell({
           <View className="p-5">
             {eyebrow || title || description ?
             <View className="mb-8 items-center">
-                <Image 
-                  source={require('../../../assets/images/logo1-clean.webp')}
-                  className="animate-flip-y"
+                <AnimatedLogo 
                   style={{ width: 64, height: 64, marginBottom: 16 }}
-                  resizeMode="contain"
                 />
                 {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}
                 {title ?

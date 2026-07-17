@@ -2,12 +2,16 @@ import React, { useState, useCallback } from "react";
 import { View, Text, FlatList, ActivityIndicator, Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Megaphone } from "lucide-react-native";
+import {  Megaphone  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { useGetOrgPostsQuery, useVoteOnPostMutation } from "@/services/api/postApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
+
 import PostCard from "@/components/posts/PostCard";
 
-export default function PostsPage() {
+export default function PostsPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { user } = useAuthSession();
   const { data: postsData, isLoading } = useGetOrgPostsQuery({ authorId: user?.id });
   const [voteOnPost] = useVoteOnPostMutation();

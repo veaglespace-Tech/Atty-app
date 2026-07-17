@@ -69,13 +69,3 @@
     box-shadow: 0 26px 60px rgb(var(--brand-blue) / 0.1), 0 14px 32px rgb(var(--brand-ink) / 0.06);
   }
 }
-
-@layer utilities {
-  @keyframes flipY {
-    0% { transform: perspective(600px) rotateY(0deg); }
-    100% { transform: perspective(600px) rotateY(360deg); }
-  }
-  .animate-flip-y {
-    animation: flipY 6s linear infinite;
-  }
-}

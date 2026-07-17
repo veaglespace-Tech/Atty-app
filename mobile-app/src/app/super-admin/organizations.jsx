@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, TouchableOpacity, Alert } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, Building2, Search, ChevronDown, Check, RefreshCcw, Download, Plus, ChevronRight, X } from "lucide-react-native";
+import {  ChevronLeft, Building2, Search, ChevronDown, Check, RefreshCcw, Download, Plus, ChevronRight, X  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { 
   useGetSuperAdminOrganizationsQuery, 
   useDownloadSuperAdminOrganizationsExcelMutation,
@@ -14,7 +15,9 @@ const SUBSCRIPTION_OPTIONS = ["ALL", "TRIAL", "ACTIVE", "PAST_DUE", "CANCELED", 
 const ACCESS_OPTIONS = ["ALL", "ACTIVE", "INACTIVE"];
 const BLOCK_OPTIONS = ["ALL", "BLOCKED", "UNBLOCKED"];
 
-export default function OrganizationsPage() {
+export default function OrganizationsPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [searchInputValue, setSearchInputValue] = useState("");
   const [search, setSearch] = useState("");
   const [subscriptionStatus, setSubscriptionStatus] = useState("ALL");

@@ -323,7 +323,7 @@ export default function PlansPage() {
       </ScrollView>
 
       {/* Plan Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
+      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => {}}>
         <View className="flex-1 justify-end bg-black/60">
           <View className="bg-white dark:bg-[#151E2F] rounded-t-3xl p-6 shadow-sm border-t border-slate-200 dark:border-[#1E293B]">
             <View className="flex-row items-center justify-between mb-6">

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, CheckCircle2, XCircle, ShieldCheck, FileWarning } from "lucide-react-native";
+import {  ChevronLeft, CheckCircle2, XCircle, ShieldCheck, FileWarning  } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 
 import {
   useGetOrgRegistrationRequestsQuery,
@@ -12,7 +13,9 @@ import {
   useRejectRegularizationRequestMutation 
 } from "@/services/api/orgApi";
 
-export default function TeamLeaderRequestsPage() {
+export default function TeamLeaderRequestsPage(props) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [activeTab, setActiveTab] = useState("REGISTRATION");
 
   const { data: regData, isLoading: isRegLoading, isFetching: isRegFetching, refetch: refetchReg } = useGetOrgRegistrationRequestsQuery(undefined);
@@ -33,7 +36,7 @@ export default function TeamLeaderRequestsPage() {
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+            <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Requests</Text>
           <View className="w-10" />
