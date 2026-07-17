@@ -16,14 +16,10 @@ dist/
 coverage/
 .cache/
 .turbo/
-.expo/
-web-build/
-expo-env.d.ts
 
 # Environment files
 .env
 .env.*
-.env*.local
 !.env.example
 !.env*.example
 
@@ -54,24 +50,3 @@ next-env.d.ts
 Thumbs.db
 .idea/
 .vscode/
-
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# macOS
-*.pem
-
-# generated native folders
-/ios
-/android
-ios/
-android/
