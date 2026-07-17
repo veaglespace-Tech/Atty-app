@@ -1341,6 +1341,7 @@ export default function DataPanelPage({
   heroAction = null,
   hiddenSummaryLabels = [],
   hiddenRecordColumns = [],
+  children,
 }) {
   const user = useSelector((state) => state.auth.user);
   const { token, hydrated } = useAuthSession();
@@ -1559,7 +1560,7 @@ export default function DataPanelPage({
         </div>
       ) : null}
 
-      {summary.length > 0 ? (
+      {summary.length > 0 || children ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {summary.map((card, index) => {
             const theme = RECORD_THEMES[index % RECORD_THEMES.length];
@@ -1582,6 +1583,7 @@ export default function DataPanelPage({
               </div>
             );
           })}
+          {children}
         </div>
       ) : null}
 
