@@ -44,15 +44,19 @@ const resolveApiBaseUrl = () => {
     return explicitApiUrl;
   }
 
-  const localApiUrl = resolveLocalApiBaseUrl();
+  if (__DEV__) {
+    console.warn("No EXPO_PUBLIC_API_URL provided in .env, falling back to localhost.");
+    return resolveLocalApiBaseUrl();
+  }
+
   const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)
     || DEFAULT_PRODUCTION_API_URL;
 
-  return __DEV__ ? localApiUrl : productionApiUrl;
+  return productionApiUrl;
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
-console.log("[API] Resolved Base URL:", API_BASE_URL);
+console.log("[API] Resolved Base URL (Cache Bust):", API_BASE_URL);
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -60,6 +64,8 @@ const rawBaseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     headers.set("cache-control", "no-cache, no-store, max-age=0");
     headers.set("pragma", "no-cache");
+    // VERY IMPORTANT: Bypass Localtunnel's warning page!
+    headers.set("Bypass-Tunnel-Reminder", "true");
 
     const token = getState()?.auth?.token;
     if (token && token !== "__cookie_session__") {

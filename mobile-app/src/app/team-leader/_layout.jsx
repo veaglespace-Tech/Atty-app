@@ -19,20 +19,16 @@ export default function TeamLeaderLayout() {
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 20,
-          left: 20,
-          right: 20,
-          backgroundColor: isDark ? 'rgba(2, 6, 23, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-          borderTopColor: 'transparent',
-          elevation: 10,
+          backgroundColor: isDark ? '#020617' : '#ffffff',
+          borderTopColor: isDark ? '#1e293b' : '#e2e8f0',
+          borderTopWidth: 1,
+          elevation: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.1,
-          shadowRadius: 20,
-          borderRadius: 32,
-          height: 64,
-          paddingBottom: 8,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          height: 65,
+          paddingBottom: 10,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
@@ -73,7 +69,7 @@ export default function TeamLeaderLayout() {
       />
       <Tabs.Screen name="users" options={{ href: null }} />
       <Tabs.Screen name="posts" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />

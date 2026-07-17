@@ -3,6 +3,7 @@ import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, T
 import { router } from "expo-router";
 import { ChevronLeft, ChevronRight, CalendarCheck2, Clock, Search, MapPin, Save, Crosshair, ChevronDown, Download, FileBox, FileText } from "lucide-react-native";
 import { useGetOrgAttendanceQuery, useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useGetOrgTeamsQuery, usePatchOrgTeamMutation, useDownloadOrgAttendancePdfMutation, useDownloadOrgAttendanceExcelMutation } from "@/services/api/orgApi";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { formatHoursValue } from "@/utils/time";
 import { getCurrentCoordinates } from "@/utils/location";
 import { useSelector } from "react-redux";
@@ -256,6 +257,7 @@ export default function OrgAttendancePage() {
  };
 
  return (
+ <MobileDashboardShell>
  <View className="flex-1 bg-slate-50 dark:bg-slate-950">
  <View className="px-5 pt-6 pb-6 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
  <View className="flex-row items-center justify-between mb-2">
@@ -674,5 +676,6 @@ export default function OrgAttendancePage() {
  </View>
  </ScrollView>
  </View>
+ </MobileDashboardShell>
  );
 }

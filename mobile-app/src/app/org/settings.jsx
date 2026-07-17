@@ -32,6 +32,7 @@ import { useUpdateMeMutation, useForgotPasswordMutation } from "@/services/api/a
 import { useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useUpdateOrgLogoMutation, useUpdateOrgDetailsMutation } from "@/services/api/orgApi";
 import { getCurrentCoordinates } from "@/utils/location";
 import ThemeToggle from "@/components/ThemeToggle";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 // --- Time Settings Component ---
 function TimeSettings() {
   const { data: settingsData, isLoading: loadingSettings } = useGetOrgAttendanceSettingsQuery();
@@ -626,6 +627,7 @@ export default function SettingsScreen() {
   const currentProfileImageUrl = profileImageDataUrl || user?.profileImageUrl;
 
   return (
+    <MobileDashboardShell>
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <View className="px-6 pt-12 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] flex-row items-center gap-3">
@@ -884,5 +886,6 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
     </View>
+    </MobileDashboardShell>
   );
 }

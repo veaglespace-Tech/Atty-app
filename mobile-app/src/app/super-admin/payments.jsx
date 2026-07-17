@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, TextInput, Alert } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, CreditCard, Search, ChevronRight, RefreshCcw, DownloadCloud } from "lucide-react-native";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { useGetSuperAdminPaymentsQuery } from "@/services/api/superAdminApi";
 
 export default function PaymentsPage() {
@@ -65,6 +66,7 @@ export default function PaymentsPage() {
   }, [filteredPayments, page, pageSize]);
 
   return (
+    <MobileDashboardShell>
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header Panel */}
       <View className="px-5 pt-12 pb-6 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm relative">
@@ -287,5 +289,6 @@ export default function PaymentsPage() {
         )}
       </ScrollView>
     </View>
+    </MobileDashboardShell>
   );
 }

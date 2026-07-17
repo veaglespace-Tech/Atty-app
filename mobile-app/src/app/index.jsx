@@ -62,20 +62,11 @@ export default function Home() {
 
           {/* Action Buttons using our new UI Component */}
           <View className="w-full max-w-sm gap-4">
-            <Link href="/register" asChild>
+            <Link href="/login" asChild>
               <Button
                 variant="primary"
                 size="lg"
                 rightIcon={<ArrowRight size={22} color="white" />}
-                className="w-full">
-                Get Started
-              </Button>
-            </Link>
-            
-            <Link href="/login" asChild>
-              <Button
-                variant="outline"
-                size="lg"
                 className="w-full">
                 Sign In
               </Button>

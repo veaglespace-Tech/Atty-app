@@ -5,6 +5,8 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
 import { QrCode } from "lucide-react-native";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
+
 export default function OrgDashboard() {
   const { data, isLoading, isFetching, refetch } = useGetOrgDashboardQuery(undefined);
   const { user } = useAuthSession();
@@ -13,131 +15,133 @@ export default function OrgDashboard() {
   const records = data?.items || [];
 
   return (
-    <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />
-        }
-      >
-        
-        {/* DASHBOARD WELCOME CARD */}
-        <View className="mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm">
-          <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
-          <View className="p-5">
-            <View className="mb-5 flex-row items-start justify-between gap-4">
-              <View className="flex-1">
-                <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">
-                  {formatRoleLabel(user?.currentRole) || "Workspace"}
-                </Text>
-                <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {`${user?.organization?.name || "Organization"} Dashboard`}
-                </Text>
-                <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                  Workspace summary for users, teams, attendance, and subscription usage.
-                </Text>
-              </View>
-              <Link href="/scanner" asChild>
-                <Pressable className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:scale-95 transition-transform">
-                  <QrCode size={20} className="text-slate-900 dark:text-white" />
-                </Pressable>
-              </Link>
-            </View>
-
-          </View>
-        </View>
-
-        {isLoading ? (
-          <View className="py-8 items-center">
-            <ActivityIndicator size="large" color="#2563eb" />
-          </View>
-        ) : (
-          <View>
-            {/* STATS OVERVIEW */}
-            <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
-              {summary.map((item, i) => (
-                <View
-                  key={i}
-                  className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <Text
-                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
-                    numberOfLines={1}>
-                    {item.label}
+    <MobileDashboardShell>
+      <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />
+          }
+        >
+          
+          {/* DASHBOARD WELCOME CARD */}
+          <View className="mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+            <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
+            <View className="p-5">
+              <View className="mb-5 flex-row items-start justify-between gap-4">
+                <View className="flex-1">
+                  <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">
+                    {formatRoleLabel(user?.currentRole) || "Workspace"}
                   </Text>
-                  <Text
-                    className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
-                    numberOfLines={1}
-                    adjustsFontSizeToFit>
-                    {item.value}
+                  <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                    {`${user?.organization?.name || "Organization"} Dashboard`}
+                  </Text>
+                  <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                    Workspace summary for users, teams, attendance, and subscription usage.
                   </Text>
                 </View>
-              ))}
-            </View>
-
-            {/* RECORDS TABLE */}
-            <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
-              <View className="flex-row items-center justify-between mb-4">
-                <View>
-                  <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                    Records
-                  </Text>
-                  <Text className="text-[10px] text-slate-500 mt-1">
-                    Detailed entries arranged for easy scanning.
-                  </Text>
-                </View>
-                <View className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">
-                  <Text className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                    {records.length} ENTRIES
-                  </Text>
-                </View>
+                <Link href="/scanner" asChild>
+                  <Pressable className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:scale-95 transition-transform">
+                    <QrCode size={20} className="text-slate-900 dark:text-white" />
+                  </Pressable>
+                </Link>
               </View>
 
-              {records.length === 0 ? (
-                <View className="py-12 items-center justify-center">
-                  <Text className="text-slate-400 dark:text-slate-500 font-medium">No recent activity.</Text>
+            </View>
+          </View>
+
+          {isLoading ? (
+            <View className="py-8 items-center">
+              <ActivityIndicator size="large" color="#2563eb" />
+            </View>
+          ) : (
+            <View>
+              {/* STATS OVERVIEW */}
+              <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
+                {summary.map((item, i) => (
+                  <View
+                    key={i}
+                    className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Text
+                      className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
+                      numberOfLines={1}>
+                      {item.label}
+                    </Text>
+                    <Text
+                      className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit>
+                      {item.value}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* RECORDS TABLE */}
+              <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
+                <View className="flex-row items-center justify-between mb-4">
+                  <View>
+                    <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                      Records
+                    </Text>
+                    <Text className="text-[10px] text-slate-500 mt-1">
+                      Detailed entries arranged for easy scanning.
+                    </Text>
+                  </View>
+                  <View className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">
+                    <Text className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                      {records.length} ENTRIES
+                    </Text>
+                  </View>
                 </View>
-              ) : (
-                <View className="gap-y-3">
-                  {records.map((record, i) => (
-                    <View
-                      key={i}
-                      className="p-4 rounded-[20px] bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                      <View className="flex-row justify-between items-start mb-2">
-                        <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1 mr-4">
-                          {record.title || "Record"}
-                        </Text>
-                        <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                          {record.date || "Today"}
-                        </Text>
-                      </View>
-                      
-                      <View className="flex-row justify-between items-end mt-1">
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 flex-1">
-                          {record.member || "Unknown"}
-                        </Text>
-                        {record.status && (
-                          <View className={`px-2 py-0.5 rounded ${
-                            record.status === 'Active' ? 'bg-emerald-100/50 dark:bg-emerald-900/30' :
-                            record.status === 'Pending' ? 'bg-amber-100/50 dark:bg-amber-900/30' :
-                            'bg-slate-100 dark:bg-slate-800'
-                          }`}>
-                            <Text className={`text-[10px] font-bold uppercase tracking-wider ${
-                              record.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' :
-                              record.status === 'Pending' ? 'text-amber-600 dark:text-amber-400' :
-                              'text-slate-500 dark:text-slate-400'
+
+                {records.length === 0 ? (
+                  <View className="py-12 items-center justify-center">
+                    <Text className="text-slate-400 dark:text-slate-500 font-medium">No recent activity.</Text>
+                  </View>
+                ) : (
+                  <View className="gap-y-3">
+                    {records.map((record, i) => (
+                      <View
+                        key={i}
+                        className="p-4 rounded-[20px] bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                        <View className="flex-row justify-between items-start mb-2">
+                          <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1 mr-4">
+                            {record.title || "Record"}
+                          </Text>
+                          <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                            {record.date || "Today"}
+                          </Text>
+                        </View>
+                        
+                        <View className="flex-row justify-between items-end mt-1">
+                          <Text className="text-xs text-slate-500 dark:text-slate-400 flex-1">
+                            {record.member || "Unknown"}
+                          </Text>
+                          {record.status && (
+                            <View className={`px-2 py-0.5 rounded ${
+                              record.status === 'Active' ? 'bg-emerald-100/50 dark:bg-emerald-900/30' :
+                              record.status === 'Pending' ? 'bg-amber-100/50 dark:bg-amber-900/30' :
+                              'bg-slate-100 dark:bg-slate-800'
                             }`}>
-                              {record.status}
-                            </Text>
-                          </View>
-                        )}
+                              <Text className={`text-[10px] font-bold uppercase tracking-wider ${
+                                record.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' :
+                                record.status === 'Pending' ? 'text-amber-600 dark:text-amber-400' :
+                                'text-slate-500 dark:text-slate-400'
+                              }`}>
+                                {record.status}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  ))}
-                </View>
-              )}
+                    ))}
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        )}
-    </ScrollView>
+          )}
+      </ScrollView>
+    </MobileDashboardShell>
   );
 }

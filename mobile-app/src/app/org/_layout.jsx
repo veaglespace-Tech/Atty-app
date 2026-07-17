@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { hasPermission, PERMISSIONS } from "@/utils/roles";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function OrgLayout() {
   const colorScheme = useColorScheme();
@@ -19,20 +20,16 @@ export default function OrgLayout() {
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 20,
-          left: 20,
-          right: 20,
-          backgroundColor: isDark ? 'rgba(2, 6, 23, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-          borderTopColor: 'transparent',
-          elevation: 10,
+          backgroundColor: isDark ? '#020617' : '#ffffff',
+          borderTopColor: isDark ? '#1e293b' : '#e2e8f0',
+          borderTopWidth: 1,
+          elevation: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.1,
-          shadowRadius: 20,
-          borderRadius: 32,
-          height: 64,
-          paddingBottom: 8,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          height: 65,
+          paddingBottom: 10,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
@@ -72,7 +69,7 @@ export default function OrgLayout() {
       />
       {/* Hide other screens from the tab bar */}
       <Tabs.Screen name="my-attendance" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="registration-requests" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
@@ -80,9 +77,7 @@ export default function OrgLayout() {
       <Tabs.Screen name="teams" options={{ href: null }} />
       <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="workspace" options={{ href: null }} />
-      <Tabs.Screen name="team" options={{ href: null }} />
       <Tabs.Screen name="team/[id]" options={{ href: null }} />
-      <Tabs.Screen name="user" options={{ href: null }} />
       <Tabs.Screen name="user/[id]" options={{ href: null }} />
       <Tabs.Screen name="attendance/[logId]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />

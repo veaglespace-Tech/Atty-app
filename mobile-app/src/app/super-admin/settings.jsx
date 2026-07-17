@@ -11,6 +11,7 @@ import { useUpdateMeMutation, useForgotPasswordMutation } from "@/services/api/a
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { formatRoleLabel, resolveUserPermissions } from "@/utils/roles";
 import ThemeToggle from "@/components/ThemeToggle";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function SuperAdminSettings() {
   const { user } = useAuthSession();
@@ -124,6 +125,7 @@ export default function SuperAdminSettings() {
   );
 
   return (
+    <MobileDashboardShell>
     <SafeAreaView className="flex-1 bg-slate-100 dark:bg-slate-950">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
@@ -219,5 +221,6 @@ export default function SuperAdminSettings() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </MobileDashboardShell>
   );
 }
