@@ -3,7 +3,6 @@ import { View, Text, Pressable, FlatList, ActivityIndicator } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Bell, CheckCircle2 } from "lucide-react-native";
 import { useGetOrgNotificationsQuery, useMarkAllNotificationsAsReadMutation } from "@/services/api/orgApi";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import NotificationCard from "@/components/notifications/NotificationCard";
 
 export default function NotificationsPage() {
@@ -14,7 +13,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <MobileDashboardShell>
+    <>
       <View className="px-6 pt-4 pb-4 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800">
         <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Feed & Updates</Text>
         {unreadCount > 0 && (
@@ -54,6 +53,6 @@ export default function NotificationsPage() {
           windowSize={5}
         />
       )}
-    </MobileDashboardShell>
+    </>
   );
 }

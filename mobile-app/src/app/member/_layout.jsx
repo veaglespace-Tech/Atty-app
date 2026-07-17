@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { hasPermission, PERMISSIONS } from "@/utils/roles";
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function MemberLayout() {
   const colorScheme = useColorScheme();
@@ -12,6 +13,7 @@ export default function MemberLayout() {
   const { user } = useAuthSession();
 
   return (
+    <MobileDashboardShell>
     <Tabs
       backBehavior="history"
       screenOptions={{
@@ -70,5 +72,6 @@ export default function MemberLayout() {
       <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
     </Tabs>
+    </MobileDashboardShell>
   );
 }

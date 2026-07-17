@@ -30,8 +30,6 @@ import DropdownFilter from "@/components/org/users/DropdownFilter";
 import OrgUsersMetrics from "@/components/org/users/OrgUsersMetrics";
 import OrgUserTableRow from "@/components/org/users/OrgUserTableRow";
 import CreateOrgUserModal from "@/components/org/users/CreateOrgUserModal";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
-
 const STATUS_TABS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
 
 export default function OrgUsersPage() {
@@ -185,7 +183,7 @@ export default function OrgUsersPage() {
   };
 
   return (
-    <MobileDashboardShell>
+    
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         className="flex-1"
@@ -368,6 +366,6 @@ export default function OrgUsersPage() {
         onPermissionToggle={onPermissionToggle}
       />
     </View>
-    </MobileDashboardShell>
+    
   );
 }

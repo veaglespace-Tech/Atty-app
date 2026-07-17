@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, RefreshControl, ScrollView, Modal, Pressable, TouchableOpacity } from "react-native";
 import { BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react-native";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { useGetSuperAdminDashboardQuery } from "@/services/api/superAdminApi";
 
 
@@ -25,7 +24,7 @@ export default function SuperAdminDashboard() {
   const currentItems = items.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
-    <MobileDashboardShell>
+    <>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
@@ -205,6 +204,6 @@ export default function SuperAdminDashboard() {
         </Pressable>
       </Modal>
 
-    </MobileDashboardShell>
+    </>
   );
 }

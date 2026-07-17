@@ -14,7 +14,6 @@ import LocationSettings from "@/components/settings/LocationSettings";
 import TimeSettings from "@/components/settings/TimeSettings";
 import OrgLogoSettings from "@/components/settings/OrgLogoSettings";
 import ThemeToggle from "@/components/ThemeToggle";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 export default function MemberSettings() {
   const { user } = useAuthSession();
   const dispatch = useDispatch();
@@ -138,7 +137,7 @@ export default function MemberSettings() {
   );
 
   return (
-    <MobileDashboardShell>
+    
     <SafeAreaView className="flex-1 bg-slate-100 dark:bg-slate-950">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
@@ -241,6 +240,6 @@ export default function MemberSettings() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-    </MobileDashboardShell>
+    
   );
 }

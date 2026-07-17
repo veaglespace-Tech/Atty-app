@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, TouchableOpacity, Alert, Pressable } from "react-native";
 import { Search, Check } from "lucide-react-native";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { useGetAllSuperAdminUsersQuery, useExportAllSuperAdminUsersExcelMutation } from "@/services/api/superAdminApi";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 import { ROLES } from "@/utils/roles";
@@ -74,7 +73,7 @@ export default function UsersPage() {
   }, [exportAllUsersExcel]);
 
   return (
-    <MobileDashboardShell>
+    <>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
@@ -185,6 +184,6 @@ export default function UsersPage() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-    </MobileDashboardShell>
+    </>
   );
 }

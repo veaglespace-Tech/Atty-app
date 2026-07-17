@@ -3,8 +3,6 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator, Modal } from "rea
 import { router } from "expo-router";
 import { ChevronLeft, MapPin, Users, X, User } from "lucide-react-native";
 import { useGetTeamLeaderTeamsQuery, useGetTeamLeaderTeamByIdQuery } from "@/services/api/teamLeaderApi";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
-
 function TeamDetailsModal({ team, visible, onClose }) {
   const { data, isLoading } = useGetTeamLeaderTeamByIdQuery(team?.id, { skip: !team });
   const members = Array.isArray(data?.members) ? data.members : [];
@@ -68,7 +66,7 @@ export default function MyTeamsPage() {
   const teams = Array.isArray(teamsData?.items) ? teamsData.items : [];
 
   return (
-    <MobileDashboardShell>
+    <>
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#2563eb" />
@@ -125,6 +123,6 @@ export default function MyTeamsPage() {
         visible={!!selectedTeam} 
         onClose={() => setSelectedTeam(null)} 
       />
-    </MobileDashboardShell>
+    </>
   );
 }

@@ -64,8 +64,9 @@ const rawBaseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     headers.set("cache-control", "no-cache, no-store, max-age=0");
     headers.set("pragma", "no-cache");
-    // VERY IMPORTANT: Bypass Localtunnel's warning page!
+    // VERY IMPORTANT: Bypass Localtunnel and Ngrok warning pages!
     headers.set("Bypass-Tunnel-Reminder", "true");
+    headers.set("ngrok-skip-browser-warning", "true");
 
     const token = getState()?.auth?.token;
     if (token && token !== "__cookie_session__") {

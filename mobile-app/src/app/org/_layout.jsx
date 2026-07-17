@@ -13,6 +13,7 @@ export default function OrgLayout() {
   const { user } = useAuthSession();
 
   return (
+    <MobileDashboardShell>
     <Tabs
       backBehavior="history"
       screenOptions={{
@@ -82,5 +83,6 @@ export default function OrgLayout() {
       <Tabs.Screen name="attendance/[logId]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
     </Tabs>
+    </MobileDashboardShell>
   );
 }

@@ -2,12 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Building2, Users, CreditCard, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
+import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function SuperAdminLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   return (
+    <MobileDashboardShell>
     <Tabs
       backBehavior="history"
       screenOptions={{
@@ -89,5 +91,6 @@ export default function SuperAdminLayout() {
       <Tabs.Screen name="referrals" options={{ href: null }} />
       <Tabs.Screen name="roles" options={{ href: null }} />
     </Tabs>
+    </MobileDashboardShell>
   );
 }

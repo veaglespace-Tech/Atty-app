@@ -5,8 +5,6 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
 import { QrCode } from "lucide-react-native";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
-
 export default function OrgDashboard() {
   const { data, isLoading, isFetching, refetch } = useGetOrgDashboardQuery(undefined);
   const { user } = useAuthSession();
@@ -15,7 +13,7 @@ export default function OrgDashboard() {
   const records = data?.items || [];
 
   return (
-    <MobileDashboardShell>
+    
       <ScrollView
           className="flex-1"
           contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
@@ -142,6 +140,6 @@ export default function OrgDashboard() {
             </View>
           )}
       </ScrollView>
-    </MobileDashboardShell>
+    
   );
 }

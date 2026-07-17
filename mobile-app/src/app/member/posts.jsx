@@ -5,7 +5,6 @@ import { router } from "expo-router";
 import { Megaphone } from "lucide-react-native";
 import { useGetOrgPostsQuery, useVoteOnPostMutation } from "@/services/api/postApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import PostCard from "@/components/posts/PostCard";
 
 export default function PostsPage() {
@@ -41,7 +40,7 @@ export default function PostsPage() {
   }, []);
 
   return (
-    <MobileDashboardShell>
+    <>
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#2563eb" />
@@ -75,6 +74,6 @@ export default function PostsPage() {
           windowSize={5}
         />
       )}
-    </MobileDashboardShell>
+    </>
   );
 }

@@ -6,8 +6,6 @@ import { PhoneCall, Component, MessageSquare, FileBarChart, Bell, ChevronRight }
 
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 import { useAuthSession } from "@/hooks/useAuthSession";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
-
 const { width } = Dimensions.get("window");
 
 export default function MemberDashboard() {
@@ -57,7 +55,7 @@ export default function MemberDashboard() {
   ];
 
   return (
-    <MobileDashboardShell>
+    
       <ScrollView 
         className="flex-1" 
         contentContainerStyle={{ paddingBottom: 60 }}
@@ -129,6 +127,6 @@ export default function MemberDashboard() {
           </View>
         </View>
       </ScrollView>
-    </MobileDashboardShell>
+    
   );
 }

@@ -2,7 +2,6 @@ import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, TouchableOpacity, Alert } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, Building2, Search, ChevronDown, Check, RefreshCcw, Download, Plus, ChevronRight, X } from "lucide-react-native";
-import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 import { 
   useGetSuperAdminOrganizationsQuery, 
   useDownloadSuperAdminOrganizationsExcelMutation,
@@ -152,7 +151,7 @@ export default function OrganizationsPage() {
   };
 
   return (
-    <MobileDashboardShell>
+    <>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
@@ -404,7 +403,7 @@ export default function OrganizationsPage() {
           refetch();
         }}
       />
-    </MobileDashboardShell>
+    </>
   );
 }
 
