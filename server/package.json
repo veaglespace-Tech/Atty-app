@@ -1,0 +1,53 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "start": "node index.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "db:sync-missing": "node scripts/sync-missing-schema.js",
+    "seed:plans": "node setup_plans.js",
+    "cleanup:paid-monthly-plans": "node scripts/remove-paid-monthly-plans.js",
+    "create:super-admin": "node scripts/create-super-admin.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@cerebras/cerebras_cloud_sdk": "^1.64.1",
+    "@prisma/client": "^5.22.0",
+    "@sentry/node": "^10.22.0",
+    "archiver": "^5.3.2",
+    "axios": "^1.13.5",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.22.1",
+    "express-async-handler": "^1.2.0",
+    "express-rate-limit": "^8.1.0",
+    "geolib": "^3.3.4",
+    "helmet": "^8.1.0",
+    "imagekit": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "node-mocks-http": "^1.17.2",
+    "nodemailer": "^8.0.2",
+    "pdfkit": "^0.17.2",
+    "prisma": "^5.22.0",
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  }
+}

@@ -115,16 +115,7 @@ export default function LoginPage() {
           eyebrow="Team Login"
           title="Welcome to Veagle Space"
           description="Sign in to manage attendance, check-ins, and your daily work in one place."
-          footer={
-          <Text className="text-sm font-medium text-slate-500 dark:text-slate-300">
-              New here?{" "}
-              <Link href="/register" asChild>
-                <Text className="font-bold text-blue-600 underline dark:text-blue-300">
-                  Create your organization
-                </Text>
-              </Link>
-            </Text>
-          }>
+          footer={null}>
           
           {authError ?
           <View className="mb-4 rounded-xl bg-red-50 p-3">

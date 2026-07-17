@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { ChevronLeft, CheckCircle2, Star, Zap, Building2 } from 'lucide-react-native';
 import { useGetPlansQuery } from '@/services/api/planApi';
@@ -128,17 +128,16 @@ export default function PricingPage() {
                     </View>
                   </View>
 
-                  <Link href="/register" asChild>
-                    <Pressable 
-                      className={`w-full py-4 rounded-2xl items-center justify-center active:scale-95 transition-transform ${
-                        isPopular ? 'bg-blue-600' : 'bg-slate-900 dark:bg-white'
-                      }`}
-                    >
-                      <Text className={`font-black text-base ${isPopular ? 'text-white' : 'text-white dark:text-slate-900'}`}>
-                        Get Started with {plan.name}
-                      </Text>
-                    </Pressable>
-                  </Link>
+                  <Pressable 
+                    onPress={() => Alert.alert("Purchase Plan", "Please purchase the plan from our website or contact Veagle Space support.")}
+                    className={`w-full py-4 rounded-2xl items-center justify-center active:scale-95 transition-transform ${
+                      isPopular ? 'bg-blue-600' : 'bg-slate-900 dark:bg-white'
+                    }`}
+                  >
+                    <Text className={`font-black text-base ${isPopular ? 'text-white' : 'text-white dark:text-slate-900'}`}>
+                      Get Started with {plan.name}
+                    </Text>
+                  </Pressable>
                 </View>
               );
             })}

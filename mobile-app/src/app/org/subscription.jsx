@@ -42,46 +42,8 @@ export default function SubscriptionPage() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const handlePurchase = async (plan) => {
-    setLoading(true);
-    setProcessingPlanCode(plan.code);
-    try {
-      const payload = { planCode: plan.code };
-      if (Platform.OS === 'web') {
-        payload.redirectBase = window.location.href.split('?')[0]; // Strip existing queries
-      }
-      const orderResponse = await createRenewalOrder(payload).unwrap();
-      if (!orderResponse?.payuParams || !orderResponse?.baseUrl) {
-        throw new Error("Failed to create payment order.");
-      }
-      
-      if (Platform.OS === 'web') {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = orderResponse.baseUrl;
-        
-        Object.keys(orderResponse.payuParams).forEach(key => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = orderResponse.payuParams[key];
-          form.appendChild(input);
-        });
-        
-        document.body.appendChild(form);
-        form.submit();
-        return;
-      }
-
-      setPayuData({
-        baseUrl: orderResponse.baseUrl,
-        payuParams: orderResponse.payuParams
-      });
-    } catch (err) {
-      Alert.alert("Checkout Failed", err?.data?.message || err?.message || "Unable to initiate payment.");
-      setLoading(false);
-      setProcessingPlanCode(null);
-    }
+  const handlePurchase = (plan) => {
+    Alert.alert("Purchase Plan", "Please purchase the plan from our website or contact Veagle Space support.");
   };
 
   return (
@@ -200,56 +162,7 @@ export default function SubscriptionPage() {
         )}
       </ScrollView>
 
-      {payuData && (
-        <Modal visible={true} animationType="slide">
-          <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <View className="flex-row items-center justify-between border-b border-slate-200 px-4 py-3 bg-white">
-              <Text className="font-black text-slate-900">Secure Checkout</Text>
-              <Pressable onPress={() => { setPayuData(null); setLoading(false); setProcessingPlanCode(null); }}>
-                <Text className="font-bold text-red-500">Cancel</Text>
-              </Pressable>
-            </View>
-            <WebView
-              source={{
-                html: `
-                  <html>
-                    <body onload="document.forms[0].submit()">
-                      <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
-                        <p>Redirecting to secure payment gateway...</p>
-                      </div>
-                      <form action="${payuData.baseUrl}" method="POST">
-                        ${Object.entries(payuData.payuParams)
-                          .map(([k, v]) => "<input type='hidden' name='" + k + "' value='" + String(v).replace(/'/g, "&apos;") + "' />")
-                          .join('')}
-                      </form>
-                    </body>
-                  </html>
-                `
-              }}
-              onNavigationStateChange={(navState) => {
-                if (navState.url.includes("payustatus=success")) {
-                  setPayuData(null);
-                  setLoading(false);
-                  setProcessingPlanCode(null);
-                  Alert.alert("Success", "Your subscription has been renewed successfully!");
-                  refetch();
-                } else if (navState.url.includes("payustatus=failed")) {
-                  setPayuData(null);
-                  setLoading(false);
-                  setProcessingPlanCode(null);
-                  Alert.alert("Payment Failed", "The transaction was failed or cancelled.");
-                }
-              }}
-              startInLoadingState={true}
-              renderLoading={() => (
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator size="large" color="#2563eb" />
-                </View>
-              )}
-            />
-          </SafeAreaView>
-        </Modal>
-      )}
+
     </View>
   );
 }

@@ -103,6 +103,8 @@ export default function OrgAttendancePage() {
     const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0];
   });
   const [customTo, setCustomTo] = useState(() => new Date().toISOString().split('T')[0]);
+  const [appliedCustomFrom, setAppliedCustomFrom] = useState(customFrom);
+  const [appliedCustomTo, setAppliedCustomTo] = useState(customTo);
 
   const handlePlaceSearch = (text) => {
     setSearchPlace(text);
@@ -135,7 +137,7 @@ export default function OrgAttendancePage() {
   };
 
 
-  const queryString = period === "custom" ? `period=custom&from=${customFrom}&to=${customTo}` : `period=${period}`;
+  const queryString = period === "custom" ? `period=custom&from=${appliedCustomFrom}&to=${appliedCustomTo}` : `period=${period}`;
   const { data, isLoading, isFetching, refetch } = useGetOrgAttendanceQuery(queryString);
   const { data: settingsData, isLoading: loadingSettings, refetch: refetchSettings } = useGetOrgAttendanceSettingsQuery();
   const { data: teamsData } = useGetOrgTeamsQuery("limit=100", { skip: !canManageTeamAttendance });
@@ -375,21 +377,29 @@ export default function OrgAttendancePage() {
              </View>
           </View>
           {period === 'custom' && (
-            <View className="mt-4 flex-row gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
-              <View className="flex-1">
-                <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 mb-2">From Date</Text>
-                <TextInput 
-                  value={customFrom} onChangeText={setCustomFrom} placeholder="YYYY-MM-DD" placeholderTextColor="#94a3b8"
-                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-900 dark:text-white"
-                />
+            <View className="mt-4 flex-col gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+              <View className="flex-row gap-4">
+                <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 mb-2">From Date</Text>
+                  <TextInput 
+                    value={customFrom} onChangeText={setCustomFrom} placeholder="YYYY-MM-DD" placeholderTextColor="#94a3b8"
+                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-900 dark:text-white"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 mb-2">To Date</Text>
+                  <TextInput 
+                    value={customTo} onChangeText={setCustomTo} placeholder="YYYY-MM-DD" placeholderTextColor="#94a3b8"
+                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-900 dark:text-white"
+                  />
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 mb-2">To Date</Text>
-                <TextInput 
-                  value={customTo} onChangeText={setCustomTo} placeholder="YYYY-MM-DD" placeholderTextColor="#94a3b8"
-                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-900 dark:text-white"
-                />
-              </View>
+              <Pressable 
+                onPress={() => { setAppliedCustomFrom(customFrom); setAppliedCustomTo(customTo); }}
+                className="bg-blue-600 rounded-xl py-3.5 items-center justify-center active:opacity-80"
+              >
+                <Text className="text-white text-xs font-bold uppercase tracking-wider">Apply Dates</Text>
+              </Pressable>
             </View>
           )}
 
@@ -413,136 +423,115 @@ export default function OrgAttendancePage() {
         {/* SETTINGS */}
         {(canSetWorkspaceLocation || canManageTeamAttendance) && (
           <>
-            <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 ml-6 mt-2">Attendance Settings</Text>
-            <View className="mx-4 bg-white dark:bg-[#0f172a] rounded-[24px] p-5 border border-slate-200 dark:border-slate-800/80 mb-6 relative">
+            <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 mx-6 mt-2">Attendance Settings</Text>
+            <View className="mx-4 bg-white dark:bg-[#0f172a] rounded-[24px] p-5 border border-slate-200 dark:border-slate-800/80 mb-6">
               
-              <View className="flex-row gap-3 mb-4 z-50">
-                <View className="flex-[2] relative">
-                  <Pressable 
-                    onPress={() => setShowTeamMenu(!showTeamMenu)}
-                    disabled={!canManageTeamAttendance}
-                    className={`bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 flex-row items-center justify-between ${!canManageTeamAttendance ? 'opacity-50' : ''}`}
-                  >
-                    <Text className="text-sm font-semibold text-slate-900 dark:text-white" numberOfLines={1}>
-                      {teamId ? (teams.find(t => t.id.toString() === teamId)?.name || 'Unknown Team') : 'Organization-wide Geofence'}
-                    </Text>
-                    {canManageTeamAttendance && <ChevronDown size={14} className="text-slate-400 ml-2 shrink-0" />}
-                  </Pressable>
-                  
-                  {showTeamMenu && (
-                    <View className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden z-50 shadow-lg max-h-48">
-                      <ScrollView nestedScrollEnabled={true}>
-                        <Pressable 
-                          onPress={() => { setTeamId(""); setShowTeamMenu(false); }}
-                          className="px-4 py-3 border-b border-slate-100 dark:border-slate-700"
-                        >
-                          <Text className="text-sm font-semibold text-slate-900 dark:text-white">Organization-wide Geofence</Text>
-                        </Pressable>
-                        {teams.map(t => (
-                          <Pressable 
-                            key={t.id}
-                            onPress={() => { setTeamId(t.id.toString()); setShowTeamMenu(false); }}
-                            className="px-4 py-3 border-b border-slate-100 dark:border-slate-700"
-                          >
-                            <Text className="text-sm font-semibold text-slate-900 dark:text-white">{t.name}</Text>
-                          </Pressable>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
+              <View className="flex-col gap-4 mb-4">
+                <View>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Select Team</Text>
+                  <View className={!canManageTeamAttendance ? 'opacity-50' : ''} pointerEvents={!canManageTeamAttendance ? 'none' : 'auto'}>
+                    <DropdownFilter
+                      label="Organization-wide Geofence"
+                      value={teamId}
+                      onSelect={setTeamId}
+                      options={[
+                        { label: "Organization-wide Geofence", value: "" },
+                        ...teams.map(t => ({ label: t.name, value: t.id.toString() }))
+                      ]}
+                    />
+                  </View>
                 </View>
                 
-                <View className="flex-1">
+                <View>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Geofence Radius (meters)</Text>
                   <TextInput 
                     value={geofenceRadius}
                     onChangeText={setGeofenceRadius}
                     keyboardType="numeric"
-                    placeholder="Radius"
+                    placeholder="e.g. 50"
                     placeholderTextColor="#94a3b8"
                     editable={canSetWorkspaceLocation || (canManageTeamAttendance && !!teamId)}
-                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white h-full"
+                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white"
                   />
                 </View>
               </View>
 
-              
-              <View className="relative mb-4 z-40">
-                <Search size={16} className="absolute left-4 top-3.5 text-slate-400 z-10" />
-                <TextInput 
-                  value={searchPlace}
-                  onChangeText={handlePlaceSearch}
-                  placeholder="Search for a place (e.g. Pune Station)"
-                  placeholderTextColor="#94a3b8"
-                  editable={canSetWorkspaceLocation || (canManageTeamAttendance && !!teamId)}
-                  className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm font-semibold text-slate-900 dark:text-white"
-                />
-                {searchingPlace && <ActivityIndicator size="small" color="#94a3b8" className="absolute right-4 top-3" />}
+              <View className="mb-4">
+                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Search Location</Text>
+                <View className="relative">
+                  <Search size={16} className="absolute left-4 top-3.5 text-slate-400 z-10" />
+                  <TextInput 
+                    value={searchPlace}
+                    onChangeText={handlePlaceSearch}
+                    placeholder="e.g. Pune Station"
+                    placeholderTextColor="#94a3b8"
+                    editable={canSetWorkspaceLocation || (canManageTeamAttendance && !!teamId)}
+                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white"
+                  />
+                  {searchingPlace && <ActivityIndicator size="small" color="#94a3b8" className="absolute right-4 top-3.5" />}
+                </View>
                 
                 {placeSuggestions.length > 0 && (
-                  <View className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xl z-50">
-                    <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled" className="max-h-48">
-                      {placeSuggestions.map((loc, i) => (
-                        <Pressable 
-                          key={i} 
-                          onPress={() => handleSelectPlace(loc)}
-                          className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 active:bg-slate-50 dark:active:bg-slate-700/50"
-                        >
-                          <Text className="text-[13px] font-semibold text-slate-900 dark:text-white" numberOfLines={2}>
-                            {loc.display_name}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
+                  <View className="mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                    {placeSuggestions.map((loc, i) => (
+                      <Pressable 
+                        key={i} 
+                        onPress={() => handleSelectPlace(loc)}
+                        className={`px-4 py-3.5 active:bg-slate-50 dark:active:bg-slate-700/50 ${i !== placeSuggestions.length - 1 ? 'border-b border-slate-100 dark:border-slate-700' : ''}`}
+                      >
+                        <Text className="text-[13px] font-semibold text-slate-900 dark:text-white" numberOfLines={2}>
+                          {loc.display_name}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
                 )}
               </View>
 
-              <View className="flex-row gap-3 mb-6 z-30">
-                <Pressable 
-                  onPress={handleUseCurrentLocation}
-                  disabled={!canSetWorkspaceLocation && !(canManageTeamAttendance && !!teamId)}
-                  className="flex-[2] bg-slate-50 dark:bg-slate-800/50 py-3 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70 border border-slate-200 dark:border-slate-700"
-                >
-                  <Crosshair size={14} className="text-slate-600 dark:text-slate-400" />
-                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Use Current Location</Text>
-                </Pressable>
+              <Pressable 
+                onPress={handleUseCurrentLocation}
+                disabled={!canSetWorkspaceLocation && !(canManageTeamAttendance && !!teamId)}
+                className="w-full bg-slate-50 dark:bg-slate-800/50 py-3.5 mb-4 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70 border border-slate-200 dark:border-slate-700 disabled:opacity-50"
+              >
+                <Crosshair size={16} className="text-slate-600 dark:text-slate-400" />
+                <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Use My Current Location</Text>
+              </Pressable>
 
+              <View className="flex-row gap-4 mb-6">
                 <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Latitude</Text>
                   <TextInput 
                     value={lat}
                     onChangeText={setLat}
                     keyboardType="numeric"
-                    placeholder="Latitude"
+                    placeholder="Lat"
                     placeholderTextColor="#94a3b8"
                     editable={canSetWorkspaceLocation || (canManageTeamAttendance && !!teamId)}
-                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-sm font-semibold text-slate-900 dark:text-white h-full"
+                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white"
                   />
                 </View>
-              </View>
-
-              <View className="flex-row gap-3 mb-6 z-20">
                 <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Longitude</Text>
                   <TextInput 
                     value={lng}
                     onChangeText={setLng}
                     keyboardType="numeric"
-                    placeholder="Longitude"
+                    placeholder="Lng"
                     placeholderTextColor="#94a3b8"
                     editable={canSetWorkspaceLocation || (canManageTeamAttendance && !!teamId)}
-                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"
+                    className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white"
                   />
                 </View>
-                <View className="flex-1 items-end justify-center">
-                  <Pressable 
-                    onPress={handleSaveSettings}
-                    disabled={updatingSettings || updatingTeam}
-                    className="bg-blue-600 py-3.5 px-6 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70 disabled:opacity-50"
-                  >
-                    {(updatingSettings || updatingTeam) ? <ActivityIndicator size="small" color="#ffffff" /> : <Save size={16} className="text-white" />}
-                    <Text className="text-sm font-bold text-white">Save Settings</Text>
-                  </Pressable>
-                </View>
               </View>
+
+              <Pressable 
+                onPress={handleSaveSettings}
+                disabled={updatingSettings || updatingTeam || (!canSetWorkspaceLocation && !teamId)}
+                className="w-full bg-blue-600 py-4 rounded-xl flex-row items-center justify-center gap-2 active:opacity-80 disabled:opacity-50"
+              >
+                {(updatingSettings || updatingTeam) ? <ActivityIndicator size="small" color="#ffffff" /> : <Save size={18} className="text-white" />}
+                <Text className="text-[15px] font-bold text-white">Save Location Settings</Text>
+              </Pressable>
 
             </View>
           </>
@@ -636,12 +625,8 @@ export default function OrgAttendancePage() {
                 <View className="flex-row flex-wrap items-center justify-between gap-4">
                   <View className="flex-row items-center gap-2">
                     <Text className="text-xs font-semibold text-slate-400">Rows</Text>
-                    <View className="bg-[#1e293b] rounded-lg border border-[#334155] px-2 py-1 flex-row items-center">
-                      <TextInput 
-                        value={pageSize.toString()}
-                        editable={false}
-                        className="text-xs font-bold text-slate-300 px-2"
-                      />
+                    <View className="bg-[#1e293b] rounded-lg border border-[#334155] px-3 py-1.5 flex-row items-center">
+                      <Text className="text-xs font-bold text-slate-300">{pageSize.toString()}</Text>
                     </View>
                   </View>
 
