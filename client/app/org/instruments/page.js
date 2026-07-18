@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Search, Check, Music, Plus, X, Loader2, Edit2, Trash2, Calendar } from "lucide-react";
+import { Search, Check, Music, Plus, Minus, X, Loader2, Edit2, Trash2, Calendar, ChevronDown, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { 
   useGetOrgInstrumentsQuery,
   useCreateOrgInstrumentMutation,
@@ -19,6 +19,84 @@ import { getErrorMessage } from "@/utils/formValidation";
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
 
+const NumberCombobox = ({ value, onChange, placeholder = "0-999" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(value || "");
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+        onChange(searchTerm);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchTerm, onChange]);
+
+  useEffect(() => {
+    setSearchTerm(value || "");
+  }, [value]);
+
+  const filteredOptions = useMemo(() => {
+    const all = Array.from({ length: 1000 }, (_, i) => i.toString());
+    if (!searchTerm) return all;
+    return all.filter(n => n.includes(searchTerm));
+  }, [searchTerm]);
+
+  return (
+    <div ref={wrapperRef} className="relative w-full max-w-[120px]">
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="numeric"
+          className={`${fieldClassName} !py-1.5 !pl-3 !pr-8 !text-sm w-full font-medium`}
+          placeholder={placeholder}
+          value={searchTerm}
+          onFocus={() => setIsOpen(true)}
+          onChange={(e) => {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            if (val !== "") val = parseInt(val, 10).toString();
+            if (val !== "" && parseInt(val) > 999) val = "999";
+            setSearchTerm(val);
+            onChange(val);
+            setIsOpen(true);
+          }}
+        />
+        <div 
+          className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <ChevronDown size={14} />
+        </div>
+      </div>
+      {isOpen && (
+        <div className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className="w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white transition-colors"
+                onClick={() => {
+                  setSearchTerm(opt);
+                  onChange(opt);
+                  setIsOpen(false);
+                }}
+              >
+                {opt}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-slate-500 text-center italic">No match</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function OrgInstrumentsPage() {
   const [selectedInstrumentId, setSelectedInstrumentId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,6 +111,20 @@ export default function OrgInstrumentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [reportFilterId, setReportFilterId] = useState("all");
+  const downloadRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (downloadRef.current && !downloadRef.current.contains(event.target)) {
+        setDownloadOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const { data: instrumentsData, isFetching: instLoading } = useGetOrgInstrumentsQuery();
   const { data: usersData, isFetching: usersLoading } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
@@ -88,6 +180,30 @@ export default function OrgInstrumentsPage() {
       }).unwrap();
       setSelectedUsers({}); // Reset after assign
       setMessage("Instrument assigned successfully");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to assign instrument"));
+    }
+  };
+
+  const handleSingleAssign = async (userId) => {
+    if (!selectedInstrumentId) return;
+    const assetId = selectedUsers[userId];
+    if (!assetId) {
+      setError("Please select or type an ID / Number first");
+      return;
+    }
+    
+    try {
+      await assignInstrument({
+        instrumentId: Number(selectedInstrumentId),
+        assignments: [{ userId: Number(userId), assetId }],
+      }).unwrap();
+      
+      const newSelected = { ...selectedUsers };
+      delete newSelected[userId];
+      setSelectedUsers(newSelected);
+      
+      setMessage("User assigned successfully");
     } catch (err) {
       setError(getErrorMessage(err, "Failed to assign instrument"));
     }
@@ -155,6 +271,86 @@ export default function OrgInstrumentsPage() {
     return users.filter((user) => user.instruments && user.instruments.length > 0);
   }, [users]);
 
+  const handleDownloadExcel = () => {
+    let csv = "Instrument Type,User Name,Instrument ID\n";
+    usersWithInstruments.forEach(user => {
+      const filteredInsts = reportFilterId === "all" ? user.instruments : user.instruments?.filter(i => String(i.id) === String(reportFilterId));
+      filteredInsts?.forEach(inst => {
+        csv += `"${inst.name}","${user.name}","${inst.assetId || ''}"\n`;
+      });
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "instrument-assignments.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadPdf = () => {
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (!printWindow) return;
+    
+    let html = `
+      <html>
+        <head>
+          <title>Instrument Assignments Report</title>
+          <style>
+            body { font-family: sans-serif; padding: 20px; color: #333; }
+            h2 { text-align: center; color: #1e293b; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+            th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+            tr:nth-child(even) { background-color: #f8fafc; }
+          </style>
+        </head>
+        <body>
+          <h2>Instrument Assignments Report</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Instrument Type</th>
+                <th>User Name</th>
+                <th>Instrument ID / Number</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    usersWithInstruments.forEach(user => {
+      const filteredInsts = reportFilterId === "all" ? user.instruments : user.instruments?.filter(i => String(i.id) === String(reportFilterId));
+      filteredInsts?.forEach(inst => {
+        html += `
+          <tr>
+            <td>${inst.name}</td>
+            <td>${user.name}</td>
+            <td>${inst.assetId || '-'}</td>
+          </tr>
+        `;
+      });
+    });
+
+    html += `
+            </tbody>
+          </table>
+          <script>
+            window.onload = () => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <section className="space-y-6">
       <div className={`${sectionCardClassName} mobile-compact-panel`}>
@@ -167,13 +363,58 @@ export default function OrgInstrumentsPage() {
           </div>
 
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <select
+              value={reportFilterId}
+              onChange={(e) => setReportFilterId(e.target.value)}
+              className="dashboard-field-control !py-2 !px-3 !w-full sm:!w-48 text-sm font-medium border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+            >
+              <option value="all">All Instruments</option>
+              {instruments.map(inst => (
+                <option key={inst.id} value={inst.id}>{inst.name}</option>
+              ))}
+            </select>
+
+            <div className="relative w-full sm:w-auto" ref={downloadRef}>
+              <button 
+                type="button" 
+                onClick={() => setDownloadOpen(!downloadOpen)} 
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2"
+              >
+                <Download size={15} />
+                Download Report
+              </button>
+              
+              {downloadOpen && (
+                <div className="absolute right-0 z-50 flex flex-col gap-1 p-2 shadow-xl bg-white/95 backdrop-blur-md rounded-2xl w-56 mt-2 border border-slate-100 dark:bg-slate-900/95 dark:border-slate-800">
+                  <button 
+                    onClick={() => { handleDownloadPdf(); setDownloadOpen(false); }} 
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-red-50 hover:text-red-600 dark:text-slate-300 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                      <FileText size={16} />
+                    </div>
+                    Export as PDF
+                  </button>
+                  <button 
+                    onClick={() => { handleDownloadExcel(); setDownloadOpen(false); }} 
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-green-50 hover:text-green-600 dark:text-slate-300 dark:hover:bg-green-500/10 dark:hover:text-green-400"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                      <FileSpreadsheet size={16} />
+                    </div>
+                    Export as Excel
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={() => setCreateOpen((prev) => !prev)}
-              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2"
             >
               <Plus size={15} />
-              Create Instrument
+              Add Instrument
             </button>
           </div>
         </div>
@@ -341,20 +582,29 @@ export default function OrgInstrumentsPage() {
                                 Assigned
                               </span>
                             ) : isSelected ? (
-                              <Check className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSingleAssign(user.id);
+                                }}
+                                className="flex items-center justify-center rounded-full bg-blue-100 p-1 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors dark:bg-blue-900/40 dark:text-blue-400 dark:hover:bg-blue-500 dark:hover:text-white shadow-sm"
+                                title="Click to assign instantly"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
                             ) : null}
                           </div>
                         </div>
 
                         {isSelected && !alreadyAssigned && (
                           <div className="mt-3 pt-3 border-t border-blue-100 dark:border-blue-800/50">
-                            <input
-                              type="text"
-                              className={`${fieldClassName} !py-1.5 !text-sm`}
-                              placeholder="Enter Physical ID / Size (Required)"
+                            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                              Assign ID / Number <span className="text-red-500">*</span>
+                            </label>
+                            <NumberCombobox
                               value={selectedUsers[user.id] || ""}
-                              onChange={(e) => updateAssetId(user.id, e.target.value)}
-                              required
+                              onChange={(val) => updateAssetId(user.id, val)}
                             />
                           </div>
                         )}
@@ -451,16 +701,13 @@ export default function OrgInstrumentsPage() {
                               </div>
                               
                               {editingAssignment?.userId === user.id && editingAssignment?.instrumentId === inst.id && (
-                                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-                                  <input 
-                                    type="text"
+                                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 w-full">
+                                  <NumberCombobox
                                     value={editingAssetId}
-                                    onChange={e => setEditingAssetId(e.target.value)}
-                                    placeholder="Enter ID/Number"
-                                    className={`${fieldClassName} !py-1.5 !px-3 !text-sm !bg-white dark:!bg-slate-950 flex-1 min-w-[120px] font-medium`}
+                                    onChange={setEditingAssetId}
                                   />
-                                  <button onClick={handleUpdateAssignment} className="brand-btn brand-btn-primary !px-3 !py-1.5 !text-sm whitespace-nowrap shadow-sm">Save</button>
-                                  <button onClick={() => setEditingAssignment(null)} className="brand-btn brand-btn-secondary !px-3 !py-1.5 !text-sm shadow-sm">Cancel</button>
+                                  <button onClick={handleUpdateAssignment} className="brand-btn brand-btn-primary !px-3 !py-1.5 !text-sm whitespace-nowrap shadow-sm h-9">Save</button>
+                                  <button onClick={() => setEditingAssignment(null)} className="brand-btn brand-btn-secondary !px-3 !py-1.5 !text-sm shadow-sm h-9">Cancel</button>
                                 </div>
                               )}
                             </div>

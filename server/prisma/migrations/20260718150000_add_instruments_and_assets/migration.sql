@@ -22,6 +22,7 @@ CREATE TABLE `user_instrument` (
     INDEX `user_instrument_userId_idx`(`userId`),
     INDEX `user_instrument_instrumentId_idx`(`instrumentId`),
     UNIQUE INDEX `user_instrument_userId_instrumentId_key`(`userId`, `instrumentId`),
+    UNIQUE INDEX `user_instrument_instrumentId_assetId_key`(`instrumentId`, `assetId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -33,3 +34,4 @@ ALTER TABLE `user_instrument` ADD CONSTRAINT `user_instrument_userId_fkey` FOREI
 
 -- AddForeignKey
 ALTER TABLE `user_instrument` ADD CONSTRAINT `user_instrument_instrumentId_fkey` FOREIGN KEY (`instrumentId`) REFERENCES `instrument`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+

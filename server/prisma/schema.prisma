@@ -843,6 +843,7 @@ model UserInstrument {
   instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, instrumentId])
+  @@unique([instrumentId, assetId])
   @@index([userId])
   @@index([instrumentId])
   @@map("user_instrument")
