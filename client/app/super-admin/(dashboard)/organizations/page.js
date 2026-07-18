@@ -90,7 +90,7 @@ export default function SuperAdminOrganizationsPage() {
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const organizations = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
   const summaryMap = useMemo(() => toSummaryMap(summary), [summary]);
-  const plans = useMemo(() => (Array.isArray(plansData?.items) ? plansData.items : []), [plansData]);
+  const plans = useMemo(() => (Array.isArray(plansData?.items) ? plansData.items.filter(p => p.code !== "ERP_ADDON") : []), [plansData]);
   const loading = isLoading || isFetching;
 
 

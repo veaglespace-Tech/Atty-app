@@ -2260,15 +2260,15 @@ exports.createSuperAdminOrganization = asyncHandler(async (req, res) => {
 
 exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
   const organizationId = parseId(req.params.organizationId);
-  const { additionalDays, planCode } = req.body;
+  const { additionalDays, planCode, hasERP } = req.body;
 
   if (!organizationId) {
     res.status(400);
     throw new Error("Invalid organization id");
   }
-  if (!additionalDays || isNaN(Number(additionalDays)) || Number(additionalDays) < 1) {
+  if (additionalDays === undefined || additionalDays === null || isNaN(Number(additionalDays)) || Number(additionalDays) < 0) {
     res.status(400);
-    throw new Error("additionalDays must be a positive number");
+    throw new Error("additionalDays must be a non-negative number");
   }
 
   const days = Math.floor(Number(additionalDays));
@@ -2347,6 +2347,7 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
         paymentOrderId: `EXTEND_${Date.now()}`,
         createdById: Number(req.user.id),
         activeKey: newSubActiveKey,
+        hasERP: hasERP !== undefined ? Boolean(hasERP) : org.hasERP,
       },
     });
 
@@ -2374,6 +2375,7 @@ exports.extendSuperAdminOrganizationPlan = asyncHandler(async (req, res) => {
         subscriptionId: newSub.id,
         planId: plan.id,
         isActive: true,
+        hasERP: hasERP !== undefined ? Boolean(hasERP) : org.hasERP,
       },
     });
 

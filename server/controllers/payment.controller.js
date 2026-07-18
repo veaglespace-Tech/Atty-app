@@ -461,7 +461,7 @@ exports.payuFailure = asyncHandler(async (req, res) => {
 });
 
 // -- Renewal helpers -----------------------------------------------------------
-const resolveRenewalContext = async ({ organizationId, planCode, couponCode, includeERP }) => {
+const resolveRenewalContext = async ({ organizationId, planCode, couponCode, includeERP, addonOnly }) => {
   const org = await prisma.organization.findUnique({ where: { id: Number(organizationId) }, include: { plan: { select: { id: true, name: true, code: true, price: true, durationInDays: true, currency: true } } } });
   if (!org) { const e = new Error("Organization not found"); e.statusCode = 404; throw e; }
   const { code, dbPlan, plan, freeTrialPlan } = await resolvePlanForCheckout(planCode);
@@ -481,11 +481,11 @@ const resolveRenewalContext = async ({ organizationId, planCode, couponCode, inc
   const selPrice = roundMoney(Number(plan.price || 0));
   const hasActive = Boolean(activeSub && remainingMs > 0);
   const samePlan = hasActive && curCode === code;
+  const isAddonOnlyPurchase = addonOnly && samePlan && hasERP !== currentHasERP;
   let mode = RENEWAL_MODES.RENEW;
   
   if (hasActive) {
-    if (samePlan && hasERP === currentHasERP) mode = RENEWAL_MODES.EXTEND;
-    else if (samePlan && hasERP !== currentHasERP) mode = RENEWAL_MODES.UPGRADE_NOW;
+    if (samePlan) mode = RENEWAL_MODES.EXTEND;
     else if (selPrice < curPrice) mode = RENEWAL_MODES.DOWNGRADE_SCHEDULED; 
     else mode = RENEWAL_MODES.UPGRADE_NOW; 
   }
@@ -493,7 +493,7 @@ const resolveRenewalContext = async ({ organizationId, planCode, couponCode, inc
   const upgradeCredit = mode === RENEWAL_MODES.UPGRADE_NOW ? calculateProratedCredit(activeSub, now) : 0;
   let discountAmount = 0;
   let couponId = null;
-  let discountedPrice = selPrice;
+  let discountedPrice = isAddonOnlyPurchase ? 0 : selPrice;
   const pastPaidSubscriptionsCount = await prisma.subscription.count({
     where: {
       orgId: Number(organizationId),
@@ -557,9 +557,14 @@ const resolveRenewalContext = async ({ organizationId, planCode, couponCode, inc
   const basePayableAmount = roundMoney(mode === RENEWAL_MODES.UPGRADE_NOW ? Math.max(discountedPrice - upgradeCredit, 0) : discountedPrice);
   const gstAmount = roundMoney((basePayableAmount * gstRate) / 100);
   const payableAmount = roundMoney(basePayableAmount + gstAmount);
-  const durationInDays = Number(plan.durationInDays || 0) || 30;
+  const durationInDays = isAddonOnlyPurchase ? 0 : (Number(plan.durationInDays || 0) || 30);
   const effectiveStartDate = (mode === RENEWAL_MODES.EXTEND || mode === RENEWAL_MODES.DOWNGRADE_SCHEDULED) && activeSub?.endDate ? new Date(activeSub.endDate) : now;
-  const expiryDate = new Date(effectiveStartDate.getTime() + durationInDays * DAY_IN_MS);
+  let expiryDate;
+  if (isAddonOnlyPurchase && activeSub?.endDate) {
+    expiryDate = new Date(activeSub.endDate);
+  } else {
+    expiryDate = new Date(effectiveStartDate.getTime() + durationInDays * DAY_IN_MS);
+  }
   return { org, activeSub, code, dbPlan, plan, freeTrialPlan, mode, upgradeCredit, basePayableAmount, gstRate, gstAmount, payableAmount, remainingDays, curPrice, selPrice, hasActive, curCode, currentExpiry: activeSub?.endDate || org.subscriptionExpiry || null, effectiveStartDate, durationInDays, now, expiryDate, couponId, discountAmount, originalPrice: selPrice, hasERP };
 };
 
@@ -567,18 +572,18 @@ const createRenewalIntent = async ({ organizationId, userId, ctx, gatewayOrderId
   const now = new Date();
   const fallbackId = createInternalOrderId({ orgId: organizationId, mode: ctx.mode });
   const resolvedOrderId = String(gatewayOrderId || fallbackId);
-  return prisma.subscriptionRenewalIntent.create({ data: { orgId: Number(organizationId), userId: Number(userId), planId: ctx.dbPlan?.id || null, currentSubscriptionId: ctx.activeSub?.id || null, planName: ctx.plan.name, planCode: ctx.code, currentPlanName: ctx.activeSub?.planName || ctx.org.plan?.name || null, currentPlanCode: ctx.curCode || null, mode: ctx.mode, status: "CREATED", payableAmount: roundMoney(ctx.payableAmount), creditAmount: roundMoney(ctx.upgradeCredit), currency: ctx.plan.currency || "INR", remainingDays: Number(ctx.remainingDays || 0), expectedStartDate: ctx.effectiveStartDate, expectedEndDate: ctx.expiryDate, gateway: ctx.payableAmount > 0 ? PAYMENT_GATEWAYS.PAYU : PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: resolvedOrderId, expiresAt: ctx.payableAmount > 0 ? new Date(now.getTime() + RENEWAL_INTENT_TTL_MS) : null, metadata: { source: "create-renewal-order", renewal: { mode: ctx.mode, hasActiveSub: ctx.hasActive, currentExpiry: ctx.currentExpiry, basePayableAmount: ctx.basePayableAmount, gstRate: ctx.gstRate, gstAmount: ctx.gstAmount }, couponId: ctx.couponId || null, discountAmount: ctx.discountAmount || 0, originalPrice: ctx.originalPrice || 0 } } });
+  return prisma.subscriptionRenewalIntent.create({ data: { orgId: Number(organizationId), userId: Number(userId), planId: ctx.dbPlan?.id || null, currentSubscriptionId: ctx.activeSub?.id || null, planName: ctx.plan.name, planCode: ctx.code, currentPlanName: ctx.activeSub?.planName || ctx.org.plan?.name || null, currentPlanCode: ctx.curCode || null, mode: ctx.mode, status: "CREATED", payableAmount: roundMoney(ctx.payableAmount), creditAmount: roundMoney(ctx.upgradeCredit), currency: ctx.plan.currency || "INR", remainingDays: Number(ctx.remainingDays || 0), expectedStartDate: ctx.effectiveStartDate, expectedEndDate: ctx.expiryDate, gateway: ctx.payableAmount > 0 ? PAYMENT_GATEWAYS.PAYU : PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: resolvedOrderId, expiresAt: ctx.payableAmount > 0 ? new Date(now.getTime() + RENEWAL_INTENT_TTL_MS) : null, hasERP: ctx.hasERP, metadata: { source: "create-renewal-order", renewal: { mode: ctx.mode, hasActiveSub: ctx.hasActive, currentExpiry: ctx.currentExpiry, basePayableAmount: ctx.basePayableAmount, gstRate: ctx.gstRate, gstAmount: ctx.gstAmount }, couponId: ctx.couponId || null, discountAmount: ctx.discountAmount || 0, originalPrice: ctx.originalPrice || 0 } } });
 
 };
 
 // -- POST /api/payment/create-renewal-order ------------------------------------
 exports.createRenewalOrder = asyncHandler(async (req, res) => {
-  const { planCode, couponCode, includeERP } = req.body || {};
+  const { planCode, couponCode, includeERP, addonOnly } = req.body || {};
   const organizationId = Number(req.user?.organizationId || req.user?.organization);
   const userId = Number(req.user?.id);
   if (!organizationId || !userId) { res.status(403); throw new Error("Organization context missing"); }
 
-  const ctx = await resolveRenewalContext({ organizationId, planCode, couponCode, includeERP });
+  const ctx = await resolveRenewalContext({ organizationId, planCode, couponCode, includeERP, addonOnly });
   if (ctx.org.isBlocked || ctx.org.isActive === false || ctx.org.deletedAt) { res.status(403); throw new Error("Organization access is blocked"); }
   if (ctx.freeTrialPlan) { res.status(400); throw new Error("Existing organizations cannot renew with a free trial plan."); }
 
@@ -693,12 +698,12 @@ exports.verifyRenewal = asyncHandler(async (req, res) => {
   const result = await prisma.$transaction(async (tx) => {
     let sub;
     if (mode === RENEWAL_MODES.EXTEND) {
-      sub = await tx.subscription.update({ where: { id: intent.currentSubscriptionId }, data: { endDate: expEnd, paymentGateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, activeKey: `ORG_${organizationId}` } });
-      await tx.organization.update({ where: { id: organizationId }, data: { subscriptionStatus: "ACTIVE", subscriptionExpiry: expEnd, subscriptionId: sub.id } });
+      sub = await tx.subscription.update({ where: { id: intent.currentSubscriptionId }, data: { endDate: expEnd, paymentGateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, activeKey: `ORG_${organizationId}`, hasERP: intent.hasERP } });
+      await tx.organization.update({ where: { id: organizationId }, data: { subscriptionStatus: "ACTIVE", subscriptionExpiry: expEnd, subscriptionId: sub.id, hasERP: intent.hasERP } });
     } else {
       await tx.subscription.updateMany({ where: { orgId: organizationId, status: "ACTIVE", startDate: { lte: now } }, data: { status: "EXPIRED", activeKey: null } });
-      sub = await tx.subscription.create({ data: { orgId: organizationId, planId: intent.planId || null, planName: intent.planName, planCode: intent.planCode, amount: roundMoney(Number(intent.payableAmount) + Number(intent.creditAmount)), currency: intent.currency || "INR", status: "ACTIVE", startDate: expStart, endDate: expEnd, paymentGateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, createdById: userId, activeKey: `ORG_${organizationId}` } });
-      await tx.organization.update({ where: { id: organizationId }, data: { planId: intent.planId || null, subscriptionStatus: "ACTIVE", subscriptionExpiry: expEnd, subscriptionId: sub.id } });
+      sub = await tx.subscription.create({ data: { orgId: organizationId, planId: intent.planId || null, planName: intent.planName, planCode: intent.planCode, amount: roundMoney(Number(intent.payableAmount) + Number(intent.creditAmount)), currency: intent.currency || "INR", status: "ACTIVE", startDate: expStart, endDate: expEnd, paymentGateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, createdById: userId, activeKey: `ORG_${organizationId}`, hasERP: intent.hasERP } });
+      await tx.organization.update({ where: { id: organizationId }, data: { planId: intent.planId || null, subscriptionStatus: "ACTIVE", subscriptionExpiry: expEnd, subscriptionId: sub.id, hasERP: intent.hasERP } });
     }
     await tx.payment.create({ data: { orgId: organizationId, userId, subscriptionId: sub.id, planName: intent.planName, planCode: intent.planCode, amount: 0, currency: intent.currency || "INR", gateway: PAYMENT_GATEWAYS.PLAN_CREDIT, paymentOrderId: fallbackOrderId, status: "SUCCESS", couponId: intent.metadata?.couponId || null, originalAmount: intent.metadata?.originalPrice || null } });
     if (intent.metadata?.couponId) {

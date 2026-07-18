@@ -1021,24 +1021,27 @@ function FormField({ label, children, fullWidth = false }) {
 function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExtended }) {
   const [extendPlan, { isLoading }] = useExtendSuperAdminOrganizationPlanMutation();
   const { data: plansData } = useGetSuperAdminPlansQuery();
-  const plans = Array.isArray(plansData?.items) ? plansData.items : [];
+  const plans = Array.isArray(plansData?.items) ? plansData.items.filter(p => p.code !== "ERP_ADDON") : [];
 
   const [additionalDays, setAdditionalDays] = useState("");
   const [planCode, setPlanCode] = useState("");
+  const [hasERP, setHasERP] = useState(Boolean(organization?.hasERP));
   const [error, setError] = useState("");
 
   const quickDays = [7, 14, 30, 60, 90, 180, 365];
 
   const onSubmit = async () => {
-    if (!additionalDays || Number(additionalDays) < 1) {
-      setError("Please enter a valid number of days (minimum 1)");
+    const daysToExtend = additionalDays ? Number(additionalDays) : 0;
+    if (daysToExtend < 0) {
+      setError("Please enter a valid number of days (minimum 0)");
       return;
     }
     try {
       setError("");
       await extendPlan({
         organizationId,
-        additionalDays: Number(additionalDays),
+        additionalDays: daysToExtend,
+        hasERP,
         ...(planCode ? { planCode } : {}),
       }).unwrap();
       await onExtended();
@@ -1127,10 +1130,10 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
             <FormField label="Custom Days">
               <input
                 type="number"
-                min="1"
+                min="0"
                 value={additionalDays}
                 onChange={(e) => setAdditionalDays(e.target.value)}
-                placeholder="e.g. 45"
+                placeholder="e.g. 45 (leave empty to just update ERP/Plan)"
                 className="dashboard-field-control w-full"
               />
             </FormField>
@@ -1175,6 +1178,22 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
                 </select>
               </FormField>
             )}
+
+            {/* ERP Toggle */}
+            <div className="pt-2">
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-900/10">
+                <input
+                  type="checkbox"
+                  checked={hasERP}
+                  onChange={(e) => setHasERP(e.target.checked)}
+                  className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">Enable Funds & Expenses ERP</span>
+                  <span className="text-xs text-slate-500">Provide this workspace with access to the advanced financial modules.</span>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Footer */}
@@ -1185,11 +1204,11 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
             <button
               type="button"
               onClick={onSubmit}
-              disabled={isLoading || !additionalDays || Number(additionalDays) < 1}
+              disabled={isLoading || (additionalDays ? Number(additionalDays) < 0 : false)}
               className="brand-btn brand-btn-primary brand-btn-md px-10"
             >
               {isLoading ? <Loader2 size={16} className="animate-spin" /> : <CalendarClock size={16} />}
-              Extend Plan
+              {additionalDays && Number(additionalDays) > 0 ? "Extend Plan" : "Update Plan"}
             </button>
           </div>
         </div>

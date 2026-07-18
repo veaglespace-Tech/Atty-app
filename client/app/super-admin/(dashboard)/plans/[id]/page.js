@@ -168,6 +168,7 @@ export default function PlanDetailPage() {
   }
 
   const planIsActive = plan.isActive !== false;
+  const isAddon = plan.code && plan.code.toUpperCase().includes("ADDON");
 
   return (
     <section className="mx-auto max-w-4xl space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -233,9 +234,11 @@ export default function PlanDetailPage() {
               <span className="text-4xl font-black text-slate-900 dark:text-white">
                 Rs. {formatPlanPrice(plan.price)}
               </span>
-              <span className="text-xs font-black uppercase text-slate-400 dark:text-slate-500">
-                / {formatPlanDurationLong(plan.durationInDays)}
-              </span>
+              {!isAddon && (
+                <span className="text-xs font-black uppercase text-slate-400 dark:text-slate-500">
+                  / {formatPlanDurationLong(plan.durationInDays)}
+                </span>
+              )}
             </div>
 
             <div className="relative space-y-4">
@@ -329,58 +332,62 @@ export default function PlanDetailPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Duration (Days)
-                  </label>
-                  <input
-                    name="durationInDays"
-                    type="number"
-                    value={form.durationInDays}
-                    onChange={onInputChange}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
-                    required
-                  />
-                </div>
+                {!isAddon && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Duration (Days)
+                      </label>
+                      <input
+                        name="durationInDays"
+                        type="number"
+                        value={form.durationInDays}
+                        onChange={onInputChange}
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
+                        required
+                      />
+                    </div>
 
-                <div className="space-y-1.5">
-                  <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Member Capacity
-                  </label>
-                  <input
-                    name="memberLimit"
-                    type="number"
-                    value={form.memberLimit}
-                    onChange={onInputChange}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
-                  />
-                </div>
+                    <div className="space-y-1.5">
+                      <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Member Capacity
+                      </label>
+                      <input
+                        name="memberLimit"
+                        type="number"
+                        value={form.memberLimit}
+                        onChange={onInputChange}
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
+                      />
+                    </div>
 
-                <div className="space-y-1.5">
-                  <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Max Teams
-                  </label>
-                  <input
-                    name="maxTeams"
-                    type="number"
-                    value={form.maxTeams}
-                    onChange={onInputChange}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
-                  />
-                </div>
+                    <div className="space-y-1.5">
+                      <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Max Teams
+                      </label>
+                      <input
+                        name="maxTeams"
+                        type="number"
+                        value={form.maxTeams}
+                        onChange={onInputChange}
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
+                      />
+                    </div>
 
-                <div className="space-y-1.5">
-                  <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Max Locations
-                  </label>
-                  <input
-                    name="maxLocations"
-                    type="number"
-                    value={form.maxLocations}
-                    onChange={onInputChange}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
-                  />
-                </div>
+                    <div className="space-y-1.5">
+                      <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Max Locations
+                      </label>
+                      <input
+                        name="maxLocations"
+                        type="number"
+                        value={form.maxLocations}
+                        onChange={onInputChange}
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-blue-500 focus:bg-white"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-1.5">
                   <label className="px-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -484,21 +491,21 @@ export default function PlanDetailPage() {
                 <div className="grid gap-10 md:grid-cols-2">
                   <DetailItem
                     label="User Allowance"
-                    value={plan.memberLimit === 0 ? "Infinite Access" : `${plan.memberLimit} Seats`}
+                    value={isAddon ? "Inherits Base Plan" : plan.memberLimit === 0 ? "Infinite Access" : `${plan.memberLimit} Seats`}
                   />
                   <DetailItem
                     label="Team Structure"
-                    value={plan.maxTeams === 0 ? "Global Hierarchy" : `${plan.maxTeams} Teams Allowed`}
+                    value={isAddon ? "Inherits Base Plan" : plan.maxTeams === 0 ? "Global Hierarchy" : `${plan.maxTeams} Teams Allowed`}
                   />
                   <DetailItem
                     label="Geo-Geofencing"
                     value={
-                      plan.maxLocations === 0 ? "Dynamic Global" : `${plan.maxLocations} Active Spots`
+                      isAddon ? "Inherits Base Plan" : plan.maxLocations === 0 ? "Dynamic Global" : `${plan.maxLocations} Active Spots`
                     }
                   />
                   <DetailItem
                     label="Billing Cycle"
-                    value={`${plan.durationInDays} Full Days`}
+                    value={isAddon ? "Inherits Base Plan" : `${plan.durationInDays} Full Days`}
                   />
                   <DetailItem
                     label="Display Order"
