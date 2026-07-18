@@ -75,7 +75,9 @@ const mapUserForManagement = (user, orgId = null) => {
     joinedAt: user.createdAt,
     createdAt: user.createdAt,
     memberships: Array.isArray(user.memberships) ? user.memberships : [],
+    instruments: Array.isArray(user.userInstruments) ? user.userInstruments.map(ui => ({ ...ui.instrument, assetId: ui.assetId, assignedAt: ui.assignedAt })) : [],
   };
+
 };
 
 const buildUserSummary = (users = []) => {

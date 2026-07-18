@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const memberApi = createApi({
   reducerPath: "memberApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["MemberDashboard", "MemberAttendance"],
+  tagTypes: ["MemberDashboard", "MemberAttendance", "MemberInstruments"],
   endpoints: (builder) => ({
     getMemberDashboard: builder.query({
       query: () => "/member/dashboard",
@@ -40,6 +40,10 @@ export const memberApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    getMemberInstruments: builder.query({
+      query: () => "/member/instruments",
+      providesTags: ["MemberInstruments"],
+    }),
   }),
 });
 
@@ -47,5 +51,6 @@ export const {
   useGetMemberDashboardQuery, 
   useGetMemberAttendanceQuery,
   useDownloadMemberAttendancePdfMutation,
-  useDownloadMemberAttendanceExcelMutation
+  useDownloadMemberAttendanceExcelMutation,
+  useGetMemberInstrumentsQuery
 } = memberApi;

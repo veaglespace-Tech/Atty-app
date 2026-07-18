@@ -213,6 +213,7 @@ model Organization {
   stockItems           Stock[]                     @relation("OrganizationStock")
   expenseTransactions  ExpenseTransaction[]        @relation("OrganizationExpenseTransactions")
   expenseClaims        ExpenseClaim[]              @relation("OrganizationExpenseClaims")
+  instruments          Instrument[]
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -560,6 +561,7 @@ model User {
   regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
   regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
   expenseClaims               ExpenseClaim[]              @relation("UserExpenseClaims")
+  userInstruments             UserInstrument[]
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
@@ -820,6 +822,7 @@ model AttendanceRegularization {
   @@map("attendance_regularization")
 }
 
+<<<<<<< HEAD
 model Stock {
   id        Int          @id @default(autoincrement())
   orgId     Int
@@ -889,4 +892,36 @@ model ExpenseClaim {
   @@index([orgId, status])
   @@index([userId])
   @@map("expense_claim")
+=======
+model Instrument {
+  id          Int      @id @default(autoincrement())
+  orgId       Int
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  users        UserInstrument[]
+
+  @@index([orgId])
+  @@map("instrument")
+}
+
+model UserInstrument {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  instrumentId Int
+  assetId      String?
+  assignedAt   DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, instrumentId])
+  @@unique([instrumentId, assetId])
+  @@index([userId])
+  @@index([instrumentId])
+  @@map("user_instrument")
+>>>>>>> 9647cfba39115e5be428d13e26c88dd8ca2d0468
 }
