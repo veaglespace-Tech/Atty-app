@@ -196,6 +196,7 @@ model Organization {
   logoUrl              String?
   logoPublicId         String?
   fundBalance          Float                       @default(0)
+  hasERP               Boolean                     @default(false)
   attendances          Attendance[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
@@ -339,6 +340,7 @@ model Subscription {
   activeKey               String?                     @unique(map: "Subscription_activeKey_key")
   paymentGateway          String                      @default("PAYU")
   notes                   String                      @default("")
+  hasERP                  Boolean                     @default(false)
   createdAt               DateTime                    @default(now())
   updatedAt               DateTime                    @updatedAt
   paymentOrderId          String?
@@ -386,6 +388,7 @@ model SubscriptionRenewalIntent {
   verifiedAt            DateTime?
   appliedAt             DateTime?
   metadata              Json?
+  hasERP                Boolean             @default(false)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   paymentOrderId        String?             @unique(map: "SubscriptionRenewalIntent_paymentOrderId_key")

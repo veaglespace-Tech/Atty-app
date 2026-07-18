@@ -6,8 +6,11 @@ import { addNotification } from "@/store/slices/notificationSlice";
 import { API_BASE_URL } from "@/services/api/baseApi";
 import { Search, Download, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuthSession } from "@/hooks/useAuthSession";
+import ERPLockedView from "@/components/ERPLockedView";
 
 export default function OrgExpensesPage() {
+  const { user } = useAuthSession();
   const dispatch = useDispatch();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("expenses"); // "stock", "expenses", "claims"
@@ -55,8 +58,10 @@ export default function OrgExpensesPage() {
   }, [searchQuery]);
 
   useEffect(() => {
-    fetchData();
-  }, [debouncedSearch, filterType, filterStatus, sortBy, sortOrder]);
+    if (user?.organization?.hasERP) {
+      fetchData();
+    }
+  }, [debouncedSearch, filterType, filterStatus, sortBy, sortOrder, user?.organization?.hasERP]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -257,6 +262,10 @@ export default function OrgExpensesPage() {
       setSortOrder("desc");
     }
   };
+
+  if (user && !user?.organization?.hasERP) {
+    return <ERPLockedView role={user?.currentRole} />;
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

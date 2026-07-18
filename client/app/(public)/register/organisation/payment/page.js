@@ -68,6 +68,7 @@ export default function PaymentPage() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [includeERP, setIncludeERP] = useState(false);
   
   const [paymentStatus, setPaymentStatus] = useState("");
   const [paymentError, setPaymentError] = useState("");
@@ -79,20 +80,16 @@ export default function PaymentPage() {
   const gstRate = gstData?.gstRate ?? 18;
   const originalPlanPrice = selectedPlan ? Number(selectedPlan.price) : 0;
   
-  let planPrice = originalPlanPrice;
-  let discountAmount = 0;
+  const erpPrice = includeERP ? 1000 : 0;
   
-  if (appliedCoupon && originalPlanPrice > 0) {
-    if (appliedCoupon.discountType === "PERCENTAGE") {
-      discountAmount = (originalPlanPrice * appliedCoupon.discountValue) / 100;
-    } else {
-      discountAmount = appliedCoupon.discountValue;
-    }
-    planPrice = Math.max(0, originalPlanPrice - discountAmount);
-  }
-
-  const gstAmount = (planPrice * gstRate) / 100;
-  const finalPrice = planPrice + gstAmount;
+  const discountAmount = appliedCoupon 
+    ? (appliedCoupon.discountType === 'PERCENTAGE' ? (originalPlanPrice * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue)
+    : 0;
+    
+  const planPrice = Math.max(0, originalPlanPrice - discountAmount);
+  const basePriceWithERP = planPrice + erpPrice;
+  const gstAmount = basePriceWithERP * (gstRate / 100);
+  const finalPrice = basePriceWithERP + gstAmount;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -222,7 +219,7 @@ export default function PaymentPage() {
     setPaymentError("");
 
     try {
-      const payload = { planCode: selectedPlan.code, organization, admin };
+      const payload = { planCode: selectedPlan.code, organization, admin, includeERP };
       if (appliedCoupon) {
         payload.couponCode = appliedCoupon.code;
       }
@@ -388,6 +385,26 @@ export default function PaymentPage() {
                             )}
                             {couponError && <p className="mt-1 text-xs text-red-500">{couponError}</p>}
                           </div>
+                          
+                          <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-900/10">
+                            <label className="flex cursor-pointer items-start gap-3">
+                              <div className="flex h-5 items-center">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+                                  checked={includeERP}
+                                  onChange={(e) => setIncludeERP(e.target.checked)}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <span className={`block text-sm font-bold ${theme.textMain}`}>Add ERP (Funds & Expenses)</span>
+                                <span className={`block text-xs ${theme.textSub}`}>Advanced management for organizational funds and expenses</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">Rs. 1,000</span>
+                              </div>
+                            </label>
+                          </div>
 
                           <div className="rounded-2xl bg-black/5 p-4 dark:bg-white/5 space-y-2 text-sm font-semibold">
                             <div className="flex justify-between text-slate-500 dark:text-slate-400">
@@ -404,8 +421,15 @@ export default function PaymentPage() {
 
                             {appliedCoupon && (
                               <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                                <span>Discounted Price</span>
+                                <span>Discounted Plan Price</span>
                                 <span>Rs. {planPrice.toLocaleString("en-IN")}</span>
+                              </div>
+                            )}
+
+                            {includeERP && (
+                              <div className="flex justify-between text-slate-700 dark:text-slate-300">
+                                <span>ERP Add-on</span>
+                                <span>Rs. 1,000</span>
                               </div>
                             )}
 

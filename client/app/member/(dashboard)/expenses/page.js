@@ -4,8 +4,11 @@ import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
 import { API_BASE_URL } from "@/services/api/baseApi";
+import { useAuthSession } from "@/hooks/useAuthSession";
+import ERPLockedView from "@/components/ERPLockedView";
 
 export default function MemberExpensesPage() {
+  const { user } = useAuthSession();
   const dispatch = useDispatch();
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +24,12 @@ export default function MemberExpensesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchClaims();
-  }, []);
+    if (user?.organization?.hasERP) {
+      fetchClaims();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.organization?.hasERP]);
 
   const fetchClaims = async () => {
     setLoading(true);
@@ -81,6 +88,10 @@ export default function MemberExpensesPage() {
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading expenses...</div>;
+
+  if (user && !user?.organization?.hasERP) {
+    return <ERPLockedView role={user?.currentRole} />;
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">

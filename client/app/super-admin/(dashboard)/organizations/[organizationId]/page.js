@@ -83,6 +83,7 @@ const getFormDefaults = (item) => ({
     item?.attendanceRadius === null || item?.attendanceRadius === undefined
       ? "25"
       : String(item.attendanceRadius),
+  hasERP: Boolean(item?.hasERP),
 });
 
 const getStatusTone = (value) => {
@@ -236,6 +237,7 @@ export default function OrganizationDetailPage() {
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
         attendanceRadius: Number(form.attendanceRadius || 25),
+        hasERP: Boolean(form.hasERP),
       }).unwrap();
 
       setMessage("Organization details updated successfully.");
@@ -336,6 +338,7 @@ export default function OrganizationDetailPage() {
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <StatusBadge value={item.code || "ORG"} />
               <StatusBadge value={item.subscriptionStatus || "TRIAL"} />
+              {item.hasERP && <StatusBadge value="ERP ACTIVE" />}
               <StatusBadge value={item.active ? "ACTIVE" : "INACTIVE"} />
               <StatusBadge value={item.blocked ? "BLOCKED" : "UNBLOCKED"} />
             </div>
@@ -659,6 +662,22 @@ function ProfileTab({
               className="dashboard-field-control w-full"
             />
           </FormField>
+
+          <div className="md:col-span-2">
+            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+              <input
+                type="checkbox"
+                name="hasERP"
+                checked={form.hasERP}
+                onChange={(e) => setForm((prev) => ({ ...prev, hasERP: e.target.checked }))}
+                className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-900 dark:text-white">Enable Funds & Expenses ERP</span>
+                <span className="text-xs text-slate-500">Provide this workspace with access to the advanced financial modules.</span>
+              </div>
+            </label>
+          </div>
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1135,11 +1154,24 @@ function ExtendPlanModal({ isOpen, onClose, organizationId, organization, onExte
                   className="dashboard-field-control dashboard-select-control w-full"
                 >
                   <option value="">Keep current plan ({organization?.plan?.name || "TRIAL"})</option>
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.code}>
-                      {p.name} — ₹{p.price} / {p.durationInDays}d
-                    </option>
-                  ))}
+                  
+                  <optgroup label="Subscription Plans">
+                    {plans.filter(p => !p.code.toUpperCase().includes('ADDON')).map((p) => (
+                      <option key={p.id} value={p.code}>
+                        {p.name} — ₹{p.price} / {p.durationInDays}d
+                      </option>
+                    ))}
+                  </optgroup>
+                  
+                  {plans.some(p => p.code.toUpperCase().includes('ADDON')) && (
+                    <optgroup label="Add-ons">
+                      {plans.filter(p => p.code.toUpperCase().includes('ADDON')).map((p) => (
+                        <option key={p.id} value={p.code}>
+                          {p.name} — ₹{p.price} / {p.durationInDays}d
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </FormField>
             )}

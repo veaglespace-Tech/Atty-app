@@ -190,6 +190,7 @@ export default function PricingPage() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [includeERP, setIncludeERP] = useState(false);
   
   const { data: gstData } = useGetGstRateQuery();
   const gstRate = gstData?.gstRate || 0;
@@ -221,7 +222,7 @@ export default function PricingPage() {
 
   const tiers = useMemo(() => {
     const plans = filterVisiblePlans(rawPlans).filter(
-      (plan) => !isOrgAdminRenewal || !isRenewalRestrictedPlan(plan)
+      (plan) => (!isOrgAdminRenewal || !isRenewalRestrictedPlan(plan)) && plan.code !== "ERP_ADDON"
     );
 
     if (plans.length === 0) return [];
@@ -286,7 +287,7 @@ export default function PricingPage() {
     setProcessingPlanCode(selectedPlan.code);
 
     try {
-      const payload = { planCode: selectedPlan.code };
+      const payload = { planCode: selectedPlan.code, includeERP };
       if (appliedCouponCode) {
         payload.couponCode = appliedCouponCode;
       }
@@ -461,6 +462,30 @@ export default function PricingPage() {
                 <CompactInfoCard label="Users" value={Number(orgUsage.users || 0)} />
                 <CompactInfoCard label="Teams" value={Number(orgUsage.teams || 0)} />
               </div>
+
+              {(() => {
+                const erpPlan = rawPlans?.find(p => p.code === "ERP_ADDON");
+                const erpPrice = erpPlan?.price ? formatPlanPrice(erpPlan.price, erpPlan.currency) : "Rs. 1,000";
+                
+                return !user?.organization?.hasERP && activeSubscription && erpPlan && (
+                  <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-900/10">
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">{erpPlan.name || "Funds & Expenses ERP"}</h4>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Add advanced financial management to your workspace.</p>
+                    <button
+                      onClick={() => {
+                        const currentPlan = rawPlans?.find(p => p.code === activeSubscription.planCode);
+                        if (currentPlan) {
+                          setCheckoutModalPlan(currentPlan);
+                          setIncludeERP(true);
+                        }
+                      }}
+                      className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-black tracking-wide text-white transition hover:bg-blue-700"
+                    >
+                      Add for {erpPrice} + GST
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         ) : (
@@ -766,6 +791,7 @@ export default function PricingPage() {
               onClick={() => {
                 setCheckoutModalPlan(null);
                 removeCoupon();
+                setIncludeERP(false);
               }}
               className="absolute right-6 top-6 text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200"
             >
@@ -814,7 +840,7 @@ export default function PricingPage() {
                     GST ({gstRate}%)
                   </span>
                   <span className="font-bold text-slate-500 dark:text-slate-400">
-                    + Rs. {((Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon ? (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue) : 0))) * (gstRate / 100)).toLocaleString("en-IN")}
+                    + Rs. {(((Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon ? (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue) : 0))) + (includeERP ? 1000 : 0)) * (gstRate / 100)).toLocaleString("en-IN")}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-2 border-t border-slate-200 pt-3 dark:border-slate-700">
@@ -822,10 +848,32 @@ export default function PricingPage() {
                     Total Payable
                   </span>
                   <span className="font-black text-blue-600 dark:text-blue-400 text-xl">
-                    Rs. {((Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon ? (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue) : 0))) * (1 + gstRate / 100)).toLocaleString("en-IN")}
+                    Rs. {(((Math.max(0, Number(checkoutModalPlan.price) - (appliedCoupon ? (appliedCoupon.discountType === 'PERCENTAGE' ? (Number(checkoutModalPlan.price) * appliedCoupon.discountValue) / 100 : appliedCoupon.discountValue) : 0))) + (includeERP ? 1000 : 0)) * (1 + gstRate / 100)).toLocaleString("en-IN")}
                   </span>
                 </div>
               </div>
+
+              {!user?.organization?.hasERP && (
+                <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-900/10">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <div className="flex h-5 items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+                        checked={includeERP}
+                        onChange={(e) => setIncludeERP(e.target.checked)}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <span className="block text-sm font-bold text-slate-900 dark:text-white">Add ERP (Funds & Expenses)</span>
+                      <span className="block text-xs text-slate-600 dark:text-slate-300">Advanced management for organizational funds and expenses</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">Rs. 1,000</span>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
                 <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">

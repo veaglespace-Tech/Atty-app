@@ -198,6 +198,9 @@ export default function SuperAdminPlansPage() {
     ],
     [plans, summaryMap]
   );
+  const subscriptionPlansList = useMemo(() => plans.filter(p => !p.code.toUpperCase().includes('ADDON')), [plans]);
+  const addonPlansList = useMemo(() => plans.filter(p => p.code.toUpperCase().includes('ADDON')), [plans]);
+
   const {
     page,
     pageSize,
@@ -207,9 +210,9 @@ export default function SuperAdminPlansPage() {
     paginatedItems: paginatedPlans,
     setPage,
     setPageSize,
-  } = useLocalPagination(plans, {
+  } = useLocalPagination(subscriptionPlansList, {
     initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.PLANS[0],
-    dependencies: [plans.length],
+    dependencies: [subscriptionPlansList.length],
   });
 
   const onInputChange = (event) => {
@@ -539,91 +542,36 @@ export default function SuperAdminPlansPage() {
       )}
 
       {/* Plans Mini Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {loading ? (
-          Array(4).fill(0).map((_, i) => (
-            <div key={i} className="h-32 rounded-3xl bg-slate-100 animate-pulse border border-slate-200"></div>
-          ))
-        ) : plans.length === 0 ? (
-          <div className="col-span-full py-16 text-center">
-            <Activity className="mx-auto text-slate-200" size={48} />
-            <p className="mt-4 text-slate-400 font-bold">No plans configured yet.</p>
-          </div>
-        ) : (
-          paginatedPlans.map((plan) => (
-            <Link 
-                href={`/super-admin/plans/${plan.id}`} 
-                key={plan.id}
-                className={planTileClassName}
-            >
-                <div className="brand-metric-glow" />
-                <div className="flex items-start justify-between gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                      {formatPlanCodeLabel(plan.code)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={(e) => handleDeletePlan(e, plan)}
-                            className="relative z-10 p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
-                        >
-                            <Trash2 size={14} />
-                        </button>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
-                            plan.active !== false
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-                              : "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300"
-                        }`}>
-                            <div className={`h-1.5 w-1.5 rounded-full ${plan.active !== false ? "bg-emerald-500" : "bg-slate-400"}`}></div>
-                            {plan.active !== false ? "Active" : "Paused"}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="relative mt-6 flex-1">
-                    <h4 className="text-[1.3rem] font-black leading-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-200">
-                      {formatPlanNameLabel(plan.name, plan.code)}
-                    </h4>
-                    <div className="mt-2 flex items-baseline gap-1">
-                        <span className="text-[2rem] font-black tracking-tight text-slate-900 dark:text-white">
-                          Rs. {formatPlanPrice(plan.price)}
-                        </span>
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                          / {formatPlanDurationLong(plan.durationInDays)}
-                        </span>
-                    </div>
-                    <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">
-                      {Number(plan.subscribersTotal || 0)} subscribers
-                      {" · "}
-                      Rs. {formatPlanPrice(plan.revenue || 0)} revenue
-                    </p>
-                </div>
-
-                <div className="relative mt-6 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-300">
-                      Open plan details
-                    </span>
-                    <span className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600 transition-colors group-hover:text-blue-700 dark:text-blue-200 dark:group-hover:text-cyan-200">
-                      View
-                    </span>
-                </div>
-
-                {plan.isDefault && (
-                    <div className="absolute top-0 right-0 h-16 w-16 overflow-hidden">
-                        <div className="absolute top-0 right-0 bg-blue-600 text-[8px] font-black text-white py-1 px-8 translate-x-1/2 translate-y-1/2 rotate-45 shadow-sm">
-                            DEFAULT
-                        </div>
-                    </div>
-                )}
-            </Link>
-          ))
-        )}
+      <div className="mb-4">
+        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4">Subscription Plans</h3>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {loading ? (
+            Array(4).fill(0).map((_, i) => (
+              <div key={i} className="h-32 rounded-3xl bg-slate-100 animate-pulse border border-slate-200"></div>
+            ))
+          ) : subscriptionPlansList.length === 0 ? (
+            <div className="col-span-full py-16 text-center">
+              <Activity className="mx-auto text-slate-200" size={48} />
+              <p className="mt-4 text-slate-400 font-bold">No plans configured yet.</p>
+            </div>
+          ) : (
+            paginatedPlans.map((plan) => (
+              <PlanCard 
+                  key={plan.id} 
+                  plan={plan} 
+                  planTileClassName={planTileClassName} 
+                  handleDeletePlan={handleDeletePlan} 
+              />
+            ))
+          )}
+        </div>
       </div>
 
-      {!loading && plans.length > 0 ? (
+      {!loading && subscriptionPlansList.length > 0 ? (
         <PaginationControls
           page={page}
           pageSize={pageSize}
-          totalItems={plans.length}
+          totalItems={subscriptionPlansList.length}
           totalPages={totalPages}
           startIndex={startIndex}
           endIndex={endIndex}
@@ -633,6 +581,22 @@ export default function SuperAdminPlansPage() {
           label="plans"
         />
       ) : null}
+
+      {!loading && addonPlansList.length > 0 && (
+        <div className="mt-12">
+          <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4">Add-ons</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {addonPlansList.map((plan) => (
+              <PlanCard 
+                  key={plan.id} 
+                  plan={plan} 
+                  planTileClassName={planTileClassName} 
+                  handleDeletePlan={handleDeletePlan} 
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -648,4 +612,72 @@ function MetricCard({ label, value, hint }) {
       </div>
     </div>
   );
+}
+
+function PlanCard({ plan, planTileClassName, handleDeletePlan }) {
+    return (
+        <Link 
+            href={`/super-admin/plans/${plan.id}`} 
+            className={planTileClassName}
+        >
+            <div className="brand-metric-glow" />
+            <div className="flex items-start justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                  {formatPlanCodeLabel(plan.code)}
+                </span>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={(e) => handleDeletePlan(e, plan)}
+                        className="relative z-10 p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                        plan.active !== false
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
+                          : "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300"
+                    }`}>
+                        <div className={`h-1.5 w-1.5 rounded-full ${plan.active !== false ? "bg-emerald-500" : "bg-slate-400"}`}></div>
+                        {plan.active !== false ? "Active" : "Paused"}
+                    </span>
+                </div>
+            </div>
+
+            <div className="relative mt-6 flex-1">
+                <h4 className="text-[1.3rem] font-black leading-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-200">
+                  {formatPlanNameLabel(plan.name, plan.code)}
+                </h4>
+                <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-[2rem] font-black tracking-tight text-slate-900 dark:text-white">
+                      Rs. {formatPlanPrice(plan.price)}
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                      / {formatPlanDurationLong(plan.durationInDays)}
+                    </span>
+                </div>
+                <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">
+                  {Number(plan.subscribersTotal || 0)} subscribers
+                  {" · "}
+                  Rs. {formatPlanPrice(plan.revenue || 0)} revenue
+                </p>
+            </div>
+
+            <div className="relative mt-6 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+                  Open plan details
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600 transition-colors group-hover:text-blue-700 dark:text-blue-200 dark:group-hover:text-cyan-200">
+                  View
+                </span>
+            </div>
+
+            {plan.isDefault && (
+                <div className="absolute top-0 right-0 h-16 w-16 overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-blue-600 text-[8px] font-black text-white py-1 px-8 translate-x-1/2 translate-y-1/2 rotate-45 shadow-sm">
+                        DEFAULT
+                    </div>
+                </div>
+            )}
+        </Link>
+    );
 }

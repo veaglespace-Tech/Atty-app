@@ -424,6 +424,7 @@ const buildSuperAdminOrganizationsPayload = async (limit = 500, filters = {}) =>
       planCode: org.plan?.code || "",
       subscriptionStatus: org.subscriptionStatus,
       subscriptionExpiry: org.subscriptionExpiry,
+      hasERP: Boolean(org.hasERP),
       successfulPayments: paymentStats.successfulPayments,
       totalRevenue: paymentStats.totalRevenue,
       lastPaymentAt: paymentStats.lastPaymentAt,
@@ -685,6 +686,7 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
     attendanceRadius: organization.attendanceRadius || 25,
     subscriptionStatus: organization.subscriptionStatus || "TRIAL",
     subscriptionExpiry: organization.subscriptionExpiry || null,
+    hasERP: Boolean(organization.hasERP),
     blocked: Boolean(organization.isBlocked),
     active: Boolean(organization.isActive),
     agreementPdfUrl: organization.agreementPdfUrl || null,
@@ -1121,6 +1123,13 @@ exports.patchSuperAdminOrganization = asyncHandler(async (req, res) => {
   });
   if (longitude !== undefined) {
     updates.longitude = longitude;
+  }
+
+  if (req.body?.hasERP !== undefined) {
+    const hasERP = parseBoolean(req.body.hasERP, null);
+    if (hasERP !== null) {
+      updates.hasERP = hasERP;
+    }
   }
 
   if (Object.keys(updates).length === 0) {
@@ -2116,6 +2125,7 @@ exports.createSuperAdminOrganization = asyncHandler(async (req, res) => {
         subscriptionStatus: "ACTIVE",
         subscriptionExpiry: expiryDate,
         planId: dbPlan.id,
+        hasERP: Boolean(organization.hasERP),
         isActive: true
       }
     });

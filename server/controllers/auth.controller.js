@@ -876,6 +876,7 @@ const serializeSessionUser = (user, organization = null) => {
           country: org.country || null,
           subscriptionStatus: org.subscriptionStatus || null,
           logoUrl: org.logoUrl || null,
+          hasERP: org.hasERP || false,
           plan: org.plan
             ? {
                 id: org.plan.id,
