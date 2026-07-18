@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -271,6 +271,48 @@ export const orgApi = createApi({
       query: () => "/coupons/my-coupons",
       providesTags: ["OrgCoupons"],
     }),
+    getOrgInstruments: builder.query({
+      query: () => "/org/instruments",
+      providesTags: ["OrgInstruments"],
+    }),
+    createOrgInstrument: builder.mutation({
+      query: (payload) => ({
+        url: "/org/instruments",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgInstruments"],
+    }),
+    assignOrgInstrument: builder.mutation({
+      query: (payload) => ({
+        url: "/org/instruments/assign",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgInstruments", "OrgUsers"],
+    }),
+    deleteOrgInstrument: builder.mutation({
+      query: (id) => ({
+        url: `/org/instruments/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgInstruments", "OrgUsers"], // invalidating both since users might have this instrument
+    }),
+    unassignOrgInstrument: builder.mutation({
+      query: ({ instrumentId, userId }) => ({
+        url: `/org/instruments/assign/${instrumentId}/${userId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgUsers"],
+    }),
+    updateOrgInstrumentAssignment: builder.mutation({
+      query: ({ instrumentId, userId, assetId }) => ({
+        url: `/org/instruments/assign/${instrumentId}/${userId}`,
+        method: "PATCH",
+        body: { assetId },
+      }),
+      invalidatesTags: ["OrgUsers"],
+    }),
   }),
 });
 
@@ -319,4 +361,10 @@ export const {
   useApproveRegularizationRequestMutation,
   useRejectRegularizationRequestMutation,
   useGetOrgCouponsQuery,
+  useGetOrgInstrumentsQuery,
+  useCreateOrgInstrumentMutation,
+  useAssignOrgInstrumentMutation,
+  useDeleteOrgInstrumentMutation,
+  useUnassignOrgInstrumentMutation,
+  useUpdateOrgInstrumentAssignmentMutation,
 } = orgApi;
