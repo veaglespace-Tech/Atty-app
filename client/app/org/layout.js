@@ -10,8 +10,10 @@ const navItems = [
   { label: "Teams", href: "/org/teams", permission: PERMISSIONS.TEAM.VIEW_ALL },
   { label: "Attendance", href: "/org/attendance", permission: PERMISSIONS.ATTENDANCE.VIEW_ALL },
   { label: "Posts", href: "/org/posts", permission: PERMISSIONS.POSTS.CREATE },
+  { label: "Instruments", href: "/org/instruments", permission: PERMISSIONS.USERS.CREATE },
   { label: "Reports", href: "/org/reports", permission: PERMISSIONS.REPORTS.VIEW },
   { label: "Subscription", href: "/org/subscription", permission: PERMISSIONS.SUBSCRIPTION.VIEW },
+
 ];
 
 export default function OrgLayout({ children }) {

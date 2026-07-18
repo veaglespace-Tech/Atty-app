@@ -5,6 +5,7 @@ const navItems = [
   { label: "Dashboard", href: "/member/dashboard" },
   { label: "Attendance", href: "/member/attendance" },
   { label: "Teams", href: "/member/teams", permission: PERMISSIONS.TEAM.VIEW_ALL },
+  { label: "Instruments", href: "/member/instruments" },
   { label: "Posts", href: "/member/posts", permission: PERMISSIONS.POSTS.CREATE },
   { label: "Reports", href: "/member/reports", permission: PERMISSIONS.REPORTS.VIEW },
   { label: "Notifications", href: "/member/notifications" },

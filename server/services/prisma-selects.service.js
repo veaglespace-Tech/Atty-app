@@ -22,6 +22,18 @@ const userManagementSelect = {
   memberships: {
     select: membershipSelect,
   },
+  userInstruments: {
+    select: {
+      assetId: true,
+      assignedAt: true,
+      instrument: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
 };
 
 const userProfileSelect = {

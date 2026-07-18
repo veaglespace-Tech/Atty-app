@@ -53,6 +53,16 @@ const {
   getOrgSubscription,
 } = require("../controllers/org-dashboard.controller");
 const { updateOrgLogo, updateOrgDetails } = require("../controllers/org-settings.controller");
+const {
+  getOrgInstruments,
+  createOrgInstrument,
+  patchOrgInstrument,
+  deleteOrgInstrument,
+  assignInstrumentToUsers,
+  unassignInstrumentFromUser,
+  updateInstrumentAssignment
+} = require("../controllers/org-instrument.controller");
+
 const { userProtected } = require("../middlewares/auth.middleware");
 const { allowRoles } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
@@ -120,5 +130,13 @@ router.get("/attendance/:id", getOrgAttendanceLogById);
 router.get("/regularization-requests", getOrgRegularizationRequests);
 router.patch("/regularization-requests/:id/approve", approveRegularizationRequest);
 router.patch("/regularization-requests/:id/reject", rejectRegularizationRequest);
+
+router.get("/instruments", getOrgInstruments);
+router.post("/instruments", allowRoles("ORG_ADMIN", "SUB_ADMIN"), createOrgInstrument);
+router.patch("/instruments/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN"), patchOrgInstrument);
+router.delete("/instruments/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN"), deleteOrgInstrument);
+router.post("/instruments/assign", allowRoles("ORG_ADMIN", "SUB_ADMIN"), assignInstrumentToUsers);
+router.patch("/instruments/assign/:instrumentId/:userId", allowRoles("ORG_ADMIN", "SUB_ADMIN"), updateInstrumentAssignment);
+router.delete("/instruments/assign/:instrumentId/:userId", allowRoles("ORG_ADMIN", "SUB_ADMIN"), unassignInstrumentFromUser);
 
 module.exports = router;

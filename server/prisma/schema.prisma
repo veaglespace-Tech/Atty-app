@@ -209,6 +209,7 @@ model Organization {
   teams                Team[]
   users                User[]                      @relation("OrganizationUsers")
   regularizations      AttendanceRegularization[]
+  instruments          Instrument[]
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -555,6 +556,7 @@ model User {
   notificationReads           UserNotificationRead[]
   regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
   regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
+  userInstruments             UserInstrument[]
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
@@ -813,4 +815,35 @@ model AttendanceRegularization {
   @@index([orgId, status])
   @@index([userId, date])
   @@map("attendance_regularization")
+}
+
+model Instrument {
+  id          Int      @id @default(autoincrement())
+  orgId       Int
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  users        UserInstrument[]
+
+  @@index([orgId])
+  @@map("instrument")
+}
+
+model UserInstrument {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  instrumentId Int
+  assetId      String?
+  assignedAt   DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, instrumentId])
+  @@index([userId])
+  @@index([instrumentId])
+  @@map("user_instrument")
 }
