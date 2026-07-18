@@ -822,7 +822,7 @@ model AttendanceRegularization {
   @@map("attendance_regularization")
 }
 
-<<<<<<< HEAD
+
 model Stock {
   id        Int          @id @default(autoincrement())
   orgId     Int
@@ -892,7 +892,7 @@ model ExpenseClaim {
   @@index([orgId, status])
   @@index([userId])
   @@map("expense_claim")
-=======
+
 model Instrument {
   id          Int      @id @default(autoincrement())
   orgId       Int
@@ -923,5 +923,5 @@ model UserInstrument {
   @@index([userId])
   @@index([instrumentId])
   @@map("user_instrument")
->>>>>>> 9647cfba39115e5be428d13e26c88dd8ca2d0468
+
 }
