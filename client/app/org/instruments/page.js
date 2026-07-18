@@ -378,7 +378,7 @@ export default function OrgInstrumentsPage() {
               <button 
                 type="button" 
                 onClick={() => setDownloadOpen(!downloadOpen)} 
-                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2"
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <Download size={15} />
                 Download Report
@@ -411,7 +411,7 @@ export default function OrgInstrumentsPage() {
             <button
               type="button"
               onClick={() => setCreateOpen((prev) => !prev)}
-              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2"
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Plus size={15} />
               Add Instrument
