@@ -195,6 +195,7 @@ model Organization {
   agreementPdfPublicId String?
   logoUrl              String?
   logoPublicId         String?
+  fundBalance          Float                       @default(0)
   attendances          Attendance[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
@@ -209,6 +210,9 @@ model Organization {
   teams                Team[]
   users                User[]                      @relation("OrganizationUsers")
   regularizations      AttendanceRegularization[]
+  stockItems           Stock[]                     @relation("OrganizationStock")
+  expenseTransactions  ExpenseTransaction[]        @relation("OrganizationExpenseTransactions")
+  expenseClaims        ExpenseClaim[]              @relation("OrganizationExpenseClaims")
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -555,6 +559,7 @@ model User {
   notificationReads           UserNotificationRead[]
   regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
   regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
+  expenseClaims               ExpenseClaim[]              @relation("UserExpenseClaims")
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
@@ -813,4 +818,75 @@ model AttendanceRegularization {
   @@index([orgId, status])
   @@index([userId, date])
   @@map("attendance_regularization")
+}
+
+model Stock {
+  id        Int          @id @default(autoincrement())
+  orgId     Int
+  name      String
+  type      String
+  quantity  Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  organization Organization @relation("OrganizationStock", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("stock")
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  CLAIM_SETTLEMENT
+}
+
+model ExpenseTransaction {
+  id        Int             @id @default(autoincrement())
+  orgId     Int
+  type      TransactionType
+  amount          Float
+  title           String
+  description     String?         @db.Text
+  items           Json?
+  receiptUrl      String?
+  receiptPublicId String?
+  createdAt       DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  organization Organization   @relation("OrganizationExpenseTransactions", fields: [orgId], references: [id], onDelete: Cascade)
+  claims       ExpenseClaim[] @relation("ClaimTransaction")
+
+  @@index([orgId, type])
+  @@map("expense_transaction")
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ExpenseClaim {
+  id              Int          @id @default(autoincrement())
+  orgId           Int
+  userId          Int
+  claimNo         String?      @unique
+  expenseType     String
+  description     String?      @db.Text
+  amount          Float
+  receiptUrl      String?
+  receiptPublicId String?
+  status          ClaimStatus  @default(PENDING)
+  transactionId   Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization  Organization        @relation("OrganizationExpenseClaims", fields: [orgId], references: [id], onDelete: Cascade)
+  user          User                @relation("UserExpenseClaims", fields: [userId], references: [id], onDelete: Cascade)
+  transaction   ExpenseTransaction? @relation("ClaimTransaction", fields: [transactionId], references: [id])
+
+  @@index([orgId, status])
+  @@index([userId])
+  @@map("expense_claim")
 }

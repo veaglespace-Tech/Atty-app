@@ -65,6 +65,7 @@ function getNavIcon(label) {
   }
   if (normalized.includes("organization")) return Building2;
   if (normalized.includes("referral")) return UserPlus;
+  if (normalized.includes("expense") || normalized.includes("fund") || normalized.includes("claim")) return CreditCard;
   return ShieldCheck;
 }
 
@@ -88,6 +89,7 @@ function getNavColor(label) {
   }
   if (normalized.includes("organization")) return "text-blue-600 dark:text-blue-400";
   if (normalized.includes("referral")) return "text-emerald-500 dark:text-emerald-400";
+  if (normalized.includes("expense") || normalized.includes("fund") || normalized.includes("claim")) return "text-amber-500 dark:text-amber-400";
   return "text-slate-500 dark:text-slate-400";
 }
 

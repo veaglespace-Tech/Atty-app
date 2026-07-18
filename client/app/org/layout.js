@@ -11,6 +11,7 @@ const navItems = [
   { label: "Attendance", href: "/org/attendance", permission: PERMISSIONS.ATTENDANCE.VIEW_ALL },
   { label: "Posts", href: "/org/posts", permission: PERMISSIONS.POSTS.CREATE },
   { label: "Reports", href: "/org/reports", permission: PERMISSIONS.REPORTS.VIEW },
+  { label: "Funds & Expenses", href: "/org/expenses" },
   { label: "Subscription", href: "/org/subscription", permission: PERMISSIONS.SUBSCRIPTION.VIEW },
 ];
 

@@ -9,6 +9,7 @@ const navItems = [
   { label: "Requests", href: "/team-leader/requests", permission: PERMISSIONS.USERS.UPDATE_STATUS },
   { label: "Posts", href: "/team-leader/posts", permission: PERMISSIONS.POSTS.CREATE },
   { label: "Reports", href: "/team-leader/reports", permission: PERMISSIONS.REPORTS.VIEW },
+  { label: "Expenses", href: "/team-leader/expenses" },
   { label: "Subscription", href: "/team-leader/subscription", permission: PERMISSIONS.SUBSCRIPTION.VIEW },
   { label: "Notifications", href: "/team-leader/notifications" },
 ];

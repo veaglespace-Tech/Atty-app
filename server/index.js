@@ -1,5 +1,5 @@
 require("./config/load-env")();
-// Trigger build comment
+// trigger restart 2
 const express = require("express");
 const compression = require("compression");
 const cors = require("cors");
@@ -92,7 +92,9 @@ app.use("/api/contact", require("./routes/contact.route"));
 app.use("/api/coupons", require("./routes/coupon.route"));
 app.use("/api/partner-referral", require("./routes/partner-referral.route"));
 app.use("/api/roles", require("./routes/role.route"));
-
+app.use("/api/org/stock", require("./routes/stock.route"));
+app.use("/api/org/expenses", require("./routes/expenses.route"));
+app.use("/api/claims", require("./routes/claims.route"));
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "resource not found" });
 });
@@ -175,3 +177,5 @@ module.exports = {
   startServer,
   shutdownServer,
 };
+
+// trigger restart
