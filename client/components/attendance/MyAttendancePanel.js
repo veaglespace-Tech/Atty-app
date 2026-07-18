@@ -226,7 +226,7 @@ export default function MyAttendancePanel({
           <button
             type="button"
             onClick={() => setPendingPunchType("in")}
-            disabled={!canPunchIn || actionLoading !== ""}
+            disabled={loading || !canPunchIn || actionLoading !== ""}
             className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {actionLoading === "in" ? <Loader2 size={16} className="animate-spin" /> : <MapPinned size={16} />}
@@ -236,7 +236,7 @@ export default function MyAttendancePanel({
           <button
             type="button"
             onClick={() => setPendingPunchType("out")}
-            disabled={!canPunchOut || actionLoading !== ""}
+            disabled={loading || !canPunchOut || actionLoading !== ""}
             className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
           >
             {actionLoading === "out" ? <Loader2 size={16} className="animate-spin" /> : <Timer size={16} />}
@@ -247,7 +247,7 @@ export default function MyAttendancePanel({
             <button
               type="button"
               onClick={() => submitPunch("home")}
-              disabled={!canReachedHome || actionLoading !== ""}
+              disabled={loading || !canReachedHome || actionLoading !== ""}
               className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
             >
               {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <Home size={16} />}
