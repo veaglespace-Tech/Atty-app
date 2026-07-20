@@ -33,7 +33,7 @@ export const authFieldErrorClassName =
 
 
 
-export default function AuthPageShell(props) {
+export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassName="", eyebrow, title, description, children, footer }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, CalendarCheck2, Users, Settings } from 'lucide-react-native';
+import { Home, CalendarCheck2, Users, Settings, CreditCard } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -74,6 +74,14 @@ export default function MemberLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="instruments"
+        options={{
+          title: 'Instruments',
+          tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
+          href: user?.organization?.hasERP ? undefined : null,
         }}
       />
       <Tabs.Screen name="posts" options={{ href: null }} />

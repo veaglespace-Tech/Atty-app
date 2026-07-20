@@ -15,13 +15,14 @@ import AuthPageShell, {
   authFieldNormalClassName } from
 '@/components/auth/AuthPageShell';
 import { useAuthSession } from '@/hooks/useAuthSession';
-import { useUserSignInMutation } from '@/services/api/authApi';
+import { useUserSignInMutation, useVerifySuperAdminOtpMutation } from '@/services/api/authApi';
 import { setSession } from '@/store/slices/authSlice';
 import { resolveDashboardPath } from '@/utils/roles';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password is too long')
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password is too long'),
+  otp: z.string().optional()
 });
 
 export default function LoginPage() {
@@ -30,6 +31,10 @@ export default function LoginPage() {
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const currentRole = user?.currentRole;
   const [userSignIn] = useUserSignInMutation();
+  const [verifyOtp, { isLoading: isOtpVerifying }] = useVerifySuperAdminOtpMutation();
+
+  const [step, setStep] = useState('LOGIN');
+  const [loginData, setLoginData] = useState(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -41,7 +46,7 @@ export default function LoginPage() {
     formState: { errors, isSubmitting }
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' }
+    defaultValues: { email: '', password: '', otp: '' }
   });
 
   useEffect(() => {
@@ -88,18 +93,45 @@ export default function LoginPage() {
   const onSubmit = async (values) => {
     try {
       setAuthError("");
-      const result = await userSignIn(values).unwrap();
-      dispatch(setSession(result));
       
-      // Save credentials for future biometric login
-      try {
-        await SecureStore.setItemAsync('userEmail', values.email);
-        await SecureStore.setItemAsync('userPassword', values.password);
-      } catch (e) {
-        console.log("Failed to securely store credentials", e);
+      if (step === 'LOGIN') {
+        const result = await userSignIn(values).unwrap();
+        
+        if (result.requires2FA) {
+          setLoginData(values);
+          setStep('OTP');
+          return;
+        }
+
+        dispatch(setSession(result));
+        
+        // Save credentials for future biometric login
+        try {
+          await SecureStore.setItemAsync('userEmail', values.email);
+          await SecureStore.setItemAsync('userPassword', values.password);
+        } catch (e) {
+          console.log("Failed to securely store credentials", e);
+        }
+        const nextPath = resolveDashboardPath(result.user?.currentRole, result.redirectPath || result.user?.dashboardPath) || "/member/dashboard";
+        router.replace(nextPath);
+      } else if (step === 'OTP') {
+        const otpPayload = {
+          email: loginData.email,
+          password: loginData.password,
+          otp: values.otp,
+        };
+        const result = await verifyOtp(otpPayload).unwrap();
+        dispatch(setSession(result));
+        
+        try {
+          await SecureStore.setItemAsync('userEmail', loginData.email);
+          await SecureStore.setItemAsync('userPassword', loginData.password);
+        } catch (e) {
+          console.log("Failed to securely store credentials", e);
+        }
+        const nextPath = resolveDashboardPath(result.user?.currentRole, result.redirectPath || result.user?.dashboardPath) || "/super-admin/dashboard";
+        router.replace(nextPath);
       }
-      const nextPath = resolveDashboardPath(result.user?.currentRole, result.redirectPath || result.user?.dashboardPath) || "/member/dashboard";
-      router.replace(nextPath);
     } catch (err) {
       setAuthError(err?.data?.message || "Invalid credentials. Please try again.");
     }
@@ -124,104 +156,146 @@ export default function LoginPage() {
           null}
 
           <View className="space-y-5 sm:space-y-6 gap-5">
-            <View className="group relative">
-              <Text className="mb-1.5 ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Email Address
-              </Text>
-              <View className="relative justify-center">
-                <View className="absolute left-4 z-10">
-                  <Mail size={20} className="text-slate-400" />
-                </View>
-                <Controller
-                  control={control}
-                  name="email"
-                  render={({ field: { onChange, onBlur, value } }) =>
-                  <TextInput
-                    className={`${authFieldClassName} pl-12 pr-4 ${
-                    errors.email ? authFieldErrorClassName : authFieldNormalClassName}`
-                    }
-                    placeholder="name@company.com"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value} />
-
-                  } />
-                
-              </View>
-              {errors.email ?
-              <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
-                  {errors.email.message}
-                </Text> :
-              null}
-            </View>
-
-            <View className="group relative">
-              <View className="mb-1.5 flex-row items-center justify-between">
-                <Text className="ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Password
-                </Text>
-                <Link href={"/forgot-password"} asChild>
-                  <Text className="text-xs font-bold text-blue-600 dark:text-blue-300">
-                    Forgot Password?
+            {step === 'LOGIN' && (
+              <>
+                <View className="group relative">
+                  <Text className="mb-1.5 ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    Email Address
                   </Text>
-                </Link>
-              </View>
-              <View className="relative justify-center">
-                <View className="absolute left-4 z-10">
-                  <Lock size={20} className="text-slate-400" />
+                  <View className="relative justify-center">
+                    <View className="absolute left-4 z-10">
+                      <Mail size={20} className="text-slate-400" />
+                    </View>
+                    <Controller
+                      control={control}
+                      name="email"
+                      render={({ field: { onChange, onBlur, value } }) =>
+                      <TextInput
+                        className={`${authFieldClassName} pl-12 pr-4 ${
+                        errors.email ? authFieldErrorClassName : authFieldNormalClassName}`
+                        }
+                        placeholder="name@company.com"
+                        placeholderTextColor="#94a3b8"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value} />
+                    } />
+                  </View>
+                  {errors.email ?
+                  <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                      {errors.email.message}
+                    </Text> :
+                  null}
                 </View>
-                <Controller
-                  control={control}
-                  name="password"
-                  render={({ field: { onChange, onBlur, value } }) =>
-                  <TextInput
-                    className={`${authFieldClassName} pl-12 pr-12 ${
-                    errors.password ? authFieldErrorClassName : authFieldNormalClassName}`
-                    }
-                    placeholder="Enter your password"
-                    placeholderTextColor="#94a3b8"
-                    secureTextEntry={!showPassword}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value} />
 
+                <View className="group relative">
+                  <View className="mb-1.5 flex-row items-center justify-between">
+                    <Text className="ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      Password
+                    </Text>
+                    <Link href={"/forgot-password"} asChild>
+                      <Text className="text-xs font-bold text-blue-600 dark:text-blue-300">
+                        Forgot Password?
+                      </Text>
+                    </Link>
+                  </View>
+                  <View className="relative justify-center">
+                    <View className="absolute left-4 z-10">
+                      <Lock size={20} className="text-slate-400" />
+                    </View>
+                    <Controller
+                      control={control}
+                      name="password"
+                      render={({ field: { onChange, onBlur, value } }) =>
+                      <TextInput
+                        className={`${authFieldClassName} pl-12 pr-12 ${
+                        errors.password ? authFieldErrorClassName : authFieldNormalClassName}`
+                        }
+                        placeholder="Enter your password"
+                        placeholderTextColor="#94a3b8"
+                        secureTextEntry={!showPassword}
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value} />
+                    } />
+                    <Pressable
+                      className="absolute right-4 z-10 p-2"
+                      onPress={() => setShowPassword(!showPassword)}>
+                      {showPassword ?
+                      <EyeOff size={20} className="text-slate-400" /> :
+                      <Eye size={20} className="text-slate-400" />
+                      }
+                    </Pressable>
+                  </View>
+                  {errors.password ?
+                  <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                      {errors.password.message}
+                    </Text> :
+                  null}
+                </View>
+              </>
+            )}
+
+            {step === 'OTP' && (
+              <View className="group relative">
+                <Text className="mb-1.5 ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Verification Code (OTP)
+                </Text>
+                <Text className="text-sm text-slate-500 dark:text-slate-400 mb-4 ml-1">
+                  Please enter the 6-digit code sent to your email.
+                </Text>
+                <View className="relative justify-center">
+                  <View className="absolute left-4 z-10">
+                    <Lock size={20} className="text-slate-400" />
+                  </View>
+                  <Controller
+                    control={control}
+                    name="otp"
+                    render={({ field: { onChange, onBlur, value } }) =>
+                    <TextInput
+                      className={`${authFieldClassName} pl-12 pr-4 ${
+                      errors.otp ? authFieldErrorClassName : authFieldNormalClassName}`
+                      }
+                      placeholder="123456"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value} />
                   } />
+                </View>
+                {errors.otp ?
+                <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                    {errors.otp.message}
+                  </Text> :
+                null}
                 
-                <Pressable
-                  className="absolute right-4 z-10 p-2"
-                  onPress={() => setShowPassword(!showPassword)}>
-                  
-                  {showPassword ?
-                  <EyeOff size={20} className="text-slate-400" /> :
-
-                  <Eye size={20} className="text-slate-400" />
-                  }
+                <Pressable onPress={() => setStep('LOGIN')} className="mt-4">
+                  <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    Back to login
+                  </Text>
                 </Pressable>
               </View>
-              {errors.password ?
-              <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
-                  {errors.password.message}
-                </Text> :
-              null}
-            </View>
+            )}
 
             <Pressable
-              disabled={isSubmitting}
+              disabled={isSubmitting || isOtpVerifying}
               onPress={handleSubmit(onSubmit)}
               className="group mt-2 flex-row w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 shadow-[0_28px_70px_rgba(59,130,246,0.32)] active:scale-95 dark:bg-blue-400 dark:shadow-[0_24px_60px_rgba(37,99,235,0.24)]">
               
-              {isSubmitting ?
+              {isSubmitting || isOtpVerifying ?
               <ActivityIndicator color="white" /> :
-
               <ArrowRight size={20} color="white" className="dark:text-slate-950" />
               }
-              <Text className="font-black text-white dark:text-slate-950 text-base">Sign In</Text>
+              <Text className="font-black text-white dark:text-slate-950 text-base">
+                {step === 'LOGIN' ? 'Sign In' : 'Verify & Sign In'}
+              </Text>
             </Pressable>
 
-            {hasBiometrics && storedCredentials && (
+            {hasBiometrics && storedCredentials && step === 'LOGIN' && (
               <Pressable
                 disabled={isSubmitting}
                 onPress={handleBiometricLogin}

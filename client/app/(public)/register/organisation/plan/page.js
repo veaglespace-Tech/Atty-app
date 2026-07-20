@@ -57,7 +57,7 @@ export default function Plans() {
   }, [router]);
 
   const tiers = useMemo(() => {
-    const plans = filterVisiblePlans(rawPlans);
+    const plans = filterVisiblePlans(rawPlans).filter(p => p.code !== "ERP_ADDON");
     if (plans.length === 0) return [];
 
     const grouped = plans.reduce((acc, plan) => {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator, TextInput, Modal } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Receipt, Users as UsersIcon, ShieldAlert, Mail, Phone, MapPin, User, Briefcase, Building2, Ban, Power, Pencil, Save, X, CalendarClock, Download } from "lucide-react-native";
+import { ChevronLeft, Receipt, Users as UsersIcon, ShieldAlert, Mail, Phone, MapPin, User, Briefcase, Building2, Ban, Power, Pencil, Save, X, CalendarClock, Download, Layers } from "lucide-react-native";
 import { 
   useGetSuperAdminOrganizationByIdQuery, 
   useGetSuperAdminOrganizationUsersQuery, 
@@ -67,6 +67,7 @@ export default function OrganizationDetailsPage() {
       attendanceRadius: String(orgData.attendanceRadius || 25),
       latitude: String(orgData.latitude || ""),
       longitude: String(orgData.longitude || ""),
+      hasERP: orgData.hasERP || false,
     });
     setEditMode(true);
   };
@@ -422,6 +423,19 @@ export default function OrganizationDetailsPage() {
                   <Text className="text-xs font-bold text-slate-500 mb-1">Attendance Radius (m)</Text>
                   <TextInput value={form.attendanceRadius} onChangeText={(t) => setForm({...form, attendanceRadius: t})} className="bg-slate-50 dark:bg-[#1E293B]/50 p-4 rounded-xl border border-slate-200 dark:border-[#1E293B] text-slate-900 dark:text-white" keyboardType="numeric" />
                 </View>
+                
+                <View className="flex-row items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-[#1E293B]/50 mt-2">
+                  <View>
+                    <Text className="text-xs font-bold text-slate-900 dark:text-white">ERP Module Access</Text>
+                    <Text className="text-[10px] text-slate-500">Enable Funds & Expenses / Instruments</Text>
+                  </View>
+                  <Pressable 
+                    onPress={() => setForm(prev => ({ ...prev, hasERP: !prev.hasERP }))}
+                    className={`w-12 h-6 rounded-full flex-row items-center px-1 transition-colors ${form.hasERP ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                  >
+                    <View className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${form.hasERP ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </Pressable>
+                </View>
               </View>
             ) : (
               <View className="flex-row flex-wrap gap-y-4 justify-between">
@@ -435,6 +449,7 @@ export default function OrganizationDetailsPage() {
                 {renderOverviewField("Country", org.country || "-")}
                 {renderOverviewField("Attendance Radius", `${org.attendanceRadius || 25} m`)}
                 {renderOverviewField("Coordinates", org.latitude || org.longitude ? `${org.latitude || "-"}, ${org.longitude || "-"}` : "-")}
+                {renderOverviewField("ERP Module", org.hasERP ? "Enabled" : "Disabled")}
                 {org.agreementPdfUrl && (
                   <View className="w-[48%] border border-slate-200 dark:border-[#1E293B] rounded-xl p-4 bg-transparent mb-3">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Agreement PDF</Text>

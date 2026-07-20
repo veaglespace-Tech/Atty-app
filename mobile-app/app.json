@@ -4,17 +4,17 @@
     "slug": "atty",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/attyLogo.png",
+    "icon": "./assets/images/atty-icon.png",
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/attyLogo.png",
+      "icon": "./assets/images/atty-icon.png",
       "bundleIdentifier": "com.veaglespace.atty"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/attyLogo.png"
+        "foregroundImage": "./assets/images/atty-adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.veaglespace.atty"

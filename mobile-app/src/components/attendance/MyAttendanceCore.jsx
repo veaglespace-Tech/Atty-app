@@ -256,20 +256,20 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
         <View className="flex-row flex-wrap gap-3">
           <Pressable
             onPress={() => setPendingPunchType("in")}
-            disabled={!canPunchIn || actionLoading !== ""}
-            className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchIn ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
+            disabled={!canPunchIn || actionLoading !== "" || loading}
+            className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchIn || loading ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
             
-            {actionLoading === "in" ? <ActivityIndicator color="white" /> : <MapPinned size={18} color={!canPunchIn ? "#94a3b8" : "white"} />}
-            <Text className={`font-bold ml-2 ${!canPunchIn ? 'text-slate-400' : 'text-white'}`}>Punch In</Text>
+            {actionLoading === "in" || loading ? <ActivityIndicator color={!canPunchIn || loading ? "#94a3b8" : "white"} /> : <MapPinned size={18} color={!canPunchIn || loading ? "#94a3b8" : "white"} />}
+            <Text className={`font-bold ml-2 ${!canPunchIn || loading ? 'text-slate-400' : 'text-white'}`}>Punch In</Text>
           </Pressable>
 
           <Pressable
             onPress={() => setPendingPunchType("out")}
-            disabled={!canPunchOut || actionLoading !== ""}
-            className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchOut ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
+            disabled={!canPunchOut || actionLoading !== "" || loading}
+            className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchOut || loading ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
             
-            {actionLoading === "out" ? <ActivityIndicator color="white" /> : <Timer size={18} color={!canPunchOut ? "#94a3b8" : "white"} />}
-            <Text className={`font-bold ml-2 ${!canPunchOut ? 'text-slate-400' : 'text-white'}`}>Punch Out</Text>
+            {actionLoading === "out" || loading ? <ActivityIndicator color={!canPunchOut || loading ? "#94a3b8" : "white"} /> : <Timer size={18} color={!canPunchOut || loading ? "#94a3b8" : "white"} />}
+            <Text className={`font-bold ml-2 ${!canPunchOut || loading ? 'text-slate-400' : 'text-white'}`}>Punch Out</Text>
           </Pressable>
         </View>
 

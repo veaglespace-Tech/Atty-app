@@ -90,7 +90,7 @@ export default function SuperAdminOrganizationsPage() {
   const summary = useMemo(() => (Array.isArray(data?.summary) ? data.summary : []), [data]);
   const organizations = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
   const summaryMap = useMemo(() => toSummaryMap(summary), [summary]);
-  const plans = useMemo(() => (Array.isArray(plansData?.items) ? plansData.items : []), [plansData]);
+  const plans = useMemo(() => (Array.isArray(plansData?.items) ? plansData.items.filter(p => p.code !== "ERP_ADDON") : []), [plansData]);
   const loading = isLoading || isFetching;
 
 
@@ -366,6 +366,9 @@ export default function SuperAdminOrganizationsPage() {
                     <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       Subscription
                     </th>
+                    <th className="px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      ERP
+                    </th>
                     <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       Access
                     </th>
@@ -395,6 +398,17 @@ export default function SuperAdminOrganizationsPage() {
                         >
                           {organization.subscriptionStatus || "TRIAL"}
                         </span>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {organization.hasERP ? (
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                            YES
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-slate-50 px-2 py-1 text-xs font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                            NO
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <span
@@ -493,6 +507,7 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
       country: "India",
       latitude: "",
       longitude: "",
+      hasERP: false,
     },
     admin: {
       name: "",
@@ -528,7 +543,7 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
       onClose();
       // Reset form
       setForm({
-        organization: { name: "", email: "", phone: "", phoneCountryCode: "+91", address: "", city: "", state: "", country: "India", latitude: "", longitude: "" },
+        organization: { name: "", email: "", phone: "", phoneCountryCode: "+91", address: "", city: "", state: "", country: "India", latitude: "", longitude: "", hasERP: false },
         admin: { name: "", email: "", mobile: "", mobileCountryCode: "+91", password: "" },
         planCode: "",
       });
@@ -612,6 +627,18 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
                       />
                     </FormField>
                   </div>
+                  <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <input
+                      type="checkbox"
+                      checked={form.organization.hasERP}
+                      onChange={(e) => onChange("organization", "hasERP", e.target.checked)}
+                      className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">Include Funds & Expenses ERP</span>
+                      <span className="text-xs text-slate-500">Provide this workspace with access to the financial modules.</span>
+                    </div>
+                  </label>
                 </div>
               </div>
 
@@ -665,7 +692,7 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
             <div className="space-y-5">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">Subscription Plan</h4>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-4">
-                {plans.map((plan) => (
+                {plans.filter(p => !p.code.toUpperCase().includes('ADDON')).map((plan) => (
                   <button
                     key={plan.id}
                     type="button"
@@ -685,6 +712,33 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
                   </button>
                 ))}
               </div>
+
+              {plans.some(p => p.code.toUpperCase().includes('ADDON')) && (
+                <>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mt-4">Add-ons</h4>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-4">
+                    {plans.filter(p => p.code.toUpperCase().includes('ADDON')).map((plan) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => setForm(prev => ({ ...prev, planCode: plan.code }))}
+                        className={`relative flex flex-col rounded-[1.5rem] border p-4 text-left transition-all ${
+                          form.planCode === plan.code
+                            ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20 dark:bg-blue-500/10"
+                            : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900"
+                        }`}
+                      >
+                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{plan.name}</p>
+                        <p className="mt-1 text-lg font-black text-blue-600">₹{plan.price}</p>
+                        <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{plan.durationInDays} Days</p>
+                        {form.planCode === plan.code && (
+                          <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

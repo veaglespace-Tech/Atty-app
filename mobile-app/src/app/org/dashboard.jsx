@@ -1,16 +1,27 @@
 import React from "react";
-import { View, Text, ActivityIndicator, RefreshControl, ScrollView, Pressable } from "react-native";
+import { View, Text, ActivityIndicator, RefreshControl, ScrollView, Pressable, Share } from "react-native";
 import { useGetOrgDashboardQuery } from "@/services/api/orgApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
-import { QrCode } from "lucide-react-native";
+import { QrCode, Copy, Share2 } from "lucide-react-native";
 export default function OrgDashboard() {
   const { data, isLoading, isFetching, refetch } = useGetOrgDashboardQuery(undefined);
   const { user } = useAuthSession();
 
   const summary = data?.summary || [];
   const records = data?.items || [];
+  const referralCode = user?.organization?.referralCode || "";
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Join ${user?.organization?.name} on Veagle Attendee! Use my referral code: ${referralCode}`,
+      });
+    } catch (error) {
+      console.log("Error sharing", error);
+    }
+  };
 
   return (
     
@@ -47,6 +58,20 @@ export default function OrgDashboard() {
 
             </View>
           </View>
+
+          {/* REFERRAL CODE SECTION */}
+          {referralCode ? (
+            <View className="mb-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm p-4">
+              <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">My Org Referral Code</Text>
+              <View className="flex-row items-center justify-between">
+                <Text className="text-xl font-bold text-slate-900 dark:text-white">{referralCode}</Text>
+                <Pressable onPress={handleShare} className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl">
+                  <Share2 size={16} className="text-slate-700 dark:text-slate-300" />
+                  <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">Share</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
 
           {isLoading ? (
             <View className="py-8 items-center">

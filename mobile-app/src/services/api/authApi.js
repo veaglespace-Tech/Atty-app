@@ -72,6 +72,13 @@ export const authApi = createApi({
         body: userData,
       }),
     }),
+    verifySuperAdminOtp: builder.mutation({
+      query: (payload) => ({
+        url: "/auth/verify-super-admin-otp",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     adminSignout: builder.mutation({
       query: () => ({
         url: "/auth/logout",
@@ -112,6 +119,7 @@ export const {
   useResetPasswordMutation,
   useUserSignOutMutation,
   useAdminSigninMutation,
+  useVerifySuperAdminOtpMutation,
   useAdminSignoutMutation,
   useValidateReferralCodeQuery,
   useJoinOrganizationMutation,

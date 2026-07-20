@@ -23,7 +23,7 @@ import {
   autofillGuardPasswordProps,
 } from "@/components/auth/AuthAutofillGuard";
 import { useAuthSession } from "@/hooks/useAuthSession";
-import { useAdminSigninMutation } from "@/services/api/authApi";
+import { useAdminSigninMutation, useVerifySuperAdminOtpMutation } from "@/services/api/authApi";
 import { setSession } from "@/store/slices/authSlice";
 import { resolveDashboardPath, ROLES } from "@/utils/roles";
 import { getErrorMessage, normalizeEmailInput } from "@/utils/formValidation";
@@ -34,6 +34,7 @@ const superAdminLoginSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password is too long"),
+  otp: z.string().optional(),
   rememberMe: z.boolean().optional(),
 });
 
@@ -48,7 +49,10 @@ export default function SuperAdminLoginPage() {
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const currentRole = user?.currentRole;
   const [adminSignin, { error: apiError }] = useAdminSigninMutation();
-
+  const [verifyOtp, { error: otpApiError, isLoading: isOtpVerifying }] = useVerifySuperAdminOtpMutation();
+  
+  const [step, setStep] = React.useState("LOGIN");
+  const [loginData, setLoginData] = React.useState(null);
 
   const {
     control,
@@ -108,15 +112,39 @@ export default function SuperAdminLoginPage() {
         localStorage.removeItem("attendee_superadmin_saved_email");
       }
 
-      const result = await adminSignin(payload).unwrap();
-      dispatch(setSession(result));
+      if (step === "LOGIN") {
+        const result = await adminSignin(payload).unwrap();
+        
+        if (result.requires2FA) {
+          setLoginData(payload);
+          setStep("OTP");
+          return;
+        }
 
-      const nextPath =
-        resolveDashboardPath(
-          result.user?.currentRole,
-          result.redirectPath || result.user?.dashboardPath
-        ) || "/super-admin/dashboard";
-      router.replace(nextPath);
+        // Handle case where OTP is somehow bypassed or not required
+        dispatch(setSession(result));
+        const nextPath =
+          resolveDashboardPath(
+            result.user?.currentRole,
+            result.redirectPath || result.user?.dashboardPath
+          ) || "/super-admin/dashboard";
+        router.replace(nextPath);
+      } else if (step === "OTP") {
+        const otpPayload = {
+          email: loginData.email,
+          password: loginData.password,
+          otp: values.otp,
+          rememberMe: loginData.rememberMe,
+        };
+        const result = await verifyOtp(otpPayload).unwrap();
+        dispatch(setSession(result));
+        const nextPath =
+          resolveDashboardPath(
+            result.user?.currentRole,
+            result.redirectPath || result.user?.dashboardPath
+          ) || "/super-admin/dashboard";
+        router.replace(nextPath);
+      }
     } catch (err) {
       if (shouldReportUnexpectedAuthError(err)) {
         console.error("Super Admin Login failed:", getErrorMessage(err, "Unable to sign in"));
@@ -157,80 +185,119 @@ export default function SuperAdminLoginPage() {
               noValidate
               className="space-y-5 sm:space-y-6"
             >
-              <AuthAutofillTrap />
+              {step === "LOGIN" && (
+                <>
+                  <AuthAutofillTrap />
 
-              <div className="group relative">
-                <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                    <Mail size={20} />
-                  </span>
-                  <input
-                    type="email"
-                    placeholder="super@admin.com"
-                    className={`${authFieldClassName} !pl-12 ${errors.email ? authFieldErrorClassName : authFieldNormalClassName}`}
-                    {...register("email")}
-                    {...autofillGuardEmailProps}
-                  />
-                </div>
-                {errors.email ? (
-                  <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
-                    {errors.email.message}
-                  </p>
-                ) : null}
-              </div>
+                  <div className="group relative">
+                    <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
+                        <Mail size={20} />
+                      </span>
+                      <input
+                        type="email"
+                        placeholder="super@admin.com"
+                        className={`${authFieldClassName} !pl-12 ${errors.email ? authFieldErrorClassName : authFieldNormalClassName}`}
+                        {...register("email")}
+                        {...autofillGuardEmailProps}
+                      />
+                    </div>
+                    {errors.email ? (
+                      <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                        {errors.email.message}
+                      </p>
+                    ) : null}
+                  </div>
 
-              <div className="group relative">
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    Password
+                  <div className="group relative">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label className="ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Password
+                      </label>
+                      <Link
+                        href={forgotPasswordHref}
+                        className="text-xs font-bold text-blue-600 transition hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
+                    <PasswordInput
+                      icon={Lock}
+                      placeholder="Super secret password"
+                      className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
+                      {...register("password")}
+                      {...autofillGuardPasswordProps}
+                    />
+                    {errors.password ? (
+                      <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                        {errors.password.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-800"
+                      {...register("rememberMe")}
+                    />
+                    <label htmlFor="rememberMe" className="ml-2 block cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Remember me
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {step === "OTP" && (
+                <div className="group relative">
+                  <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    Verification Code (OTP)
                   </label>
-                  <Link
-                    href={forgotPasswordHref}
-                    className="text-xs font-bold text-blue-600 transition hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
-                  >
-                    Forgot Password?
-                  </Link>
-                </div>
-                <PasswordInput
-                  icon={Lock}
-                  placeholder="Super secret password"
-                  className={`${authFieldClassName} !pl-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
-                  {...register("password")}
-                  {...autofillGuardPasswordProps}
-                />
-                {errors.password ? (
-                  <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
-                    {errors.password.message}
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 ml-1">
+                    Please enter the 6-digit code sent to your email.
                   </p>
-                ) : null}
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-800"
-                  {...register("rememberMe")}
-                />
-                <label htmlFor="rememberMe" className="ml-2 block cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Remember me
-                </label>
-              </div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
+                      <Lock size={20} />
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="123456"
+                      className={`${authFieldClassName} !pl-12 ${errors.otp ? authFieldErrorClassName : authFieldNormalClassName}`}
+                      {...register("otp", { required: "OTP is required" })}
+                    />
+                  </div>
+                  {errors.otp ? (
+                    <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                      {errors.otp.message}
+                    </p>
+                  ) : null}
+                  <button 
+                    type="button" 
+                    onClick={() => setStep("LOGIN")}
+                    className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    Back to login
+                  </button>
+                </div>
+              )}
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isOtpVerifying}
                 className="mt-2 flex w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 font-black text-white shadow-[0_24px_60px_rgba(59,130,246,0.30)] transition-all duration-500 hover:-translate-y-1 hover:bg-slate-900 hover:shadow-[0_24px_60px_rgba(15,23,42,0.24)] active:scale-95 disabled:opacity-50 dark:bg-blue-400 dark:text-slate-950 dark:shadow-[0_24px_60px_rgba(37,99,235,0.24)] dark:hover:bg-blue-300"
               >
-                {isSubmitting ? (
+                {isSubmitting || isOtpVerifying ? (
                   <Loader2 size={20} className="animate-spin" />
                 ) : (
                   <ArrowRight size={20} />
                 )}
-                Sign In
+                {step === "LOGIN" ? "Sign In" : "Verify & Sign In"}
               </button>
             </form>
 

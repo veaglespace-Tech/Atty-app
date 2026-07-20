@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -271,6 +271,48 @@ export const orgApi = createApi({
       query: () => "/coupons/my-coupons",
       providesTags: ["OrgCoupons"],
     }),
+    getOrgInstruments: builder.query({
+      query: (params = "") => `/org/instruments${params ? `?${params}` : ""}`,
+      providesTags: ["OrgInstruments"],
+    }),
+    createOrgInstrument: builder.mutation({
+      query: (payload) => ({
+        url: "/org/instruments",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgInstruments"],
+    }),
+    updateOrgInstrument: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: `/org/instruments/${id}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgInstruments"],
+    }),
+    deleteOrgInstrument: builder.mutation({
+      query: (id) => ({
+        url: `/org/instruments/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgInstruments"],
+    }),
+    assignOrgInstrument: builder.mutation({
+      query: ({ id, userId }) => ({
+        url: `/org/instruments/${id}/assign`,
+        method: "POST",
+        body: { userId },
+      }),
+      invalidatesTags: ["OrgInstruments", "OrgUsers"],
+    }),
+    revokeOrgInstrument: builder.mutation({
+      query: (id) => ({
+        url: `/org/instruments/${id}/revoke`,
+        method: "POST",
+      }),
+      invalidatesTags: ["OrgInstruments", "OrgUsers"],
+    }),
   }),
 });
 
@@ -319,4 +361,10 @@ export const {
   useApproveRegularizationRequestMutation,
   useRejectRegularizationRequestMutation,
   useGetOrgCouponsQuery,
+  useGetOrgInstrumentsQuery,
+  useCreateOrgInstrumentMutation,
+  useUpdateOrgInstrumentMutation,
+  useDeleteOrgInstrumentMutation,
+  useAssignOrgInstrumentMutation,
+  useRevokeOrgInstrumentMutation,
 } = orgApi;

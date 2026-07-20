@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, TouchableOpacity, Alert } from "react-native";
 import { router } from "expo-router";
-import {  ChevronLeft, Building2, Search, ChevronDown, Check, RefreshCcw, Download, Plus, ChevronRight, X  } from "lucide-react-native";
+import { ChevronLeft, Building2, Search, ChevronDown, Check, RefreshCcw, Download, Plus, ChevronRight, X, Layers } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import { 
   useGetSuperAdminOrganizationsQuery, 
@@ -416,6 +416,7 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
     organization: { name: "", email: "", phone: "", phoneCountryCode: "+91", address: "", city: "", state: "", country: "India", latitude: "", longitude: "" },
     admin: { name: "", email: "", mobile: "", mobileCountryCode: "+91", password: "" },
     planCode: "",
+    hasERP: false,
   });
 
   const onChange = (section, field, value) => {
@@ -572,6 +573,25 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
                 <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1">{plan.durationInDays} Days</Text>
               </Pressable>
             ))}
+          </View>
+          
+          <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-3">Add-Ons</Text>
+          <View className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 flex-row items-center justify-between pb-20">
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center">
+                <Layers size={18} className="text-indigo-500" />
+              </View>
+              <View>
+                <Text className="text-sm font-bold text-slate-900 dark:text-white">ERP Module</Text>
+                <Text className="text-xs text-slate-500">Funds & Expenses / Instruments</Text>
+              </View>
+            </View>
+            <Pressable 
+              onPress={() => setForm(prev => ({ ...prev, hasERP: !prev.hasERP }))}
+              className={`w-12 h-6 rounded-full flex-row items-center px-1 transition-colors ${form.hasERP ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+            >
+              <View className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${form.hasERP ? 'translate-x-6' : 'translate-x-0'}`} />
+            </Pressable>
           </View>
         </ScrollView>
 
