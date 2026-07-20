@@ -329,14 +329,19 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                 aria-label={mobileNavOpen ? "Close section menu" : "Open section menu"}
               >
                 {mobileNavOpen ? <X size={16} /> : <Menu size={16} />}
-                <ChevronDown
-                  size={14}
-                  className={cn("transition-transform", mobileNavOpen ? "rotate-180" : "")}
-                />
               </button>
             </div>
 
             <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3 w-full">
+              {user?.organization?.logoUrl && (
+                <div className="flex shrink-0 h-10 sm:h-11 lg:h-[92px] items-center justify-center overflow-hidden rounded-xl lg:rounded-[1.25rem] border border-slate-200/80 bg-white/90 shadow-[0_12px_36px_rgba(59,130,246,0.15)] hover:shadow-[0_16px_48px_rgba(59,130,246,0.25)] transition-all duration-300 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/90 dark:shadow-[0_12px_40px_rgba(2,6,23,0.4)] dark:hover:shadow-[0_16px_50px_rgba(59,130,246,0.15)] mr-2 sm:mr-3 p-1 lg:p-0">
+                  <img
+                    src={user.organization.logoUrl}
+                    alt="Organization Logo"
+                    className="h-full w-auto max-w-[120px] lg:max-w-[240px] object-contain transition-transform duration-300 hover:scale-[1.02]"
+                  />
+                </div>
+              )}
               <div className="brand-panel-soft hidden min-w-[320px] max-w-[420px] rounded-[1.5rem] border border-slate-200/80 bg-white px-4 py-3 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] lg:block">
                 <div className="flex items-center gap-3">
                   <UserAvatar
@@ -374,15 +379,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
                 <span className="hidden sm:inline">Logout</span>
               </button>
 
-              {user?.organization?.logoUrl && (
-                <div className="hidden lg:flex shrink-0 h-[92px] items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white/90 shadow-[0_12px_36px_rgba(59,130,246,0.15)] hover:shadow-[0_16px_48px_rgba(59,130,246,0.25)] transition-all duration-300 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/90 dark:shadow-[0_12px_40px_rgba(2,6,23,0.4)] dark:hover:shadow-[0_16px_50px_rgba(59,130,246,0.15)] ml-3">
-                  <img
-                    src={user.organization.logoUrl}
-                    alt="Organization Logo"
-                    className="h-full w-auto max-w-[240px] object-contain transition-transform duration-300 hover:scale-[1.02]"
-                  />
-                </div>
-              )}
+
             </div>
           </div>
         </header>
