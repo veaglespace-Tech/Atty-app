@@ -85,7 +85,6 @@ export default function OrgLayout() {
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="subscription" options={{ href: null }} />
       <Tabs.Screen name="teams" options={{ href: null }} />
-      <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="workspace" options={{ href: null }} />
       <Tabs.Screen name="team/[id]" options={{ href: null }} />
       <Tabs.Screen name="user/[id]" options={{ href: null }} />
