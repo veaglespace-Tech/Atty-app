@@ -90,6 +90,9 @@ export default function OrgLayout() {
       <Tabs.Screen name="user/[id]" options={{ href: null }} />
       <Tabs.Screen name="attendance/[logId]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
+      <Tabs.Screen name="expenses" options={{ href: null }} />
+      <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
+      <Tabs.Screen name="instruments" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );
