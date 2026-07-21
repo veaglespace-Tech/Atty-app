@@ -11,7 +11,6 @@ import { memberApi } from "@/services/api/memberApi";
 import { superAdminApi } from "@/services/api/superAdminApi";
 import { dashboardApi } from "@/services/api/dashboardApi";
 import { attendanceApi } from "@/services/api/attendanceApi";
-import { paymentApi } from "@/services/api/paymentApi";
 import { utilityApi } from "@/services/api/utilityApi";
 import { postApi } from "@/services/api/postApi";
 import { attyApi } from "@/services/api/attyApi";
@@ -30,7 +29,6 @@ export const store = configureStore({
     [superAdminApi.reducerPath]: superAdminApi.reducer,
     [dashboardApi.reducerPath]: dashboardApi.reducer,
     [attendanceApi.reducerPath]: attendanceApi.reducer,
-    [paymentApi.reducerPath]: paymentApi.reducer,
     [utilityApi.reducerPath]: utilityApi.reducer,
     [postApi.reducerPath]: postApi.reducer,
     [attyApi.reducerPath]: attyApi.reducer,
@@ -52,7 +50,6 @@ export const store = configureStore({
       superAdminApi.middleware,
       dashboardApi.middleware,
       attendanceApi.middleware,
-      paymentApi.middleware,
       utilityApi.middleware,
       postApi.middleware,
       attyApi.middleware,

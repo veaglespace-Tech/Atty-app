@@ -7,64 +7,35 @@ import { useColorScheme } from "nativewind";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
-<<<<<<< HEAD
 import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission } from "@/utils/roles";
 import AnimatedLogo from '../AnimatedLogo.jsx';
-=======
-import { ROLES, DASHBOARD_ROOT_BY_ROLE } from "@/utils/roles";
-
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer 
 
-<<<<<<< HEAD
 const getTabsForRole = (user) => {
   if (!user) return [];
   const role = ROLE_ALIASES[(user.currentRole || user.role)?.toUpperCase()] || (user.currentRole || user.role);
-=======
-import { BarChart3, Building2, Book, Gift, Database, Inbox, Settings } from "lucide-react-native";
-
-const getTabsForRole = (role) => {
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
   const commonIconProps = { size: 18, color: "#2563eb" };
   
   if (role === ROLES.SUPER_ADMIN) {
     return [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "Organizations", icon: <Building2 {...commonIconProps} />, href: "organizations" },
-<<<<<<< HEAD
       { title: "Leads", icon: <Users {...commonIconProps} />, href: "leads" },
       { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
       { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
       { title: "Contacts", icon: <Users {...commonIconProps} />, href: "contacts" },
       { title: "Referrals", icon: <Users {...commonIconProps} />, href: "referrals" },
-      { title: "Plans", icon: <Book {...commonIconProps} />, href: "plans" },
       { title: "Access", icon: <Shield {...commonIconProps} />, href: "access" },
       { title: "Roles", icon: <Shield {...commonIconProps} />, href: "roles" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-      { title: "Payments", icon: <CreditCard {...commonIconProps} />, href: "payments" },
-      { title: "Coupons", icon: <Gift {...commonIconProps} />, href: "coupons" },
       { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
       { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" }
-=======
-      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
-      { title: "Plans", icon: <Book {...commonIconProps} />, href: "plans" },
-      { title: "Payments", icon: <CreditCard {...commonIconProps} />, href: "payments" },
-      { title: "Coupons", icon: <Gift {...commonIconProps} />, href: "coupons" },
-      { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
-      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-      { title: "Leads", icon: <Users {...commonIconProps} />, href: "leads" },
-      { title: "Contacts", icon: <Users {...commonIconProps} />, href: "contacts" },
-      { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" },
-      { title: "Referrals", icon: <Users {...commonIconProps} />, href: "referrals" },
-      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
     ];
   }
   
   if (role === ROLES.ORG_ADMIN || role === ROLES.SUB_ADMIN) {
-<<<<<<< HEAD
     const tabs = [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
@@ -87,9 +58,6 @@ const getTabsForRole = (role) => {
     }
     if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
-    }
-    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION_VIEW)) {
-      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
     }
     return tabs;
   }
@@ -115,66 +83,27 @@ const getTabsForRole = (role) => {
     if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
-    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION_VIEW)) {
-      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
-    }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
     return tabs;
   }
   
   // MEMBER fallback
-  const tabs = [
+  const fallbackTabs = [
     { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
     { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" }
   ];
   if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
-    tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+    fallbackTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
   }
   if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
-    tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
+    fallbackTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
   }
   if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
-    tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
+    fallbackTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
-  tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+  fallbackTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
   
-  return tabs;
-=======
-    return [
-      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-      { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
-      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
-      { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" },
-      { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
-      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" },
-      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
-    ];
-  }
-  
-  if (role === ROLES.TEAM_LEADER) {
-    return [
-      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-      { title: "My Team", icon: <Users {...commonIconProps} />, href: "teams" },
-      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Requests", icon: <Inbox {...commonIconProps} />, href: "requests" },
-      { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" }
-    ];
-  }
-  
-  // MEMBER fallback
-  return [
-    { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-    { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-    { title: "My Teams", icon: <Component {...commonIconProps} />, href: "teams" },
-    { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-    { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
-  ];
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
+  return fallbackTabs;
 };
 
 export default function MobileDashboardShell({ children }) {

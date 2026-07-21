@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronRight, Lock, Mail, MapPin, ShieldCheck, User, Eye, EyeOff, Globe } from "lucide-react-native";
+import { ChevronRight, Lock, Mail, MapPin, ShieldCheck, User, Eye, EyeOff, Globe, CheckCircle2 } from "lucide-react-native";
 
 import RegisterFlowShell from "@/components/register/RegisterFlowShell";
 import RegisterStepBack from "@/components/register/RegisterStepBack";
@@ -22,7 +22,7 @@ import {
   toDigitsOnly,
   isNotCommonEmailTypo } from
 "@/utils/formValidation";
-import { getRegistrationDraft, REGISTRATION_DRAFT_KEYS, setRegistrationDraft } from "@/utils/registerDraft";
+import { getRegistrationDraft, REGISTRATION_DRAFT_KEYS, setRegistrationDraft, clearAllRegistrationDrafts } from "@/utils/registerDraft";
 
 const registrationSchema = z.object({
   name: z.string().trim().min(2, "Required").max(120, "Too long").regex(PERSON_NAME_REGEX, "Invalid chars"),
@@ -58,6 +58,7 @@ const adminDefaultValues = {
 export default function AdminRegistration() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
+  const [successState, setSuccessState] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -96,19 +97,29 @@ export default function AdminRegistration() {
       setRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin, adminDraft);
 
       const orgDraft = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation);
-      if (orgDraft) {
-        try {
-          await fetch(`${API_BASE_URL}/auth/save-lead`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ org: orgDraft, admin: adminDraft })
-          });
-        } catch (err) {
-          console.error("Failed to save lead:", err);
-        }
+      
+      const res = await fetch(`${API_BASE_URL}/payment/verify-and-register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organization: orgDraft,
+          admin: adminDraft,
+          plan: { name: 'Free Trial', code: 'FREE' }
+        })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || "Registration failed.");
       }
 
-      router.push("/register/organisation/plan");
+      setSuccessState({
+        organizationName: orgDraft?.name || "Your organization",
+        adminEmail: adminDraft?.email || "",
+        planName: "Free Trial",
+        emailSent: true,
+        freeTrial: true
+      });
     } catch (error) {
       setSubmitError(error.message || "Something went wrong during registration.");
     }
@@ -151,15 +162,64 @@ export default function AdminRegistration() {
           title="Admin Profile"
           description="Create your organization's primary administrator"
           beforeCard={
-          <RegisterStepBack href="/register/organisation" label="Back to Organization Details" />
+            !successState ? (
+              <RegisterStepBack href="/register/organisation" label="Back to Organization Details" />
+            ) : null
           }>
           
-          {submitError ?
-          <View className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-rose-500/25 dark:bg-rose-500/10">
+          {submitError && !successState ? (
+            <View className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-rose-500/25 dark:bg-rose-500/10">
               <Text className="text-sm font-semibold text-red-700 dark:text-rose-200">{submitError}</Text>
-            </View> :
-          null}
+            </View>
+          ) : null}
 
+          {successState ? (
+            <View className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm mt-4">
+              <View className="items-center mb-8">
+                <View className="h-20 w-20 rounded-full bg-emerald-50 dark:bg-emerald-900/30 items-center justify-center border border-emerald-100 dark:border-emerald-800 mb-4">
+                  <CheckCircle2 size={36} className="text-emerald-500 dark:text-emerald-400" />
+                </View>
+                <Text className="text-xs font-black uppercase tracking-widest text-emerald-500 mb-2">
+                  Registration Success
+                </Text>
+                <Text className="text-2xl font-black text-slate-900 dark:text-white text-center mb-2">
+                  Workspace Activated
+                </Text>
+                <Text className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                  Your registration is complete. We have shared the organization code on your registered email.
+                </Text>
+              </View>
+
+              <View className="gap-4 mb-8">
+                <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
+                  <Text className="text-[10px] font-black uppercase text-slate-400 mb-1">Plan</Text>
+                  <Text className="text-sm font-black text-slate-900 dark:text-white">{successState.planName}</Text>
+                </View>
+                <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
+                  <Text className="text-[10px] font-black uppercase text-slate-400 mb-1">Workspace</Text>
+                  <Text className="text-sm font-black text-slate-900 dark:text-white">{successState.organizationName}</Text>
+                </View>
+                <View className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-2xl">
+                  <Text className="text-[10px] font-black uppercase text-emerald-600/60 dark:text-emerald-400/60 mb-1">Email</Text>
+                  <Text className="text-sm font-black text-emerald-700 dark:text-emerald-300">{successState.adminEmail}</Text>
+                </View>
+              </View>
+
+              <View className="gap-3">
+                <Pressable
+                  onPress={() => { clearAllRegistrationDrafts(); router.replace("/login"); }}
+                  className="bg-slate-900 dark:bg-blue-600 py-4 rounded-full items-center justify-center flex-row gap-2">
+                  <Text className="text-white font-black text-sm">Go to Login</Text>
+                  <ChevronRight size={18} color="white" />
+                </Pressable>
+                <Pressable
+                  onPress={() => { clearAllRegistrationDrafts(); router.replace("/"); }}
+                  className="border border-slate-200 dark:border-slate-700 py-4 rounded-full items-center justify-center">
+                  <Text className="text-slate-700 dark:text-slate-300 font-black text-sm">Back to Home</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
           <View className="gap-5">
             {fields.map((field) => {
               if (field.name === "mobile") {
@@ -283,6 +343,7 @@ export default function AdminRegistration() {
               {!isSubmitting && <ChevronRight size={20} color="white" className="dark:text-slate-950" />}
             </Pressable>
           </View>
+          )}
         </RegisterFlowShell>
       </ScrollView>
     </KeyboardAvoidingView>);

@@ -11,11 +11,7 @@ export default function RolesTab({
   return (
     <View className="space-y-6 pb-12">
       {roleMappings.map((rm) => (
-<<<<<<< HEAD
-        <View key={rm.role} className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-5 shadow-sm">
-=======
         <View key={rm.role} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
           <View className="flex-row items-center gap-3 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <View className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3">
               <Shield size={24} className="text-indigo-600 dark:text-indigo-400" />
