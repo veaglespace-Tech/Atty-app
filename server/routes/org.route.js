@@ -64,8 +64,9 @@ const {
 } = require("../controllers/org-instrument.controller");
 
 const { userProtected } = require("../middlewares/auth.middleware");
-const { allowRoles } = require("../middlewares/rbac.middleware");
+const { requireMembership, requirePermission } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
+const { PERMISSIONS } = require("../constants/permissions");
 
 router.post("/onboard", onboardOrganization);
 
@@ -73,17 +74,17 @@ router.use(userProtected);
 
 router.get(
   "/subscription",
-  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"),
+  requireMembership(),
   getOrgSubscription
 );
 
 router.use(
   checkActiveSubscription,
-  allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER")
+  requireMembership()
 );
 
-router.patch("/settings/logo", allowRoles("ORG_ADMIN", "SUB_ADMIN"), updateOrgLogo);
-router.patch("/settings/details", allowRoles("ORG_ADMIN", "SUB_ADMIN"), updateOrgDetails);
+router.patch("/settings/logo", requirePermission(PERMISSIONS.TEAM.UPDATE), updateOrgLogo);
+router.patch("/settings/details", requirePermission(PERMISSIONS.TEAM.UPDATE), updateOrgDetails);
 
 router.get("/dashboard", getOrgDashboard);
 router.get("/reports", getOrgReports);
@@ -109,9 +110,9 @@ router.patch("/users/:userId/status", updateOrgUserStatus);
 router.patch("/users/:userId/active", toggleOrgUserActive);
 router.delete("/users/:userId", deleteOrgUser);
 
-router.get("/registration-requests", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), getOrgRegistrationRequests);
-router.patch("/registration-requests/:id/accept", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), acceptRegistrationRequest);
-router.patch("/registration-requests/:id/reject", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), rejectRegistrationRequest);
+router.get("/registration-requests", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), getOrgRegistrationRequests);
+router.patch("/registration-requests/:id/accept", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), acceptRegistrationRequest);
+router.patch("/registration-requests/:id/reject", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), rejectRegistrationRequest);
 
 router.get("/teams", getOrgTeams);
 router.get("/teams/:teamId", getOrgTeamById);
@@ -132,11 +133,11 @@ router.patch("/regularization-requests/:id/approve", approveRegularizationReques
 router.patch("/regularization-requests/:id/reject", rejectRegularizationRequest);
 
 router.get("/instruments", getOrgInstruments);
-router.post("/instruments", allowRoles("ORG_ADMIN", "SUB_ADMIN"), createOrgInstrument);
-router.patch("/instruments/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN"), patchOrgInstrument);
-router.delete("/instruments/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN"), deleteOrgInstrument);
-router.post("/instruments/assign", allowRoles("ORG_ADMIN", "SUB_ADMIN"), assignInstrumentToUsers);
-router.patch("/instruments/assign/:instrumentId/:userId", allowRoles("ORG_ADMIN", "SUB_ADMIN"), updateInstrumentAssignment);
-router.delete("/instruments/assign/:instrumentId/:userId", allowRoles("ORG_ADMIN", "SUB_ADMIN"), unassignInstrumentFromUser);
+router.post("/instruments", requirePermission(PERMISSIONS.USERS.CREATE), createOrgInstrument);
+router.patch("/instruments/:id", requirePermission(PERMISSIONS.USERS.CREATE), patchOrgInstrument);
+router.delete("/instruments/:id", requirePermission(PERMISSIONS.USERS.CREATE), deleteOrgInstrument);
+router.post("/instruments/assign", requirePermission(PERMISSIONS.USERS.CREATE), assignInstrumentToUsers);
+router.patch("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), updateInstrumentAssignment);
+router.delete("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), unassignInstrumentFromUser);
 
 module.exports = router;

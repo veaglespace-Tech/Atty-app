@@ -27,9 +27,9 @@ export default function OrgLayout({ children }) {
     // Insert right before Subscription
     const subIndex = items.findIndex(item => item.label === "Subscription");
     if (subIndex !== -1) {
-      items.splice(subIndex, 0, { label: "Funds & Expenses", href: "/org/expenses" });
+      items.splice(subIndex, 0, { label: "Funds & Expenses", href: "/org/expenses", permission: PERMISSIONS.EXPENSES.MANAGE });
     } else {
-      items.push({ label: "Funds & Expenses", href: "/org/expenses" });
+      items.push({ label: "Funds & Expenses", href: "/org/expenses", permission: PERMISSIONS.EXPENSES.MANAGE });
     }
     return items;
   }, []);

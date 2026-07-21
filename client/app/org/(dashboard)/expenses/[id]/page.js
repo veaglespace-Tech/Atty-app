@@ -157,7 +157,7 @@ export default function TransactionDetailsPage() {
                     {transaction.claimDetails.description && (
                       <div className="pt-2 mt-2 border-t border-blue-200 dark:border-blue-800/50">
                         <span className="text-blue-700/70 dark:text-blue-300/70 block mb-1">User Note:</span>
-                        <p className="italic text-blue-900 dark:text-blue-100">"{transaction.claimDetails.description}"</p>
+                        <p className="italic text-blue-900 dark:text-blue-100">&quot;{transaction.claimDetails.description}&quot;</p>
                       </div>
                     )}
                   </div>

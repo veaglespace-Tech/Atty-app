@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
 import { API_BASE_URL } from "@/services/api/baseApi";
@@ -57,13 +57,8 @@ export default function OrgExpensesPage() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  useEffect(() => {
-    if (user?.organization?.hasERP) {
-      fetchData();
-    }
-  }, [debouncedSearch, filterType, filterStatus, sortBy, sortOrder, user?.organization?.hasERP]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const queryParamsExp = new URLSearchParams({ search: debouncedSearch, type: filterType, sortBy, sortOrder }).toString();
@@ -90,7 +85,13 @@ export default function OrgExpensesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, filterType, filterStatus, sortBy, sortOrder, dispatch]);
+
+  useEffect(() => {
+    if (user?.organization?.hasERP) {
+      fetchData();
+    }
+  }, [fetchData, user?.organization?.hasERP]);
 
   const handleExport = (format) => {
     const queryParamsExp = new URLSearchParams({ search: debouncedSearch, type: filterType }).toString();
@@ -264,7 +265,7 @@ export default function OrgExpensesPage() {
   };
 
   if (user && !user?.organization?.hasERP) {
-    return <ERPLockedView role={user?.currentRole} />;
+    return <ERPLockedView user={user} />;
   }
 
   return (
@@ -469,7 +470,7 @@ export default function OrgExpensesPage() {
                     <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                       Requested by: {claim.user?.name} ({claim.user?.email})
                     </p>
-                    {claim.description && <p className="text-sm text-gray-700 dark:text-slate-300 mt-2 italic">"{claim.description}"</p>}
+                    {claim.description && <p className="text-sm text-gray-700 dark:text-slate-300 mt-2 italic">&quot;{claim.description}&quot;</p>}
                     <p className="text-sm font-medium text-gray-900 dark:text-white mt-2">Amount: ₹{claim.amount}</p>
                     {claim.receiptUrl && (
                       <a href={claim.receiptUrl} target="_blank" rel="noreferrer" className="text-blue-500 dark:text-blue-400 text-sm hover:underline mt-2 inline-block">
@@ -721,9 +722,9 @@ export default function OrgExpensesPage() {
                     <p className="text-sm font-bold text-gray-900 dark:text-white">{fetchedClaim.expenseType}</p>
                     <p className="text-sm text-gray-600 dark:text-slate-400">Requested by: {fetchedClaim.user?.name}</p>
                     <p className="text-sm text-gray-600 dark:text-slate-400">Requested Amount: <span className="font-bold text-gray-900 dark:text-white">₹{fetchedClaim.amount}</span></p>
-                    {fetchedClaim.description && <p className="text-sm text-gray-700 dark:text-slate-300 italic border-l-2 border-blue-300 dark:border-blue-600 pl-2 mt-2">"{fetchedClaim.description}"</p>}
+                    {fetchedClaim.description && <p className="text-sm text-gray-700 dark:text-slate-300 italic border-l-2 border-blue-300 dark:border-blue-600 pl-2 mt-2">&quot;{fetchedClaim.description}&quot;</p>}
                     {fetchedClaim.receiptUrl && (
-                       <a href={fetchedClaim.receiptUrl} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 text-xs hover:underline inline-block mt-2">View User's Receipt</a>
+                       <a href={fetchedClaim.receiptUrl} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 text-xs hover:underline inline-block mt-2">View User&apos;s Receipt</a>
                     )}
                   </div>
                 )}

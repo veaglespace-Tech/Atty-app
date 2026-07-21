@@ -9,19 +9,20 @@ const {
   getPostPollResults,
 } = require("../controllers/post.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
-const { allowRoles } = require("../middlewares/rbac.middleware");
+const { requireMembership } = require("../middlewares/rbac.middleware");
 
 // Routes protected by authentication
 router.use(userProtected);
+router.use(requireMembership());
 
 // Get all posts (Available to all authenticated members of organization)
 router.get("/", getOrgPosts);
-router.get("/:id/poll-results", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"), getPostPollResults);
+router.get("/:id/poll-results", getPostPollResults);
 router.post("/:id/vote", voteOnPostPoll);
 
 // Post management (Gated by permission in controller)
-router.post("/", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"), createPost);
-router.patch("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"), updatePost);
-router.delete("/:id", allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"), deletePost);
+router.post("/", createPost);
+router.patch("/:id", updatePost);
+router.delete("/:id", deletePost);
 
 module.exports = router;

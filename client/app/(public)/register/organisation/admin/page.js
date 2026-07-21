@@ -82,7 +82,7 @@ const registrationSchema = z
       .max(80, "City is too long")
       .regex(PLACE_NAME_REGEX, "Enter a valid city"),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
-    bloodGroup: z.string().optional(),
+    bloodGroup: z.string().trim().min(1, "Blood Group is required"),
     role: z.string().default(ROLES.ORG_ADMIN),
   })
   .refine((data) => data.password === data.confirmPassword, {

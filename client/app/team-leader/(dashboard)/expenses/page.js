@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
 import { API_BASE_URL } from "@/services/api/baseApi";
@@ -23,15 +23,8 @@ export default function MemberExpensesPage() {
   const [receiptFile, setReceiptFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (user?.organization?.hasERP) {
-      fetchClaims();
-    } else {
-      setLoading(false);
-    }
-  }, [user?.organization?.hasERP]);
 
-  const fetchClaims = async () => {
+  const fetchClaims = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/claims/my-claims`, { credentials: "include" });
@@ -44,7 +37,15 @@ export default function MemberExpensesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (user?.organization?.hasERP) {
+      fetchClaims();
+    } else {
+      setLoading(false);
+    }
+  }, [fetchClaims, user?.organization?.hasERP]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -90,7 +91,7 @@ export default function MemberExpensesPage() {
   if (loading) return <div className="p-8 text-center text-gray-500">Loading expenses...</div>;
 
   if (user && !user?.organization?.hasERP) {
-    return <ERPLockedView role={user?.currentRole} />;
+    return <ERPLockedView user={user} />;
   }
 
   return (

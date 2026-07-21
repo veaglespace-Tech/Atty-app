@@ -11,7 +11,8 @@ import {
   Megaphone, 
   FileText, 
   BarChart2, 
-  Trophy 
+  Trophy,
+  Send
 } from "lucide-react";
 import { 
   useGetOrgPostsQuery, 
@@ -20,12 +21,14 @@ import {
   useVoteOnPostMutation,
   useDeletePostMutation 
 } from "@/services/api/postApi";
+import { useGetRolesQuery } from "@/services/api/roleApi";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import { getErrorMessage } from "@/utils/formValidation";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { PostForm } from "./_components/PostForm";
+import { UpdateForm } from "./_components/UpdateForm";
 import { PostCard } from "./_components/PostCard";
 
 const POST_TYPES = [
@@ -38,6 +41,7 @@ const POST_TYPES = [
 
 export default function OrgPostsPage() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -56,6 +60,7 @@ export default function OrgPostsPage() {
 
   const { user } = useAuthSession();
   const { data: postsData, isLoading, refetch, isFetching } = useGetOrgPostsQuery({ authorId: user?.id }, { skip: !user?.id });
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
   const [createPost] = useCreatePostMutation();
   const [updatePost] = useUpdatePostMutation();
   const [voteOnPost] = useVoteOnPostMutation();
@@ -101,6 +106,7 @@ export default function OrgPostsPage() {
     });
     setEditingId(null);
     setCreateOpen(false);
+    setUpdateOpen(false);
   };
 
   const handleSubmit = async (e) => {
@@ -127,6 +133,38 @@ export default function OrgPostsPage() {
       resetForm();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to save post"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    setMessage("");
+
+    try {
+      if (!form.metadata?.targetRoles || form.metadata.targetRoles.length === 0) {
+        setError("Please select at least one role to send the update to.");
+        setSubmitting(false);
+        return;
+      }
+
+      await createPost({
+        title: "Update",
+        content: form.content,
+        type: "NOTIFICATION",
+        metadata: {
+          isRoleUpdate: true,
+          targetRoles: form.metadata.targetRoles,
+        },
+      }).unwrap();
+      
+      setMessage("Update sent successfully!");
+      resetForm();
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to send update"));
     } finally {
       setSubmitting(false);
     }
@@ -184,13 +222,30 @@ export default function OrgPostsPage() {
               type="button"
               onClick={() => {
                 if (createOpen && editingId) resetForm();
-                else setCreateOpen(!createOpen);
+                else {
+                  setUpdateOpen(false);
+                  setCreateOpen(!createOpen);
+                }
               }}
               className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
             >
               <Plus size={15} />
               {editingId ? "Cancel Edit" : "Create Post"}
               {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setCreateOpen(false);
+                setUpdateOpen(!updateOpen);
+              }}
+              className="brand-btn bg-indigo-600 hover:bg-indigo-700 text-white brand-btn-md w-full sm:w-auto shadow-md"
+            >
+              <Send size={15} />
+              Send Update
+              {updateOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
 
             <button
@@ -223,6 +278,18 @@ export default function OrgPostsPage() {
           onReset={resetForm}
           onInputChange={onInputChange}
           types={POST_TYPES}
+        />
+      ) : null}
+
+      {updateOpen ? (
+        <UpdateForm
+          form={form}
+          setForm={setForm}
+          submitting={submitting}
+          onSubmit={handleUpdateSubmit}
+          onReset={resetForm}
+          roles={rolesData?.data || []}
+          rolesLoading={rolesLoading}
         />
       ) : null}
 

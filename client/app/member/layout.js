@@ -19,9 +19,9 @@ export default function MemberLayout({ children }) {
     const items = [...baseNavItems];
     const notifIndex = items.findIndex(item => item.label === "Notifications");
     if (notifIndex !== -1) {
-      items.splice(notifIndex, 0, { label: "Expenses", href: "/member/expenses" });
+      items.splice(notifIndex, 0, { label: "Expenses", href: "/member/expenses", permission: PERMISSIONS.EXPENSES.MANAGE });
     } else {
-      items.push({ label: "Expenses", href: "/member/expenses" });
+      items.push({ label: "Expenses", href: "/member/expenses", permission: PERMISSIONS.EXPENSES.MANAGE });
     }
     return items;
   }, []);

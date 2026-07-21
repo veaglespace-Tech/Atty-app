@@ -82,7 +82,7 @@ const organisationSchema = z.object({
     .min(1, "Country is required")
     .max(80, "Country is too long")
     .regex(PLACE_NAME_REGEX, "Enter a valid country"),
-  address: z.string().trim().max(180, "Address is too long").optional(),
+  address: z.string().trim().min(5, "Address must be at least 5 characters").max(180, "Address is too long"),
 });
 
 const fieldClassName =

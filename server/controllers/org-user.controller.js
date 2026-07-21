@@ -942,7 +942,25 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     }
   }
 
-  const items = posts.map((post) => {
+  const userRole = resolveUserRole(req.user, orgId);
+
+  // Filter posts in-memory for targetRoles
+  const filteredPosts = posts.filter((post) => {
+    const meta = _toSafeObj(post.metadata);
+    if (meta.targetRoles && Array.isArray(meta.targetRoles) && meta.targetRoles.length > 0) {
+      // If user is SUPER_ADMIN, they can see all updates, otherwise check inclusion
+      if (userRole === "SUPER_ADMIN") return true;
+      return meta.targetRoles.includes(userRole);
+    }
+    return true; // No targeted roles, visible to all
+  });
+
+  const actualTotal = filteredPosts.length;
+  const actualUnreadCount = filteredPosts.filter(p => !p.reads || p.reads.length === 0).length;
+
+  const paginatedPosts = filteredPosts.slice(0, limit);
+
+  const items = paginatedPosts.map((post) => {
     const serialized = _serializePollForNotification(post, userId);
     return {
       id: String(post.id),
@@ -961,14 +979,14 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     summary: [
-      toSummaryItem("Total Notifications", total),
-      toSummaryItem("Unread Notifications", unreadCount),
+      toSummaryItem("Total Notifications", actualTotal),
+      toSummaryItem("Unread Notifications", actualUnreadCount),
     ],
     items,
     meta: {
       limit,
-      total,
-      unreadCount
+      total: actualTotal,
+      unreadCount: actualUnreadCount
     },
   });
 });

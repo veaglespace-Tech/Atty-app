@@ -1346,7 +1346,6 @@ exports.login = asyncHandler(async (req, res) => {
       : hydratedUser;
 
   const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
-  const resolvedPermissions = resolveUserPermissions(sessionUser, org?.id);
   const token = jwt.sign(
     { 
       id: user.id,
@@ -1354,7 +1353,6 @@ exports.login = asyncHandler(async (req, res) => {
       email: user.email,
       role: currentRole,
       orgId: org?.id || null,
-      permissions: resolvedPermissions,
     },
     process.env.JWT_KEY,
     {
@@ -1471,7 +1469,6 @@ exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
   };
 
   const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
-  const resolvedPermissions = resolveUserPermissions(sessionUser, null);
   const token = jwt.sign(
     { 
       id: user.id,
@@ -1479,7 +1476,6 @@ exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
       email: user.email,
       role: currentRole,
       orgId: null,
-      permissions: resolvedPermissions,
     },
     process.env.JWT_KEY,
     { expiresIn: tokenTTL }

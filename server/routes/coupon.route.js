@@ -2,19 +2,20 @@ const express = require('express');
 const router = express.Router();
 const couponController = require('../controllers/coupon.controller');
 const { verifyToken } = require('../middlewares/auth.middleware');
-const { allowRoles } = require('../middlewares/rbac.middleware');
+const { requirePermission, requireMembership } = require('../middlewares/rbac.middleware');
+const { PERMISSIONS } = require('../constants/permissions');
 
 // Public
 router.get('/validate/:code', couponController.validateCoupon);
 
 // Admin only
-router.post('/', verifyToken, allowRoles('SUPER_ADMIN', 'ORG_ADMIN'), couponController.createCoupon);
-router.put('/:id', verifyToken, allowRoles('SUPER_ADMIN', 'ORG_ADMIN'), couponController.updateCoupon);
-router.delete('/:id', verifyToken, allowRoles('SUPER_ADMIN', 'ORG_ADMIN'), couponController.deleteCoupon);
-router.get('/admin', verifyToken, allowRoles('SUPER_ADMIN', 'ORG_ADMIN'), couponController.getAdminCoupons);
-router.get('/assignable-users', verifyToken, allowRoles('SUPER_ADMIN', 'ORG_ADMIN'), couponController.getAssignableUsers);
+router.post('/', verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), couponController.createCoupon);
+router.put('/:id', verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), couponController.updateCoupon);
+router.delete('/:id', verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), couponController.deleteCoupon);
+router.get('/admin', verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), couponController.getAdminCoupons);
+router.get('/assignable-users', verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), couponController.getAssignableUsers);
 
 // SubAdmin / TeamLeader
-router.get('/my-coupons', verifyToken, allowRoles('SUPER_ADMIN', 'ORG_ADMIN', 'SUB_ADMIN', 'TEAM_LEADER'), couponController.getMyCoupons);
+router.get('/my-coupons', verifyToken, requireMembership(), couponController.getMyCoupons);
 
 module.exports = router;
