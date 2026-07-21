@@ -59,7 +59,7 @@ export default function SuperAdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="users"
+        name="users/index"
         options={{
           title: 'Users',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
@@ -67,10 +67,7 @@ export default function SuperAdminLayout() {
       />
       <Tabs.Screen
         name="payments"
-        options={{
-          title: 'Payments',
-          tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="settings"
@@ -82,17 +79,18 @@ export default function SuperAdminLayout() {
       <Tabs.Screen name="access" options={{ href: null }} />
       <Tabs.Screen name="organization/[id]" options={{ href: null }} />
       <Tabs.Screen name="payment/[id]" options={{ href: null }} />
+      <Tabs.Screen name="referrals/index" options={{ href: null }} />
       <Tabs.Screen name="referrals/[id]" options={{ href: null }} />
       <Tabs.Screen name="users/[id]" options={{ href: null }} />
       <Tabs.Screen name="analytics" options={{ href: null }} />
-      <Tabs.Screen name="attendance" options={{ href: null }} />
+      <Tabs.Screen name="attendance/index" options={{ href: null }} />
       <Tabs.Screen name="attendance/member/[id]" options={{ href: null }} />
       <Tabs.Screen name="backup" options={{ href: null }} />
-      <Tabs.Screen name="contacts" options={{ href: null }} />
+      <Tabs.Screen name="contacts/index" options={{ href: null }} />
       <Tabs.Screen name="contacts/[id]" options={{ href: null }} />
       <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="leads" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="plans/[id]" options={{ href: null }} />

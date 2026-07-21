@@ -32,7 +32,6 @@ export default function BackupPage() {
   };
 
   return (
-<<<<<<< HEAD
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header */}
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
@@ -45,38 +44,15 @@ export default function BackupPage() {
               <Text className="text-[10px] font-black uppercase tracking-widest text-blue-400">Database</Text>
             </View>
             <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Database Backup</Text>
-          </View>
-=======
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Database Backup</Text>
-          <View className="w-10" />
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-        </View>
+          </View>        </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         
-<<<<<<< HEAD
         {/* Left/Top Block: What's included */}
         <View className="bg-white dark:bg-[#151E2F] rounded-[32px] border border-slate-200 dark:border-[#1E293B] p-6 mb-6 shadow-sm">
           <Text className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-5">
-            What's included in the backup
-=======
-        <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-6 mb-6 items-center shadow-sm">
-          <View className="h-20 w-20 rounded-full bg-indigo-50 dark:bg-indigo-900/20 items-center justify-center mb-6">
-            <Database size={40} className="text-indigo-500" />
-          </View>
-          
-          <Text className="text-xl font-black text-slate-900 dark:text-white text-center mb-2">Manual Data Snapshot</Text>
-          <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center mb-8 px-4">
-            Generate and download a complete, point-in-time snapshot of all organizations, users, attendance, and payment records.
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-          </Text>
+            What's included in the backup          </Text>
           <View className="flex-row flex-wrap gap-3">
             {TABLE_INFO.map(({ icon: Icon, label, desc }) => (
               <View key={label} className="w-full flex-row items-start gap-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/50 p-4">
@@ -99,7 +75,6 @@ export default function BackupPage() {
           </View>
         </View>
 
-<<<<<<< HEAD
         {/* Right/Bottom Block: Generate button card */}
         <View className="bg-white dark:bg-[#151E2F] rounded-[32px] border border-slate-200 dark:border-[#1E293B] p-6 shadow-sm z-0 relative overflow-hidden">
           <View className="absolute inset-0 bg-blue-50 dark:bg-blue-900/5 opacity-50 z-0" />
@@ -144,15 +119,7 @@ export default function BackupPage() {
                 </View>
               ))}
             </View>
-          </View>
-=======
-        <View className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-[24px] border border-amber-100 dark:border-amber-800/30">
-          <Text className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-1">Important Notice</Text>
-          <Text className="text-xs text-amber-700 dark:text-amber-500 leading-5">
-            Generating large backups on a mobile device may consume significant memory and data. For very large databases, we recommend using the web dashboard.
-          </Text>
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-        </View>
+          </View>        </View>
 
       </ScrollView>
     </View>

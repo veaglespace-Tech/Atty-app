@@ -78,15 +78,11 @@ export default function MemberLayout() {
       />
       <Tabs.Screen
         name="instruments"
-        options={{
-          title: 'Instruments',
-          tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
-          href: user?.organization?.hasERP ? undefined : null,
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="notifications/index" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );

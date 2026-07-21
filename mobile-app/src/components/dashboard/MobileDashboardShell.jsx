@@ -40,24 +40,31 @@ const getTabsForRole = (user) => {
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
     ];
-    if (hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE)) {
+    
+    const isAdmin = role === ROLES.ORG_ADMIN;
+
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE)) {
       tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
       tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
     }
-    if (hasPermission(user, PERMISSIONS.USERS_CREATE)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS_CREATE)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
     }
-    if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
-    if (hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW)) {
       tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
     }
-    if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.POST_CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
-    if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
+    }
+    if (isAdmin) {
+      tabs.push({ title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" });
+      tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
     }
     return tabs;
   }
@@ -169,7 +176,6 @@ export default function MobileDashboardShell({ children }) {
             </Pressable>
             <View className="flex-row items-center gap-2.5">
               <View className="h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
-<<<<<<< HEAD
                 <AnimatedLogo 
                   className="w-full h-full" 
                 />
@@ -179,34 +185,14 @@ export default function MobileDashboardShell({ children }) {
                   Veagle
                 </Text>
                 <Text className="text-lg font-black text-blue-500 leading-tight tracking-tight">
-                  Attendee
-=======
-                <Image 
-                  source={require('../../../assets/images/logo-glow.png')}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
-                />
-              </View>
-              <View>
-                <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight tracking-tight">
-                  Veagle <Text className="text-blue-500">Attendee</Text>
-                </Text>
-                <Text className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                  Workspace
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-                </Text>
+                  Attendee                </Text>
               </View>
             </View>
           </View>
           
           <Pressable
             onPress={() => router.push('/org/settings')}
-<<<<<<< HEAD
-            className="flex-row items-center justify-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
-=======
-            className="flex-row items-center gap-2 bg-slate-50 dark:bg-slate-800/50 pl-1.5 pr-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-          >
+            className="flex-row items-center justify-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"          >
             {user?.avatar || user?.profilePicture ? (
               <Image source={{ uri: user.avatar || user.profilePicture }} style={{ width: 26, height: 26, borderRadius: 13 }} />
             ) : (
@@ -216,12 +202,7 @@ export default function MobileDashboardShell({ children }) {
                 </Text>
               </View>
             )}
-<<<<<<< HEAD
-=======
-            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              {user?.firstName || user?.name || "Profile"}
-            </Text>
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
+
           </Pressable>
         </View>
       )}
@@ -256,24 +237,13 @@ export default function MobileDashboardShell({ children }) {
             <View className="flex-1 bg-white dark:bg-[#020617] pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8">
                 <View className="flex-row items-center gap-3">
-<<<<<<< HEAD
+
                   <AnimatedLogo 
                     style={{ width: 36, height: 36 }}
                   />
                   <View className="flex-row items-baseline gap-1.5">
                     <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      Veagle
-=======
-                  <Image 
-                    source={require('../../../assets/images/logo-glow.png')}
-                    style={{ width: 36, height: 36 }}
-                    resizeMode="contain"
-                  />
-                  <View>
-                    <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      Veagle <Text className="text-blue-500">Attendee</Text>
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-                    </Text>
+                      Veagle                    </Text>
                     <Text className="text-2xl font-black text-blue-500 tracking-tight">
                       Attendee
                     </Text>
@@ -292,26 +262,15 @@ export default function MobileDashboardShell({ children }) {
                 </Text>
                 
                 <View className="gap-y-1">
-<<<<<<< HEAD
-                  {getTabsForRole(user).map((tab) => (
-=======
-                  {getTabsForRole(user?.role).map((tab) => (
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-                    <Pressable
+                  {getTabsForRole(user).map((tab) => (                    <Pressable
                       key={tab.title}
                       onPress={() => {
                         closeDrawer();
                         setTimeout(() => {
-<<<<<<< HEAD
                           const activeRole = user?.currentRole || user?.role;
                           const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
                           const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
-                          router.push(`${basePath}/${tab.href}`);
-=======
-                          const basePath = DASHBOARD_ROOT_BY_ROLE[user?.role] || "/member";
-                          router.replace(`${basePath}/${tab.href}`);
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-                        }, 200);
+                          router.push(`${basePath}/${tab.href}`);                        }, 200);
                       }}
                       className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50 dark:active:bg-slate-800 transition-colors">
                       <View className="flex-row items-center gap-4">

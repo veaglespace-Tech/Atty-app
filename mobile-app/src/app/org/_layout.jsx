@@ -4,13 +4,16 @@ import { Home, CalendarCheck2, Users, Settings, CreditCard } from 'lucide-react-
 import { useColorScheme } from 'react-native';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
-import { hasPermission, PERMISSIONS } from "@/utils/roles";
+import { hasPermission, PERMISSIONS, ROLES } from "@/utils/roles";
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function OrgLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { user } = useAuthSession();
+  
+  const role = user?.currentRole || user?.role;
+  const isAdmin = role === ROLES.ORG_ADMIN;
 
   return (
     <MobileDashboardShell>
@@ -55,11 +58,11 @@ export default function OrgLayout() {
         }}
       />
       <Tabs.Screen
-        name="attendance"
+        name="attendance/index"
         options={{
           title: 'Attendance',
           tabBarIcon: ({ color }) => <CalendarCheck2 size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW) ? undefined : null,
+          href: isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -67,7 +70,7 @@ export default function OrgLayout() {
         options={{
           title: 'Users',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.USERS_CREATE) ? undefined : null,
+          href: isAdmin || hasPermission(user, PERMISSIONS.USERS_CREATE) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -79,11 +82,7 @@ export default function OrgLayout() {
       />
       <Tabs.Screen
         name="instruments"
-        options={{
-          title: 'Instruments',
-          tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
-          href: user?.organization?.hasERP ? undefined : null,
-        }}
+        options={{ href: null }}
       />
       {/* Hide other screens from the tab bar */}
       <Tabs.Screen name="my-attendance" options={{ href: null }} />
@@ -99,6 +98,9 @@ export default function OrgLayout() {
       <Tabs.Screen name="user/[id]" options={{ href: null }} />
       <Tabs.Screen name="attendance/[logId]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
+      <Tabs.Screen name="employees" options={{ href: null }} />
+      <Tabs.Screen name="expenses/index" options={{ href: null }} />
+      <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );

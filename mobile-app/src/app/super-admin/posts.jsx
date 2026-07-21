@@ -93,7 +93,6 @@ export default function PostsPage() {
   };
 
   return (
-<<<<<<< HEAD
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header */}
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
@@ -126,18 +125,7 @@ export default function PostsPage() {
                 <Text className="text-xs font-bold text-white">Create Post</Text>
               </Pressable>
             </View>
-          </View>
-=======
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Posts</Text>
-          <View className="w-10" />
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-        </View>
+          </View>        </View>
       </View>
 
       <ScrollView 
@@ -315,7 +303,6 @@ export default function PostsPage() {
             </Text>
           </View>
         ) : (
-<<<<<<< HEAD
           <View className="space-y-4 mb-6 z-0">
             {paginatedPosts.map((post) => {
               const typeInfo = getTypeInfo(post.type);
@@ -327,49 +314,7 @@ export default function PostsPage() {
                 const options = post.metadata.options || [];
                 const votes = post.metadata.votes || {};
                 let totalVotes = 0;
-                Object.values(votes).forEach(count => totalVotes += Number(count || 0));
-=======
-          <View className="space-y-4">
-            {posts.map((post) => (
-              <View key={post.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-                <View className="flex-row items-start justify-between mb-3">
-                  <View className="flex-1 pr-4">
-                    <Text className="text-sm font-black text-slate-900 dark:text-white">{post.title || post.content?.substring(0, 50) + "..."}</Text>
-                  </View>
-                  <Pressable 
-                    disabled={isDeleting}
-                    onPress={() => handleDelete(post.id)}
-                    className="h-8 w-8 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-500/10 -mt-1 -mr-1">
-                    <Trash2 size={14} className="text-rose-600 dark:text-rose-400" />
-                  </Pressable>
-                </View>
-
-                {!!post.content && (
-                  <Text className="text-sm text-slate-600 dark:text-slate-400 mb-4" numberOfLines={3}>
-                    {post.content}
-                  </Text>
-                )}
-
-                <View className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-[24px] space-y-2">
-                  {post.organization?.name && (
-                    <View className="flex-row items-center gap-2">
-                      <Building2 size={14} className="text-slate-400" />
-                      <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {post.organization.name}
-                      </Text>
-                    </View>
-                  )}
-                  {post.author?.name && (
-                    <View className="flex-row items-center gap-2">
-                      <User size={14} className="text-slate-400" />
-                      <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {post.author.name}
-                      </Text>
-                    </View>
-                  )}
-                </View>
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-                
+                Object.values(votes).forEach(count => totalVotes += Number(count || 0));                
                 pollStats = {
                   totalVotes,
                   options: options.map((opt, index) => {

@@ -145,7 +145,6 @@ export default function AccessPage() {
   };
 
   return (
-<<<<<<< HEAD
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       <View className="px-5 pt-12 pb-0 bg-white dark:bg-[#0A0F1C] z-10 shadow-sm border-b border-slate-200 dark:border-slate-800">
         
@@ -180,35 +179,13 @@ export default function AccessPage() {
                 <Text className="text-xs font-bold text-white">New Permission</Text>
               </Pressable>
             </View>
-          </View>
-=======
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
-        <View className="flex-row items-center justify-between mb-4">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Access Control</Text>
-          <Pressable 
-            onPress={() => setShowAddModal(true)} 
-            disabled={readOnlyFallback}
-            className={`h-10 w-10 items-center justify-center rounded-full ${readOnlyFallback ? 'bg-slate-100 dark:bg-slate-800 opacity-50' : 'bg-blue-50 dark:bg-blue-900/30'}`}
-          >
-            <Plus size={20} className={readOnlyFallback ? "text-slate-400" : "text-blue-600 dark:text-blue-400"} />
-          </Pressable>
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-        </View>
+          </View>        </View>
 
         {/* Segmented Control - Tab Style */}
         <View className="flex-row border-b border-slate-200 dark:border-slate-800">
           <Pressable
             onPress={() => setActiveTab("PERMISSIONS")}
-<<<<<<< HEAD
-            className={`mr-6 pb-3 flex-row items-center ${activeTab === "PERMISSIONS" ? "border-b-2 border-blue-500" : ""}`}
-=======
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg transition-all ${activeTab === "PERMISSIONS" ? "bg-white dark:bg-slate-900/80 shadow-sm" : "bg-transparent"}`}
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-          >
+            className={`mr-6 pb-3 flex-row items-center ${activeTab === "PERMISSIONS" ? "border-b-2 border-blue-500" : ""}`}          >
             <Key size={14} className={activeTab === "PERMISSIONS" ? "text-blue-500 mr-2" : "text-slate-500 mr-2"} />
             <Text className={`text-xs font-black uppercase tracking-widest ${activeTab === "PERMISSIONS" ? "text-blue-500" : "text-slate-500"}`}>
               Permissions
@@ -216,12 +193,7 @@ export default function AccessPage() {
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("ROLES")}
-<<<<<<< HEAD
-            className={`pb-3 flex-row items-center ${activeTab === "ROLES" ? "border-b-2 border-blue-500" : ""}`}
-=======
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg transition-all ${activeTab === "ROLES" ? "bg-white dark:bg-slate-900/80 shadow-sm" : "bg-transparent"}`}
->>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
-          >
+            className={`pb-3 flex-row items-center ${activeTab === "ROLES" ? "border-b-2 border-blue-500" : ""}`}          >
             <ShieldCheck size={14} className={activeTab === "ROLES" ? "text-blue-500 mr-2" : "text-slate-500 mr-2"} />
             <Text className={`text-xs font-black uppercase tracking-widest ${activeTab === "ROLES" ? "text-blue-500" : "text-slate-500"}`}>
               Role Access
