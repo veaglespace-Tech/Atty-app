@@ -473,7 +473,14 @@ export const resolveDashboardPath = (role, dashboardPath) => {
   if (!normalizedPath.startsWith("/")) return fallbackPath;
 
   const expectedRoot = getDashboardRootByRole(role);
-  return normalizedPath === expectedRoot || normalizedPath.startsWith(`${expectedRoot}/`)
+  
+  // If the path is exactly the root (like "/member" or "/org"), 
+  // redirect to the actual dashboard path (like "/member/dashboard")
+  if (normalizedPath === expectedRoot) {
+    return fallbackPath;
+  }
+
+  return normalizedPath.startsWith(`${expectedRoot}/`)
     ? normalizedPath
     : fallbackPath;
 };

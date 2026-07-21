@@ -94,8 +94,9 @@ const runAttendanceAutoCloseJob = async () => {
 
       for (const record of openRecords) {
         const punchInMinutes = resolveTimeOfDayMinutes(record.punchInAt, config.timeZone);
+        const autoCloseEndMinutes = 23 * 60 + 59;
         const totalMinutesWorked =
-          punchInMinutes === null ? 0 : Math.max(Math.min(endMinutes - punchInMinutes, 24 * 60), 0);
+          punchInMinutes === null ? 0 : Math.max(autoCloseEndMinutes - punchInMinutes, 0);
         const status = calculateAttendanceStatus({
           totalMinutesWorked,
           startTime,
@@ -103,7 +104,7 @@ const runAttendanceAutoCloseJob = async () => {
         });
         const shiftEndAt = buildDateTimeForDateKey({
           dateKey: today,
-          time: endTime,
+          time: "23:59",
           timeZone: config.timeZone,
         });
 
