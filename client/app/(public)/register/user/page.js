@@ -74,7 +74,7 @@ const userSchema = z
       .regex(/[!@#$%^&*(),.?\":{}|<>]/, "Password must contain at least one special character"),
     confirmPassword: z.string(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
-    bloodGroup: z.string().optional(),
+    bloodGroup: z.string().trim().min(1, "Blood Group is required"),
     city: z
       .string()
       .trim()

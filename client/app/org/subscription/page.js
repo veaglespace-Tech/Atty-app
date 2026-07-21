@@ -7,8 +7,11 @@ import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetOrgSubscriptionQuery } from "@/services/api/orgApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { formatCalendarDate } from "@/utils/date";
+import { useAuthSession } from "@/hooks/useAuthSession";
+import { hasPermission, PERMISSIONS } from "@/utils/roles";
 
 export default function OrgSubscriptionPage() {
+  const { user } = useAuthSession();
   const { data, isLoading, isFetching, error, refetch } = useGetOrgSubscriptionQuery(undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
@@ -61,12 +64,14 @@ export default function OrgSubscriptionPage() {
           </div>
 
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            <Link
-              href="/pricing?renew=1"
-              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
-            >
-              Upgrade Plan
-            </Link>
+            {hasPermission(user, PERMISSIONS.SUBSCRIPTION.MANAGE) && (
+              <Link
+                href="/pricing?renew=1"
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+              >
+                Upgrade Plan
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => refetch()}

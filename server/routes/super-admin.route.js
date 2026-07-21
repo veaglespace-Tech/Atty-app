@@ -61,10 +61,10 @@ const {
   deleteAllSuperAdminContacts
 } = require("../controllers/contact.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
-const { allowRoles } = require("../middlewares/rbac.middleware");
+const { requireSuperAdmin } = require("../middlewares/rbac.middleware");
 
 // Routes protected by authentication and role
-router.use(userProtected, allowRoles("SUPER_ADMIN"));
+router.use(userProtected, requireSuperAdmin());
 
 router.get("/dashboard", getSuperAdminDashboard);
 router.get("/dashboard/pdf", downloadSuperAdminDashboardPdf);

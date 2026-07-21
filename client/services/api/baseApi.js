@@ -1,6 +1,6 @@
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout } from "@/store/slices/authSlice";
-import { normalizeRole, ROLES } from "@/utils/roles";
+import { normalizeRole, ROLES, hasPermission, PERMISSIONS } from "@/utils/roles";
 import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
 const DEFAULT_LOCAL_API_URL = "http://localhost:5000/api";
@@ -89,10 +89,10 @@ const shouldForceLogoutForForbidden = (error) => {
 const redirectForExpiredSubscription = (api) => {
   if (typeof window === "undefined") return;
 
-  const role = normalizeRole(api.getState?.()?.auth?.user?.currentRole);
+  const user = api.getState?.()?.auth?.user;
   const currentPath = window.location.pathname;
 
-  if (role === ROLES.ORG_ADMIN) {
+  if (hasPermission(user, PERMISSIONS.SUBSCRIPTION.MANAGE)) {
     if (!currentPath.startsWith("/pricing")) {
       window.location.replace("/pricing?renew=1");
     }

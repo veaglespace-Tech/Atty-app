@@ -105,6 +105,9 @@ export const PERMISSIONS = Object.freeze({
   ROLES: {
     VIEW: "roles:view",
     MANAGE: "roles:manage",
+  },
+  EXPENSES: {
+    MANAGE: "expenses:manage",
   }
 });
 
@@ -150,6 +153,7 @@ export const PERMISSION_LABELS = Object.freeze({
   [PERMISSIONS.POSTS.DELETE]: "Delete Posts",
   [PERMISSIONS.ROLES.VIEW]: "View Roles",
   [PERMISSIONS.ROLES.MANAGE]: "Manage Roles",
+  [PERMISSIONS.EXPENSES.MANAGE]: "Manage Funds & Expenses",
 });
 
 export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
@@ -190,7 +194,7 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.POSTS.CREATE,
     PERMISSIONS.SUBSCRIPTION.VIEW,
     PERMISSIONS.LOCATION.VIEW,
-    PERMISSIONS.LOCATION.MANAGE
+    PERMISSIONS.LOCATION.MANAGE,
   ]),
   [ROLES.MEMBER]: Object.freeze([
     PERMISSIONS.ATTENDANCE.VIEW_OWN,
@@ -255,6 +259,11 @@ export const PERMISSION_GROUPS = Object.freeze([
     key: "COMMUNICATION",
     label: "Communication",
     items: [PERMISSIONS.POSTS.VIEW, PERMISSIONS.POSTS.CREATE, PERMISSIONS.POSTS.UPDATE, PERMISSIONS.POSTS.DELETE],
+  },
+  {
+    key: "EXPENSES",
+    label: "Funds & Expenses",
+    items: [PERMISSIONS.EXPENSES.MANAGE],
   },
 ]);
 

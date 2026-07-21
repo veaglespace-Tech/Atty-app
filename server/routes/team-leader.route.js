@@ -14,14 +14,14 @@ const {
   downloadTeamLeaderReportsExcel,
 } = require("../controllers/team-leader.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
-const { allowRoles } = require("../middlewares/rbac.middleware");
+const { requireMembership } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
 const { enforceAbac } = require("../middlewares/abac.middleware");
 
 router.use(
   userProtected,
   checkActiveSubscription,
-  allowRoles("TEAM_LEADER", "SUB_ADMIN", "ORG_ADMIN", "MEMBER")
+  requireMembership()
 );
 
 router.get("/dashboard", getTeamLeaderDashboard);

@@ -1,59 +1,30 @@
 const asyncHandler = require("express-async-handler");
-const {
-  ROLE_ROUTE_PREFIX,
-  normalizeRole,
-} = require("../constants/rbac");
-const { resolveAccessibleRoles, resolveUserRole } = require("../utils/membership");
+const { resolveAccessibleRoles } = require("../utils/membership");
+const { assertAnyPermission } = require("../services/access.service");
 
 const isProtectionBypassed = () =>
   process.env.NODE_ENV === "test" &&
   String(process.env.BYPASS_PROTECTED_ROUTES || "").toLowerCase() === "true";
 
-function sanitizePath(req) {
-  return req.originalUrl.replace(/^\/api/, "") || "/";
+function requirePermission(...permissionKeys) {
+  return asyncHandler(async (req, res, next) => {
+    if (isProtectionBypassed()) {
+      return next();
+    }
+
+    assertAnyPermission(res, req.user, permissionKeys);
+    next();
+  });
 }
 
-const enforceRoleRouteAccess = asyncHandler(async (req, res, next) => {
-  if (isProtectionBypassed()) {
-    return next();
-  }
-
-  const role = resolveUserRole(req.user);
-  const path = sanitizePath(req);
-  const allowedPrefix = ROLE_ROUTE_PREFIX[role];
-
-  if (!allowedPrefix) {
-    res.status(403);
-    throw new Error("Invalid role for route access");
-  }
-
-  if (!path.startsWith(allowedPrefix)) {
-    res.status(403);
-    throw new Error("Unauthorized route access for this role");
-  }
-
-  next();
-});
-
-function allowRoles(...roles) {
-  const normalizedAllowedRoles = roles.map((role) => normalizeRole(role));
-
+function requireMembership() {
   return asyncHandler(async (req, res, next) => {
     if (isProtectionBypassed()) {
       return next();
     }
 
     const accessibleRoles = resolveAccessibleRoles(req.user);
-
-    let hasAccess = accessibleRoles.some((role) => normalizedAllowedRoles.includes(role));
-
-    if (!hasAccess && normalizedAllowedRoles.includes("MEMBER")) {
-      const { ALL_ROLES } = require("../constants/rbac");
-      const hasCustomRole = accessibleRoles.some((role) => !ALL_ROLES.includes(role));
-      if (hasCustomRole) {
-        hasAccess = true;
-      }
-    }
+    const hasAccess = accessibleRoles.length > 0;
 
     if (!hasAccess) {
       res.status(403);
@@ -64,7 +35,26 @@ function allowRoles(...roles) {
   });
 }
 
+function requireSuperAdmin() {
+  return asyncHandler(async (req, res, next) => {
+    if (isProtectionBypassed()) {
+      return next();
+    }
+
+    const { resolveUserRole } = require("../utils/membership");
+    const role = resolveUserRole(req.user);
+
+    if (role !== "SUPER_ADMIN") {
+      res.status(403);
+      throw new Error("You do not have permission to access this resource");
+    }
+
+    next();
+  });
+}
+
 module.exports = {
-  enforceRoleRouteAccess,
-  allowRoles,
+  requirePermission,
+  requireMembership,
+  requireSuperAdmin,
 };

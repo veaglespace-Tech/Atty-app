@@ -14,14 +14,15 @@ const {
   payuRenewalFailure,
 } = require("../controllers/payment.controller");
 const { verifyToken } = require("../middlewares/token.middleware");
-const { allowRoles } = require("../middlewares/rbac.middleware");
+const { requirePermission } = require("../middlewares/rbac.middleware");
+const { PERMISSIONS } = require("../constants/permissions");
 
 router.get("/get-key", getPublicKey);
 router.get("/gst", getGstRateEndpoint);
 router.post("/create-order", createOrder);
-router.post("/create-renewal-order", verifyToken, allowRoles("ORG_ADMIN"), createRenewalOrder);
+router.post("/create-renewal-order", verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), createRenewalOrder);
 router.post("/verify-and-register", verifyAndRegister);
-router.post("/verify-renewal", verifyToken, allowRoles("ORG_ADMIN"), verifyRenewal);
+router.post("/verify-renewal", verifyToken, requirePermission(PERMISSIONS.SUBSCRIPTION.MANAGE), verifyRenewal);
 router.post("/archive-failed-registration", archiveFailedRegistrationAttempt);
 // PayU Callbacks (POST from PayU servers)
 router.post("/payu-success", payuSuccess);

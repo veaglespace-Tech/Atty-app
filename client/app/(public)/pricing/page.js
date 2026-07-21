@@ -31,7 +31,7 @@ import {
   formatPlanDurationShort,
   formatPlanPrice,
 } from "@/utils/plans";
-import { ROLES } from "@/utils/roles";
+import { ROLES, hasPermission, PERMISSIONS } from "@/utils/roles";
 import { API_BASE_URL } from "@/services/api/baseApi";
 
 function getAccentPalette(color) {
@@ -171,7 +171,7 @@ const getRenewalCtaLabel = ({ isCurrentPlan, subscriptionStatus, mode }) => {
 
 export default function PricingPage() {
   const { token, user, hydrated } = useAuthSession();
-  const isOrgAdminRenewal = hydrated && Boolean(token) && user?.currentRole === ROLES.ORG_ADMIN;
+  const isOrgAdminRenewal = hydrated && Boolean(token) && hasPermission(user, PERMISSIONS.SUBSCRIPTION.MANAGE);
   const { data: rawPlans, isLoading, error, refetch } = useGetPlansQuery();
   const { data: orgSubscription, isFetching: isSubscriptionLoading, refetch: refetchSubscription } =
     useGetOrgSubscriptionQuery(undefined, {
