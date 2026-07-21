@@ -159,11 +159,15 @@ export default function ReferralsPage() {
         ) : (
           <View className="space-y-4">
             {filteredPartners.map((partner) => (
+<<<<<<< HEAD
               <Pressable 
                 key={partner.id} 
                 onPress={() => router.push(`/super-admin/referrals/${partner.id}`)}
                 className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between active:opacity-80 active:scale-[0.98] shadow-sm"
               >
+=======
+              <View key={partner.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 <View className="flex-1">
                   <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-0.5">{partner.name}</Text>
                   <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">{partner.email}</Text>

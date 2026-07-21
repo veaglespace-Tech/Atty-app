@@ -59,6 +59,17 @@ export default function Home() {
             </Text>
           </View>
 
+<<<<<<< HEAD
+=======
+          {/* Heading */}
+          <Text className="mb-2 text-center text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+            Veagle
+          </Text>
+          <Text className="mb-6 text-center text-5xl font-black tracking-tight text-blue-500 dark:text-blue-400">
+            Space
+          </Text>
+
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
           {/* Subheading */}
           <Text className="mb-12 text-center text-base font-medium leading-relaxed text-slate-600 dark:text-slate-400">
             Manage attendance, teams, and daily check-ins in one place with a system that feels clear, fast, and easy to use.

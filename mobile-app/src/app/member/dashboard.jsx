@@ -65,6 +65,7 @@ export default function MemberDashboard(props) {
         contentContainerStyle={{ paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
+<<<<<<< HEAD
         {/* Welcome Section */}
         <View className="px-6 mt-6 mb-4">
           <Text className="text-[13px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
@@ -73,6 +74,38 @@ export default function MemberDashboard(props) {
           <Text className="text-[28px] font-black text-slate-900 dark:text-white tracking-tight mt-1">
             {user?.firstName || user?.name?.split(' ')[0] || "User"}
           </Text>
+=======
+        {/* App Header */}
+        <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1">
+            <View className="h-14 w-14 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mr-4 shadow-sm border border-blue-200 dark:border-blue-800">
+              <User size={28} color="#2563eb" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                {getGreeting()}
+              </Text>
+              <Text className="text-2xl font-black text-slate-900 dark:text-white" numberOfLines={1}>
+                {user?.name?.split(' ')[0] || "Member"}
+              </Text>
+            </View>
+          </View>
+          
+          <View className="flex-row items-center gap-3">
+            <Link href="./settings" asChild>
+              <Pressable className="h-11 w-11 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70">
+                <Settings size={20} color="#64748b" />
+              </Pressable>
+            </Link>
+            
+            <Pressable 
+              onPress={handleLogout}
+              className="h-11 w-11 rounded-full bg-rose-50 dark:bg-rose-500/10 items-center justify-center shadow-sm border border-rose-100 dark:border-rose-500/20 active:opacity-70"
+            >
+              <LogOut size={18} color="#e11d48" />
+            </Pressable>
+          </View>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
         </View>
 
         {/* Hero Section: Attendance Core */}
@@ -110,11 +143,16 @@ export default function MemberDashboard(props) {
           <View className="flex-row flex-wrap justify-between gap-y-4">
             {menuItems.map((item, index) => (
               <Link key={index} href={`./${item.href}`} asChild>
+<<<<<<< HEAD
                 <Pressable 
                   style={{ width: (width - 48 - 16) / 2 }}
                   className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-[0.98]"
                 >
                   <View className={`h-14 w-14 rounded-2xl ${item.bg} ${item.border} border items-center justify-center mb-5`}>
+=======
+                <Pressable className="w-[48%] bg-white dark:bg-slate-900/80 rounded-[28px] p-5 mb-4 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-70 active:scale-95">
+                  <View className={`h-14 w-14 rounded-[24px] ${item.bg} items-center justify-center mb-4`}>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                     {item.icon}
                   </View>
                   <View>

@@ -5,8 +5,7 @@ import {  ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, U
 import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderReportsQuery, useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation, useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 import { useSelector } from "react-redux";
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from "expo-sharing";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
@@ -96,34 +95,7 @@ export default function TeamLeaderReportsPage(props) {
     try {
       const blob = await mutation(queryString).unwrap();
       const filename = `team_report_${period}_${todayKey()}.${ext}`;
-
-      if (Platform.OS === 'web') {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        Alert.alert("Success", "Report downloaded successfully.");
-      } else {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
-          try {
-            const base64data = reader.result.split(',')[1];
-            const fileUri = `${FileSystem.documentDirectory}${filename}`;
-            await FileSystem.writeAsStringAsync(fileUri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-            
-            if (await Sharing.isAvailableAsync()) {
-               await Sharing.shareAsync(fileUri, { UTI: uti, mimeType });
-            } else {
-               Alert.alert("Success", `Report saved to ${filename}`);
-            }
-          } catch (e) {
-            Alert.alert("Error", "Failed to save file.");
-          }
-        };
-      }
+      await downloadAndShareBlob(blob, filename);
     } catch (err) {
       Alert.alert("Error", err?.data?.message || `Failed to download ${format.toUpperCase()}`);
     }

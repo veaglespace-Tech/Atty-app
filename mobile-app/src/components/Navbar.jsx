@@ -74,7 +74,7 @@ export default function Navbar() {
                   <AnimatedLogo className="w-full h-full" />
                 </View>
                 <Text className="text-xl font-black text-slate-900 dark:text-white">
-                  Veagle <Text className="text-blue-500">Attendee</Text>
+                  Veagle <Text className="text-blue-500">Space</Text>
                 </Text>
               </Pressable>
             </Link>

@@ -130,11 +130,18 @@ export default function PlansPage() {
   };
 
   return (
+<<<<<<< HEAD
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header */}
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.push('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+=======
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <View className="flex-row items-center justify-between">
+          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">System Plans</Text>
@@ -223,11 +230,17 @@ export default function PlansPage() {
             </Text>
           </View>
         ) : (
+<<<<<<< HEAD
           <View className="space-y-4 mb-6">
             {paginatedPlans.map((plan) => (
               <View key={plan.id} className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-5 shadow-sm">
                 
                 {/* Plan Header */}
+=======
+          <View className="space-y-4">
+            {plans.map((plan) => (
+              <View key={plan.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 <View className="flex-row items-center justify-between mb-4">
                   <View className="flex-row items-center gap-2">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400">{plan.code}</Text>
@@ -241,12 +254,29 @@ export default function PlansPage() {
                   </View>
                 </View>
 
+<<<<<<< HEAD
                 {/* Plan Details */}
                 <View className="mb-4">
                   <Text className="text-lg font-black text-slate-900 dark:text-white mb-2">{plan.name}</Text>
                   <View className="flex-row items-baseline gap-1">
                     <Text className="text-2xl font-black text-slate-900 dark:text-white">Rs. {plan.price}</Text>
                     <Text className="text-xs font-bold text-slate-500">/ {plan.durationInDays} DAYS</Text>
+=======
+                <View className="flex-row items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[24px] mb-4">
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Price</Text>
+                    <Text className="text-lg font-black text-slate-900 dark:text-white">₹{plan.price}</Text>
+                  </View>
+                  <View className="h-8 w-[1px] bg-slate-200 dark:bg-slate-700" />
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Duration</Text>
+                    <Text className="text-lg font-black text-slate-900 dark:text-white">{plan.durationInDays} days</Text>
+                  </View>
+                  <View className="h-8 w-[1px] bg-slate-200 dark:bg-slate-700" />
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Limit</Text>
+                    <Text className="text-lg font-black text-slate-900 dark:text-white">{plan.memberLimit}</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                   </View>
                 </View>
 
@@ -322,10 +352,16 @@ export default function PlansPage() {
         )}
       </ScrollView>
 
+<<<<<<< HEAD
       {/* Plan Modal */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => {}}>
         <View className="flex-1 justify-end bg-black/60">
           <View className="bg-white dark:bg-[#151E2F] rounded-t-3xl p-6 shadow-sm border-t border-slate-200 dark:border-[#1E293B]">
+=======
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             <View className="flex-row items-center justify-between mb-6">
               <Text className="text-xl font-black text-slate-900 dark:text-white">
                 {editingPlan ? "Edit Plan" : "Create New Plan"}

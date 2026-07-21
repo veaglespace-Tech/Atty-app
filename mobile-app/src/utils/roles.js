@@ -4,6 +4,7 @@ export const ROLES = {
   SUB_ADMIN: "SUB_ADMIN",
   TEAM_LEADER: "TEAM_LEADER",
   MEMBER: "MEMBER",
+  LIFE_MEMBER: "LIFE_MEMBER",
 
   // Backward-compatible aliases used by existing dashboard code.
   ADMIN: "ORG_ADMIN",
@@ -22,6 +23,8 @@ export const ROLE_ALIASES = Object.freeze({
   TEAM_LEADER: ROLES.TEAM_LEADER,
   TEAMLEAD: ROLES.TEAM_LEADER,
   MEMBER: ROLES.MEMBER,
+  LIFEMEMBER: ROLES.LIFE_MEMBER,
+  LIFE_MEMBER: ROLES.LIFE_MEMBER,
 });
 
 export const DASHBOARD_ROOT_BY_ROLE = Object.freeze({
@@ -30,6 +33,7 @@ export const DASHBOARD_ROOT_BY_ROLE = Object.freeze({
   [ROLES.SUB_ADMIN]: "/org",
   [ROLES.TEAM_LEADER]: "/team-leader",
   [ROLES.MEMBER]: "/member",
+  [ROLES.LIFE_MEMBER]: "/member",
 });
 
 export const ROLE_LABELS = Object.freeze({
@@ -38,6 +42,7 @@ export const ROLE_LABELS = Object.freeze({
   [ROLES.SUB_ADMIN]: "Sub Admin",
   [ROLES.TEAM_LEADER]: "Team Leader",
   [ROLES.MEMBER]: "Member",
+  [ROLES.LIFE_MEMBER]: "Life Member",
 });
 
 export const LOGIN_ROLE_OPTIONS = Object.freeze([
@@ -46,63 +51,155 @@ export const LOGIN_ROLE_OPTIONS = Object.freeze([
   { value: ROLES.SUB_ADMIN, label: ROLE_LABELS[ROLES.SUB_ADMIN] },
   { value: ROLES.TEAM_LEADER, label: ROLE_LABELS[ROLES.TEAM_LEADER] },
   { value: ROLES.MEMBER, label: ROLE_LABELS[ROLES.MEMBER] },
+  { value: ROLES.LIFE_MEMBER, label: ROLE_LABELS[ROLES.LIFE_MEMBER] },
 ]);
 
 export const ORG_MANAGED_ROLE_OPTIONS = Object.freeze([
   { value: ROLES.MEMBER, label: ROLE_LABELS[ROLES.MEMBER] },
+  { value: ROLES.LIFE_MEMBER, label: ROLE_LABELS[ROLES.LIFE_MEMBER] },
   { value: ROLES.TEAM_LEADER, label: ROLE_LABELS[ROLES.TEAM_LEADER] },
   { value: ROLES.SUB_ADMIN, label: ROLE_LABELS[ROLES.SUB_ADMIN] },
   { value: ROLES.ORG_ADMIN, label: ROLE_LABELS[ROLES.ORG_ADMIN] },
 ]);
 
 export const PERMISSIONS = Object.freeze({
-  TEAM_VIEW: "TEAM_VIEW",
-  TEAM_CREATE: "TEAM_CREATE",
-  TEAM_UPDATE: "TEAM_UPDATE",
-  TEAM_DELETE: "TEAM_DELETE",
-  TEAM_ASSIGN_MEMBERS: "TEAM_ASSIGN_MEMBERS",
-  ATTENDANCE_VIEW: "ATTENDANCE_VIEW",
-  ATTENDANCE_MANAGE: "ATTENDANCE_MANAGE",
-  REPORTS_VIEW: "REPORTS_VIEW",
-  REPORTS_DOWNLOAD: "REPORTS_DOWNLOAD",
-  USERS_VIEW: "USERS_VIEW",
-  USERS_CREATE: "USERS_CREATE",
-  USERS_STATUS_UPDATE: "USERS_STATUS_UPDATE",
-  USERS_ACTIVE_TOGGLE: "USERS_ACTIVE_TOGGLE",
-  USERS_DELETE: "USERS_DELETE",
-  SUBSCRIPTION_VIEW: "SUBSCRIPTION_VIEW",
-  LOCATION_SET: "LOCATION_SET",
-  POST_CREATE: "POST_CREATE",
+  TEAM: {
+    VIEW_ALL: "team:view:all",
+    VIEW_OWN: "team:view:own",
+    CREATE: "team:create",
+    UPDATE: "team:update",
+    DELETE: "team:delete",
+    ASSIGN_MEMBERS: "team:assign_members",
+  },
+  ATTENDANCE: {
+    VIEW_ALL: "attendance:view:all",
+    VIEW_TEAM: "attendance:view:team",
+    VIEW_OWN: "attendance:view:own",
+    MANAGE: "attendance:manage",
+  },
+  REPORTS: {
+    VIEW: "reports:view",
+    DOWNLOAD: "reports:download",
+  },
+  USERS: {
+    VIEW: "users:view",
+    CREATE: "users:create",
+    UPDATE_STATUS: "users:update_status",
+    TOGGLE_ACTIVE: "users:toggle_active",
+    DELETE: "users:delete",
+  },
+  POSTS: {
+    VIEW: "posts:view",
+    CREATE: "posts:create",
+    UPDATE: "posts:update",
+    DELETE: "posts:delete",
+  },
+  SUBSCRIPTION: {
+    VIEW: "subscription:view",
+    MANAGE: "subscription:manage",
+  },
+  LOCATION: {
+    VIEW: "location:view",
+    MANAGE: "location:manage",
+  },
+  ROLES: {
+    VIEW: "roles:view",
+    MANAGE: "roles:manage",
+  }
 });
 
-export const ALL_PERMISSIONS = Object.freeze(Object.values(PERMISSIONS));
+const extractPermissions = (obj) => {
+  let perms = [];
+  for (const key in obj) {
+    if (typeof obj[key] === "string") {
+      perms.push(obj[key]);
+    } else {
+      perms.push(...extractPermissions(obj[key]));
+    }
+  }
+  return perms;
+};
+
+export const ALL_PERMISSIONS = Object.freeze(extractPermissions(PERMISSIONS));
 
 export const PERMISSION_LABELS = Object.freeze({
-  [PERMISSIONS.TEAM_VIEW]: "View Teams",
-  [PERMISSIONS.TEAM_CREATE]: "Create Teams",
-  [PERMISSIONS.TEAM_UPDATE]: "Update Teams",
-  [PERMISSIONS.TEAM_DELETE]: "Delete Teams",
-  [PERMISSIONS.TEAM_ASSIGN_MEMBERS]: "Assign Team Members",
-  [PERMISSIONS.ATTENDANCE_VIEW]: "View Attendance",
-  [PERMISSIONS.ATTENDANCE_MANAGE]: "Manage Attendance",
-  [PERMISSIONS.REPORTS_VIEW]: "View Reports",
-  [PERMISSIONS.REPORTS_DOWNLOAD]: "Download Reports",
-  [PERMISSIONS.USERS_VIEW]: "View Users",
-  [PERMISSIONS.USERS_CREATE]: "Create Users",
-  [PERMISSIONS.USERS_STATUS_UPDATE]: "Approve/Reject Users",
-  [PERMISSIONS.USERS_ACTIVE_TOGGLE]: "Activate/Deactivate Users",
-  [PERMISSIONS.USERS_DELETE]: "Delete Users",
-  [PERMISSIONS.SUBSCRIPTION_VIEW]: "View Subscription",
-  [PERMISSIONS.LOCATION_SET]: "Set Workspace Location",
-  [PERMISSIONS.POST_CREATE]: "Create/Manage Posts",
+  [PERMISSIONS.TEAM.VIEW_ALL]: "View All Teams",
+  [PERMISSIONS.TEAM.VIEW_OWN]: "View Own Teams",
+  [PERMISSIONS.TEAM.CREATE]: "Create Teams",
+  [PERMISSIONS.TEAM.UPDATE]: "Update Teams",
+  [PERMISSIONS.TEAM.DELETE]: "Delete Teams",
+  [PERMISSIONS.TEAM.ASSIGN_MEMBERS]: "Assign Team Members",
+  [PERMISSIONS.ATTENDANCE.VIEW_ALL]: "View All Attendance",
+  [PERMISSIONS.ATTENDANCE.VIEW_TEAM]: "View Team Attendance",
+  [PERMISSIONS.ATTENDANCE.VIEW_OWN]: "View Own Attendance",
+  [PERMISSIONS.ATTENDANCE.MANAGE]: "Manage Attendance",
+  [PERMISSIONS.REPORTS.VIEW]: "View Reports",
+  [PERMISSIONS.REPORTS.DOWNLOAD]: "Download Reports",
+  [PERMISSIONS.USERS.VIEW]: "View Users",
+  [PERMISSIONS.USERS.CREATE]: "Create Users",
+  [PERMISSIONS.USERS.UPDATE_STATUS]: "Approve/Reject Users",
+  [PERMISSIONS.USERS.TOGGLE_ACTIVE]: "Activate/Deactivate Users",
+  [PERMISSIONS.USERS.DELETE]: "Delete Users",
+  [PERMISSIONS.SUBSCRIPTION.VIEW]: "View Subscription",
+  [PERMISSIONS.SUBSCRIPTION.MANAGE]: "Manage Subscription",
+  [PERMISSIONS.LOCATION.VIEW]: "View Location",
+  [PERMISSIONS.LOCATION.MANAGE]: "Manage Location",
+  [PERMISSIONS.POSTS.VIEW]: "View Posts",
+  [PERMISSIONS.POSTS.CREATE]: "Create Posts",
+  [PERMISSIONS.POSTS.UPDATE]: "Update Posts",
+  [PERMISSIONS.POSTS.DELETE]: "Delete Posts",
+  [PERMISSIONS.ROLES.VIEW]: "View Roles",
+  [PERMISSIONS.ROLES.MANAGE]: "Manage Roles",
 });
 
 export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
   [ROLES.SUPER_ADMIN]: ALL_PERMISSIONS,
   [ROLES.ORG_ADMIN]: ALL_PERMISSIONS,
-  [ROLES.SUB_ADMIN]: Object.freeze([PERMISSIONS.ATTENDANCE_VIEW]),
-  [ROLES.TEAM_LEADER]: Object.freeze([PERMISSIONS.ATTENDANCE_VIEW]),
-  [ROLES.MEMBER]: Object.freeze([PERMISSIONS.ATTENDANCE_VIEW]),
+  [ROLES.SUB_ADMIN]: Object.freeze([
+    PERMISSIONS.TEAM.VIEW_ALL,
+    PERMISSIONS.TEAM.CREATE,
+    PERMISSIONS.TEAM.UPDATE,
+    PERMISSIONS.TEAM.ASSIGN_MEMBERS,
+    PERMISSIONS.ATTENDANCE.VIEW_ALL,
+    PERMISSIONS.ATTENDANCE.MANAGE,
+    PERMISSIONS.REPORTS.VIEW,
+    PERMISSIONS.REPORTS.DOWNLOAD,
+    PERMISSIONS.USERS.VIEW,
+    PERMISSIONS.USERS.CREATE,
+    PERMISSIONS.USERS.UPDATE_STATUS,
+    PERMISSIONS.USERS.TOGGLE_ACTIVE,
+    PERMISSIONS.POSTS.VIEW,
+    PERMISSIONS.POSTS.CREATE,
+    PERMISSIONS.POSTS.UPDATE,
+    PERMISSIONS.SUBSCRIPTION.VIEW,
+    PERMISSIONS.LOCATION.VIEW,
+    PERMISSIONS.LOCATION.MANAGE,
+    PERMISSIONS.ROLES.VIEW,
+  ]),
+  [ROLES.TEAM_LEADER]: Object.freeze([
+    PERMISSIONS.TEAM.VIEW_OWN,
+    PERMISSIONS.TEAM.CREATE,
+    PERMISSIONS.TEAM.UPDATE,
+    PERMISSIONS.TEAM.ASSIGN_MEMBERS,
+    PERMISSIONS.ATTENDANCE.VIEW_TEAM,
+    PERMISSIONS.ATTENDANCE.MANAGE,
+    PERMISSIONS.REPORTS.VIEW,
+    PERMISSIONS.REPORTS.DOWNLOAD,
+    PERMISSIONS.USERS.VIEW,
+    PERMISSIONS.POSTS.VIEW,
+    PERMISSIONS.POSTS.CREATE,
+    PERMISSIONS.SUBSCRIPTION.VIEW,
+    PERMISSIONS.LOCATION.VIEW,
+    PERMISSIONS.LOCATION.MANAGE
+  ]),
+  [ROLES.MEMBER]: Object.freeze([
+    PERMISSIONS.ATTENDANCE.VIEW_OWN,
+    PERMISSIONS.POSTS.VIEW
+  ]),
+  [ROLES.LIFE_MEMBER]: Object.freeze([
+    PERMISSIONS.ATTENDANCE.VIEW_OWN,
+    PERMISSIONS.POSTS.VIEW
+  ]),
 });
 
 export const PERMISSION_GROUPS = Object.freeze([
@@ -110,59 +207,62 @@ export const PERMISSION_GROUPS = Object.freeze([
     key: "TEAM",
     label: "Team Management",
     items: [
-      PERMISSIONS.TEAM_VIEW,
-      PERMISSIONS.TEAM_CREATE,
-      PERMISSIONS.TEAM_UPDATE,
-      PERMISSIONS.TEAM_DELETE,
-      PERMISSIONS.TEAM_ASSIGN_MEMBERS,
+      PERMISSIONS.TEAM.VIEW_ALL,
+      PERMISSIONS.TEAM.VIEW_OWN,
+      PERMISSIONS.TEAM.CREATE,
+      PERMISSIONS.TEAM.UPDATE,
+      PERMISSIONS.TEAM.DELETE,
+      PERMISSIONS.TEAM.ASSIGN_MEMBERS,
     ],
   },
   {
     key: "ATTENDANCE",
     label: "Attendance",
     items: [
-      PERMISSIONS.ATTENDANCE_VIEW,
-      PERMISSIONS.ATTENDANCE_MANAGE,
+      PERMISSIONS.ATTENDANCE.VIEW_ALL,
+      PERMISSIONS.ATTENDANCE.VIEW_TEAM,
+      PERMISSIONS.ATTENDANCE.VIEW_OWN,
+      PERMISSIONS.ATTENDANCE.MANAGE,
     ],
   },
   {
     key: "REPORTS",
     label: "Reports",
-    items: [PERMISSIONS.REPORTS_VIEW, PERMISSIONS.REPORTS_DOWNLOAD],
+    items: [PERMISSIONS.REPORTS.VIEW, PERMISSIONS.REPORTS.DOWNLOAD],
   },
   {
     key: "USERS",
     label: "User Management",
     items: [
-      PERMISSIONS.USERS_VIEW,
-      PERMISSIONS.USERS_CREATE,
-      PERMISSIONS.USERS_STATUS_UPDATE,
-      PERMISSIONS.USERS_ACTIVE_TOGGLE,
-      PERMISSIONS.USERS_DELETE,
+      PERMISSIONS.USERS.VIEW,
+      PERMISSIONS.USERS.CREATE,
+      PERMISSIONS.USERS.UPDATE_STATUS,
+      PERMISSIONS.USERS.TOGGLE_ACTIVE,
+      PERMISSIONS.USERS.DELETE,
     ],
   },
   {
     key: "SUBSCRIPTION",
     label: "Subscription",
-    items: [PERMISSIONS.SUBSCRIPTION_VIEW],
+    items: [PERMISSIONS.SUBSCRIPTION.VIEW, PERMISSIONS.SUBSCRIPTION.MANAGE],
   },
   {
     key: "CONFIGURATION",
     label: "Configuration",
-    items: [PERMISSIONS.LOCATION_SET],
+    items: [PERMISSIONS.LOCATION.VIEW, PERMISSIONS.LOCATION.MANAGE, PERMISSIONS.ROLES.VIEW, PERMISSIONS.ROLES.MANAGE],
   },
   {
     key: "COMMUNICATION",
     label: "Communication",
-    items: [PERMISSIONS.POST_CREATE],
+    items: [PERMISSIONS.POSTS.VIEW, PERMISSIONS.POSTS.CREATE, PERMISSIONS.POSTS.UPDATE, PERMISSIONS.POSTS.DELETE],
   },
 ]);
 
 export const ASSIGNABLE_PERMISSIONS_BY_ROLE = Object.freeze({
   [ROLES.ORG_ADMIN]: ALL_PERMISSIONS,
   [ROLES.SUB_ADMIN]: ALL_PERMISSIONS,
-  [ROLES.TEAM_LEADER]: Object.freeze([]),
-  [ROLES.MEMBER]: Object.freeze([]),
+  [ROLES.TEAM_LEADER]: ALL_PERMISSIONS,
+  [ROLES.MEMBER]: ALL_PERMISSIONS,
   [ROLES.SUPER_ADMIN]: ALL_PERMISSIONS,
 });
 
@@ -176,13 +276,13 @@ export const normalizeRole = (role) => {
     ROLE_ALIASES[rawRole] ||
     ROLE_ALIASES[normalizedWithUnderscore] ||
     ROLE_ALIASES[compact] ||
-    ROLES.MEMBER
+    normalizedWithUnderscore
   );
 };
 
 export const normalizePermission = (permission) => {
   if (!permission) return null;
-  const normalized = String(permission).toUpperCase().trim().replace(/[\s-]+/g, "_");
+  const normalized = String(permission).toLowerCase().trim();
   return ALL_PERMISSIONS.includes(normalized) ? normalized : null;
 };
 
@@ -289,12 +389,12 @@ export const getUserRoleForOrg = (user, orgId = null) => {
 
 export const getDefaultPermissionsForRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || [])];
+  return [...(ROLE_DEFAULT_PERMISSIONS[normalizedRole] || ROLE_DEFAULT_PERMISSIONS[ROLES.MEMBER])];
 };
 
 export const getAssignablePermissionsByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || [])];
+  return [...(ASSIGNABLE_PERMISSIONS_BY_ROLE[normalizedRole] || ALL_PERMISSIONS)];
 };
 
 export const getManagedRoleOptions = (actorRole) => {
@@ -414,5 +514,13 @@ export const hasPermission = (userOrRole, permissionKey, explicitPermissions) =>
   if (!normalizedPermission) return false;
 
   const resolvedPermissions = resolveUserPermissions(userOrRole, explicitPermissions);
-  return resolvedPermissions.includes(normalizedPermission);
+  if (resolvedPermissions.includes(normalizedPermission)) return true;
+
+  return resolvedPermissions.some((p) => {
+    if (p.endsWith("*")) {
+      const prefix = p.slice(0, -1);
+      return normalizedPermission.startsWith(prefix);
+    }
+    return false;
+  });
 };

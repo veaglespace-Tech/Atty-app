@@ -1,14 +1,14 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Users, CalendarCheck2, Inbox, Settings } from 'lucide-react-native';
-import { useColorScheme } from 'react-native';
+import { useColorScheme } from 'nativewind';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { hasPermission, PERMISSIONS } from "@/utils/roles";
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function TeamLeaderLayout() {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { user } = useAuthSession();
 

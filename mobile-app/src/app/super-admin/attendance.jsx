@@ -249,6 +249,7 @@ export default function AttendancePage() {
 
         {/* Stats Row */}
         {!isLoading && reports.length > 0 && (
+<<<<<<< HEAD
           <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
             <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
               <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Platform Members</Text>
@@ -265,6 +266,20 @@ export default function AttendancePage() {
             <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
               <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Total Worked Hours</Text>
               <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Worked Hrs")} hrs</Text>
+=======
+          <View className="flex-row gap-3 mb-6">
+            <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Present</Text>
+              <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Present Days")}</Text>
+            </View>
+            <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <Text className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Half Days</Text>
+              <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Half Days")}</Text>
+            </View>
+            <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Total Hrs</Text>
+              <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Worked Hrs")}</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             </View>
           </View>
         )}
@@ -282,6 +297,7 @@ export default function AttendancePage() {
             </Text>
           </View>
         ) : (
+<<<<<<< HEAD
           <>
             <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
               <View className="px-5 py-4 border-b border-slate-100 dark:border-slate-800/50 flex-row justify-between items-center">
@@ -300,6 +316,21 @@ export default function AttendancePage() {
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Half Day</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Absent</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-right">Worked Hours</Text>
+=======
+          <View className="space-y-4">
+            {reports.map((report, index) => (
+              <View key={report.userId || index} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+                <View className="flex-row items-center justify-between mb-3">
+                  <View className="flex-1">
+                    <Text className="text-lg font-black text-slate-900 dark:text-white">{report.member}</Text>
+                    <Text className="text-xs font-semibold text-slate-500">{report.email}</Text>
+                  </View>
+                  <View className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
+                      {report.role}
+                    </Text>
+                  </View>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 </View>
 
                 {/* Table Rows */}

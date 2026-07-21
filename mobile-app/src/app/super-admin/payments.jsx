@@ -56,6 +56,7 @@ export default function PaymentsPage() {
     return filtered;
   }, [payments, search]);
 
+<<<<<<< HEAD
   const totalItems = filteredPayments.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
@@ -107,6 +108,47 @@ export default function PaymentsPage() {
               </View>
             </View>
           </View>
+=======
+  const renderStatusModal = () => (
+    <Modal visible={showStatusModal} transparent animationType="fade">
+      <TouchableOpacity 
+        activeOpacity={1} 
+        onPress={() => setShowStatusModal(false)}
+        className="flex-1 bg-black/50 justify-end"
+      >
+        <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-slate-900/80 rounded-t-3xl p-6 pb-12 shadow-sm">
+          <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">Filter by Status</Text>
+          {STATUS_OPTIONS.map((opt) => (
+            <Pressable
+              key={opt}
+              onPress={() => {
+                setStatus(opt);
+                setShowStatusModal(false);
+              }}
+              className={`py-4 border-b border-slate-100 dark:border-slate-800 flex-row items-center justify-between`}
+            >
+              <Text className={`text-base font-bold ${status === opt ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                {opt === "ALL" ? "All Payments" : opt}
+              </Text>
+              {status === opt && <Check size={20} className="text-blue-600 dark:text-blue-400" />}
+            </Pressable>
+          ))}
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+
+  return (
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
+        <View className="flex-row items-center justify-between mb-4">
+          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+          </Pressable>
+          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Payments</Text>
+          <View className="w-10" />
+        </View>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
 
           {/* Metric Cards */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row mt-2" contentContainerStyle={{ gap: 12 }}>
@@ -135,6 +177,7 @@ export default function PaymentsPage() {
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#2563eb" />}>
         
+<<<<<<< HEAD
         {/* Table Header Area */}
         <View className="mb-6">
           <View className="flex-col md:flex-row md:items-center justify-between gap-4">
@@ -183,6 +226,28 @@ export default function PaymentsPage() {
                   <View className="flex-1 pr-4">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">ORGANIZATION</Text>
                     <Text className="text-sm font-black text-slate-900 dark:text-white leading-tight" numberOfLines={1}>{payment.organization}</Text>
+=======
+        {isLoading && payments.length === 0 ?
+        <View className="py-12 items-center justify-center">
+            <ActivityIndicator size="large" color="#2563eb" />
+          </View> :
+        payments.length === 0 ?
+        <View className="py-12 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
+            <CreditCard size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
+            <Text className="text-slate-500 font-medium">No payments found.</Text>
+          </View> :
+
+        <View className="gap-4">
+            <Text className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">
+              {payments.length} Transactions Found
+            </Text>
+            {payments.map((payment) =>
+          <View key={payment.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
+                <View className="flex-row items-start justify-between mb-2">
+                  <View className="flex-1 pr-3">
+                    <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>{payment.organization}</Text>
+                    <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">{payment.userEmail}</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                   </View>
                   <View className="items-end">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">ORG CODE</Text>

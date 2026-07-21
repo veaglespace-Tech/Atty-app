@@ -13,8 +13,7 @@ import { Download } from "lucide-react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const todayKey = getTodayDateKey;
 
@@ -97,23 +96,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
         params += `?period=${filterType}`;
       }
       const blob = await downloadPdfMutation(params).unwrap();
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const base64data = reader.result.split(',')[1];
-          const filename = `attendance-logs-${filterType.toLowerCase()}.pdf`;
-          const uri = FileSystem.documentDirectory + filename;
-          await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(uri);
-          } else {
-            Alert.alert("Success", "PDF downloaded successfully.");
-          }
-        } catch (e) {
-          Alert.alert("Error", "Failed to save PDF to device.");
-        }
-      };
-      reader.readAsDataURL(blob);
+      await downloadAndShareBlob(blob, `attendance-logs-${filterType.toLowerCase()}.pdf`);
     } catch (err) {
       Alert.alert("Error", err?.data?.message || err?.message || "Failed to download PDF");
     }
@@ -128,23 +111,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
         params += `?period=${filterType}`;
       }
       const blob = await downloadExcelMutation(params).unwrap();
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const base64data = reader.result.split(',')[1];
-          const filename = `attendance-logs-${filterType.toLowerCase()}.xlsx`;
-          const uri = FileSystem.documentDirectory + filename;
-          await FileSystem.writeAsStringAsync(uri, base64data, { encoding: FileSystem.EncodingType.Base64 });
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(uri);
-          } else {
-            Alert.alert("Success", "Excel downloaded successfully.");
-          }
-        } catch (e) {
-          Alert.alert("Error", "Failed to save Excel to device.");
-        }
-      };
-      reader.readAsDataURL(blob);
+      await downloadAndShareBlob(blob, `attendance-logs-${filterType.toLowerCase()}.xlsx`);
     } catch (err) {
       Alert.alert("Error", err?.data?.message || err?.message || "Failed to download Excel");
     }

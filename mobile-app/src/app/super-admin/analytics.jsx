@@ -49,26 +49,49 @@ export default function AnalyticsPage() {
             
             {/* Total Summary Row */}
             <View className="flex-row flex-wrap justify-between gap-y-3">
+<<<<<<< HEAD
               <View className="w-full bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+=======
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 <View className="flex-row items-center gap-2 mb-2">
                   <Building2 size={16} className="text-blue-500" />
                   <Text className="text-xs font-black uppercase tracking-widest text-slate-500">Organizations</Text>
                 </View>
                 <Text className="text-3xl font-black text-slate-900 dark:text-white">{getSummaryValue("Organizations")}</Text>
               </View>
+<<<<<<< HEAD
               <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+=======
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 <View className="flex-row items-center gap-2 mb-2">
                   <Users size={14} className="text-indigo-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Users</Text>
                 </View>
                 <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Users")}</Text>
               </View>
+<<<<<<< HEAD
               <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+=======
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                 <View className="flex-row items-center gap-2 mb-2">
                   <CreditCard size={14} className="text-amber-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Payments</Text>
                 </View>
+<<<<<<< HEAD
                 <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Payments")}</Text>
+=======
+                <Text className="text-xl font-black text-slate-900 dark:text-white">{getSummaryValue("Total Payments")}</Text>
+              </View>
+              <View className="w-[48%] bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-[24px] border border-emerald-100 dark:border-emerald-800/30">
+                <View className="flex-row items-center gap-2 mb-2">
+                  <TrendingUp size={14} className="text-emerald-600" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Total Rev</Text>
+                </View>
+                <Text className="text-xl font-black text-emerald-700 dark:text-emerald-300">₹{getSummaryValue("Total Revenue")}</Text>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
               </View>
             </View>
 

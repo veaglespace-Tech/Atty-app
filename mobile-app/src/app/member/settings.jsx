@@ -144,7 +144,11 @@ export default function MemberSettings() {
           {/* Header */}
           <View className="px-5 pt-4 pb-4 flex-row items-center bg-slate-100 dark:bg-slate-950">
             <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 mr-4 active:opacity-70">
+<<<<<<< HEAD
               <ArrowLeft size={20} className="text-slate-700 dark:text-white" />
+=======
+              <ArrowLeft size={20} color="#334155" />
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
             </Pressable>
             <View className="flex-1 flex-row items-center">
               <Text className="text-xl font-black text-slate-900 dark:text-white truncate">Settings</Text>

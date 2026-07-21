@@ -77,6 +77,7 @@ export default function NotificationsPage() {
   }, [filteredPosts, page, pageSize]);
 
   return (
+<<<<<<< HEAD
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header */}
       <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
@@ -139,6 +140,31 @@ export default function NotificationsPage() {
                   </Pressable>
                 ) : null}
               </View>
+=======
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <View className="flex-row items-center justify-between">
+          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+          </Pressable>
+          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Push Notifications</Text>
+          <View className="w-10" />
+        </View>
+      </View>
+
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        
+        <View className="bg-white dark:bg-slate-900/80 p-6 rounded-[24px] border border-slate-200 dark:border-slate-800 mb-6 shadow-sm">
+          <View className="flex-row items-center gap-3 mb-6">
+            <View className="h-12 w-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 items-center justify-center border border-blue-100 dark:border-blue-800/50">
+              <Bell size={24} className="text-blue-600 dark:text-blue-400" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-lg font-black text-slate-900 dark:text-white">Broadcast Message</Text>
+              <Text className="text-xs font-semibold text-slate-500">Send a system-wide push notification to all platform users.</Text>
+            </View>
+          </View>
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
 
               {/* Organization Dropdown */}
               {showOrgDropdown && (
@@ -213,6 +239,7 @@ export default function NotificationsPage() {
           <View className="flex-1 items-center justify-center p-12">
             <ActivityIndicator size="large" color="#3b82f6" />
           </View>
+<<<<<<< HEAD
         ) : filteredPosts.length === 0 ? (
           <View className="flex-1 items-center justify-center p-12 bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
             <Megaphone size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
@@ -238,6 +265,22 @@ export default function NotificationsPage() {
                       <Text className={`text-[9px] font-black uppercase tracking-[0.15em] ${config.color}`}>
                         {config.label}
                       </Text>
+=======
+        ) : recentBroadcasts.length === 0 ? (
+          <View className="bg-white dark:bg-slate-900/80 p-8 rounded-[24px] border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm">
+            <Users size={32} className="text-slate-300 dark:text-slate-700 mb-3" />
+            <Text className="text-base font-bold text-slate-900 dark:text-white text-center">No Recent Broadcasts</Text>
+            <Text className="text-xs text-slate-500 text-center mt-1">Previous system notifications will appear here.</Text>
+          </View>
+        ) : (
+          <View className="space-y-4">
+            {recentBroadcasts.map((broadcast) => (
+              <View key={broadcast.id} className="bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+                <View className="flex-row items-start justify-between mb-2">
+                  <View className="flex-row items-center gap-2">
+                    <View className="bg-blue-50 dark:bg-blue-900/30 p-1.5 rounded-lg border border-blue-100 dark:border-blue-800/50">
+                      <Megaphone size={14} className="text-blue-600 dark:text-blue-400" />
+>>>>>>> 89f1cc1 (Update mobile UI, branding, and implement role-based dashboard navigation)
                     </View>
 
                     <View className="flex-row items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 dark:border-slate-700 dark:bg-slate-800">
