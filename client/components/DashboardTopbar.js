@@ -85,7 +85,7 @@ export default function DashboardTopbar() {
               <img
                 src={user.organization.logoUrl}
                 alt="Organization Logo"
-                className="h-full w-auto max-w-[120px] object-contain py-2"
+                className="h-full w-auto object-contain py-2"
               />
             </div>
           )}
