@@ -81,11 +81,11 @@ export default function DashboardTopbar() {
           </button>
 
           {user?.organization?.logoUrl && (
-            <div className="hidden h-[74px] shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] md:flex">
+            <div className="hidden h-[74px] shrink-0 items-center justify-center rounded-[1.5rem] border border-slate-200/80 bg-white/88 px-4 shadow-[0_18px_42px_rgba(59,130,246,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/88 dark:shadow-[0_22px_50px_rgba(2,6,23,0.34)] md:flex">
               <img
                 src={user.organization.logoUrl}
                 alt="Organization Logo"
-                className="h-full w-auto object-contain py-2"
+                className="h-full w-auto max-w-none object-contain py-2"
               />
             </div>
           )}
