@@ -82,7 +82,7 @@ export default function TeamLeaderLayout() {
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
-      <Tabs.Screen name="coupons" options={{ href: null }} />
+
       <Tabs.Screen name="settings" options={{ href: null }} />
 
       <Tabs.Screen name="team" options={{ href: null }} />
