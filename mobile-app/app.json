@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Atty",
+    "name": "ATTY",
     "slug": "atty",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -47,9 +47,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "ec15eb7c-ef6c-469d-a2e9-797a51a0aebd"
+        "projectId": "d782f29a-35b0-49b7-9d97-eedd9d486a98"
       }
     },
-    "owner": "akshaysingare"
+    "owner": "veaglespace"
   }
 }
