@@ -26,7 +26,7 @@ jest.mock("../services/attendance-time.service", () => ({
     graceMinutes: 0,
   })),
   resolveTimeOfDayMinutes: jest.fn((value) => {
-    if (value instanceof Date) return 19 * 60 + 125;
+    if (value instanceof Date) return 23 * 60 + 35;
     return 10 * 60;
   }),
   parseStartTimeMinutes: jest.fn(() => 19 * 60),
@@ -97,8 +97,8 @@ describe("attendance auto close scheduler", () => {
       expect.objectContaining({
         skipDuplicates: true,
         data: expect.arrayContaining([
-          expect.objectContaining({ orgId: 22, userId: 2, status: "ABSENT" }),
-          expect.objectContaining({ orgId: 22, userId: 3, status: "ABSENT" }),
+          expect.objectContaining({ userId: 2, orgId: 22, status: "ABSENT" }),
+          expect.objectContaining({ userId: 3, orgId: 22, status: "ABSENT" }),
         ]),
       })
     );

@@ -2,7 +2,7 @@ const { CLIENT_BASE_URL } = require("./index");
 
 const trimValue = (value) => String(value || "").trim();
 
-const parsePort = (value, fallback = 5000) => {
+const parsePort = (value, fallback = 5001) => {
   const parsed = Number.parseInt(String(value || ""), 10);
   if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 65535) {
     return fallback;
@@ -52,7 +52,7 @@ const ensureEnv = () => {
     nodeEnv,
     isTest,
     isProduction,
-    port: parsePort(process.env.PORT, 5000),
+    port: parsePort(process.env.PORT, 5001),
     loginRateLimitMax: parseRateLimitMax(process.env.LOGIN_RATE_LIMIT_MAX, 10),
   };
 };

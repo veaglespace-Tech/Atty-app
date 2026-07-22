@@ -207,7 +207,7 @@ const uploadImageDataUrl = async ({
       const filePath = path.join(uploadsDir, fileName);
       fs.writeFileSync(filePath, buffer);
       
-      const backendUrl = process.env.API_URL || "http://localhost:5000";
+      const backendUrl = process.env.API_URL || process.env.SERVER_BASE_URL || "http://localhost:5001";
       return {
         url: `${backendUrl}/uploads/${normalizedFolder}/${fileName}`,
         publicId: `local-${normalizedFolder}-${fileName}`,
