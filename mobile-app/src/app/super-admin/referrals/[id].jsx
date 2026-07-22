@@ -183,13 +183,7 @@ export default function ReferralPartnerDetailsPage() {
                         </View>
                       </View>
                     </View>
-                    <View className="items-end">
-                      <View className={`px-2.5 py-1 rounded-md ${org.subscriptionStatus === 'ACTIVE' ? 'bg-emerald-50 dark:bg-emerald-500/20' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                        <Text className={`text-[9px] font-black uppercase tracking-widest ${org.subscriptionStatus === 'ACTIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                          {org.subscriptionStatus || 'INACTIVE'}
-                        </Text>
-                      </View>
-                    </View>
+
                   </Pressable>
                 ))}
               </View>

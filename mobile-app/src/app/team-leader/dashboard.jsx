@@ -27,7 +27,6 @@ export default function TeamLeaderDashboard() {
       name: "Settings",
       actions: [
         { title: "Posts", description: "Manage team announcements.", icon: <MessageSquare size={22} color="#2563eb" />, href: "posts" },
-        { title: "Subscription", description: "View subscription plan details.", icon: <CreditCard size={22} color="#2563eb" />, href: "subscription" },
         { title: "Notifications", description: "View team alerts and updates.", icon: <Bell size={22} color="#2563eb" />, href: "notifications" },
         { title: "Coupons", description: "Manage referral and discount coupons.", icon: <Gift size={22} color="#2563eb" />, href: "coupons" }
       ]

@@ -65,10 +65,7 @@ export default function SuperAdminLayout() {
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="payments"
-        options={{ href: null }}
-      />
+
       <Tabs.Screen
         name="settings"
         options={{
@@ -78,7 +75,7 @@ export default function SuperAdminLayout() {
       />
       <Tabs.Screen name="access" options={{ href: null }} />
       <Tabs.Screen name="organization/[id]" options={{ href: null }} />
-      <Tabs.Screen name="payment/[id]" options={{ href: null }} />
+
       <Tabs.Screen name="referrals/index" options={{ href: null }} />
       <Tabs.Screen name="referrals/[id]" options={{ href: null }} />
       <Tabs.Screen name="users/[id]" options={{ href: null }} />
@@ -92,8 +89,7 @@ export default function SuperAdminLayout() {
       <Tabs.Screen name="leads" options={{ href: null }} />
       <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
-      <Tabs.Screen name="plans" options={{ href: null }} />
-      <Tabs.Screen name="plans/[id]" options={{ href: null }} />
+
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="referrals" options={{ href: null }} />
       <Tabs.Screen name="roles" options={{ href: null }} />

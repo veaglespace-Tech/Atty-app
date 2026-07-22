@@ -38,7 +38,7 @@ export default function SuperAdminDashboard(props) {
             <Text className="text-[10px] font-black uppercase tracking-widest text-blue-400">Platform Overview</Text>
           </View>
           <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Super Admin Dashboard</Text>
-          <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">Global SaaS usage, subscription health, and revenue summary.</Text>
+          <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">Global SaaS usage, and organization summary.</Text>
         </View>
 
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-8">
@@ -58,10 +58,7 @@ export default function SuperAdminDashboard(props) {
             <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Users</Text>
             <Text className="text-xl font-black text-slate-900 dark:text-white">{summary.get("Users") || 0}</Text>
           </View>
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Payments</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white">{summary.get("Successful Payments") || 0}</Text>
-          </View>
+
         </View>
 
         <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
@@ -81,8 +78,6 @@ export default function SuperAdminDashboard(props) {
               <View className="flex-row items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-2 min-w-[800px]">
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-40">Organization</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24">Org Code</Text>
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32">Plan</Text>
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-28 text-center">Subscription</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-16 text-center">Users</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-16 text-center">Teams</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Access</Text>
@@ -95,12 +90,6 @@ export default function SuperAdminDashboard(props) {
                 <View key={item.id || index} className="flex-row items-center py-4 border-b border-slate-100 dark:border-slate-800/50 min-w-[800px]">
                   <Text className="text-xs font-bold text-slate-900 dark:text-white w-40 pr-2" numberOfLines={1}>{item.organization}</Text>
                   <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-24">{item.code}</Text>
-                  <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-32">{item.planName}</Text>
-                  <View className="w-28 items-center">
-                    <View className={`px-2 py-1 rounded-full border ${item.subscriptionStatus === 'ACTIVE' ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800/50' : 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800/50'}`}>
-                      <Text className={`text-[9px] font-black uppercase tracking-widest ${item.subscriptionStatus === 'ACTIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{item.subscriptionStatus || 'N/A'}</Text>
-                    </View>
-                  </View>
                   <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-16 text-center">{item.users}</Text>
                   <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-16 text-center">{item.teams}</Text>
                   <View className="w-24 items-center">

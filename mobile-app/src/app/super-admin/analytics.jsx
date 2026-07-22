@@ -61,11 +61,7 @@ export default function AnalyticsPage() {
                 </View>
                 <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Users")}</Text>
               </View>
-              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">                <View className="flex-row items-center gap-2 mb-2">
-                  <CreditCard size={14} className="text-amber-500" />
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Payments</Text>
-                </View>
-                <Text className="text-2xl font-black text-slate-900 dark:text-white">{getSummaryValue("Payments")}</Text>              </View>
+
             </View>
 
             {/* Monthly Trend Data */}
@@ -78,7 +74,7 @@ export default function AnalyticsPage() {
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-16">Month</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Orgs</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Users</Text>
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex-1 text-center">Pays</Text>
+
                   <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 w-16 text-right">Rev</Text>
                 </View>
                 
@@ -99,11 +95,7 @@ export default function AnalyticsPage() {
                         <Text className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400">{item.users}</Text>
                       </View>
                     </View>
-                    <View className="flex-1 items-center">
-                      <View className="px-2 py-1 rounded bg-amber-50 dark:bg-amber-900/30">
-                        <Text className="text-[10px] font-bold text-amber-700 dark:text-amber-400">{item.payments}</Text>
-                      </View>
-                    </View>
+
                     <Text className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 w-16 text-right" numberOfLines={1}>₹{item.revenue}</Text>
                   </View>
                 ))}

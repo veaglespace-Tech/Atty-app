@@ -81,7 +81,7 @@ app.use("/api/auth", require("./routes/auth.route"));
 app.use("/api/org", require("./routes/org.route"));
 app.use("/api/attendance", require("./routes/attendance.route"));
 app.use("/api/dashboard", require("./routes/dashboard.route"));
-app.use("/api/payment", require("./routes/payment.route"));
+
 app.use("/api/plans", require("./routes/plan.route"));
 app.use("/api/super-admin", require("./routes/super-admin.route"));
 app.use("/api/team-leader", require("./routes/team-leader.route"));

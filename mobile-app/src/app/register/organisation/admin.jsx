@@ -98,7 +98,7 @@ export default function AdminRegistration() {
 
       const orgDraft = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation);
       
-      const res = await fetch(`${API_BASE_URL}/payment/verify-and-register`, {
+      const res = await fetch(`${API_BASE_URL}/auth/register-org`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -191,10 +191,7 @@ export default function AdminRegistration() {
               </View>
 
               <View className="gap-4 mb-8">
-                <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
-                  <Text className="text-[10px] font-black uppercase text-slate-400 mb-1">Plan</Text>
-                  <Text className="text-sm font-black text-slate-900 dark:text-white">{successState.planName}</Text>
-                </View>
+
                 <View className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
                   <Text className="text-[10px] font-black uppercase text-slate-400 mb-1">Workspace</Text>
                   <Text className="text-sm font-black text-slate-900 dark:text-white">{successState.organizationName}</Text>

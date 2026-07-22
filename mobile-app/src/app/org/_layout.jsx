@@ -90,7 +90,7 @@ export default function OrgLayout() {
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="registration-requests" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
-      <Tabs.Screen name="subscription" options={{ href: null }} />
+
       <Tabs.Screen name="teams" options={{ href: null }} />
       <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="workspace" options={{ href: null }} />

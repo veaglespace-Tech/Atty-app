@@ -8,9 +8,7 @@ import {
   useGetSuperAdminOrganizationTeamsQuery, 
   useExportSuperAdminOrganizationUsersExcelMutation,
   useUpdateOrganizationAccessMutation,
-  usePatchSuperAdminOrganizationMutation,
-  useExtendSuperAdminOrganizationPlanMutation,
-  useGetSuperAdminPlansQuery
+  usePatchSuperAdminOrganizationMutation
 } from "@/services/api/superAdminApi";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
@@ -21,18 +19,12 @@ export default function OrganizationDetailsPage() {
 
   const { data: usersData, isLoading: isLoadingUsers } = useGetSuperAdminOrganizationUsersQuery(id, { skip: !id || activeTab !== "Users" });
   const { data: teamsData, isLoading: isLoadingTeams } = useGetSuperAdminOrganizationTeamsQuery(id, { skip: !id || activeTab !== "Teams" });
-  const { data: plansData } = useGetSuperAdminPlansQuery();
-  
   const [exportOrgUsersExcel, { isLoading: isExporting }] = useExportSuperAdminOrganizationUsersExcelMutation();
   const [updateAccess, { isLoading: isUpdatingAccess }] = useUpdateOrganizationAccessMutation();
   const [patchOrg, { isLoading: isPatchingOrg }] = usePatchSuperAdminOrganizationMutation();
-  const [extendPlan, { isLoading: isExtending }] = useExtendSuperAdminOrganizationPlanMutation();
 
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({});
-  const [showExtendModal, setShowExtendModal] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState("");
-  const [durationInDays, setDurationInDays] = useState("30");
 
   const handleExportUsers = async () => {
     try {
@@ -88,19 +80,6 @@ export default function OrganizationDetailsPage() {
     }
   };
 
-  const handleExtendPlan = async () => {
-    try {
-      await extendPlan({
-        organizationId: id,
-        planId: selectedPlanId,
-        durationInDays: Number(durationInDays),
-      }).unwrap();
-      alert("Plan extended successfully.");
-      setShowExtendModal(false);
-    } catch (err) {
-      alert("Failed to extend plan.");
-    }
-  };
 
   const org = data?.item;
 
@@ -154,7 +133,7 @@ export default function OrganizationDetailsPage() {
     </View>
   );
 
-  const tabs = ["Overview", "Profile", "Billing", "Users", "Teams"];
+  const tabs = ["Overview", "Profile", "Users", "Teams"];
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0F172A]">
@@ -179,17 +158,13 @@ export default function OrganizationDetailsPage() {
               <View className="flex-row flex-wrap gap-2">
                 {renderBadge(`ORG - ${org.code || '---'}`)}
                 {renderBadge(org.active ? "ACTIVE" : "INACTIVE", org.active ? "success" : "default")}
-                {renderBadge(org.subscriptionStatus || "TRIAL", org.subscriptionStatus === "ACTIVE" ? "success" : "info")}
                 {renderBadge(org.blocked ? "BLOCKED" : "UNBLOCKED", org.blocked ? "danger" : "success")}
               </View>
             </View>
 
             {/* Right Side: Stats Grid */}
             <View className="w-full md:w-64 gap-2">
-              <View className="flex-row gap-2">
-                {renderStatCard("Plan", org.plan?.name || "Free Trial")}
-                {renderStatCard("Revenue", `₹${org.paymentSummary?.totalRevenue || 0}`)}
-              </View>
+
               <View className="flex-row gap-2">
                 {renderStatCard("Users", org.counts?.users || 0)}
                 {renderStatCard("Teams", org.counts?.teams || 0)}
@@ -230,10 +205,8 @@ export default function OrganizationDetailsPage() {
                 <View className="flex-row flex-wrap justify-between gap-y-3">
                   {renderOverviewField("Email", org.email || org.admin?.email || "-")}
                   {renderOverviewField("Phone", org.phone ? `${org.phoneCountryCode || ''} ${org.phone}` : (org.admin?.mobile ? `${org.admin.mobileCountryCode || ''} ${org.admin.mobile}` : "-"))}
-                  {renderOverviewField("Subscription Expiry", org.subscriptionExpiry ? new Date(org.subscriptionExpiry).toLocaleDateString() : "Never")}
                   {renderOverviewField("Location", [org.city, org.state, org.country].filter(Boolean).join(", ") || "-")}
-                  {renderOverviewField("Successful Payments", org.paymentSummary?.successfulPayments || "0")}
-                  {renderOverviewField("Last Payment", org.paymentSummary?.lastPaymentAt ? new Date(org.paymentSummary.lastPaymentAt).toLocaleString() : "-")}
+
                   {renderOverviewField("Referred By", org.referredByPartner?.name || "-")}
                 </View>
               </View>
@@ -290,40 +263,7 @@ export default function OrganizationDetailsPage() {
           </View>
         )}
 
-        {activeTab === "Billing" && (
-          <View className="space-y-4">
-            <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
-              <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">Subscription Snapshot</Text>
-                <Pressable onPress={() => setShowExtendModal(true)} className="flex-row items-center bg-blue-500 px-3 py-1.5 rounded-lg">
-                  <CalendarClock size={14} color="white" className="mr-2" />
-                  <Text className="text-xs font-bold text-white">Extend Plan</Text>
-                </Pressable>              </View>
-              <View className="space-y-3">
-                <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Plan</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.plan?.name || "TRIAL"}</Text></View>
-                <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Price</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.plan?.currency || "INR"} {org.plan?.price || 0}</Text></View>
-                <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Start Date</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription?.startDate ? new Date(org.activeSubscription.startDate).toLocaleDateString() : "-"}</Text></View>
-                <View className="flex-row justify-between"><Text className="text-sm text-slate-500">End Date</Text><Text className="text-sm font-bold text-slate-900 dark:text-white">{org.activeSubscription?.endDate ? new Date(org.activeSubscription.endDate).toLocaleDateString() : "-"}</Text></View>
-                <View className="flex-row justify-between"><Text className="text-sm text-slate-500">Total Revenue</Text><Text className="text-sm font-black text-emerald-600 dark:text-emerald-400">₹{org.paymentSummary?.totalRevenue || 0}</Text></View>
-              </View>
-            </View>
-            
-            <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-4">
-              <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-4">Recent Subscriptions</Text>
-              {(org.recentSubscriptions && org.recentSubscriptions.length > 0) ? (
-                org.recentSubscriptions.map((sub, index) => (
-                  <View key={sub.id || index} className="border border-slate-100 dark:border-[#1E293B] rounded-xl p-4 mb-2 bg-slate-50 dark:bg-[#1E293B]/30">
-                    <Text className="text-sm font-bold text-slate-900 dark:text-white">{sub.planName || sub.planCode}</Text>
-                    <Text className="text-xs font-semibold text-slate-500 mt-1">{sub.startDate ? new Date(sub.startDate).toLocaleDateString() : "-"} to {sub.endDate ? new Date(sub.endDate).toLocaleDateString() : "-"}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text className="text-sm text-slate-500">No recent subscriptions found.</Text>
-              )}
-            </View>
-          </View>
-        )}
-            
+
         {activeTab === "Profile" && (
           <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
             <View className="flex-row justify-between items-center mb-6">
@@ -494,45 +434,7 @@ export default function OrganizationDetailsPage() {
         )}
       </ScrollView>
 
-      <Modal visible={showExtendModal} animationType="fade" transparent onRequestClose={() => {}}>
-        <View className="flex-1 bg-black/50 justify-center items-center p-4">
-          <View className="bg-white dark:bg-[#1E293B] rounded-[24px] p-6 w-full max-w-sm">
-            <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">Extend Plan</Text>
-            
-            <Text className="text-xs font-bold text-slate-500 mb-1">Select Plan</Text>
-            <View className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mb-4">
-              <ScrollView className="max-h-32">
-                {plansData?.items?.map(plan => (
-                  <Pressable 
-                    key={plan.id} 
-                    onPress={() => setSelectedPlanId(plan.id)}
-                    className={`p-3 border-b border-slate-100 dark:border-slate-700 ${selectedPlanId === plan.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                  >
-                    <Text className={`text-sm ${selectedPlanId === plan.id ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>{plan.name} - ₹{plan.price}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
 
-            <Text className="text-xs font-bold text-slate-500 mb-1">Duration (Days)</Text>
-            <TextInput 
-              value={durationInDays} 
-              onChangeText={setDurationInDays} 
-              keyboardType="numeric" 
-              className="bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-slate-700 rounded-xl p-3 mb-6 text-slate-900 dark:text-white"
-            />
-
-            <View className="flex-row justify-end gap-3">
-              <Pressable onPress={() => setShowExtendModal(false)} className="px-4 py-2">
-                <Text className="font-bold text-slate-500 dark:text-slate-400">Cancel</Text>
-              </Pressable>
-              <Pressable onPress={handleExtendPlan} disabled={isExtending || !selectedPlanId} className={`px-4 py-2 rounded-xl ${isExtending || !selectedPlanId ? 'bg-blue-300' : 'bg-blue-500'}`}>
-                <Text className="font-bold text-white">{isExtending ? "Extending..." : "Extend Plan"}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

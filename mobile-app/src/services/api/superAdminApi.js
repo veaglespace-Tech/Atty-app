@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads", "SACoupons"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads", "SACoupons"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -108,43 +108,7 @@ export const superAdminApi = createApi({
       query: () => "/super-admin/plans",
       providesTags: ["SAPlans"],
     }),
-    getSuperAdminPayments: builder.query({
-      query: (queryString = "") => `/super-admin/payments${queryString ? `?${queryString}` : ""}`,
-      providesTags: ["SAPayments"],
-    }),
-    getSuperAdminPaymentById: builder.query({
-      query: (paymentId) => `/super-admin/payments/${paymentId}`,
-      providesTags: ["SAPayments"],
-    }),
-    updateSuperAdminPayment: builder.mutation({
-      query: ({ paymentId, ...payload }) => ({
-        url: `/super-admin/payments/${paymentId}`,
-        method: "PATCH",
-        body: payload,
-      }),
-      invalidatesTags: ["SAPayments", "SAOrganizations", "SADashboard"],
-    }),
-    deleteSuperAdminPayment: builder.mutation({
-      query: (paymentId) => ({
-        url: `/super-admin/payments/${paymentId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["SAPayments", "SAOrganizations", "SADashboard"],
-    }),
-    downloadSuperAdminPaymentsPdf: builder.mutation({
-      query: (queryString = "") => ({
-        url: `/super-admin/payments/pdf${queryString ? `?${queryString}` : ""}`,
-        method: "GET",
-        responseHandler: (response) => response.blob(),
-      }),
-    }),
-    downloadSuperAdminPaymentsExcel: builder.mutation({
-      query: (queryString = "") => ({
-        url: `/super-admin/payments/excel${queryString ? `?${queryString}` : ""}`,
-        method: "GET",
-        responseHandler: (response) => response.blob(),
-      }),
-    }),
+
     getSuperAdminAnalytics: builder.query({
       query: () => "/super-admin/analytics",
       providesTags: ["SAAnalytics"],  
@@ -382,12 +346,7 @@ export const {
   useExtendSuperAdminOrganizationPlanMutation,
   useUpdateOrganizationAccessMutation,
   useGetSuperAdminPlansQuery,
-  useGetSuperAdminPaymentsQuery,
-  useGetSuperAdminPaymentByIdQuery,
-  useUpdateSuperAdminPaymentMutation,
-  useDeleteSuperAdminPaymentMutation,
-  useDownloadSuperAdminPaymentsPdfMutation,
-  useDownloadSuperAdminPaymentsExcelMutation,
+
   useGetSuperAdminAnalyticsQuery,
   useGetPermissionsQuery,
   useCreatePermissionMutation,

@@ -9,7 +9,7 @@ const TABLE_INFO = [
   { icon: Users, label: "Users", desc: "All registered user accounts" },
   { icon: Building2, label: "Organizations", desc: "Org profiles & settings" },
   { icon: CalendarDays, label: "Attendance", desc: "Full attendance logs" },
-  { icon: CreditCard, label: "Payments & Subscriptions", desc: "All billing records" },
+
   { icon: FileJson, label: "Plans, Posts, Contacts", desc: "Platform content & plans" },
   { icon: ShieldCheck, label: "Permissions & Roles", desc: "RBAC role-permission matrix" },
   { icon: HardDrive, label: "Archive & Misc", desc: "Archive data, settings, tokens" },

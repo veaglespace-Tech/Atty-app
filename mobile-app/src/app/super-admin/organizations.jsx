@@ -6,12 +6,10 @@ import { useColorScheme } from "nativewind";
 import { 
   useGetSuperAdminOrganizationsQuery, 
   useDownloadSuperAdminOrganizationsExcelMutation,
-  useCreateSuperAdminOrganizationMutation,
-  useGetSuperAdminPlansQuery
+  useCreateSuperAdminOrganizationMutation
 } from "@/services/api/superAdminApi";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
-const SUBSCRIPTION_OPTIONS = ["ALL", "TRIAL", "ACTIVE", "PAST_DUE", "CANCELED", "UNPAID"];
 const ACCESS_OPTIONS = ["ALL", "ACTIVE", "INACTIVE"];
 const BLOCK_OPTIONS = ["ALL", "BLOCKED", "UNBLOCKED"];
 
@@ -20,7 +18,6 @@ export default function OrganizationsPage(props) {
   const isDark = colorScheme === "dark";
   const [searchInputValue, setSearchInputValue] = useState("");
   const [search, setSearch] = useState("");
-  const [subscriptionStatus, setSubscriptionStatus] = useState("ALL");
   const [access, setAccess] = useState("ALL");
   const [block, setBlock] = useState("ALL");
   
@@ -32,15 +29,12 @@ export default function OrganizationsPage(props) {
   const [activeFilter, setActiveFilter] = useState(null); // 'subscription', 'access', 'block' or null
 
   const [downloadOrganizationsExcel, { isLoading: downloadingExcel }] = useDownloadSuperAdminOrganizationsExcelMutation();
-  const { data: plansData } = useGetSuperAdminPlansQuery();
-  const plans = useMemo(() => plansData?.items || [], [plansData]);
 
   const handleDownload = async () => {
     try {
       const params = new URLSearchParams();
       params.set("limit", "2000");
       if (search.trim()) params.set("search", search.trim());
-      if (subscriptionStatus !== "ALL") params.set("subscriptionStatus", subscriptionStatus);
       if (access !== "ALL") params.set("access", access);
       if (block !== "ALL") params.set("block", block);
 
@@ -62,7 +56,6 @@ export default function OrganizationsPage(props) {
 
   const { data, isLoading, isFetching, refetch } = useGetSuperAdminOrganizationsQuery({
     search,
-    subscriptionStatus: subscriptionStatus === "ALL" ? undefined : subscriptionStatus,
     access: access === "ALL" ? undefined : access,
     block: block === "ALL" ? undefined : block,
     limit: 2000,
@@ -91,7 +84,6 @@ export default function OrganizationsPage(props) {
       case "EXPIRED":
       case "INACTIVE":
         return "bg-rose-50 border-rose-200 text-rose-600 dark:border-rose-800/50 dark:bg-rose-900/30 dark:text-rose-400";
-      case "PAYMENT_PENDING":
       case "TRIAL":
         return "bg-amber-50 border-amber-200 text-amber-600 dark:border-amber-800/50 dark:bg-amber-900/30 dark:text-amber-400";
       default:
@@ -105,12 +97,7 @@ export default function OrganizationsPage(props) {
     let setValue = null;
     let title = "";
 
-    if (activeFilter === "subscription") {
-      options = SUBSCRIPTION_OPTIONS;
-      currentValue = subscriptionStatus;
-      setValue = setSubscriptionStatus;
-      title = "Filter by Subscription";
-    } else if (activeFilter === "access") {
+    if (activeFilter === "access") {
       options = ACCESS_OPTIONS;
       currentValue = access;
       setValue = setAccess;
@@ -210,15 +197,12 @@ export default function OrganizationsPage(props) {
             <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Blocked</Text>
             <Text className="text-xl font-black text-slate-900 dark:text-white">{summary.get("Blocked") || 0}</Text>
           </View>
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Payments</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white">{summary.get("Successful Payments") || 0}</Text>
-          </View>
+
         </View>
         <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
           <View className="p-5 border-b border-slate-200 dark:border-slate-800">
             <Text className="text-sm font-black uppercase tracking-widest text-slate-500 mb-1">Organization List</Text>
-            <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-4">Minimal list view here. Full profile, subscription, usage, and control actions move to the detail page.</Text>
+            <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-4">Minimal list view here. Full profile, usage, and control actions move to the detail page.</Text>
             
             <View className="flex-row flex-wrap gap-3">
               <View className="w-full">
@@ -234,15 +218,6 @@ export default function OrganizationsPage(props) {
                     returnKeyType="search"
                   />
                 </View>
-              </View>
-              <View className="flex-1">
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5 ml-1">Subscription</Text>
-                <Pressable 
-                  onPress={() => setActiveFilter("subscription")}
-                  className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex-row items-center justify-between"
-                >
-                  <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300" numberOfLines={1}>{subscriptionStatus}</Text>
-                </Pressable>
               </View>
               <View className="flex-1">
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5 ml-1">Access</Text>
@@ -270,8 +245,6 @@ export default function OrganizationsPage(props) {
               <View className="flex-row items-center border-b border-slate-200 dark:border-slate-800 pb-3 mb-2 min-w-[800px]">
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-48">Organization</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32">Org Code</Text>
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-40">Plan</Text>
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-center">Subscription</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-center">Access</Text>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-right">Details</Text>
               </View>
@@ -280,14 +253,6 @@ export default function OrganizationsPage(props) {
                 <View key={org.id} className="flex-row items-center py-4 border-b border-slate-100 dark:border-slate-800/50 min-w-[800px]">
                   <Text className="text-xs font-bold text-slate-900 dark:text-white w-48 pr-2" numberOfLines={1}>{org.name}</Text>
                   <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-32">{org.code}</Text>
-                  <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-40" numberOfLines={1}>{org.planName || "TRIAL"}</Text>
-                  
-                  <View className="w-32 items-center">
-                    <View className={`px-2 py-1 rounded-full border ${getTone(org.subscriptionStatus)}`}>
-                      <Text className={`text-[9px] font-black uppercase tracking-widest ${getTone(org.subscriptionStatus)} bg-transparent border-transparent`}>{org.subscriptionStatus || 'TRIAL'}</Text>
-                    </View>
-                  </View>
-                  
                   <View className="w-32 items-center">
                     <View className={`px-2 py-1 rounded-full border ${getTone(org.blocked ? "BLOCKED" : org.active ? "ACTIVE" : "INACTIVE")}`}>
                       <Text className={`text-[9px] font-black uppercase tracking-widest ${getTone(org.blocked ? "BLOCKED" : org.active ? "ACTIVE" : "INACTIVE")} bg-transparent border-transparent`}>{org.blocked ? "BLOCKED" : org.active ? "ACTIVE" : "INACTIVE"}</Text>
@@ -399,7 +364,6 @@ export default function OrganizationsPage(props) {
       <CreateOrganizationModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
-        plans={plans}
         onCreated={() => {
           setIsCreateModalOpen(false);
           refetch();
@@ -409,12 +373,12 @@ export default function OrganizationsPage(props) {
   );
 }
 
-function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
+function CreateOrganizationModal({ isOpen, onClose, onCreated }) {
   const [createOrganization, { isLoading: isCreating }] = useCreateSuperAdminOrganizationMutation();
   const [form, setForm] = useState({
     organization: { name: "", email: "", phone: "", phoneCountryCode: "+91", address: "", city: "", state: "", country: "India", latitude: "", longitude: "" },
     admin: { name: "", email: "", mobile: "", mobileCountryCode: "+91", password: "" },
-    planCode: "",
+    planCode: "FREE",
     hasERP: false,
   });
 
@@ -423,10 +387,6 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
   };
 
   const onSubmit = async () => {
-    if (!form.planCode) {
-      Alert.alert("Error", "Please select a plan.");
-      return;
-    }
     if (!form.organization.name || !form.organization.email || !form.organization.phone || !form.admin.name || !form.admin.email || !form.admin.mobile || !form.admin.password) {
       Alert.alert("Error", "Please fill out all required fields including phone numbers.");
       return;
@@ -448,7 +408,7 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
         <View className="flex-row items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
           <View>
             <Text className="text-lg font-black text-slate-900 dark:text-white uppercase">Create Organization</Text>
-            <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium">Bypass payment and onboard a workspace.</Text>
+            <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium">Onboard a workspace.</Text>
           </View>
           <Pressable onPress={onClose} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full">
             <X size={20} className="text-slate-600 dark:text-slate-300" />
@@ -559,21 +519,6 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
             </View>
           </View>
 
-          <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-3">Subscription Plan</Text>
-          <View className="flex-row flex-wrap gap-3 pb-20">
-            {plans.map((plan) => (
-              <Pressable
-                key={plan.id}
-                onPress={() => setForm(prev => ({ ...prev, planCode: plan.code }))}
-                className={`w-[48%] p-4 rounded-2xl border ${form.planCode === plan.code ? 'bg-blue-50 border-blue-500 dark:bg-blue-500/10 dark:border-blue-500' : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800'}`}
-              >
-                <Text className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{plan.name}</Text>
-                <Text className="text-lg font-black text-blue-600 dark:text-blue-400 mt-1">₹{plan.price}</Text>
-                <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1">{plan.durationInDays} Days</Text>
-              </Pressable>
-            ))}
-          </View>
-          
           <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-3">Add-Ons</Text>
           <View className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 flex-row items-center justify-between pb-20">
             <View className="flex-row items-center gap-3">

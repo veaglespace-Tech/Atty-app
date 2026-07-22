@@ -46,7 +46,7 @@ export default function OrgDashboard() {
                     {`${user?.organization?.name || "Organization"} Dashboard`}
                   </Text>
                   <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                    Workspace summary for users, teams, attendance, and subscription usage.
+                    Workspace summary for users, teams, and attendance.
                   </Text>
                 </View>
                 <Link href="/scanner" asChild>

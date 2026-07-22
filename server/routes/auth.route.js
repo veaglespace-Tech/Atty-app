@@ -18,6 +18,7 @@ const {
   validateReferralCode,
   submitJoinRequest,
 } = require("../controllers/registration-request.controller");
+const { verifyAndRegister } = require("../controllers/payment.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { validateBody } = require("../middlewares/validation.middleware");
 
@@ -145,6 +146,7 @@ router.get("/organizations/search", searchOrganizations);
 router.get("/join/:referralCode", validateReferralCode);
 router.post("/join/:referralCode", submitJoinRequest);
 router.post("/register", validateBody(registerSchema), register);
+router.post("/register-org", verifyAndRegister);
 const checkEmailSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
 });
