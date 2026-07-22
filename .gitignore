@@ -70,8 +70,10 @@ Thumbs.db
 # macOS
 *.pem
 
-# generated native folders
-/ios
-/android
+# Generated Expo/native folders
+.expo/
 ios/
 android/
+mobile-app/.expo/
+mobile-app/ios/
+mobile-app/android/
