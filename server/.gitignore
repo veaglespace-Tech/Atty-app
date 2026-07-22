@@ -4,3 +4,5 @@ node_modules
 
 .server-start.log
 .server-start.err.log
+
+uploads/
