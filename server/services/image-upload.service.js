@@ -124,6 +124,9 @@ const mapCloudinaryToImageKitTransform = (trans) => {
     if (t.height) mapped.height = String(t.height);
     if (t.gravity === "face") mapped.focus = "face";
     if (t.crop === "fill") mapped.cropMode = "extract";
+    if (t.crop === "fit") {
+      mapped.c = "at_max";
+    }
     return mapped;
   });
 };
