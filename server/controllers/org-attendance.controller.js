@@ -210,7 +210,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
 
 
   const subtitleLines = [
-    `User: ${payload.user.name} (${payload.user.email})`,
+    `User: ${payload.user.name} (${payload.user.email}) | Gender: ${payload.user.gender} | Type: ${payload.user.existingMember}`,
     `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
     `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
   ];
@@ -280,7 +280,7 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
   });
 
   const subtitleLines = [
-    `User: ${payload.user.name} (${payload.user.email})`,
+    `User: ${payload.user.name} (${payload.user.email}) | Gender: ${payload.user.gender} | Type: ${payload.user.existingMember}`,
     `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
     `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
     `Generated At: ${new Date().toLocaleString("en-IN")}`,
@@ -363,6 +363,8 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
     columns: [
       { key: "entryNo", label: "No.", width: 40, align: "left" },
       { key: "user", label: "Member", width: 100 },
+      { key: "gender", label: "Gender", width: 60 },
+      { key: "existingMember", label: "Member Type", width: 80 },
       { key: "date", label: "Date", width: 80 },
       { key: "status", label: "Status", width: 70, align: "center" },
       { key: "punchIn", label: "Punch In", width: 70, align: "center" },
@@ -375,6 +377,8 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
       return {
         entryNo: String(index + 1).padStart(3, "0"),
         user: item.member || "-",
+        gender: item.gender || "-",
+        existingMember: item.existingMember || "-",
         date: item.date,
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
@@ -425,6 +429,14 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
     columns: [
       { key: "entryNo", label: "No.", width: 40 },
       { key: "user", label: "Member", width: 120 },
+      { key: "gender", label: "Gender", width: 70 },
+      { key: "existingMember", label: "Member Type", width: 90 },
+      { key: "bloodGroup", label: "Blood Group", width: 85 },
+      { key: "referenceBy", label: "Reference By", width: 110 },
+      { key: "emergencyContact", label: "Emergency Contact", width: 120 },
+      { key: "currentAddress", label: "Current Address", width: 180 },
+      { key: "permanentAddress", label: "Permanent Address", width: 180 },
+      { key: "joinedAt", label: "Joining Date", width: 100 },
       { key: "date", label: "Date", width: 90 },
       { key: "status", label: "Status", width: 80 },
       { key: "punchIn", label: "Punch In", width: 110 },
@@ -439,6 +451,14 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
       return {
         entryNo: String(index + 1),
         user: item.member || "-",
+        gender: item.gender || "-",
+        existingMember: item.existingMember || "-",
+        bloodGroup: item.bloodGroup || "-",
+        referenceBy: item.referenceBy || "-",
+        emergencyContact: item.emergencyContact || "-",
+        currentAddress: item.currentAddress || "-",
+        permanentAddress: item.permanentAddress || "-",
+        joinedAt: item.joinedAt || "-",
         date: item.date,
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",

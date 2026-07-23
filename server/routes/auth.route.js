@@ -116,6 +116,8 @@ const updateMeSchema = z
     currentAddress: z.string().trim().optional(),
     permanentAddress: z.string().trim().optional(),
     bloodGroup: z.string().trim().optional(),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
+    existingMember: z.enum(["SENIOR", "JUNIOR"]).optional().or(z.literal("")),
     profileImageDataUrl: z
       .string()
       .trim()

@@ -28,6 +28,8 @@ function MetricCard({ label, value }) {
 
 export default function SuperAdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [memberTypeFilter, setMemberTypeFilter] = useState("ALL");
+  const [genderFilter, setGenderFilter] = useState("ALL");
   const [downloading, setDownloading] = useState(false);
 
   const { data, isLoading, isFetching, refetch } = useGetAllSuperAdminUsersQuery();
@@ -40,18 +42,28 @@ export default function SuperAdminUsersPage() {
     const query = searchTerm.trim().toLowerCase();
 
     return users.filter((user) => {
+      if (memberTypeFilter !== "ALL") {
+        const userMemberType = String(user.existingMember || "").toUpperCase();
+        if (userMemberType !== memberTypeFilter.toUpperCase()) return false;
+      }
+      if (genderFilter !== "ALL") {
+        const userGender = String(user.gender || "").toUpperCase();
+        if (userGender !== genderFilter.toUpperCase()) return false;
+      }
       if (!query) return true;
       return [
         user.name,
         user.email,
         user.organization?.name,
         user.organization?.organizationCode,
+        user.existingMember,
+        user.gender
       ]
         .map((value) => String(value || "").toLowerCase())
         .join(" ")
         .includes(query);
     });
-  }, [users, searchTerm]);
+  }, [users, searchTerm, memberTypeFilter, genderFilter]);
 
   const {
     page,
@@ -64,7 +76,7 @@ export default function SuperAdminUsersPage() {
     setPageSize,
   } = useLocalPagination(filteredUsers, {
     initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS?.[0] || 10,
-    dependencies: [searchTerm],
+    dependencies: [searchTerm, memberTypeFilter, genderFilter],
   });
 
   const getStatusTone = (user) => {
@@ -153,8 +165,8 @@ export default function SuperAdminUsersPage() {
       </div>
 
       <div className={`${panelClassName} mobile-compact-panel`}>
-        <div className="mt-5 grid gap-3 xl:grid-cols-1">
-          <div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="relative sm:col-span-2">
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               Search Users
             </p>
@@ -164,9 +176,38 @@ export default function SuperAdminUsersPage() {
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Name, email, organization name"
-                className="dashboard-field-control w-full pl-9 pr-3 text-sm max-w-md"
+                className="dashboard-field-control w-full pl-9 pr-3 text-sm"
               />
             </div>
+          </div>
+          <div className="relative">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              Member Type
+            </p>
+            <select
+              value={memberTypeFilter}
+              onChange={(event) => setMemberTypeFilter(event.target.value)}
+              className="dashboard-select-control w-full"
+            >
+              <option value="ALL">All Member Types</option>
+              <option value="SENIOR">Senior</option>
+              <option value="JUNIOR">Junior</option>
+            </select>
+          </div>
+          <div className="relative">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              Gender
+            </p>
+            <select
+              value={genderFilter}
+              onChange={(event) => setGenderFilter(event.target.value)}
+              className="dashboard-select-control w-full"
+            >
+              <option value="ALL">All Genders</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
           </div>
         </div>
 

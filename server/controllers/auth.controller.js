@@ -843,6 +843,8 @@ const serializeSessionUser = (user, organization = null) => {
     currentAddress: normalized.currentAddress || null,
     permanentAddress: normalized.permanentAddress || null,
     bloodGroup: normalized.bloodGroup || null,
+    gender: normalized.gender || null,
+    existingMember: normalized.existingMember || null,
     profileImageUrl: normalized.profileImageUrl || null,
     memberships: normalized.memberships.map((membership) => ({
       orgId: membership.orgId,
@@ -1634,6 +1636,8 @@ exports.updateMe = asyncHandler(async (req, res) => {
   const hasCurrentAddress = Object.prototype.hasOwnProperty.call(requestBody, "currentAddress");
   const hasPermanentAddress = Object.prototype.hasOwnProperty.call(requestBody, "permanentAddress");
   const hasBloodGroup = Object.prototype.hasOwnProperty.call(requestBody, "bloodGroup");
+  const hasGender = Object.prototype.hasOwnProperty.call(requestBody, "gender");
+  const hasExistingMember = Object.prototype.hasOwnProperty.call(requestBody, "existingMember");
 
   if (hasEmergencyContact) {
     payload.emergencyContact = requestBody.emergencyContact;
@@ -1646,6 +1650,12 @@ exports.updateMe = asyncHandler(async (req, res) => {
   }
   if (hasBloodGroup) {
     payload.bloodGroup = requestBody.bloodGroup;
+  }
+  if (hasGender) {
+    payload.gender = requestBody.gender;
+  }
+  if (hasExistingMember) {
+    payload.existingMember = requestBody.existingMember;
   }
 
   if (hasName) {

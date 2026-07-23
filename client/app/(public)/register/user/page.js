@@ -72,8 +72,10 @@ const userSchema = z
       .regex(/[a-z]/, "Password must contain at least one small letter")
       .regex(/\d/, "Password must contain at least one number")
       .regex(/[!@#$%^&*(),.?\":{}|<>]/, "Password must contain at least one special character"),
-    confirmPassword: z.string(),
-    gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }).refine(val => val !== "", { message: "Gender is required" }),
+    existingMember: z.enum(["SENIOR", "JUNIOR"], { required_error: "Existing Member Type is required" }),
+    referenceBy: z.string().trim().max(100, "Reference name is too long").optional().or(z.literal("")),
     bloodGroup: z.string().trim().min(1, "Blood Group is required"),
     city: z
       .string()
@@ -143,7 +145,9 @@ function RegisterFormContent() {
       mobile: "",
       password: "",
       confirmPassword: "",
-      gender: "MALE",
+      gender: "",
+      existingMember: "",
+      referenceBy: "",
       bloodGroup: "",
       city: "",
       emergencyContact: "",
@@ -178,6 +182,7 @@ function RegisterFormContent() {
         emergencyContact: toDigitsOnly(values.emergencyContact),
         currentAddress: normalizeTextInput(values.currentAddress),
         permanentAddress: normalizeTextInput(values.permanentAddress),
+        referenceBy: values.referenceBy ? normalizeTextInput(values.referenceBy) : null,
       };
       const normalizedReferralCode = values.referralCode.trim().toUpperCase();
 
@@ -331,6 +336,30 @@ function RegisterFormContent() {
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
             </select>
+          </Field>
+
+          <Field label="Member Type" error={errors.existingMember?.message}>
+            <select
+              {...register("existingMember")}
+              className={`${fieldClassName} appearance-none ${errors.existingMember ? errorFieldClassName : normalFieldClassName}`}
+            >
+              <option value="">Select Member Type</option>
+              <option value="SENIOR">Senior</option>
+              <option value="JUNIOR">Junior</option>
+            </select>
+          </Field>
+
+          <Field
+            label="Reference By (Optional)"
+            icon={User}
+            placeholder="Name of person referring you"
+            error={errors.referenceBy?.message}
+          >
+            <input
+              type="text"
+              {...register("referenceBy")}
+              className={`${fieldClassName} !pl-12 ${errors.referenceBy ? errorFieldClassName : normalFieldClassName}`}
+            />
           </Field>
 
           <Field label="Blood Group" error={errors.bloodGroup?.message}>

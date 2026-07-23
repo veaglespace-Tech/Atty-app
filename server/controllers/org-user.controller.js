@@ -386,6 +386,10 @@ exports.downloadOrgUserProfilePdf = asyncHandler(async (req, res) => {
       emergencyContact: detailedUser.emergencyContact,
       currentAddress: detailedUser.currentAddress,
       permanentAddress: detailedUser.permanentAddress,
+      gender: detailedUser.gender,
+      bloodGroup: detailedUser.bloodGroup,
+      existingMember: detailedUser.existingMember,
+      referenceBy: detailedUser.referenceBy,
       profileImageUrl: detailedUser.profileImageUrl,
       joinedAt: detailedUser.membership?.joinedAt || detailedUser.joinedAt,
       lastLoginAt: detailedUser.lastLoginAt,
@@ -445,6 +449,64 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
     }
     userPayload.mobile = normalizedPhone.e164;
     userPayload.mobileCountryCode = normalizedPhone.countryCode;
+  }
+
+  if (typeof req.body?.email === "string") {
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+      res.status(400);
+      throw new Error("email cannot be empty");
+    }
+    const emailValidation = await validateEmail(email);
+    if (!emailValidation.valid) {
+      res.status(400);
+      throw new Error(emailValidation.error);
+    }
+    if (email !== user.email) {
+      const duplicateUser = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (duplicateUser && duplicateUser.id !== user.id) {
+        res.status(409);
+        throw new Error("User with this email already exists");
+      }
+    }
+    userPayload.email = email;
+  }
+
+  const hasGender = Object.prototype.hasOwnProperty.call(req.body || {}, "gender");
+  if (hasGender) {
+    userPayload.gender = req.body.gender || null;
+  }
+
+  const hasExistingMember = Object.prototype.hasOwnProperty.call(req.body || {}, "existingMember");
+  if (hasExistingMember) {
+    userPayload.existingMember = req.body.existingMember || null;
+  }
+
+  const hasReferenceBy = Object.prototype.hasOwnProperty.call(req.body || {}, "referenceBy");
+  if (hasReferenceBy) {
+    userPayload.referenceBy = req.body.referenceBy || null;
+  }
+
+  const hasBloodGroup = Object.prototype.hasOwnProperty.call(req.body || {}, "bloodGroup");
+  if (hasBloodGroup) {
+    userPayload.bloodGroup = req.body.bloodGroup || null;
+  }
+
+  const hasEmergencyContact = Object.prototype.hasOwnProperty.call(req.body || {}, "emergencyContact");
+  if (hasEmergencyContact) {
+    userPayload.emergencyContact = req.body.emergencyContact || null;
+  }
+
+  const hasCurrentAddress = Object.prototype.hasOwnProperty.call(req.body || {}, "currentAddress");
+  if (hasCurrentAddress) {
+    userPayload.currentAddress = req.body.currentAddress || null;
+  }
+
+  const hasPermanentAddress = Object.prototype.hasOwnProperty.call(req.body || {}, "permanentAddress");
+  if (hasPermanentAddress) {
+    userPayload.permanentAddress = req.body.permanentAddress || null;
   }
 
   const hasRole = Object.prototype.hasOwnProperty.call(req.body || {}, "role");
@@ -1152,6 +1214,9 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
       role: true,
       status: true,
       isActive: true,
+      gender: true,
+      bloodGroup: true,
+      existingMember: true,
       createdAt: true,
     },
     orderBy: [{ name: "asc" }],
@@ -1162,19 +1227,25 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
   const columns = [
-    { key: "index", label: "No.", width: 30, align: "center" },
-    { key: "name", label: "Name", width: 120 },
-    { key: "email", label: "Email", width: 140 },
-    { key: "mobile", label: "Contact No.", width: 90 },
-    { key: "role", label: "Role", width: 70 },
+    { key: "index", label: "No.", width: 25, align: "center" },
+    { key: "name", label: "Name", width: 100 },
+    { key: "gender", label: "Gender", width: 50 },
+    { key: "bloodGroup", label: "Blood Grp", width: 50 },
+    { key: "existingMember", label: "Type", width: 50 },
+    { key: "email", label: "Email", width: 120 },
+    { key: "mobile", label: "Contact No.", width: 80 },
+    { key: "role", label: "Role", width: 60 },
     { key: "status", label: "Status", width: 60, align: "center" },
-    { key: "active", label: "Active", width: 50, align: "center" },
-    { key: "joinedAt", label: "Joined At", width: 70, align: "center" },
+    { key: "active", label: "Active", width: 45, align: "center" },
+    { key: "joinedAt", label: "Joined At", width: 65, align: "center" },
   ];
 
   const rows = users.map((user, index) => ({
     index: index + 1,
     name: user.name || "-",
+    gender: user.gender || "-",
+    bloodGroup: user.bloodGroup || "-",
+    existingMember: user.existingMember || "-",
     email: user.email || "-",
     mobile: user.mobile || "-",
     role: user.role || "-",
@@ -1230,6 +1301,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       currentAddress: true,
       permanentAddress: true,
       profileImageUrl: true,
+      gender: true,
+      existingMember: true,
+      bloodGroup: true,
+      referenceBy: true,
       role: true,
       status: true,
       isActive: true,
@@ -1245,6 +1320,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   const headers = [
     "Sr. No.",
     "Name",
+    "Gender",
+    "Member Type",
+    "Blood Group",
+    "Reference By",
     "Email",
     "Contact No.",
     "Emergency Contact",
@@ -1290,7 +1369,11 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   // Set column widths
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
-    col.width = i === 0 ? 8 : i === 7 ? 18 : (i >= 5 && i <= 6 ? 40 : 25);
+    if (i === 0) col.width = 8;
+    else if (i === 11) col.width = 18; // Profile Photo
+    else if (i === 9 || i === 10) col.width = 40; // Addresses
+    else if (i === 1 || i === 5 || i === 6) col.width = 25; // Name, Ref, Email
+    else col.width = 15;
   });
 
   // Helper for parallel map with concurrency limit
@@ -1320,6 +1403,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     return {
       index: index + 1,
       name: user.name || "-",
+      gender: user.gender || "-",
+      existingMember: user.existingMember || "-",
+      bloodGroup: user.bloodGroup || "-",
+      referenceBy: user.referenceBy || "-",
       email: user.email || "-",
       mobile: user.mobile || "-",
       emergencyContact: user.emergencyContact || "-",
@@ -1339,6 +1426,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     const row = worksheet.addRow([
       rowData.index,
       rowData.name,
+      rowData.gender,
+      rowData.existingMember,
+      rowData.bloodGroup,
+      rowData.referenceBy,
       rowData.email,
       rowData.mobile,
       rowData.emergencyContact,
@@ -1373,7 +1464,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
         worksheet.addImage(imageId, {
           tl: { 
-            nativeCol: 7, 
+            nativeCol: 11, 
             nativeColOff: Math.round(offsetX * 9525), 
             nativeRow: currentRowIndex - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
@@ -1382,10 +1473,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 8).value = "Error loading image";
+        worksheet.getCell(currentRowIndex, 12).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 8).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(currentRowIndex, 12).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;

@@ -16,19 +16,21 @@ const TABLE_HEADER_HEIGHT = 24;
 const TABLE_ROW_HEIGHT = 22;
 
 const TABLE_COLUMNS = [
-  { key: "entryNo", label: "No.", width: 44, align: "center" },
-  { key: "userId", label: "ID", width: 44, align: "center" },
-  { key: "userName", label: "Member", width: 92, align: "left" },
-  { key: "contact", label: "Phone", width: 68, align: "left" },
-  { key: "email", label: "Email", width: 114, align: "left" },
-  { key: "date", label: "Date", width: 60, align: "center" },
-  { key: "punchIn", label: "In", width: 44, align: "center" },
-  { key: "punchOut", label: "Out", width: 44, align: "center" },
-  { key: "reachedHome", label: "Home", width: 44, align: "center" },
-  { key: "reachedHomeLocation", label: "Home Loc", width: 72, align: "left" },
-  { key: "totalHours", label: "Tot Hrs", width: 40, align: "center" },
-  { key: "presentHours", label: "Prs Hrs", width: 40, align: "center" },
-  { key: "absent", label: "Abs", width: 40, align: "center" },
+  { key: "entryNo", label: "No.", width: 40, align: "center" },
+  { key: "userId", label: "ID", width: 40, align: "center" },
+  { key: "userName", label: "Member", width: 80, align: "left" },
+  { key: "gender", label: "Gender", width: 45, align: "center" },
+  { key: "existingMember", label: "Type", width: 65, align: "left" },
+  { key: "contact", label: "Phone", width: 60, align: "left" },
+  { key: "email", label: "Email", width: 80, align: "left" },
+  { key: "date", label: "Date", width: 55, align: "center" },
+  { key: "punchIn", label: "In", width: 40, align: "center" },
+  { key: "punchOut", label: "Out", width: 40, align: "center" },
+  { key: "reachedHome", label: "Home", width: 40, align: "center" },
+  { key: "reachedHomeLocation", label: "Home Loc", width: 70, align: "left" },
+  { key: "totalHours", label: "Tot Hrs", width: 38, align: "center" },
+  { key: "presentHours", label: "Prs Hrs", width: 38, align: "center" },
+  { key: "absent", label: "Abs", width: 35, align: "center" },
 ];
 
 const normalizeText = (value) => String(value === null || value === undefined ? "" : value).trim();

@@ -62,6 +62,8 @@ export default function OrgUsersPage() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [activeFilter, setActiveFilter] = useState("ALL");
+  const [memberTypeFilter, setMemberTypeFilter] = useState("ALL");
+  const [genderFilter, setGenderFilter] = useState("ALL");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -130,14 +132,22 @@ export default function OrgUsersPage() {
       if (statusFilter !== "ALL" && String(user.approvalStatus) !== statusFilter) return false;
       if (activeFilter === "ACTIVE" && !user.active) return false;
       if (activeFilter === "BLOCKED" && user.active) return false;
+      if (memberTypeFilter !== "ALL") {
+        const userMemberType = String(user.existingMember || "").toUpperCase();
+        if (userMemberType !== memberTypeFilter.toUpperCase()) return false;
+      }
+      if (genderFilter !== "ALL") {
+        const userGender = String(user.gender || "").toUpperCase();
+        if (userGender !== genderFilter.toUpperCase()) return false;
+      }
       if (!query) return true;
 
-      const haystack = [user.name, user.email, user.mobile]
+      const haystack = [user.name, user.email, user.mobile, user.existingMember, user.gender]
         .map((value) => String(value || "").toLowerCase())
         .join(" ");
       return haystack.includes(query);
     });
-  }, [users, searchTerm, roleFilter, statusFilter, activeFilter]);
+  }, [users, searchTerm, roleFilter, statusFilter, activeFilter, memberTypeFilter, genderFilter]);
 
   const {
     page,
@@ -150,7 +160,7 @@ export default function OrgUsersPage() {
     setPageSize,
   } = useLocalPagination(filteredUsers, {
     initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS[0],
-    dependencies: [searchTerm, roleFilter, statusFilter, activeFilter],
+    dependencies: [searchTerm, roleFilter, statusFilter, activeFilter, memberTypeFilter, genderFilter],
   });
 
   useEffect(() => {
@@ -494,8 +504,8 @@ export default function OrgUsersPage() {
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No users found.</p>
         ) : (
           <div className="mt-4 space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="relative sm:col-span-2 xl:col-span-1">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+              <div className="relative sm:col-span-2 xl:col-span-2">
                 <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
                 <input
                   value={searchTerm}
@@ -537,6 +547,25 @@ export default function OrgUsersPage() {
                 <option value="ALL">All Access</option>
                 <option value="ACTIVE">Active</option>
                 <option value="BLOCKED">Blocked</option>
+              </select>
+              <select
+                value={memberTypeFilter}
+                onChange={(event) => setMemberTypeFilter(event.target.value)}
+                className={`${fieldClassName} dashboard-select-control`}
+              >
+                <option value="ALL">All Member Types</option>
+                <option value="SENIOR">Senior</option>
+                <option value="JUNIOR">Junior</option>
+              </select>
+              <select
+                value={genderFilter}
+                onChange={(event) => setGenderFilter(event.target.value)}
+                className={`${fieldClassName} dashboard-select-control`}
+              >
+                <option value="ALL">All Genders</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
               </select>
             </div>
 

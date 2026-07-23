@@ -62,6 +62,9 @@ model ArchiveUser {
   lastLoginAt       DateTime?
   archiveReason     String      @default("")
   metadata          Json?
+  gender            String?
+  referenceBy       String?
+  existingMember    String?
   createdById       Int?
   archivedById      Int?
   archivedAt        DateTime    @default(now())
@@ -422,6 +425,8 @@ model RegistrationRequest {
   permanentAddress  String?
   password          String
   gender            String?
+  referenceBy       String?
+  existingMember    String?
   bloodGroup        String?
   city              String?
   status            RegistrationRequestStatus @default(PENDING)
@@ -529,6 +534,9 @@ model User {
   currentAddress              String?
   permanentAddress            String?
   password                    String
+  gender                      String?
+  referenceBy                 String?
+  existingMember              String?
   bloodGroup                  String?
   role                        String                      @default("MEMBER")
   permissions                 Json?
