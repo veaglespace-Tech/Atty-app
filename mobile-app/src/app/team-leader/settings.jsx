@@ -138,7 +138,7 @@ export default function TeamLeaderSettings() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-100 dark:bg-slate-950">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
           {/* Header */}
           <View className="px-5 pt-4 pb-4 flex-row items-center bg-slate-100 dark:bg-slate-950">
