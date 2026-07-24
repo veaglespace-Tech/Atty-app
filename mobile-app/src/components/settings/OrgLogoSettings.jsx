@@ -104,12 +104,12 @@ export default function OrgLogoSettings() {
             )}
           </View>
           <View className="flex-1 gap-2">
-            <TouchableOpacity onPress={pickImage} className="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 active:scale-95 flex-row items-center justify-center gap-2">
+            <TouchableOpacity onPress={pickImage} className="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800  flex-row items-center justify-center gap-2">
               <ImageUp size={14} className="text-slate-700 dark:text-slate-300" />
               <Text className="font-bold text-slate-700 dark:text-slate-300 text-sm">{previewLogoUrl ? "Change" : "Upload"}</Text>
             </TouchableOpacity>
             {(removeLogo || logoDataUrl || currentLogoUrl) ? (
-              <TouchableOpacity onPress={toggleLogoRemoval} className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 active:scale-95 flex-row items-center justify-center gap-2">
+              <TouchableOpacity onPress={toggleLogoRemoval} className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700  flex-row items-center justify-center gap-2">
                 <Trash2 size={14} className="text-rose-500" />
                 <Text className="font-bold text-rose-500 text-sm">{removeLogo ? "Keep Current" : logoDataUrl ? "Clear" : "Remove"}</Text>
               </TouchableOpacity>
@@ -120,7 +120,7 @@ export default function OrgLogoSettings() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={isLoading || !hasPendingChange}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isLoading || !hasPendingChange ? 'opacity-50' : ''}`}>
+          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isLoading || !hasPendingChange ? 'opacity-50' : ''}`}>
           {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Logo Update</Text>}
         </TouchableOpacity>
       </View>

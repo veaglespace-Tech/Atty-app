@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TextInput, Alert, ActivityIndicator, Image, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Alert, ActivityIndicator, Image } from "react-native";
+import { TouchableOpacity, ScrollView } from "react-native-gesture-handler";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
@@ -660,7 +661,7 @@ export default function SettingsScreen() {
         <ThemeToggle />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         
         {/* Profile Header */}
         <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">

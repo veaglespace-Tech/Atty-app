@@ -100,7 +100,7 @@ export default function TimeSettings() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
+          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Time Settings</Text>}
         </TouchableOpacity>
       </View>
