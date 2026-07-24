@@ -512,10 +512,7 @@ function OrgDetailsSettings() {
           </View>
         </View>
 
-        <Pressable
-          onPress={handleSave}
-          disabled={isUpdating}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating ? 'opacity-50' : ''}`}>
+        <Pressable onPress={handleSave} disabled={isUpdating}><View className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Details</Text>}
         </Pressable>
       </View>
@@ -644,17 +641,16 @@ export default function SettingsScreen() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <View className="px-6 pt-12 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] flex-row items-center gap-3">
-        <Pressable 
-          onPress={() => {
+        <Pressable onPress={() => {
             if (router.canGoBack()) {
               router.back();
             } else {
               router.replace("/org/dashboard");
             }
-          }}
-          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900  ">
+          }}>
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900  ">
           <ChevronLeft size={20} className="text-slate-700 dark:text-slate-300" />
-        </Pressable>
+        </View></Pressable>
         <View className="flex-1 flex-row items-center">
           <Text className="text-xl font-black text-slate-900 dark:text-white truncate">
             Settings
@@ -708,32 +704,38 @@ export default function SettingsScreen() {
         <View className="flex-row mb-6 bg-slate-200/50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
           <Pressable 
             onPress={() => setActiveTab("personal")}
-            className={`flex-1 items-center justify-center flex-row gap-2 py-2.5 rounded-xl  ${activeTab === "personal" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}
+            style={{ flex: 1 }}
           >
-            <User size={16} color={activeTab === "personal" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
-            <Text className={`text-sm font-bold ${activeTab === "personal" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
-              Personal
-            </Text>
+            <View className={`items-center justify-center flex-row gap-2 py-2.5 rounded-xl  ${activeTab === "personal" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}>
+              <User size={16} color={activeTab === "personal" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
+              <Text className={`text-sm font-bold ${activeTab === "personal" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+                Personal
+              </Text>
+            </View>
           </Pressable>
           {canSeeAdminSettings && (
             <Pressable 
               onPress={() => setActiveTab("organization")}
-              className={`flex-1 items-center justify-center flex-row gap-2 py-2.5 rounded-xl  ${activeTab === "organization" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}
+              style={{ flex: 1 }}
             >
-              <Building2 size={16} color={activeTab === "organization" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
-              <Text className={`text-sm font-bold ${activeTab === "organization" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
-                Workspace
-              </Text>
+              <View className={`items-center justify-center flex-row gap-2 py-2.5 rounded-xl  ${activeTab === "organization" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}>
+                <Building2 size={16} color={activeTab === "organization" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
+                <Text className={`text-sm font-bold ${activeTab === "organization" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+                  Workspace
+                </Text>
+              </View>
             </Pressable>
           )}
           <Pressable 
             onPress={() => setActiveTab("security")}
-            className={`flex-1 items-center justify-center flex-row gap-2 py-2.5 rounded-xl  ${activeTab === "security" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}
+            style={{ flex: 1 }}
           >
-            <ShieldCheck size={16} color={activeTab === "security" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
-            <Text className={`text-sm font-bold ${activeTab === "security" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
-              Security
-            </Text>
+            <View className={`items-center justify-center flex-row gap-2 py-2.5 rounded-xl  ${activeTab === "security" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}>
+              <ShieldCheck size={16} color={activeTab === "security" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
+              <Text className={`text-sm font-bold ${activeTab === "security" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+                Security
+              </Text>
+            </View>
           </Pressable>
         </View>
 
@@ -826,10 +828,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
               
-              <Pressable
-                onPress={handleUpdate}
-                disabled={isLoading}
-                className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600  ${isLoading ? 'opacity-70' : ''}`}>
+              <Pressable onPress={handleUpdate} disabled={isLoading}><View className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600  ${isLoading ? 'opacity-70' : ''}`}>
                 {isLoading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
@@ -838,7 +837,7 @@ export default function SettingsScreen() {
                     <Text className="font-bold text-white text-[15px]">Save Profile Changes</Text>
                   </>
                 )}
-              </Pressable>
+              </View></Pressable>
 
             </View>
           </View>
@@ -865,10 +864,7 @@ export default function SettingsScreen() {
                       <Text className="flex-1 text-sm font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
                         {referralCode}
                       </Text>
-                      <Pressable 
-                        onPress={copyCodeToClipboard}
-                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl  "
-                      >
+                      <Pressable onPress={copyCodeToClipboard}><View className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl  ">
                         {copiedReferralCode ? (
                           <>
                             <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
@@ -880,7 +876,7 @@ export default function SettingsScreen() {
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Code</Text>
                           </>
                         )}
-                      </Pressable>
+                      </View></Pressable>
                     </View>
                   </View>
 
@@ -890,10 +886,7 @@ export default function SettingsScreen() {
                       <Text className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300" numberOfLines={1} ellipsizeMode="tail">
                         {referralLink}
                       </Text>
-                      <Pressable 
-                        onPress={copyToClipboard}
-                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl  "
-                      >
+                      <Pressable onPress={copyToClipboard}><View className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl  ">
                         {copiedReferral ? (
                           <>
                             <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
@@ -905,7 +898,7 @@ export default function SettingsScreen() {
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Link</Text>
                           </>
                         )}
-                      </Pressable>
+                      </View></Pressable>
                     </View>
                   </View>
                 </View>
@@ -921,16 +914,13 @@ export default function SettingsScreen() {
                 Manage your account security and password.
               </Text>
               
-              <Pressable
-                onPress={handleResetPassword}
-                disabled={isResetting}
-                className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800   ${isResetting ? 'opacity-70' : ''}`}>
+              <Pressable onPress={handleResetPassword} disabled={isResetting}><View className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800   ${isResetting ? 'opacity-70' : ''}`}>
                 {isResetting ? (
                   <ActivityIndicator color="#3b82f6" size="small" />
                 ) : (
                   <Text className="font-bold text-slate-900 dark:text-white text-[15px]">Request Password Reset</Text>
                 )}
-              </Pressable>
+              </View></Pressable>
             </View>
           </View>
         )}

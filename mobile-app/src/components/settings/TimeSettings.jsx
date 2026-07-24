@@ -59,8 +59,10 @@ export default function TimeSettings() {
           <Text className="text-xs font-semibold text-slate-500">Configure workspace working hours.</Text>
         </View>
         {hasChanges && (
-          <Pressable onPress={handleUndo} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-            <RotateCcw size={16} className="text-slate-500" />
+          <Pressable onPress={handleUndo}>
+            <View className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+              <RotateCcw size={16} className="text-slate-500" />
+            </View>
           </Pressable>
         )}
       </View>
@@ -100,8 +102,10 @@ export default function TimeSettings() {
         <Pressable
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
-          {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Time Settings</Text>}
+        >
+          <View className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
+            {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Time Settings</Text>}
+          </View>
         </Pressable>
       </View>
     </View>

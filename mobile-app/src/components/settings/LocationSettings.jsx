@@ -103,16 +103,20 @@ export default function LocationSettings() {
         <Pressable
           onPress={handleFetchCurrentLocation}
           disabled={isFetchingLocation}
-          className="flex-row items-center justify-center gap-2 py-3 mt-1 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 ">
-          {isFetchingLocation ? <ActivityIndicator size="small" color="#3b82f6" /> : <MapPin size={16} className="text-blue-600 dark:text-blue-400" />}
-          <Text className="font-bold text-blue-600 dark:text-blue-400 text-sm">Detect Location</Text>
+        >
+          <View className="flex-row items-center justify-center gap-2 py-3 mt-1 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 ">
+            {isFetchingLocation ? <ActivityIndicator size="small" color="#3b82f6" /> : <MapPin size={16} className="text-blue-600 dark:text-blue-400" />}
+            <Text className="font-bold text-blue-600 dark:text-blue-400 text-sm">Detect Location</Text>
+          </View>
         </Pressable>
 
         <Pressable
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
-          {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Geofencing</Text>}
+        >
+          <View className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
+            {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Geofencing</Text>}
+          </View>
         </Pressable>
       </View>
     </View>
