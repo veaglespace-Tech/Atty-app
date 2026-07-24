@@ -514,7 +514,7 @@ function OrgDetailsSettings() {
 
         <Pressable onPress={handleSave} disabled={isUpdating}><View className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Details</Text>}
-        </Pressable>
+        </View></Pressable>
       </View>
     </View>
   );
