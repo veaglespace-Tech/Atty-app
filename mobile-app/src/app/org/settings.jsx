@@ -90,8 +90,10 @@ function TimeSettings() {
         </View>
         <ThemeToggle />
         {hasChanges && (
-          <Pressable onPress={handleUndo} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <Pressable onPress={handleUndo}>
+            <View className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
             <RotateCcw size={16} className="text-slate-500" />
+          </View>
           </Pressable>
         )}
       </View>
@@ -663,7 +665,8 @@ export default function SettingsScreen() {
         
         {/* Profile Header */}
         <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
-          <Pressable onPress={pickImage} className="relative mb-4  ">
+          <Pressable onPress={pickImage}>
+            <View className="relative mb-4  ">
             {currentProfileImageUrl ? (
               <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
             ) : (
@@ -674,6 +677,7 @@ export default function SettingsScreen() {
             <View className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 rounded-full items-center justify-center border-2 border-white dark:border-slate-800">
               <Camera size={14} color="#fff" />
             </View>
+          </View>
           </Pressable>
           <Text className="text-2xl font-black text-slate-900 dark:text-white text-center">
             {user?.name || "User"}
