@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Pressable, Alert } from "react-native";
+import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Pressable, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, AlertCircle, HeartPulse, ShieldCheck, Lock, Building2, Users } from "lucide-react-native";
+import { ArrowLeft, Save, User, Mail, Phone, MapPin, AlertCircle, HeartPulse, ShieldCheck, Lock, Building2, Users, Camera } from "lucide-react-native";
 
 import { Button } from "@/components/ui/Button";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -21,6 +21,7 @@ export default function MemberSettings() {
   const [updateMe, { isLoading }] = useUpdateMeMutation();
   const [forgotPassword, { isLoading: sendingReset }] = useForgotPasswordMutation();
 
+  const [activeTab, setActiveTab] = useState("personal");
   const [form, setForm] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -153,11 +154,11 @@ export default function MemberSettings() {
           </View>
 
           <View className="px-5">
-            {/* Hero Profile Completion Card */}
-            <View className="bg-white dark:bg-slate-900/80 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6 flex-row items-center">
-              <View className="relative">
-                {currentProfileImageUrl ? (
-                  <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
+            {/* Profile Header */}
+            <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
+              <Pressable onPress={() => Alert.alert("Notice", "Profile image updates are coming soon.")} className="relative mb-4 active:scale-95 transition-transform">
+                {user?.profileImageUrl ? (
+                  <Image source={{ uri: user?.profileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
                 ) : (
                   <View className="h-24 w-24 rounded-2xl bg-blue-100 dark:bg-blue-900/30 items-center justify-center border-4 border-white dark:border-slate-800">
                     <Text className="text-3xl font-black text-blue-600 dark:text-blue-400">
@@ -165,25 +166,53 @@ export default function MemberSettings() {
                     </Text>
                   </View>
                 )}
-                {completionState.percentage === 100 ? (
-                  <View className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-blue-500 border-2 border-white items-center justify-center">
-                    <ShieldCheck size={12} color="white" />
+                <View className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 rounded-full items-center justify-center border-2 border-white dark:border-slate-800">
+                  <Camera size={14} color="#fff" />
+                </View>
+              </Pressable>
+              <Text className="text-2xl font-black text-slate-900 dark:text-white text-center">
+                {user?.name || "Workspace User"}
+              </Text>
+              <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                {user?.email}
+              </Text>
+              
+              <View className="flex-row items-center gap-3 mt-5 w-full">
+                <View className="flex-1 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 flex-row items-center gap-3">
+                  <ShieldCheck size={18} className="text-emerald-500" />
+                  <View>
+                    <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400">Role</Text>
+                    <Text className="font-bold text-slate-700 dark:text-slate-200">{roleLabel}</Text>
                   </View>
-                ) : null}
-              </View>
-              <View className="ml-4 flex-1">
-                <Text className="text-lg font-black text-slate-900 dark:text-white">{user?.name || "Workspace User"}</Text>
-                <View className="bg-slate-100 dark:bg-slate-800 self-start px-2 py-1 rounded-md mt-1 mb-2">
-                  <Text className="text-[10px] font-black uppercase text-slate-500">{roleLabel}</Text>
                 </View>
-                <View className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <View 
-                    className={`h-full ${completionState.percentage === 100 ? 'bg-blue-500' : 'bg-orange-500'}`} 
-                    style={{ width: `${completionState.percentage}%` }}
-                  />
+                <View className="flex-1 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 flex-row items-center gap-3">
+                  <Building2 size={18} className="text-blue-500" />
+                  <View className="flex-1">
+                    <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400">Workspace</Text>
+                    <Text className="font-bold text-slate-700 dark:text-slate-200" numberOfLines={1}>{user?.organization?.name || workspaceCode || "N/A"}</Text>
+                  </View>
                 </View>
-                <Text className="text-[10px] font-bold text-slate-500 mt-1">Profile {completionState.percentage}% Complete</Text>
               </View>
+            </View>
+
+            {/* Modern Tabs */}
+            <View className="flex-row mb-6 bg-slate-200/50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <Pressable 
+                onPress={() => setActiveTab("personal")}
+                className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "personal" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+              >
+                <Text className={`text-sm font-bold ${activeTab === "personal" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+                  Personal
+                </Text>
+              </Pressable>
+              <Pressable 
+                onPress={() => setActiveTab("security")}
+                className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "security" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+              >
+                <Text className={`text-sm font-bold ${activeTab === "security" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+                  Security
+                </Text>
+              </Pressable>
             </View>
 
             {error ? (
@@ -200,45 +229,41 @@ export default function MemberSettings() {
               </View>
             ) : null}
 
-            {/* Administrative Settings (Dynamic based on Permissions) */}
-            {canManageLocationSettings && <LocationSettings />}
-            {canManageOrgSettings && (
-              <>
-                <TimeSettings />
-                <OrgLogoSettings />
-              </>
+            {activeTab === "personal" && (
+              <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+                <Text className="text-base font-black text-slate-900 dark:text-white mb-5 flex-row items-center">
+                  Personal Details
+                </Text>
+                
+                <View className="gap-y-4">
+                  <InputField label="Full Name" icon={User} value={form.name} onChangeText={(text) => setForm({ ...form, name: text })} placeholder="e.g. John Doe" />
+                  <InputField label="Email Address" icon={Mail} value={form.email} onChangeText={(text) => setForm({ ...form, email: text })} placeholder="e.g. john@example.com" keyboardType="email-address" />
+                  <InputField label="Mobile Number" icon={Phone} value={form.mobile} onChangeText={(text) => setForm({ ...form, mobile: text })} placeholder="e.g. 9876543210" keyboardType="phone-pad" />
+                  <InputField label="Emergency Contact" icon={HeartPulse} value={form.emergencyContact} onChangeText={(text) => setForm({ ...form, emergencyContact: text })} placeholder="e.g. 1234567890" keyboardType="phone-pad" />
+                  <InputField label="Current Address" icon={MapPin} value={form.currentAddress} onChangeText={(text) => setForm({ ...form, currentAddress: text })} placeholder="e.g. 123 Main St, City" />
+                  <InputField label="Permanent Address" icon={MapPin} value={form.permanentAddress} onChangeText={(text) => setForm({ ...form, permanentAddress: text })} placeholder="e.g. 456 Home St, City" />
+                  <InputField label="Blood Group" icon={HeartPulse} value={form.bloodGroup} onChangeText={(text) => setForm({ ...form, bloodGroup: text })} placeholder="e.g. O+" />
+                  
+                  <Button variant="primary" size="lg" className="w-full mt-2" onPress={handleSave} disabled={isLoading} rightIcon={!isLoading && <Save size={20} color="white" />}>
+                    {isLoading ? "Saving..." : "Save Changes"}
+                  </Button>
+                </View>
+              </View>
             )}
 
-            {/* Editable Form */}
-            <SectionCard title="Editable Profile" description="Update your personal details here. Changes appear across the dashboard right away.">
-              <InputField label="Full Name" icon={User} value={form.name} onChangeText={(text) => setForm({ ...form, name: text })} placeholder="e.g. John Doe" />
-              <InputField label="Email Address" icon={Mail} value={form.email} onChangeText={(text) => setForm({ ...form, email: text })} placeholder="e.g. john@example.com" keyboardType="email-address" />
-              <InputField label="Mobile Number" icon={Phone} value={form.mobile} onChangeText={(text) => setForm({ ...form, mobile: text })} placeholder="e.g. 9876543210" keyboardType="phone-pad" />
-              <InputField label="Emergency Contact" icon={HeartPulse} value={form.emergencyContact} onChangeText={(text) => setForm({ ...form, emergencyContact: text })} placeholder="e.g. 1234567890" keyboardType="phone-pad" />
-              <InputField label="Current Address" icon={MapPin} value={form.currentAddress} onChangeText={(text) => setForm({ ...form, currentAddress: text })} placeholder="e.g. 123 Main St, City" />
-              <InputField label="Permanent Address" icon={MapPin} value={form.permanentAddress} onChangeText={(text) => setForm({ ...form, permanentAddress: text })} placeholder="e.g. 456 Home St, City" />
-              <InputField label="Blood Group" icon={HeartPulse} value={form.bloodGroup} onChangeText={(text) => setForm({ ...form, bloodGroup: text })} placeholder="e.g. O+" />
-              
-              <Button variant="primary" size="lg" className="w-full mt-2" onPress={handleSave} disabled={isLoading} rightIcon={!isLoading && <Save size={20} color="white" />}>
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </SectionCard>
-
-            {/* Workspace & Permissions details */}
-            <SectionCard title="Workspace Details" description="Your organizational scope and permissions.">
-              <StaticField label="Organization Code" value={workspaceCode} icon={Building2} color="blue" />
-              <StaticField label="Permissions" value={`${permissionsCount} Features Enabled`} icon={Users} color="purple" />
-            </SectionCard>
-
-            {/* Security Settings */}
-            <SectionCard title="Security" description="Your account is protected by secure sessions.">
-              <Button variant="secondary" size="lg" className="w-full" onPress={handleResetPassword} disabled={sendingReset} rightIcon={!sendingReset && <Lock size={20} color="#64748b" />}>
-                {sendingReset ? "Sending..." : "Send Reset Password Link"}
-              </Button>
-              <Text className="text-xs font-medium text-slate-400 mt-3 text-center">
-                A secure reset link will be sent to {user?.email || "your registered email"}.
-              </Text>
-            </SectionCard>
+            {activeTab === "security" && (
+              <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+                <Text className="text-base font-black text-slate-900 dark:text-white mb-5 flex-row items-center">
+                  Security
+                </Text>
+                <Button variant="secondary" size="lg" className="w-full" onPress={handleResetPassword} disabled={sendingReset} rightIcon={!sendingReset && <Lock size={20} color="#64748b" />}>
+                  {sendingReset ? "Sending..." : "Send Reset Password Link"}
+                </Button>
+                <Text className="text-xs font-medium text-slate-400 mt-3 text-center">
+                  A secure reset link will be sent to {user?.email || "your registered email"}.
+                </Text>
+              </View>
+            )}
 
           </View>
         </ScrollView>

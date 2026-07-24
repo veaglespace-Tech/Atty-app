@@ -56,7 +56,7 @@ export default function SuperAdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="users/index"
+        name="users"
         options={{
           title: 'Users',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
@@ -73,22 +73,20 @@ export default function SuperAdminLayout() {
       <Tabs.Screen name="access" options={{ href: null }} />
       <Tabs.Screen name="organization/[id]" options={{ href: null }} />
 
-      <Tabs.Screen name="referrals/index" options={{ href: null }} />
+      <Tabs.Screen name="referrals" options={{ href: null }} />
       <Tabs.Screen name="referrals/[id]" options={{ href: null }} />
       <Tabs.Screen name="users/[id]" options={{ href: null }} />
       <Tabs.Screen name="analytics" options={{ href: null }} />
-      <Tabs.Screen name="attendance/index" options={{ href: null }} />
+      <Tabs.Screen name="attendance" options={{ href: null }} />
       <Tabs.Screen name="attendance/member/[id]" options={{ href: null }} />
       <Tabs.Screen name="backup" options={{ href: null }} />
-      <Tabs.Screen name="contacts/index" options={{ href: null }} />
+      <Tabs.Screen name="contacts" options={{ href: null }} />
       <Tabs.Screen name="contacts/[id]" options={{ href: null }} />
-      <Tabs.Screen name="coupons" options={{ href: null }} />
       <Tabs.Screen name="leads" options={{ href: null }} />
-      <Tabs.Screen name="notifications/index" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
 
       <Tabs.Screen name="posts" options={{ href: null }} />
-      <Tabs.Screen name="referrals" options={{ href: null }} />
       <Tabs.Screen name="roles" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
