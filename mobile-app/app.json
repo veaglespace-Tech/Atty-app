@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/atty-icon.png",
-      "bundleIdentifier": "com.veaglespace.atty"
+      "bundleIdentifier": "com.veaglespace.atty",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
