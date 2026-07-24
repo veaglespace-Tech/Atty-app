@@ -91,7 +91,7 @@ export default function AttendanceFaceCaptureModal({
             </Text>
           </View>
 
-          <View className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-950 h-80 mb-4">
+          <View className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-950 aspect-[3/4] w-full mb-4">
             {capturedImage ?
             <Image
               source={{ uri: capturedImage }}
