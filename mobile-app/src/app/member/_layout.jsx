@@ -63,7 +63,7 @@ export default function MemberLayout() {
         options={{
           title: 'Teams',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.TEAM_VIEW) ? undefined : null,
+          href: hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) ? undefined : null,
         }}
       />
       <Tabs.Screen

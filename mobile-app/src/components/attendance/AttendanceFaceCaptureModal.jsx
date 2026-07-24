@@ -44,7 +44,7 @@ export default function AttendanceFaceCaptureModal({
     try {
       setIsCapturing(true);
       setCameraError("");
-      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
+      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.3 });
 
       if (photo?.base64) {
         setCapturedImage(`data:image/jpeg;base64,${photo.base64}`);

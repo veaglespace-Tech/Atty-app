@@ -10,7 +10,7 @@ const UsersHeader = ({ loading, downloadingExcel, usersLength, totalItems, refet
           <Text className="text-[10px] font-black uppercase tracking-widest text-blue-400">Platform Directory</Text>
         </View>
         <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Users</Text>
-        <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">View all users across the entire platform. Open a user's detail page to manage their profile and permissions.</Text>
+        <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">View all users across the entire platform. Open a user&apos;s detail page to manage their profile and permissions.</Text>
       </View>
       
       <View className="items-end gap-3">

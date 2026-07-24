@@ -99,9 +99,9 @@ export default function OrgUserDetailPage() {
     [assignablePermissions]
   );
 
-  const canUpdateStatus = hasPermission(authUser, PERMISSIONS.USERS_STATUS_UPDATE);
-  const canToggleAccess = hasPermission(authUser, PERMISSIONS.USERS_ACTIVE_TOGGLE);
-  const canEditUser = hasPermission(authUser, PERMISSIONS.USERS_CREATE);
+  const canUpdateStatus = hasPermission(authUser, PERMISSIONS.USERS.UPDATE_STATUS);
+  const canToggleAccess = hasPermission(authUser, PERMISSIONS.USERS.TOGGLE_ACTIVE);
+  const canEditUser = hasPermission(authUser, PERMISSIONS.USERS.CREATE);
 
   useEffect(() => {
     if (!user) return;

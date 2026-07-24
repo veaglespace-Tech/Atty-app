@@ -43,23 +43,23 @@ const getTabsForRole = (user) => {
     
     const isAdmin = role === ROLES.ORG_ADMIN;
 
-    if (isAdmin || hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
       tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
       tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
     }
-    if (isAdmin || hasPermission(user, PERMISSIONS.USERS_CREATE)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
     }
-    if (isAdmin || hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
-    if (isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
       tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
     }
-    if (isAdmin || hasPermission(user, PERMISSIONS.POST_CREATE)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
-    if (isAdmin || hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+    if (isAdmin || hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     if (isAdmin) {
@@ -74,20 +74,20 @@ const getTabsForRole = (user) => {
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" }
     ];
     // We map TEAM_VIEW_OWN to TEAM_VIEW as per roles.js
-    if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
     tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
-    if (hasPermission(user, PERMISSIONS.USERS_VIEW)) {
+    if (hasPermission(user, PERMISSIONS.USERS.VIEW)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
     }
-    if (hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE)) {
+    if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
       tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "requests" });
     }
-    if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
+    if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
-    if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+    if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
@@ -99,13 +99,13 @@ const getTabsForRole = (user) => {
     { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
     { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" }
   ];
-  if (hasPermission(user, PERMISSIONS.TEAM_VIEW)) {
+  if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
     fallbackTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
   }
-  if (hasPermission(user, PERMISSIONS.POST_CREATE)) {
+  if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
     fallbackTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
   }
-  if (hasPermission(user, PERMISSIONS.REPORTS_VIEW)) {
+  if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
     fallbackTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
   fallbackTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });

@@ -27,15 +27,23 @@ function NotificationSetup({ children }) {
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
       if (data?.postId) {
-        // Navigate to the post or notifications tab when clicked
-        // Example: router.push(`/member/notifications`);
-        console.log("Notification clicked with data:", data);
+        // Find the current user role to navigate to the correct tab
+        const state = store.getState();
+        const role = state.auth?.user?.currentRole;
+        
+        let basePath = '/member';
+        if (role === 'SUPER_ADMIN') basePath = '/super-admin';
+        else if (role === 'ORG_ADMIN') basePath = '/org';
+        else if (role === 'TEAM_LEADER') basePath = '/team-leader';
+        
+        // Navigate to the notifications tab when clicked
+        router.push(`${basePath}/notifications`);
       }
     });
 
     return () => {
       if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+        responseListener.current.remove();
       }
     };
   }, []);

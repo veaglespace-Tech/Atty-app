@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { CalendarCheck2, FileBarChart, MapPinned, Users, Component, ClipboardCheck, MessageSquare, CreditCard, Bell, Gift, QrCode, ChevronRight, CheckCircle2, ShieldCheck, Clock, CheckCircle } from "lucide-react-native";
+import { CalendarCheck2, FileBarChart, MapPinned, Users, Component, ClipboardCheck, MessageSquare, CreditCard, Bell, Gift, ChevronRight, CheckCircle2, ShieldCheck, Clock, CheckCircle } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useGetTeamLeaderDashboardQuery } from "@/services/api/teamLeaderApi";
@@ -26,7 +26,6 @@ export default function TeamLeaderDashboard() {
     {
       name: "Attendance",
       actions: [
-        { title: "QR Scanner", description: "Scan QR codes for verification.", icon: <QrCode size={22} color="#2563eb" />, href: "/scanner" },
         { title: "Team Attendance", description: "View today status and member attendance details.", icon: <CalendarCheck2 size={22} color="#2563eb" />, href: "attendance" },
         { title: "Live Location", description: "Open location context for active team members.", icon: <MapPinned size={22} color="#2563eb" />, href: "location" },
         { title: "Reports", description: "Check team summaries and performance reports.", icon: <FileBarChart size={22} color="#2563eb" />, href: "reports" }

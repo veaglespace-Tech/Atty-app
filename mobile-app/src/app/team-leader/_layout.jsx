@@ -56,7 +56,7 @@ export default function TeamLeaderLayout() {
         options={{
           title: 'Teams',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.TEAM_VIEW) ? undefined : null,
+          href: hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -64,7 +64,7 @@ export default function TeamLeaderLayout() {
         options={{
           title: 'Attendance',
           tabBarIcon: ({ color }) => <CalendarCheck2 size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW) ? undefined : null,
+          href: hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_TEAM) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -72,7 +72,7 @@ export default function TeamLeaderLayout() {
         options={{
           title: 'Requests',
           tabBarIcon: ({ color }) => <Inbox size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.USERS_STATUS_UPDATE) ? undefined : null,
+          href: hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS) ? undefined : null,
         }}
       />
       <Tabs.Screen name="users" options={{ href: null }} />

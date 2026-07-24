@@ -39,7 +39,7 @@ export default function TeamLeaderSettings() {
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || "N/A";
   
   const effectiveRole = user?.currentRole || user?.role || ROLES.MEMBER;
-  const canManageLocationSettings = hasPermission(user, PERMISSIONS.LOCATION_SET);
+  const canManageLocationSettings = hasPermission(user, PERMISSIONS.LOCATION.MANAGE);
   const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
 
   const completionState = useMemo(() => {

@@ -59,7 +59,7 @@ export default function OrgLayout() {
         options={{
           title: 'Attendance',
           tabBarIcon: ({ color }) => <CalendarCheck2 size={24} color={color} />,
-          href: isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE_VIEW) ? undefined : null,
+          href: isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -67,7 +67,7 @@ export default function OrgLayout() {
         options={{
           title: 'Users',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-          href: isAdmin || hasPermission(user, PERMISSIONS.USERS_CREATE) ? undefined : null,
+          href: isAdmin || hasPermission(user, PERMISSIONS.USERS.CREATE) ? undefined : null,
         }}
       />
       <Tabs.Screen

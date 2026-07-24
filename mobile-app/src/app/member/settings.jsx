@@ -14,6 +14,45 @@ import LocationSettings from "@/components/settings/LocationSettings";
 import TimeSettings from "@/components/settings/TimeSettings";
 import OrgLogoSettings from "@/components/settings/OrgLogoSettings";
 import ThemeToggle from "@/components/ThemeToggle";
+const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = "default" }) => (
+  <View className="mb-4">
+    <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider ml-1">
+      {label}
+    </Text>
+    <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 px-4 py-3 shadow-sm">
+      <Icon size={20} color="#64748b" className="mr-3" />
+      <TextInput
+        className="flex-1 text-base font-medium text-slate-900 dark:text-white"
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#94a3b8"
+        keyboardType={keyboardType}
+      />
+    </View>
+  </View>
+);
+
+const SectionCard = ({ title, children, description }) => (
+  <View className="bg-white dark:bg-slate-900/80 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
+    <Text className="text-lg font-black text-slate-900 dark:text-white">{title}</Text>
+    {description && <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 mb-4">{description}</Text>}
+    {children}
+  </View>
+);
+
+const StaticField = ({ label, value, icon: Icon, color = "blue" }) => (
+  <View className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[24px] mb-3 border border-slate-100 dark:border-slate-800">
+    <View className={`h-10 w-10 rounded-xl bg-${color}-100 dark:bg-${color}-500/20 items-center justify-center mr-3`}>
+      <Icon size={18} className={`text-${color}-600 dark:text-${color}-400`} color="#2563eb" />
+    </View>
+    <View className="flex-1">
+      <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</Text>
+      <Text className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{value}</Text>
+    </View>
+  </View>
+);
+
 export default function MemberSettings() {
   const { user } = useAuthSession();
   const dispatch = useDispatch();
@@ -40,7 +79,7 @@ export default function MemberSettings() {
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || "N/A";
   
   const effectiveRole = user?.currentRole || user?.role || ROLES.MEMBER;
-  const canManageLocationSettings = hasPermission(user, PERMISSIONS.LOCATION_SET);
+  const canManageLocationSettings = hasPermission(user, PERMISSIONS.LOCATION.MANAGE);
   const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
 
   const completionState = useMemo(() => {
@@ -98,44 +137,6 @@ export default function MemberSettings() {
     }
   };
 
-  const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = "default" }) => (
-    <View className="mb-4">
-      <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider ml-1">
-        {label}
-      </Text>
-      <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 px-4 py-3 shadow-sm">
-        <Icon size={20} color="#64748b" className="mr-3" />
-        <TextInput
-          className="flex-1 text-base font-medium text-slate-900 dark:text-white"
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor="#94a3b8"
-          keyboardType={keyboardType}
-        />
-      </View>
-    </View>
-  );
-
-  const SectionCard = ({ title, children, description }) => (
-    <View className="bg-white dark:bg-slate-900/80 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
-      <Text className="text-lg font-black text-slate-900 dark:text-white">{title}</Text>
-      {description && <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 mb-4">{description}</Text>}
-      {children}
-    </View>
-  );
-
-  const StaticField = ({ label, value, icon: Icon, color = "blue" }) => (
-    <View className="flex-row items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[24px] mb-3 border border-slate-100 dark:border-slate-800">
-      <View className={`h-10 w-10 rounded-xl bg-${color}-100 dark:bg-${color}-500/20 items-center justify-center mr-3`}>
-        <Icon size={18} className={`text-${color}-600 dark:text-${color}-400`} color="#2563eb" />
-      </View>
-      <View className="flex-1">
-        <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</Text>
-        <Text className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{value}</Text>
-      </View>
-    </View>
-  );
 
   return (
     

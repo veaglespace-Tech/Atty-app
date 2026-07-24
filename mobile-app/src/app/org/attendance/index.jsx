@@ -102,8 +102,8 @@ const ExportDropdown = ({ onPdf, onExcel, loadingPdf, loadingExcel }) => {
 
 export default function OrgAttendancePage() {
  const authUser = useSelector((state) => state.auth.user);
- const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION_SET);
- const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE_MANAGE);
+ const canSetWorkspaceLocation = hasPermission(authUser, PERMISSIONS.LOCATION.MANAGE);
+ const canManageTeamAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE.MANAGE);
 
  const [period, setPeriod] = useState("monthly");
  const [search, setSearch] = useState("");

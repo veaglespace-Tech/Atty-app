@@ -11,8 +11,8 @@ const getErrorMessage = (error, fallback) => error?.data?.message || error?.erro
 
 export default function OrgTeamsPage() {
   const authUser = useSelector((state) => state.auth.user);
-  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM_CREATE);
-  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM_ASSIGN_MEMBERS);
+  const canCreateTeams = hasPermission(authUser, PERMISSIONS.TEAM.CREATE);
+  const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM.ASSIGN_MEMBERS);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);

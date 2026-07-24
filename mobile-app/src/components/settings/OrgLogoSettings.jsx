@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Image } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, Alert, Image } from "react-native";
 import { Building2, Save, Trash2, ImageUp } from "lucide-react-native";
 import { useDispatch, useSelector } from "react-redux";
 import * as ImagePicker from "expo-image-picker";

@@ -4,7 +4,7 @@ import { useGetOrgDashboardQuery } from "@/services/api/orgApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
-import { QrCode, Copy, Share2, Users, FileText, Component, ShieldAlert, CheckCircle, Activity, Bell } from "lucide-react-native";
+import { Copy, Share2, Users, FileText, Component, ShieldAlert, CheckCircle, Activity, Bell } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 const getIconForLabel = (label) => {
@@ -62,13 +62,7 @@ export default function OrgDashboard() {
                     Workspace summary for users, teams, and attendance.
                   </Text>
                 </View>
-                <Link href="/scanner" asChild>
-                  <Pressable className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:scale-95 transition-transform">
-                    <QrCode size={20} className="text-slate-900 dark:text-white" />
-                  </Pressable>
-                </Link>
               </View>
-
             </View>
           </View>
 

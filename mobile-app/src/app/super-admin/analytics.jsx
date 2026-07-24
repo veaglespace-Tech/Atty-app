@@ -49,13 +49,15 @@ export default function AnalyticsPage() {
             
             {/* Total Summary Row */}
             <View className="flex-row flex-wrap justify-between gap-y-3">
-              <View className="w-full bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">                <View className="flex-row items-center gap-2 mb-2">
+              <View className="w-full bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+                <View className="flex-row items-center gap-2 mb-2">
                   <Building2 size={16} className="text-blue-500" />
                   <Text className="text-xs font-black uppercase tracking-widest text-slate-500">Organizations</Text>
                 </View>
                 <Text className="text-3xl font-black text-slate-900 dark:text-white">{getSummaryValue("Organizations")}</Text>
               </View>
-              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">                <View className="flex-row items-center gap-2 mb-2">
+              <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+                <View className="flex-row items-center gap-2 mb-2">
                   <Users size={14} className="text-indigo-500" />
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Users</Text>
                 </View>
