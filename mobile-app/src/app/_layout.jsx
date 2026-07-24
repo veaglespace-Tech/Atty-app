@@ -4,6 +4,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme, StyleSheet, LogBox, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Slot } from 'expo-router';
 import { useEffect } from 'react';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
@@ -41,13 +42,16 @@ export default function RootLayout() {
   }, [colorScheme]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StoreProvider>
-        <SafeAreaView style={styles.container}>
-          <Slot />
-        </SafeAreaView>
-      </StoreProvider>
-    </ThemeProvider>);
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StoreProvider>
+          <SafeAreaView style={styles.container}>
+            <Slot />
+          </SafeAreaView>
+        </StoreProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
+  );
 
 }
 
