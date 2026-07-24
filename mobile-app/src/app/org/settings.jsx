@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Alert, ActivityIndicator, Image } from "react-native";
-import { TouchableOpacity, ScrollView } from "react-native-gesture-handler";
+import { View, Text, TextInput, Alert, ActivityIndicator, Image, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
@@ -706,8 +705,9 @@ export default function SettingsScreen() {
         <View className="flex-row mb-6 bg-slate-200/50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
           <TouchableOpacity 
             onPress={() => setActiveTab("personal")}
-            className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "personal" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+            className={`flex-1 items-center justify-center flex-row gap-2 py-2.5 rounded-xl transition-all ${activeTab === "personal" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}
           >
+            <User size={16} color={activeTab === "personal" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
             <Text className={`text-sm font-bold ${activeTab === "personal" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
               Personal
             </Text>
@@ -715,8 +715,9 @@ export default function SettingsScreen() {
           {canSeeAdminSettings && (
             <TouchableOpacity 
               onPress={() => setActiveTab("organization")}
-              className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "organization" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+              className={`flex-1 items-center justify-center flex-row gap-2 py-2.5 rounded-xl transition-all ${activeTab === "organization" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}
             >
+              <Building2 size={16} color={activeTab === "organization" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
               <Text className={`text-sm font-bold ${activeTab === "organization" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
                 Workspace
               </Text>
@@ -724,8 +725,9 @@ export default function SettingsScreen() {
           )}
           <TouchableOpacity 
             onPress={() => setActiveTab("security")}
-            className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "security" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+            className={`flex-1 items-center justify-center flex-row gap-2 py-2.5 rounded-xl transition-all ${activeTab === "security" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700" : ""}`}
           >
+            <ShieldCheck size={16} color={activeTab === "security" ? (isDark ? "#fff" : "#0f172a") : "#64748b"} />
             <Text className={`text-sm font-bold ${activeTab === "security" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
               Security
             </Text>
