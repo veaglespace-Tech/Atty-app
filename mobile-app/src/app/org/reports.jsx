@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, TextInput, Modal } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { View, Text, Pressable, ScrollView, RefreshControl, TextInput, Modal, Alert, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, FileBarChart, FileText, Download, FileBox, FileArchive, Search, X } from "lucide-react-native";
 import { useGetOrgReportsQuery, useGetOrgAttendanceQuery, useDownloadOrgReportPdfMutation, useDownloadOrgReportExcelMutation } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
-import { Alert, ActivityIndicator } from "react-native";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const PERIODS = [
@@ -87,8 +87,8 @@ export default function OrgReportsPage() {
             </View>
           ) : (
             <View className="gap-3">
-              {filteredMemberLogs.map((log) => (
-                <View key={log.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+              {filteredMemberLogs.map((log, index) => (
+                <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()} key={log.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                   <View className="flex-row items-center justify-between mb-3">
                     <Text className="text-sm font-bold text-slate-900 dark:text-white">{log.date}</Text>
                     <View className="px-2 py-1 rounded-full border bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
@@ -109,7 +109,7 @@ export default function OrgReportsPage() {
                         <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">{formatHoursValue(log.workedHours ?? log.workedMinutes, { fromMinutes: log.workedHours == null })}</Text>
                      </View>
                   </View>
-                </View>
+                </Animated.View>
               ))}
             </View>
           )}
@@ -222,8 +222,8 @@ export default function OrgReportsPage() {
           </View>
         ) : (
           <View className="gap-3">
-            {items.map((item) => (
-              <ReportRecordCard key={item.id || item.member} item={item} onPress={() => setSelectedMember(item)} />
+            {items.map((item, index) => (
+              <ReportRecordCard key={item.id || item.member} item={item} index={index} onPress={() => setSelectedMember(item)} />
             ))}
           </View>
         )}
@@ -241,36 +241,38 @@ function MetricCard({ label, value }) {
   );
 }
 
-function ReportRecordCard({ item, onPress }) {
+function ReportRecordCard({ item, index = 0, onPress }) {
   return (
-    <Pressable onPress={onPress} className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm active:scale-[0.98] transition-transform">
-      <View className="flex-row items-center justify-between mb-3">
-        <View className="flex-1">
-          <Text className="text-base font-bold text-slate-900 dark:text-white">{item.member}</Text>
-          <Text className="text-xs font-semibold text-slate-500 mt-0.5">{item.role || "Member"}</Text>
+    <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()}>
+      <Pressable onPress={onPress} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm active:scale-[0.98] transition-transform">
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-1">
+            <Text className="text-base font-bold text-slate-900 dark:text-white">{item.member}</Text>
+            <Text className="text-xs font-semibold text-slate-500 mt-0.5">{item.role || "Member"}</Text>
+          </View>
+          <View className="px-2 py-1 rounded-full border bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <Text className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 dark:text-slate-400">Details &gt;</Text>
+          </View>
         </View>
-        <View className="px-2 py-1 rounded-full border bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-          <Text className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 dark:text-slate-400">Details &gt;</Text>
+        <View className="flex-row flex-wrap border-t border-slate-100 dark:border-slate-800 pt-3 gap-y-3">
+          <View className="w-1/2">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Present</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.presentDays}</Text>
+          </View>
+          <View className="w-1/2">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Absent</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.absentDays}</Text>
+          </View>
+          <View className="w-1/2">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Half Day</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.halfDays}</Text>
+          </View>
+          <View className="w-1/2">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Worked Hrs</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatHoursValue(item.workedHours)}</Text>
+          </View>
         </View>
-      </View>
-      <View className="flex-row flex-wrap border-t border-slate-100 dark:border-slate-800 pt-3 gap-y-3">
-        <View className="w-1/2">
-          <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Present</Text>
-          <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.presentDays}</Text>
-        </View>
-        <View className="w-1/2">
-          <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Absent</Text>
-          <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.absentDays}</Text>
-        </View>
-        <View className="w-1/2">
-          <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Half Day</Text>
-          <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.halfDays}</Text>
-        </View>
-        <View className="w-1/2">
-          <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Worked Hrs</Text>
-          <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatHoursValue(item.workedHours)}</Text>
-        </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }

@@ -85,7 +85,7 @@ export default function OrganizationDetailsPage() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-slate-50 dark:bg-[#0F172A] items-center justify-center">
+      <View className="flex-1 bg-slate-50 dark:bg-slate-900 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
@@ -93,7 +93,7 @@ export default function OrganizationDetailsPage() {
 
   if (error || !org) {
     return (
-      <View className="flex-1 bg-slate-50 dark:bg-[#0F172A] items-center justify-center p-6">
+      <View className="flex-1 bg-slate-50 dark:bg-slate-900 items-center justify-center p-6">
         <Text className="text-lg font-bold text-slate-800 dark:text-slate-200 text-center">
           {error?.message || error?.data?.message || "Organization not found"}
         </Text>
@@ -136,8 +136,8 @@ export default function OrganizationDetailsPage() {
   const tabs = ["Overview", "Profile", "Users", "Teams"];
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-[#0F172A]">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0F172A]">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900">
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="flex-row items-center self-start px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 mb-4">
           <ChevronLeft size={16} className="text-slate-600 dark:text-slate-300 mr-1" />
           <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">Back</Text>
@@ -200,7 +200,7 @@ export default function OrganizationDetailsPage() {
             <View className="flex-1 space-y-4">
               <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6">
                 <Text className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200 mb-1">At a Glance</Text>
-                <Text className="text-xs text-slate-500 dark:text-slate-400 mb-6">Important account, subscription, usage, and admin details in one place.</Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400 mb-6">Important account, usage, and admin details in one place.</Text>
                 
                 <View className="flex-row flex-wrap justify-between gap-y-3">
                   {renderOverviewField("Email", org.email || org.admin?.email || "-")}
@@ -218,8 +218,6 @@ export default function OrganizationDetailsPage() {
                   {renderOverviewField("Admin Email", org.admin?.email || "-")}
                   {renderOverviewField("Partner Code", org.referredByPartner?.partnerReferralCode || "-")}
                   {renderOverviewField("Partner Email", org.referredByPartner?.email || "-")}
-                  {renderOverviewField("Member Limit", org.plan?.memberLimit || "-")}
-                  {renderOverviewField("Max Teams", org.plan?.maxTeams || "-")}
                 </View>              </View>
             </View>
 

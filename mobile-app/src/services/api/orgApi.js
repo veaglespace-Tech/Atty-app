@@ -72,9 +72,7 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
-    getOrgSubscription: builder.query({
-      query: () => "/org/subscription",
-    }),
+
     getOrgNotifications: builder.query({
       query: (limit = 100) => `/org/notifications?limit=${limit}`,
       providesTags: ["OrgNotifications"],
@@ -322,7 +320,7 @@ export const {
   useGetOrgReportsQuery,
   useDownloadOrgReportPdfMutation,
   useDownloadOrgReportExcelMutation,
-  useGetOrgSubscriptionQuery,
+
   useGetOrgNotificationsQuery,
   useGetOrgNotificationByIdQuery,
   useMarkNotificationAsReadMutation,

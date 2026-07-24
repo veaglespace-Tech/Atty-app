@@ -136,30 +136,32 @@ export default function AttendanceFaceCaptureModal({
               variant="primary"
               className="flex-1"
               disabled={isCapturing || isSubmitting || !permission?.granted}
-              onPress={captureSelfie}>
-              
-                {isCapturing ? <ActivityIndicator size="small" color="white" /> : <Camera size={18} color="white" className="dark:text-slate-900" />}
-                <Text className="font-bold text-white dark:text-slate-900 ml-2">Capture Selfie</Text>
-              </Button> :
+              onPress={captureSelfie}
+              leftIcon={isCapturing ? <ActivityIndicator size="small" color="white" /> : <Camera size={18} color="white" className="dark:text-slate-900" />}
+            >
+              Capture Selfie
+            </Button> :
 
             <>
                 <Button
                 variant="outline"
                 className="flex-1"
                 disabled={isSubmitting}
-                onPress={() => setCapturedImage("")}>
-                
-                  <RefreshCcw size={16} className="text-slate-700 dark:text-slate-300 mr-2" />
-                  <Text className="font-bold text-slate-700 dark:text-slate-300">Retake</Text>
+                onPress={() => setCapturedImage("")}
+                leftIcon={<RefreshCcw size={16} className="text-slate-600 dark:text-slate-300" />}
+                >
+                  Retake
                 </Button>
+                
                 <Button
                 variant="primary"
                 className="flex-1"
                 disabled={isSubmitting}
-                onPress={handleSubmit}>
-                
-                  {isSubmitting ? <ActivityIndicator size="small" color="white" /> : <Camera size={16} color="white" className="dark:text-slate-900 mr-2" />}
-                  <Text className="font-bold text-white dark:text-slate-900">Submit</Text>
+                isLoading={isSubmitting}
+                onPress={handleSubmit}
+                leftIcon={!isSubmitting && <ShieldCheck size={18} color="white" />}
+                >
+                  Submit
                 </Button>
               </>
             }

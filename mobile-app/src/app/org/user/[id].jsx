@@ -212,10 +212,10 @@ export default function OrgUserDetailPage() {
         {error ? <View className="mb-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"><Text className="text-sm text-red-700 dark:text-red-300">{error}</Text></View> : null}
         {message ? <View className="mb-3 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"><Text className="text-sm text-emerald-700 dark:text-emerald-300">{message}</Text></View> : null}
 
-        {/* User Details */}
+        {/* Overview Tiles (Non-editable data) */}
         <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Complete Details</Text>
+            <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Account Overview</Text>
             <Pressable 
               onPress={async () => {
                 try {
@@ -232,69 +232,74 @@ export default function OrgUserDetailPage() {
           </View>
           <View className="flex-row flex-wrap gap-3">
             <DetailTile label="User ID" value={toDisplayText(user.id)} />
-            <DetailTile label="Role" value={formatRoleLabel(user.role)} />
-            <DetailTile label="Status" value={toDisplayText(user.approvalStatus)} />
-            <DetailTile label="Access" value={user.active ? "Active" : "Blocked"} />
-            <DetailTile label="Email" value={toDisplayText(user.email)} />
-            <DetailTile label="Mobile" value={`${user.mobileCountryCode || ""} ${user.mobile || "-"}`} />
-            <DetailTile label="Joined On" value={toDateLabel(user.membership?.joinedAt || user.joinedAt)} />
-            <DetailTile label="Last Login" value={toDateTimeLabel(user.lastLoginAt)} />
             <DetailTile label="Organization" value={toDisplayText(user.organization?.name)} />
             <DetailTile label="Org Code" value={toDisplayText(user.organization?.organizationCode)} />
+            <DetailTile label="Joined On" value={toDateLabel(user.membership?.joinedAt || user.joinedAt)} />
+            <DetailTile label="Last Login" value={toDateTimeLabel(user.lastLoginAt)} />
             <DetailTile label="Present" value={String(attendanceSummary.presentDays || 0)} />
             <DetailTile label="Absent" value={String(attendanceSummary.absentDays || 0)} />
+            {/* Show these as read-only ONLY if the user CANNOT edit them */}
+            {!canEditUser && (
+              <>
+                <DetailTile label="Role" value={formatRoleLabel(user.role)} />
+                <DetailTile label="Mobile" value={`${user.mobileCountryCode || ""} ${user.mobile || "-"}`} />
+                <DetailTile label="Status" value={toDisplayText(user.approvalStatus)} />
+              </>
+            )}
           </View>
         </View>
 
-        {/* Edit Profile */}
-        <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
-          <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">Profile & Access</Text>
-          <View className="gap-3">
-            <View className="gap-1.5">
-              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Name</Text>
-              <TextInput value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} editable={canEditUser}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
-            </View>
-            <View className="gap-1.5">
-              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Mobile</Text>
-              <View className="flex-row gap-2">
-                <TextInput value={form.mobileCountryCode} onChangeText={(v) => setForm((p) => ({ ...p, mobileCountryCode: v }))} editable={canEditUser}
-                  className="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
-                <TextInput value={form.mobile} onChangeText={(v) => setForm((p) => ({ ...p, mobile: v.replace(/[^\d]/g, "") }))} editable={canEditUser} keyboardType="phone-pad"
-                  className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
-              </View>
-            </View>
-            <View className="gap-1.5">
-              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Role</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {manageableRoleOptions.map((r) => (
-                  <Pressable key={r.value} onPress={() => { if (!canEditUser) return; setForm((p) => ({ ...p, role: r.value, permissions: getDefaultPermissionsForRole(r.value) })); }}
-                    className={`px-4 py-2.5 rounded-2xl border ${form.role === r.value ? "bg-blue-600 border-blue-600" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
-                    <Text className={`text-[13px] font-bold ${form.role === r.value ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{r.label}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-            {canUpdateStatus && (
+        {/* Edit Profile Form (Only shown if user has permission to edit) */}
+        {canEditUser && (
+          <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
+            <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">Edit Profile Settings</Text>
+            <View className="gap-4">
               <View className="gap-1.5">
-                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Approval Status</Text>
+                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Full Name</Text>
+                <TextInput value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))}
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Mobile Number</Text>
+                <View className="flex-row gap-2">
+                  <TextInput value={form.mobileCountryCode} onChangeText={(v) => setForm((p) => ({ ...p, mobileCountryCode: v }))}
+                    className="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white text-center" />
+                  <TextInput value={form.mobile} onChangeText={(v) => setForm((p) => ({ ...p, mobile: v.replace(/[^\d]/g, "") }))} keyboardType="phone-pad"
+                    className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
+                </View>
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Role</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                  {STATUS_OPTIONS.map((s) => (
-                    <Pressable key={s} onPress={() => setForm((p) => ({ ...p, approvalStatus: s }))}
-                      className={`px-4 py-2.5 rounded-2xl border ${form.approvalStatus === s ? "bg-blue-600 border-blue-600" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
-                      <Text className={`text-[13px] font-bold ${form.approvalStatus === s ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{s}</Text>
+                  {manageableRoleOptions.map((r) => (
+                    <Pressable key={r.value} onPress={() => { setForm((p) => ({ ...p, role: r.value, permissions: getDefaultPermissionsForRole(r.value) })); }}
+                      className={`px-4 py-2.5 rounded-2xl border active:scale-95 transition-transform ${form.role === r.value ? "bg-blue-600 border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                      <Text className={`text-[13px] font-bold ${form.role === r.value ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{r.label}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
               </View>
-            )}
-            <Pressable onPress={saveProfile} disabled={!canEditUser || savingProfile}
-              className={`w-full py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${savingProfile ? "bg-blue-400" : "bg-blue-600"}`}>
-              {savingProfile ? <ActivityIndicator size="small" color="#fff" /> : <UserRound size={16} color="#fff" />}
-              <Text className="text-white text-sm font-bold">Update Profile</Text>
-            </Pressable>
+              {canUpdateStatus && (
+                <View className="gap-1.5">
+                  <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Approval Status</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    {STATUS_OPTIONS.map((s) => (
+                      <Pressable key={s} onPress={() => setForm((p) => ({ ...p, approvalStatus: s }))}
+                        className={`px-4 py-2.5 rounded-2xl border active:scale-95 transition-transform ${form.approvalStatus === s ? "bg-blue-600 border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                        <Text className={`text-[13px] font-bold ${form.approvalStatus === s ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{s}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+              <Pressable onPress={saveProfile} disabled={savingProfile}
+                className={`w-full py-4 rounded-2xl items-center flex-row justify-center gap-2 mt-2 active:scale-[0.98] transition-transform ${savingProfile ? "bg-blue-400" : "bg-blue-600 shadow-sm"}`}>
+                {savingProfile ? <ActivityIndicator size="small" color="#fff" /> : <UserRound size={18} color="#fff" />}
+                <Text className="text-white text-[15px] font-bold">Update Profile Settings</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Permissions */}
         <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">

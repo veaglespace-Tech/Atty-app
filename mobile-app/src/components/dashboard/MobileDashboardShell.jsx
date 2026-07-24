@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image } from "react-native";
+import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield } from "lucide-react-native";
 import { useDispatch } from "react-redux";
@@ -167,42 +167,49 @@ export default function MobileDashboardShell({ children }) {
       
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (
-        <View className="flex-row items-center justify-between px-4 pt-3 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-          <View className="flex-row items-center gap-3">
+        <View className="flex-row items-center justify-between px-4 pt-3 pb-3 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 h-[64px]">
+          {/* Left Side: Hamburger Menu */}
+          <View className="flex-row items-center w-12 z-10">
             <Pressable
               onPress={openDrawer}
-              className="h-12 w-12 items-center justify-center rounded-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm active:scale-95 transition-transform">
-              <Menu size={22} color={isDark ? "#ffffff" : "#0f172a"} />
+              className="h-10 w-10 items-center justify-center rounded-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm active:scale-95 transition-transform">
+              <Menu size={20} color={isDark ? "#ffffff" : "#0f172a"} />
             </Pressable>
-            <View className="flex-row items-center gap-2.5">
-              <View className="h-9 w-9 items-center justify-center rounded-xl overflow-hidden">
-                <AnimatedLogo 
-                  className="w-full h-full" 
-                />
-              </View>
-              <View className="flex-row items-baseline gap-1">
-                <Text className="text-lg font-black text-slate-900 dark:text-white leading-tight tracking-tight">
-                  Veagle
-                </Text>
-                <Text className="text-lg font-black text-blue-500 leading-tight tracking-tight">
-                  Attendee                </Text>
-              </View>
-            </View>
           </View>
           
-          <Pressable
-            onPress={() => router.push('/org/settings')}
-            className="flex-row items-center justify-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"          >
-            {user?.avatar || user?.profilePicture ? (
-              <Image source={{ uri: user.avatar || user.profilePicture }} style={{ width: 26, height: 26, borderRadius: 13 }} />
+          {/* Center: Org Logo or Brand */}
+          <View className="absolute left-0 right-0 items-center justify-center pointer-events-none" style={{ top: 0, bottom: 0, zIndex: 1 }}>
+            {user?.organization?.logoUrl ? (
+              <Image 
+                source={{ uri: user.organization.logoUrl }} 
+                style={{ height: 32, width: 120 }} 
+                resizeMode="contain" 
+              />
             ) : (
-              <View className="h-[26px] w-[26px] items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <Text className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                  {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
+              <View className="flex-row items-center justify-center">
+                <AnimatedLogo style={{ width: 28, height: 28, marginRight: 8 }} />
+                <Text className="text-xl font-black text-slate-900 dark:text-white leading-tight tracking-tight mr-1">
+                  Veagle
+                </Text>
+                <Text className="text-xl font-black text-blue-500 leading-tight tracking-tight">
+                  Attendee
                 </Text>
               </View>
             )}
+          </View>
 
+          {/* Right Side: Profile Info */}
+          <Pressable
+            onPress={() => router.push('/org/settings')}
+            className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform z-10 shadow-sm overflow-hidden"
+          >
+            {user?.profileImageUrl || user?.avatar || user?.profilePicture ? (
+              <Image source={{ uri: user?.profileImageUrl || user?.avatar || user?.profilePicture }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <Text className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
+                {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
+              </Text>
+            )}
           </Pressable>
         </View>
       )}
@@ -235,23 +242,26 @@ export default function MobileDashboardShell({ children }) {
             className="h-full shadow-2xl flex-col"
           >
             <View className="flex-1 bg-white dark:bg-[#020617] pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
-              <View className="px-6 flex-row items-center justify-between mb-8">
-                <View className="flex-row items-center gap-3">
-
+              <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
+                <View className="flex-row items-center gap-3 flex-1">
                   <AnimatedLogo 
-                    style={{ width: 36, height: 36 }}
+                    style={{ width: 34, height: 34 }}
                   />
-                  <View className="flex-row items-baseline gap-1.5">
-                    <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      Veagle                    </Text>
-                    <Text className="text-2xl font-black text-blue-500 tracking-tight">
+                  <View className="flex-row items-center flex-1">
+                    <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mr-1.5">
+                      Veagle
+                    </Text>
+                    <Text 
+                      className="text-2xl font-black text-blue-500 tracking-tight flex-shrink"
+                      numberOfLines={1}
+                    >
                       Attendee
                     </Text>
                   </View>
                 </View>
                 <Pressable 
                   onPress={closeDrawer}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                  className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 ml-2 flex-shrink-0">
                   <X size={20} color={isDark ? "#94a3b8" : "#64748b"} />
                 </Pressable>
               </View>
@@ -272,7 +282,7 @@ export default function MobileDashboardShell({ children }) {
                           const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
                           router.push(`${basePath}/${tab.href}`);                        }, 200);
                       }}
-                      className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50 dark:active:bg-slate-800 transition-colors">
+                      className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50/80 dark:active:bg-slate-800/80 active:scale-95 transition-all">
                       <View className="flex-row items-center gap-4">
                         <View className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 items-center justify-center">
                           {tab.icon}

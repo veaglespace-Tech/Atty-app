@@ -49,7 +49,7 @@ export default function TimeSettings() {
   }
 
   return (
-    <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+    <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <View className="flex-row items-center gap-3 mb-5">
         <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-500/20">
           <Clock size={18} className="text-orange-600 dark:text-orange-400" />

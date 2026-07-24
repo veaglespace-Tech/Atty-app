@@ -104,20 +104,19 @@ export default function OrgTeamsPage() {
         <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-6">
           Create teams, assign leader and members, and open each team for full management.
         </Text>
-        <View className="flex-row gap-2 flex-wrap">
+        <View className="flex-row items-center gap-3">
           {canCreateTeams && (
             <Pressable
               onPress={() => setCreateOpen(true)}
-              className="flex-row items-center gap-2 bg-blue-500 dark:bg-blue-600 px-5 py-2.5 rounded-full shadow-sm shadow-blue-500/20 active:opacity-80">
-              <Plus size={16} color="#fff" />
-              <Text className="text-white text-sm font-bold">Create Team</Text>
+              className="flex-1 h-11 flex-row items-center justify-center gap-2 bg-blue-500 dark:bg-blue-600 rounded-[18px] shadow-sm shadow-blue-500/20 active:scale-[0.98] transition-transform">
+              <Plus size={18} color="#fff" />
+              <Text className="text-white text-sm font-bold">New Team</Text>
             </Pressable>
           )}
           <Pressable
             onPress={refetchTeams}
-            className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-full active:opacity-80">
-            <RefreshCw size={14} className="text-slate-700 dark:text-slate-300" />
-            <Text className="text-slate-700 dark:text-slate-300 text-sm font-bold">Refresh</Text>
+            className="h-11 w-11 items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[18px] active:scale-95 transition-transform">
+            <RefreshCw size={18} className="text-slate-700 dark:text-slate-300" />
           </Pressable>
         </View>
       </View>
@@ -128,7 +127,7 @@ export default function OrgTeamsPage() {
         contentContainerStyle={{ paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetchTeams} tintColor="#2563eb" />}>
 
-        <View className="mt-6 mx-4 bg-white dark:bg-[#0f172a] rounded-[24px] border border-slate-200 dark:border-slate-800/80 overflow-hidden mb-8">
+        <View className="mt-6 mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800/80 overflow-hidden mb-8">
           <View className="px-5 pt-5 pb-3">
             <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Team Directory
@@ -237,9 +236,9 @@ export default function OrgTeamsPage() {
               )}
 
               <Pressable onPress={createTeam} disabled={submitting}
-                className={`w-full mt-4 py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${submitting ? "bg-blue-400" : "bg-blue-600"}`}>
-                {submitting ? <ActivityIndicator size="small" color="#fff" /> : <UsersRound size={16} color="#fff" />}
-                <Text className="text-white text-sm font-bold">Create Team</Text>
+                className={`w-full mt-4 py-4 rounded-2xl items-center flex-row justify-center gap-2 active:scale-[0.98] transition-transform ${submitting ? "bg-blue-400" : "bg-blue-600 shadow-sm"}`}>
+                {submitting ? <ActivityIndicator size="small" color="#fff" /> : <UsersRound size={18} color="#fff" />}
+                <Text className="text-white text-[15px] font-bold">Create Team</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -337,7 +336,7 @@ function TeamCard({ team, index = 0 }) {
 
   return (
     <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()}>
-      <Pressable onPress={() => router.push(`/org/team/${team.id}`)} className="p-5 mb-3 mx-4 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 transition-colors">
+      <Pressable onPress={() => router.push(`/org/team/${team.id}`)} className="p-5 mb-3 mx-4 bg-white dark:bg-slate-900 rounded-[24px] shadow-sm border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 active:scale-[0.98] transition-all">
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
             <Text className="text-base font-black text-slate-900 dark:text-white" numberOfLines={1}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, TextInput, Alert, ToastAndroid, Platform, Modal } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, ChevronRight, CalendarCheck2, Clock, Search, MapPin, Save, Crosshair, ChevronDown, Download, FileBox, FileText } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, CalendarCheck2, Clock, Search, MapPin, Save, Crosshair, ChevronDown, Download, FileBox, FileText, UserCheck, CalendarX } from "lucide-react-native";
 import { useGetOrgAttendanceQuery, useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useGetOrgTeamsQuery, usePatchOrgTeamMutation, useDownloadOrgAttendancePdfMutation, useDownloadOrgAttendanceExcelMutation } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
 import { getCurrentCoordinates } from "@/utils/location";
@@ -10,11 +10,29 @@ import { hasPermission, PERMISSIONS } from "@/utils/roles";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
-const MetricCard = ({ label, value, bgClass, textClass }) =>
- <View className={`flex-1 rounded-[24px] p-5 border border-slate-100 dark:border-slate-800 ${bgClass}`}>
- <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">{label}</Text>
- <Text className={`text-3xl font-black tracking-tight ${textClass}`}>{value}</Text>
- </View>;
+const getMetricConfig = (label) => {
+  const labelLower = label?.toLowerCase() || '';
+  if (labelLower.includes("records") || labelLower.includes("total")) return { icon: FileText, iconColor: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" };
+  if (labelLower.includes("present")) return { icon: UserCheck, iconColor: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-50 dark:bg-emerald-500/10" };
+  if (labelLower.includes("half day")) return { icon: Clock, iconColor: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-50 dark:bg-amber-500/10" };
+  if (labelLower.includes("absent")) return { icon: CalendarX, iconColor: "text-red-600 dark:text-red-400", iconBg: "bg-red-50 dark:bg-red-500/10" };
+  return { icon: FileText, iconColor: "text-slate-600 dark:text-slate-400", iconBg: "bg-slate-50 dark:bg-slate-500/10" };
+};
+
+const MetricCard = ({ label, value, bgClass, textClass }) => {
+  const { icon: Icon, iconColor, iconBg } = getMetricConfig(label);
+  return (
+    <View className={`flex-1 rounded-[24px] p-5 border shadow-sm ${bgClass || 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}>
+      <View className="flex-row items-center justify-between mb-4">
+        <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" numberOfLines={1}>{label}</Text>
+        <View className={`h-8 w-8 rounded-full items-center justify-center ${iconBg}`}>
+          <Icon size={14} className={iconColor} />
+        </View>
+      </View>
+      <Text className={`text-3xl font-black tracking-tight ${textClass || 'text-slate-900 dark:text-white'}`}>{value}</Text>
+    </View>
+  );
+};
 
 
 const DropdownFilter = ({ label, value, options, onSelect }) => {
@@ -300,7 +318,7 @@ export default function OrgAttendancePage() {
  }
  >
  {/* FILTERS */}
- <View className="mt-6 mx-4 bg-white dark:bg-[#0f172a] rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 p-5">
+ <View className="mt-6 mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 p-5">
  <View className="flex-row flex-wrap gap-4">
  <View className="flex-1 min-w-[140px]">
  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Filter By Status</Text>
@@ -379,18 +397,18 @@ export default function OrgAttendancePage() {
 
  </View>
  {/* SUMMARY CARDS */}
- <View className="mx-4 flex-row flex-wrap justify-between mb-6 gap-y-3">
+ <View className="mx-4 flex-row flex-wrap justify-between mb-6 gap-y-4">
  <View className="w-[48%]">
- <MetricCard label="Records" value={getSummaryValue("Total Logs")} bgClass="bg-[#0B1A3A] dark:bg-[#07122C] border-slate-800" textClass="text-white" />
+ <MetricCard label="Records" value={getSummaryValue("Total Logs")} />
  </View>
  <View className="w-[48%]">
- <MetricCard label="Present" value={getSummaryValue("Present")} bgClass="bg-[#0B1A3A] dark:bg-[#07122C] border-slate-800" textClass="text-white" />
+ <MetricCard label="Present" value={getSummaryValue("Present")} />
  </View>
  <View className="w-[48%]">
- <MetricCard label="Half Day" value={getSummaryValue("Half Day") || 0} bgClass="bg-[#0B1A3A] dark:bg-[#07122C] border-slate-800" textClass="text-white" />
+ <MetricCard label="Half Day" value={getSummaryValue("Half Day") || 0} />
  </View>
  <View className="w-[48%]">
- <MetricCard label="Absent" value={getSummaryValue("Absent")} bgClass="bg-[#0B1A3A] dark:bg-[#07122C] border-slate-800" textClass="text-white" />
+ <MetricCard label="Absent" value={getSummaryValue("Absent")} />
  </View>
  </View>
 
@@ -398,7 +416,7 @@ export default function OrgAttendancePage() {
  {(canSetWorkspaceLocation || canManageTeamAttendance) && (
  <>
  <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 mx-6 mt-2">Attendance Settings</Text>
- <View className="mx-4 bg-white dark:bg-[#0f172a] rounded-[24px] p-5 border border-slate-200 dark:border-slate-800 mb-6">
+ <View className="mx-4 bg-white dark:bg-slate-900 rounded-[24px] p-5 border border-slate-200 dark:border-slate-800 mb-6">
  
  <View className="flex-col gap-4 mb-4">
  <View>
@@ -517,7 +535,7 @@ export default function OrgAttendancePage() {
  )}
 
  {/* LOGS */}
- <View className="mx-4 bg-white dark:bg-[#0f172a] rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-8">
+ <View className="mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-8">
  <View className="px-5 pt-5 pb-3">
  <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Attendance Logs</Text>
  </View>
@@ -593,7 +611,7 @@ export default function OrgAttendancePage() {
  ))}
 
  {totalPages > 1 && (
- <View className="bg-[#0f172a] dark:bg-[#0f172a] rounded-[24px] p-5 mt-2 flex-col gap-4 dark: border border-[#1e293b]">
+ <View className="bg-slate-900 dark:bg-slate-900 rounded-[24px] p-5 mt-2 flex-col gap-4 dark: border border-[#1e293b]">
  <View>
  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Page View</Text>
  <Text className="text-xs font-semibold text-slate-300">

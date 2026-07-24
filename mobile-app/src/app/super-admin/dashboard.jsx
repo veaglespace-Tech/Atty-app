@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { View, Text, RefreshControl, ScrollView, Modal, Pressable, TouchableOpacity } from "react-native";
 import {  BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings, ChevronLeft, ChevronRight, ChevronDown  } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useGetSuperAdminDashboardQuery } from "@/services/api/superAdminApi";
 
 
@@ -41,24 +42,46 @@ export default function SuperAdminDashboard(props) {
           <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">Global SaaS usage, and organization summary.</Text>
         </View>
 
-        <View className="flex-row flex-wrap justify-between gap-y-3 mb-8">
-          <View className="w-full bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Organizations</Text>
-            <Text className="text-3xl font-black text-slate-900 dark:text-white">{summary.get("Organizations") || 0}</Text>
-          </View>
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Active Orgs</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>{summary.get("Active Organizations") || 0}</Text>
-          </View>
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Blocked Orgs</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>{summary.get("Blocked Organizations") || 0}</Text>
-          </View>
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Users</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white">{summary.get("Users") || 0}</Text>
-          </View>
-
+        <View className="flex-row flex-wrap justify-between gap-y-4 mb-8">
+          <Animated.View entering={FadeInDown.duration(400).delay(0).springify()} className="w-full bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+            <View className="flex-row items-start justify-between mb-4">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3" numberOfLines={2}>Total Organizations</Text>
+              <View className="h-8 w-8 rounded-full items-center justify-center shrink-0 bg-blue-50 dark:bg-blue-500/10">
+                <Building2 size={14} className="text-blue-600 dark:text-blue-400" />
+              </View>
+            </View>
+            <Text className="text-4xl font-black tracking-tight text-slate-900 dark:text-white" adjustsFontSizeToFit numberOfLines={1}>{summary.get("Organizations") || 0}</Text>
+          </Animated.View>
+          
+          <Animated.View entering={FadeInDown.duration(400).delay(100).springify()} className="w-[48%] bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+            <View className="flex-row items-start justify-between mb-4">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3" numberOfLines={2}>Active Orgs</Text>
+              <View className="h-8 w-8 rounded-full items-center justify-center shrink-0 bg-emerald-50 dark:bg-emerald-500/10">
+                <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+              </View>
+            </View>
+            <Text className="text-3xl font-black tracking-tight text-slate-900 dark:text-white" adjustsFontSizeToFit numberOfLines={1}>{summary.get("Active Organizations") || 0}</Text>
+          </Animated.View>
+          
+          <Animated.View entering={FadeInDown.duration(400).delay(200).springify()} className="w-[48%] bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+            <View className="flex-row items-start justify-between mb-4">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3" numberOfLines={2}>Blocked</Text>
+              <View className="h-8 w-8 rounded-full items-center justify-center shrink-0 bg-rose-50 dark:bg-rose-500/10">
+                <Building2 size={14} className="text-rose-600 dark:text-rose-400" />
+              </View>
+            </View>
+            <Text className="text-3xl font-black tracking-tight text-slate-900 dark:text-white" adjustsFontSizeToFit numberOfLines={1}>{summary.get("Blocked Organizations") || 0}</Text>
+          </Animated.View>
+          
+          <Animated.View entering={FadeInDown.duration(400).delay(300).springify()} className="w-[100%] bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
+            <View className="flex-row items-start justify-between mb-4">
+              <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3" numberOfLines={2}>Platform Users</Text>
+              <View className="h-8 w-8 rounded-full items-center justify-center shrink-0 bg-purple-50 dark:bg-purple-500/10">
+                <Users size={14} className="text-purple-600 dark:text-purple-400" />
+              </View>
+            </View>
+            <Text className="text-3xl font-black tracking-tight text-slate-900 dark:text-white" adjustsFontSizeToFit numberOfLines={1}>{summary.get("Users") || 0}</Text>
+          </Animated.View>
         </View>
 
         <View className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">

@@ -103,18 +103,6 @@ const shouldForceLogoutForForbidden = (error) => {
   ].some((fragment) => message.includes(fragment));
 };
 
-const redirectForExpiredSubscription = (api) => {
-  const role = normalizeRole(api.getState?.()?.auth?.user?.currentRole);
-
-  if (role === ROLES.ORG_ADMIN) {
-    router.replace("/org/subscription");
-    return;
-  }
-
-  api.dispatch(logout());
-  router.replace("/login");
-};
-
 const handleUnauthorizedSession = (api, args) => {
   const requestUrl = resolveRequestUrl(args);
   if (isAuthMutationRequest(requestUrl)) {
@@ -133,10 +121,6 @@ export const buildBaseQuery = () => async (args, api, extraOptions) => {
 
   if (result?.error) {
     const statusCode = Number(result.error.status || result.error.originalStatus || 0);
-
-    if (statusCode === 402) {
-      redirectForExpiredSubscription(api);
-    }
 
     if (statusCode === 401 || (statusCode === 403 && shouldForceLogoutForForbidden(result.error))) {
       handleUnauthorizedSession(api, args);

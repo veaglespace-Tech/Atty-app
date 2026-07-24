@@ -141,13 +141,17 @@ export default function SuperAdminSettings() {
             {/* Hero Profile Completion Card */}
             <View className="bg-white dark:bg-slate-900/80 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 mb-6 flex-row items-center">
               <View className="relative">
-                <View className="h-20 w-20 rounded-full bg-blue-100 dark:bg-blue-900/40 items-center justify-center border-4 border-blue-50 dark:border-blue-900">
-                  <Text className="text-3xl font-black text-blue-600 dark:text-blue-400">
-                    {user?.name?.charAt(0)?.toUpperCase() || "S"}
-                  </Text>
-                </View>
+                {user?.profileImageUrl ? (
+                  <Image source={{ uri: user.profileImageUrl }} resizeMode="contain" className="h-20 w-20 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-white" />
+                ) : (
+                  <View className="h-20 w-20 rounded-2xl bg-blue-100 dark:bg-blue-900/40 items-center justify-center border border-blue-50 dark:border-blue-900">
+                    <Text className="text-3xl font-black text-blue-600 dark:text-blue-400">
+                      {user?.name?.charAt(0)?.toUpperCase() || "S"}
+                    </Text>
+                  </View>
+                )}
                 {completionState.percentage === 100 ? (
-                  <View className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-blue-500 border-2 border-white items-center justify-center">
+                  <View className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-blue-500 border-2 border-white dark:border-slate-900 items-center justify-center">
                     <ShieldCheck size={12} color="white" />
                   </View>
                 ) : null}

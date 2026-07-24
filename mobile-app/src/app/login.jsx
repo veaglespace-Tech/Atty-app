@@ -58,6 +58,7 @@ export default function LoginPage() {
   useEffect(() => {
     const checkBiometrics = async () => {
       try {
+        if (Platform.OS === 'web') return;
         const compatible = await LocalAuthentication.hasHardwareAsync();
         const enrolled = await LocalAuthentication.isEnrolledAsync();
         if (compatible && enrolled) {
@@ -107,8 +108,13 @@ export default function LoginPage() {
         
         // Save credentials for future biometric login
         try {
-          await SecureStore.setItemAsync('userEmail', values.email);
-          await SecureStore.setItemAsync('userPassword', values.password);
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('userEmail', values.email);
+            await SecureStore.setItemAsync('userPassword', values.password);
+          } else {
+            localStorage.setItem('userEmail', values.email);
+            localStorage.setItem('userPassword', values.password);
+          }
         } catch (e) {
           console.log("Failed to securely store credentials", e);
         }
@@ -124,8 +130,13 @@ export default function LoginPage() {
         dispatch(setSession(result));
         
         try {
-          await SecureStore.setItemAsync('userEmail', loginData.email);
-          await SecureStore.setItemAsync('userPassword', loginData.password);
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('userEmail', loginData.email);
+            await SecureStore.setItemAsync('userPassword', loginData.password);
+          } else {
+            localStorage.setItem('userEmail', loginData.email);
+            localStorage.setItem('userPassword', loginData.password);
+          }
         } catch (e) {
           console.log("Failed to securely store credentials", e);
         }
@@ -284,7 +295,7 @@ export default function LoginPage() {
             <Pressable
               disabled={isSubmitting || isOtpVerifying}
               onPress={handleSubmit(onSubmit)}
-              className="group mt-2 flex-row w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 shadow-[0_28px_70px_rgba(59,130,246,0.32)] active:scale-95 dark:bg-blue-400 dark:shadow-[0_24px_60px_rgba(37,99,235,0.24)]">
+              className="group mt-2 flex-row w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 shadow-[0_28px_70px_rgba(59,130,246,0.32)] active:scale-[0.98] transition-transform dark:bg-blue-400 dark:shadow-[0_24px_60px_rgba(37,99,235,0.24)]">
               
               {isSubmitting || isOtpVerifying ?
               <ActivityIndicator color="white" /> :

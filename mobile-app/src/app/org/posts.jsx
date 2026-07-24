@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { View, Text, Pressable, ScrollView, RefreshControl, Image, TextInput, Alert, ActivityIndicator, Modal } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, MessageSquare, Image as ImageIcon, Send, Clock, Trash2, Shield, X, Plus, Paperclip, FileText, Search, Edit2 } from "lucide-react-native";
@@ -307,7 +308,7 @@ export default function OrgPostsPage() {
             <Pressable 
               onPress={handlePost}
               disabled={isCreating || isUpdating || !form.content.trim() || !form.title.trim()}
-              className={`px-5 py-2.5 rounded-full flex-row items-center gap-2 ${(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? 'bg-blue-600 shadow-sm shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
+              className={`px-5 py-2.5 rounded-full flex-row items-center gap-2 active:scale-[0.96] transition-transform ${(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? 'bg-blue-600 shadow-sm shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
               {(isCreating || isUpdating) ? <ActivityIndicator size="small" color="#fff" /> : <Send size={14} color={(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? "white" : "#94a3b8"} />}
               <Text className={`font-bold ${(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? 'text-white' : 'text-slate-400'}`}>{editingId ? 'Save' : 'Post'}</Text>
             </Pressable>
@@ -357,8 +358,8 @@ export default function OrgPostsPage() {
           </View>
         ) : (
           <View className="gap-4">
-            {paginatedPosts.map((post) => (
-              <View key={post.id} className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            {paginatedPosts.map((post, index) => (
+              <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()} key={post.id} className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                 <View className="flex-row justify-between items-start mb-3">
                   <View className="flex-row items-center gap-3">
                     <View className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 items-center justify-center border border-blue-200 dark:border-blue-800">
@@ -445,7 +446,7 @@ export default function OrgPostsPage() {
                     ))}
                   </View>
                 )}
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}

@@ -3,6 +3,7 @@ import { View, Text, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {  ArrowLeft  } from "lucide-react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { useColorScheme } from "nativewind";import SectionEyebrow from "@/components/SectionEyebrow";
 import { cn } from "@/lib/utils";
 import AnimatedLogo from '../AnimatedLogo.jsx';
@@ -50,7 +51,7 @@ export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassN
       </SafeAreaView>
 
       <View className={cn("w-full self-center", maxWidthClassName)}>
-        <View className={cn(authCardClassName, cardClassName)}>
+        <Animated.View entering={FadeInUp.duration(600).springify()} className={cn(authCardClassName, cardClassName)}>
           <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
 
           <View className="p-5">
@@ -76,7 +77,7 @@ export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassN
 
             {footer ? <View className="mt-10 items-center">{footer}</View> : null}
           </View>
-        </View>
+        </Animated.View>
       </View>
     </View>);
 

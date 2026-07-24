@@ -4,12 +4,25 @@ import { useGetOrgDashboardQuery } from "@/services/api/orgApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
-import { QrCode, Copy, Share2 } from "lucide-react-native";
+import { QrCode, Copy, Share2, Users, FileText, Component, ShieldAlert, CheckCircle, Activity, Bell } from "lucide-react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+
+const getIconForLabel = (label) => {
+  const lbl = label?.toLowerCase() || '';
+  if (lbl.includes("user") || lbl.includes("member")) return { icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" };
+  if (lbl.includes("team")) return { icon: Component, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10" };
+  if (lbl.includes("active")) return { icon: Activity, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" };
+  if (lbl.includes("block")) return { icon: ShieldAlert, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10" };
+  if (lbl.includes("approve")) return { icon: CheckCircle, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10" };
+  if (lbl.includes("notice") || lbl.includes("notification")) return { icon: Bell, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" };
+  return { icon: FileText, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-500/10" };
+};
+
 export default function OrgDashboard() {
   const { data, isLoading, isFetching, refetch } = useGetOrgDashboardQuery(undefined);
   const { user } = useAuthSession();
 
-  const summary = data?.summary || [];
+  const summary = (data?.summary || []).filter(item => !item.label.toLowerCase().includes('subscription') && !item.label.toLowerCase().includes('payment'));
   const records = data?.items || [];
   const referralCode = user?.organization?.referralCode || "";
 
@@ -81,23 +94,32 @@ export default function OrgDashboard() {
             <View>
               {/* STATS OVERVIEW */}
               <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
-                {summary.map((item, i) => (
-                  <View
-                    key={i}
-                    className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <Text
-                      className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3"
-                      numberOfLines={1}>
-                      {item.label}
-                    </Text>
-                    <Text
-                      className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
-                      numberOfLines={1}
-                      adjustsFontSizeToFit>
-                      {item.value}
-                    </Text>
-                  </View>
-                ))}
+                {summary.map((item, index) => {
+                  const { icon: Icon, color, bg } = getIconForLabel(item.label);
+                  return (
+                    <Animated.View
+                      entering={FadeInDown.duration(400).delay(index * 100).springify()}
+                      key={index}
+                      className="w-[48%] bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+                      <View className="flex-row items-start justify-between mb-4">
+                        <Text
+                          className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3"
+                          numberOfLines={2}>
+                          {item.label}
+                        </Text>
+                        <View className={`h-8 w-8 rounded-full items-center justify-center shrink-0 ${bg}`}>
+                          <Icon size={14} className={color} />
+                        </View>
+                      </View>
+                      <Text
+                        className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {item.value}
+                      </Text>
+                    </Animated.View>
+                  );
+                })}
               </View>
 
               {/* RECORDS TABLE */}

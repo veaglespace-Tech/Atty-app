@@ -2,7 +2,7 @@ import '../global.css';
 import '@/lib/lucide-interop';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme, StyleSheet, LogBox } from 'react-native';
+import { useColorScheme, StyleSheet, LogBox, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot } from 'expo-router';
 import { useEffect } from 'react';
@@ -29,6 +29,16 @@ export default function RootLayout() {
     // Hide splash screen immediately since we aren't loading fonts yet
     SplashScreen.hideAsync();
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      if (colorScheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [colorScheme]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

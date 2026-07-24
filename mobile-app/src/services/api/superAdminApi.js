@@ -28,7 +28,6 @@ export const superAdminApi = createApi({
       query: (params) => {
         let url = `/super-admin/organizations?limit=${params?.limit || 2000}`;
         if (params?.search) url += `&search=${encodeURIComponent(params.search)}`;
-        if (params?.subscriptionStatus) url += `&subscriptionStatus=${params.subscriptionStatus}`;
         if (params?.access) url += `&access=${params.access}`;
         if (params?.block) url += `&block=${params.block}`;
         return url;

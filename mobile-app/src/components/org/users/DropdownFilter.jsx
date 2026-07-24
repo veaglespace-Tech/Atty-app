@@ -18,7 +18,7 @@ export default function DropdownFilter({ label, value, options, onSelect }) {
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <View className="flex-1 bg-black/60 justify-end">
           <Pressable className="flex-1" onPress={() => setOpen(false)} />
-          <View className="bg-white dark:bg-[#0f172a] rounded-t-[32px] p-6 border-t border-slate-200 dark:border-slate-800 shadow-2xl pb-10">
+          <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 border-t border-slate-200 dark:border-slate-800 shadow-2xl pb-10">
             <View className="items-center mb-6">
               <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mb-4" />
               <Text className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">{label}</Text>

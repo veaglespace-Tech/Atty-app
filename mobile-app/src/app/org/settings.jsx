@@ -79,7 +79,7 @@ function TimeSettings() {
   }
 
   return (
-    <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+    <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <View className="flex-row items-center gap-3 mb-5">
         <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-500/20">
           <Clock size={18} className="text-orange-600 dark:text-orange-400" />
@@ -194,7 +194,7 @@ function LocationSettings() {
   }
 
   return (
-    <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+    <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <View className="flex-row items-center gap-3 mb-5">
         <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-500/20">
           <MapPin size={18} className="text-blue-600 dark:text-blue-400" />
@@ -274,7 +274,7 @@ function OrgLogoSettings() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.2,
         base64: true,
       });
 
@@ -331,7 +331,7 @@ function OrgLogoSettings() {
   };
 
   return (
-    <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+    <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <View className="flex-row items-center gap-3 mb-5">
         <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-500/20">
           <ImageUp size={18} className="text-purple-600 dark:text-purple-400" />
@@ -457,7 +457,7 @@ function OrgDetailsSettings() {
   );
 
   return (
-    <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+    <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <View className="flex-row items-center gap-3 mb-5">
         <View className="h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
           <Building2 size={18} className="text-indigo-600 dark:text-indigo-400" />
@@ -529,6 +529,7 @@ export default function SettingsScreen() {
   const { user } = useAuthSession();
   const [updateMe, { isLoading }] = useUpdateMeMutation();
   const [forgotPassword, { isLoading: isResetting }] = useForgotPasswordMutation();
+  const [activeTab, setActiveTab] = useState("personal");
   
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
   const [formData, setFormData] = useState({
@@ -571,7 +572,7 @@ export default function SettingsScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.2,
         base64: true, // Need base64 to send to backend as data url
       });
 
@@ -586,9 +587,19 @@ export default function SettingsScreen() {
 
   const handleUpdate = async () => {
     try {
-      const payload = { ...formData };
+      const payload = {};
+      if (formData.name && formData.name !== user?.name) payload.name = formData.name;
+      if (formData.mobile && formData.mobile !== user?.mobile) payload.mobile = formData.mobile;
+      if (formData.emergencyContact !== user?.emergencyContact) payload.emergencyContact = formData.emergencyContact;
+      if (formData.currentAddress !== user?.currentAddress) payload.currentAddress = formData.currentAddress;
+
       if (profileImageDataUrl) {
         payload.profileImageDataUrl = profileImageDataUrl;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        Alert.alert("Info", "No changes to save.");
+        return;
       }
 
       const result = await updateMe(payload).unwrap();
@@ -652,12 +663,12 @@ export default function SettingsScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         
         {/* Profile Header */}
-        <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
+        <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
           <Pressable onPress={pickImage} className="relative mb-4 active:scale-95 transition-transform">
             {currentProfileImageUrl ? (
-              <Image source={{ uri: currentProfileImageUrl }} className="h-24 w-24 rounded-full border-4 border-white dark:border-slate-800" />
+              <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
             ) : (
-              <View className="h-24 w-24 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center border-4 border-white dark:border-slate-800">
+              <View className="h-24 w-24 rounded-2xl bg-blue-100 dark:bg-blue-900/30 items-center justify-center border-4 border-white dark:border-slate-800">
                 <User size={40} className="text-blue-600 dark:text-blue-400" />
               </View>
             )}
@@ -690,199 +701,233 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Admin Sections */}
-        {canSeeAdminSettings && (
-          <>
+        {/* Modern Tabs */}
+        <View className="flex-row mb-6 bg-slate-200/50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Pressable 
+            onPress={() => setActiveTab("personal")}
+            className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "personal" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+          >
+            <Text className={`text-sm font-bold ${activeTab === "personal" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+              Personal
+            </Text>
+          </Pressable>
+          {canSeeAdminSettings && (
+            <Pressable 
+              onPress={() => setActiveTab("organization")}
+              className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "organization" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+            >
+              <Text className={`text-sm font-bold ${activeTab === "organization" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+                Workspace
+              </Text>
+            </Pressable>
+          )}
+          <Pressable 
+            onPress={() => setActiveTab("security")}
+            className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "security" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
+          >
+            <Text className={`text-sm font-bold ${activeTab === "security" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
+              Security
+            </Text>
+          </Pressable>
+        </View>
+
+        {activeTab === "organization" && canSeeAdminSettings && (
+          <View className="mb-6">
             <OrgLogoSettings />
             <OrgDetailsSettings />
             <LocationSettings />
             <TimeSettings />
-          </>
+          </View>
         )}
 
-        {/* Edit Profile Form */}
-        <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
-          <Text className="text-base font-black text-slate-900 dark:text-white mb-5 flex-row items-center">
-            Personal Details
-          </Text>
+        {activeTab === "personal" && (
+          <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+            <Text className="text-base font-black text-slate-900 dark:text-white mb-5 flex-row items-center">
+              Personal Details
+            </Text>
 
-          <View className="gap-y-4">
-            <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Full Name</Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-                <User size={16} className="text-slate-400 mr-3" />
-                <TextInput
-                  value={formData.name}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, name: val }))}
-                  className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
-                  placeholder="Enter full name"
-                  placeholderTextColor="#94a3b8"
-                />
-              </View>
-            </View>
-
-            <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Email Address</Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 opacity-70">
-                <Mail size={16} className="text-slate-400 mr-3" />
-                <TextInput
-                  value={formData.email}
-                  editable={false}
-                  className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
-                />
-              </View>
-            </View>
-
-            <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Mobile Number</Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-                <Smartphone size={16} className="text-slate-400 mr-3" />
-                <TextInput
-                  value={formData.mobile}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val }))}
-                  className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
-                  placeholder="Enter mobile number"
-                  keyboardType="phone-pad"
-                  placeholderTextColor="#94a3b8"
-                />
-              </View>
-            </View>
-
-            <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Emergency Contact</Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-                <PhoneCall size={16} className="text-slate-400 mr-3" />
-                <TextInput
-                  value={formData.emergencyContact}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val }))}
-                  className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
-                  placeholder="Enter emergency contact"
-                  keyboardType="phone-pad"
-                  placeholderTextColor="#94a3b8"
-                />
-              </View>
-            </View>
-
-            <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Current Address</Text>
-              <View className="flex-row bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-                <MapPin size={16} className="text-slate-400 mr-3 mt-0.5" />
-                <TextInput
-                  value={formData.currentAddress}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, currentAddress: val }))}
-                  className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
-                  placeholder="Enter current address"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
-                  placeholderTextColor="#94a3b8"
-                />
-              </View>
-            </View>
-            
-            <Pressable
-              onPress={handleUpdate}
-              disabled={isLoading}
-              className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600 active:bg-blue-700 ${isLoading ? 'opacity-70' : ''}`}>
-              {isLoading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Save size={18} color="#fff" />
-                  <Text className="font-bold text-white text-[15px]">Save Profile Changes</Text>
-                </>
-              )}
-            </Pressable>
-
-          </View>
-        </View>
-
-        {/* Referral Link */}
-        {!isSuperAdmin && !!referralCode && (
-          <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
-            <View className="flex-row items-center gap-3 mb-4">
-              <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/20">
-                <Link2 size={18} className="text-blue-600 dark:text-blue-400" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-black text-slate-900 dark:text-white">Referral Link</Text>
-                <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">Invite members to your workspace</Text>
-              </View>
-            </View>
-            <View className="flex-col gap-4">
+            <View className="gap-y-4">
               <View>
-                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Referral Code</Text>
-                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-2 pl-4">
-                  <Text className="flex-1 text-sm font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
-                    {referralCode}
-                  </Text>
-                  <Pressable 
-                    onPress={copyCodeToClipboard}
-                    className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
-                  >
-                    {copiedReferralCode ? (
-                      <>
-                        <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
-                        <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Copied</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} className="text-slate-500 dark:text-slate-400" />
-                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Code</Text>
-                      </>
-                    )}
-                  </Pressable>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Full Name</Text>
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
+                  <User size={16} className="text-slate-400 mr-3" />
+                  <TextInput
+                    value={formData.name}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, name: val }))}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                    placeholder="Enter full name"
+                    placeholderTextColor="#94a3b8"
+                  />
                 </View>
               </View>
 
               <View>
-                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Full Link</Text>
-                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-2 pl-4">
-                  <Text className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300" numberOfLines={1} ellipsizeMode="tail">
-                    {referralLink}
-                  </Text>
-                  <Pressable 
-                    onPress={copyToClipboard}
-                    className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
-                  >
-                    {copiedReferral ? (
-                      <>
-                        <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
-                        <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Copied</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} className="text-slate-500 dark:text-slate-400" />
-                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Link</Text>
-                      </>
-                    )}
-                  </Pressable>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Email Address</Text>
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 opacity-70">
+                  <Mail size={16} className="text-slate-400 mr-3" />
+                  <TextInput
+                    value={formData.email}
+                    editable={false}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                  />
                 </View>
               </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Mobile Number</Text>
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
+                  <Smartphone size={16} className="text-slate-400 mr-3" />
+                  <TextInput
+                    value={formData.mobile}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val }))}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                    placeholder="Enter mobile number"
+                    keyboardType="phone-pad"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Emergency Contact</Text>
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
+                  <PhoneCall size={16} className="text-slate-400 mr-3" />
+                  <TextInput
+                    value={formData.emergencyContact}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val }))}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                    placeholder="Enter emergency contact"
+                    keyboardType="phone-pad"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Current Address</Text>
+                <View className="flex-row bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
+                  <MapPin size={16} className="text-slate-400 mr-3 mt-0.5" />
+                  <TextInput
+                    value={formData.currentAddress}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, currentAddress: val }))}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                    placeholder="Enter current address"
+                    multiline
+                    numberOfLines={2}
+                    textAlignVertical="top"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+              
+              <Pressable
+                onPress={handleUpdate}
+                disabled={isLoading}
+                className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600 active:bg-blue-700 ${isLoading ? 'opacity-70' : ''}`}>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Save size={18} color="#fff" />
+                    <Text className="font-bold text-white text-[15px]">Save Profile Changes</Text>
+                  </>
+                )}
+              </Pressable>
+
             </View>
           </View>
         )}
 
-        {/* Advanced Security */}
-        <View className="bg-white dark:bg-[#0f172a] rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-          <Text className="text-base font-black text-slate-900 dark:text-white mb-2">
-            Security
-          </Text>
-          <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-5">
-            Manage your account security and password.
-          </Text>
-          
-          <Pressable
-            onPress={handleResetPassword}
-            disabled={isResetting}
-            className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 ${isResetting ? 'opacity-70' : ''}`}>
-            {isResetting ? (
-              <ActivityIndicator color="#3b82f6" size="small" />
-            ) : (
-              <Text className="font-bold text-slate-900 dark:text-white text-[15px]">Request Password Reset</Text>
+        {activeTab === "security" && (
+          <View>
+            {/* Referral Link */}
+            {!isSuperAdmin && !!referralCode && (
+              <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
+                <View className="flex-row items-center gap-3 mb-4">
+                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/20">
+                    <Link2 size={18} className="text-blue-600 dark:text-blue-400" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-base font-black text-slate-900 dark:text-white">Referral Link</Text>
+                    <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">Invite members to your workspace</Text>
+                  </View>
+                </View>
+                <View className="flex-col gap-4">
+                  <View>
+                    <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Referral Code</Text>
+                    <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-2 pl-4">
+                      <Text className="flex-1 text-sm font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
+                        {referralCode}
+                      </Text>
+                      <Pressable 
+                        onPress={copyCodeToClipboard}
+                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
+                      >
+                        {copiedReferralCode ? (
+                          <>
+                            <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
+                            <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Copied</Text>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} className="text-slate-500 dark:text-slate-400" />
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Code</Text>
+                          </>
+                        )}
+                      </Pressable>
+                    </View>
+                  </View>
+
+                  <View>
+                    <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Full Link</Text>
+                    <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-2 pl-4">
+                      <Text className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300" numberOfLines={1} ellipsizeMode="tail">
+                        {referralLink}
+                      </Text>
+                      <Pressable 
+                        onPress={copyToClipboard}
+                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
+                      >
+                        {copiedReferral ? (
+                          <>
+                            <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
+                            <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Copied</Text>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} className="text-slate-500 dark:text-slate-400" />
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Link</Text>
+                          </>
+                        )}
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              </View>
             )}
-          </Pressable>
-        </View>
+
+            {/* Advanced Security */}
+            <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+              <Text className="text-base font-black text-slate-900 dark:text-white mb-2">
+                Security
+              </Text>
+              <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-5">
+                Manage your account security and password.
+              </Text>
+              
+              <Pressable
+                onPress={handleResetPassword}
+                disabled={isResetting}
+                className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 ${isResetting ? 'opacity-70' : ''}`}>
+                {isResetting ? (
+                  <ActivityIndicator color="#3b82f6" size="small" />
+                ) : (
+                  <Text className="font-bold text-slate-900 dark:text-white text-[15px]">Request Password Reset</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
     

@@ -1,6 +1,7 @@
 import { CalendarCheck2, FileBarChart, MapPinned, Users, Component, ClipboardCheck, MessageSquare, CreditCard, Bell, Gift, QrCode, ChevronRight } from "lucide-react-native";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 export default function TeamLeaderDashboard() {
   const router = useRouter();
@@ -41,27 +42,27 @@ export default function TeamLeaderDashboard() {
       </View>
 
       {groups.map((group, idx) => (
-        <View key={idx} className="mb-6">
+        <Animated.View key={idx} entering={FadeInDown.duration(400).delay(idx * 150).springify()} className="mb-6">
           <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-1">{group.name}</Text>
-          <View className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <View className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             {group.actions.map((action, actionIdx) => (
               <Pressable
                 key={actionIdx}
                 onPress={() => router.push(action.href)}
-                className={`flex-row items-center p-4 ${actionIdx !== group.actions.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/50' : ''} active:bg-slate-50 dark:active:bg-slate-800`}
+                className={`flex-row items-center p-4 ${actionIdx !== group.actions.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/50' : ''} active:bg-slate-50 dark:active:bg-slate-800/80 active:scale-[0.98] transition-all`}
               >
-                <View className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 items-center justify-center mr-4">
+                <View className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 items-center justify-center mr-4 shrink-0">
                   {action.icon}
                 </View>
-                <View className="flex-1">
+                <View className="flex-1 mr-2">
                   <Text className="text-[15px] font-bold text-slate-900 dark:text-white mb-0.5">{action.title}</Text>
                   <Text className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{action.description}</Text>
                 </View>
-                <ChevronRight size={18} color="#94a3b8" />
+                <ChevronRight size={18} color="#94a3b8" className="shrink-0" />
               </Pressable>
             ))}
           </View>
-        </View>
+        </Animated.View>
       ))}
     </ScrollView>
   );

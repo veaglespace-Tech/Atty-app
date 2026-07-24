@@ -4,6 +4,7 @@ import { Link } from "expo-router";
 import * as Linking from 'expo-linking';
 import {  PhoneCall, Component, MessageSquare, FileBarChart, Bell, ChevronRight  } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -80,25 +81,25 @@ export default function MemberDashboard(props) {
         </View>
 
         {/* SOS Emergency Button */}
-        <View className="px-6 mb-10">
+        <Animated.View entering={FadeInDown.duration(400).delay(0).springify()} className="px-6 mb-10">
           <Pressable 
             onPress={handleSOS}
-            className="overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform"
+            className="overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md active:bg-slate-50 dark:active:bg-slate-900 active:scale-[0.98] transition-all"
           >
             <View className="flex-row items-center p-1.5">
-              <View className="bg-rose-50 dark:bg-rose-500/10 h-16 w-16 rounded-2xl items-center justify-center m-1">
+              <View className="bg-rose-50 dark:bg-rose-500/10 h-16 w-16 rounded-2xl items-center justify-center m-1 shrink-0">
                 <PhoneCall size={26} color="#e11d48" strokeWidth={2.5} />
               </View>
               <View className="flex-1 px-4">
                 <Text className="text-[17px] font-black text-slate-900 dark:text-white tracking-tight">Emergency SOS</Text>
                 <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">One-tap contact alert</Text>
               </View>
-              <View className="px-4">
+              <View className="px-4 shrink-0">
                 <ChevronRight size={20} color="#cbd5e1" />
               </View>
             </View>
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* App Grid Navigation */}
         <View className="px-6">
@@ -108,23 +109,25 @@ export default function MemberDashboard(props) {
           
           <View className="flex-row flex-wrap justify-between gap-y-4">
             {menuItems.map((item, index) => (
-              <Link key={index} href={`./${item.href}`} asChild>
-                <Pressable 
-                  style={{ width: (width - 48 - 16) / 2 }}
-                  className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 active:opacity-70 active:scale-[0.98]"
-                >
-                  <View className={`h-14 w-14 rounded-2xl ${item.bg} ${item.border} border items-center justify-center mb-5`}>                    {item.icon}
-                  </View>
-                  <View>
-                    <Text className="text-[17px] font-black text-slate-900 dark:text-white tracking-tight mb-1">
-                      {item.title}
-                    </Text>
-                    <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
-                      {item.description}
-                    </Text>
-                  </View>
-                </Pressable>
-              </Link>
+              <Animated.View key={index} entering={FadeInDown.duration(400).delay(index * 100 + 100).springify()} style={{ width: (width - 48 - 16) / 2 }}>
+                <Link href={`./${item.href}`} asChild>
+                  <Pressable 
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-900 active:scale-[0.98] transition-all flex-1"
+                  >
+                    <View className={`h-14 w-14 rounded-2xl ${item.bg} ${item.border} border items-center justify-center mb-5 shrink-0`}>
+                      {item.icon}
+                    </View>
+                    <View className="flex-1 justify-center">
+                      <Text className="text-[17px] font-black text-slate-900 dark:text-white tracking-tight mb-1" numberOfLines={1} adjustsFontSizeToFit>
+                        {item.title}
+                      </Text>
+                      <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
+                        {item.description}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </Link>
+              </Animated.View>
             ))}
           </View>
         </View>
