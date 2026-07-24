@@ -111,7 +111,8 @@ export default function UsersPage(props) {
                 placeholderTextColor="#94a3b8"
                 className="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-300 p-0"
               />
-            </View>          </View>
+            </View>
+          </View>
 
           {/* Horizontal List Container */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

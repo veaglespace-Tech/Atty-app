@@ -218,7 +218,8 @@ export default function OrganizationDetailsPage() {
                   {renderOverviewField("Admin Email", org.admin?.email || "-")}
                   {renderOverviewField("Partner Code", org.referredByPartner?.partnerReferralCode || "-")}
                   {renderOverviewField("Partner Email", org.referredByPartner?.email || "-")}
-                </View>              </View>
+                </View>
+              </View>
             </View>
 
             {/* ACCESS & RISK */}
@@ -382,7 +383,8 @@ export default function OrganizationDetailsPage() {
                   <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Export Excel</Text>
                 </Pressable>
               )}
-            </View>            {isLoadingUsers ? (
+            </View>
+            {isLoadingUsers ? (
               <ActivityIndicator size="small" color="#3B82F6" />
             ) : usersData?.items?.length > 0 ? (
               <View className="space-y-3">

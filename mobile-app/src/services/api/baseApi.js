@@ -44,13 +44,12 @@ const resolveApiBaseUrl = () => {
     return explicitApiUrl;
   }
 
-  if (__DEV__) {
-    console.warn("No EXPO_PUBLIC_API_URL provided in .env, falling back to localhost.");
-    return resolveLocalApiBaseUrl();
-  }
-
   const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)
     || DEFAULT_PRODUCTION_API_URL;
+
+  if (__DEV__) {
+    console.warn("No EXPO_PUBLIC_API_URL provided in .env, falling back to LIVE server.");
+  }
 
   return productionApiUrl;
 };
@@ -58,8 +57,10 @@ const resolveApiBaseUrl = () => {
 export const API_BASE_URL = resolveApiBaseUrl();
 console.log("[API] Resolved Base URL (Cache Bust):", API_BASE_URL);
 
-const rawBaseQuery = fetchBaseQuery({
-  baseUrl: API_BASE_URL,
+const LIVE_SERVER_URL = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD) || "https://atty.veaglespace.com/api";
+
+const createBaseQuery = (url) => fetchBaseQuery({
+  baseUrl: url,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     headers.set("cache-control", "no-cache, no-store, max-age=0");
@@ -76,6 +77,9 @@ const rawBaseQuery = fetchBaseQuery({
     return headers;
   },
 });
+
+const rawBaseQuery = createBaseQuery(API_BASE_URL);
+const fallbackBaseQuery = createBaseQuery(LIVE_SERVER_URL);
 
 const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
 
@@ -117,7 +121,13 @@ const handleUnauthorizedSession = (api, args) => {
 };
 
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
-  const result = await rawBaseQuery(args, api, extraOptions);
+  let result = await rawBaseQuery(args, api, extraOptions);
+
+  // DYNAMIC FALLBACK: If local server fails to connect, retry with the live server automatically!
+  if (result?.error?.status === "FETCH_ERROR" && API_BASE_URL !== LIVE_SERVER_URL) {
+    console.warn("[API] Local server unreachable. Falling back to live server...");
+    result = await fallbackBaseQuery(args, api, extraOptions);
+  }
 
   if (result?.error) {
     const statusCode = Number(result.error.status || result.error.originalStatus || 0);

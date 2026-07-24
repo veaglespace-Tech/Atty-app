@@ -13,6 +13,7 @@ const {
   resetPassword,
   saveLead,
   checkEmail,
+  updatePushToken,
 } = require("../controllers/auth.controller");
 const {
   validateReferralCode,
@@ -164,5 +165,6 @@ router.post("/reset-password", validateBody(resetPasswordSchema), resetPassword)
 router.post("/logout", logout);
 router.get("/me", userProtected, getMe);
 router.patch("/me", userProtected, validateBody(updateMeSchema), updateMe);
+router.post("/push-token", userProtected, updatePushToken);
 
 module.exports = router;

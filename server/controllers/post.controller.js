@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const { Expo } = require("expo-server-sdk");
 const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
@@ -259,6 +260,46 @@ exports.createPost = asyncHandler(async (req, res) => {
     },
     include: POST_INCLUDE,
   });
+
+  // BACKGROUND TASK: Send Push Notifications
+  try {
+    const usersWithTokens = await prisma.user.findMany({
+      where: {
+        orgId,
+        expoPushToken: { not: null },
+        id: { not: req.user.id }, // don't notify the author
+        ...(resolvedTeamId ? { teamMemberships: { some: { teamId: resolvedTeamId } } } : {})
+      },
+      select: { expoPushToken: true }
+    });
+
+    const expo = new Expo();
+    let messages = [];
+
+    for (let user of usersWithTokens) {
+      if (!Expo.isExpoPushToken(user.expoPushToken)) continue;
+      messages.push({
+        to: user.expoPushToken,
+        sound: "default",
+        title: `New Post: ${normalizedTitle}`,
+        body: truncateText(normalizedContent, 100),
+        data: { postId: post.id },
+      });
+    }
+
+    const chunks = expo.chunkPushNotifications(messages);
+    (async () => {
+      for (let chunk of chunks) {
+        try {
+          await expo.sendPushNotificationsAsync(chunk);
+        } catch (error) {
+          console.error("Push notification chunk error:", error);
+        }
+      }
+    })();
+  } catch (error) {
+    console.error("Failed to queue push notifications:", error);
+  }
 
   res.status(201).json({
     success: true,

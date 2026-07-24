@@ -77,43 +77,43 @@ model ArchiveUser {
 }
 
 model Attendance {
-  id                     Int              @id @default(autoincrement())
-  orgId                  Int
-  userId                 Int
-  teamId                 Int?
-  markedById             Int?
-  date                   String
-  punchInAt              DateTime?
-  punchOutAt             DateTime?
-  punchInLatitude        Float?
-  punchInLongitude       Float?
-  punchOutLatitude       Float?
-  punchOutLongitude      Float?
-  punchInDistanceMeters  Float?
-  punchOutDistanceMeters Float?
-  isPunchInValid         Boolean          @default(false)
-  isPunchOutValid        Boolean          @default(false)
-  totalMinutesWorked     Int              @default(0)
-  lateMinutes            Int              @default(0)
-  status                 AttendanceStatus @default(PRESENT)
-  notes                  String           @default("")
-  punchInLocationMeta    Json?
-  punchOutLocationMeta   Json?
-  reachedHomeAt          DateTime?
-  reachedHomeLatitude    Float?
-  reachedHomeLongitude   Float?
+  id                      Int              @id @default(autoincrement())
+  orgId                   Int
+  userId                  Int
+  teamId                  Int?
+  markedById              Int?
+  date                    String
+  punchInAt               DateTime?
+  punchOutAt              DateTime?
+  punchInLatitude         Float?
+  punchInLongitude        Float?
+  punchOutLatitude        Float?
+  punchOutLongitude       Float?
+  punchInDistanceMeters   Float?
+  punchOutDistanceMeters  Float?
+  isPunchInValid          Boolean          @default(false)
+  isPunchOutValid         Boolean          @default(false)
+  totalMinutesWorked      Int              @default(0)
+  lateMinutes             Int              @default(0)
+  status                  AttendanceStatus @default(PRESENT)
+  notes                   String           @default("")
+  punchInLocationMeta     Json?
+  punchOutLocationMeta    Json?
+  punchInSelfieUrl        String?
+  punchInSelfiePublicId   String?
+  punchOutSelfieUrl       String?
+  punchOutSelfiePublicId  String?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  deletedAt               DateTime?
+  reachedHomeAt           DateTime?
+  reachedHomeLatitude     Float?
   reachedHomeLocationMeta Json?
-  punchInSelfieUrl       String?
-  punchInSelfiePublicId  String?
-  punchOutSelfieUrl      String?
-  punchOutSelfiePublicId String?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  deletedAt              DateTime?
-  markedBy               User?            @relation("AttendanceMarkedBy", fields: [markedById], references: [id], map: "Attendance_markedById_fkey")
-  organization           Organization     @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
-  team                   Team?            @relation(fields: [teamId], references: [id], map: "Attendance_teamId_fkey")
-  user                   User             @relation("AttendanceUser", fields: [userId], references: [id], map: "Attendance_userId_fkey")
+  reachedHomeLongitude    Float?
+  markedBy                User?            @relation("AttendanceMarkedBy", fields: [markedById], references: [id], map: "Attendance_markedById_fkey")
+  organization            Organization     @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
+  team                    Team?            @relation(fields: [teamId], references: [id], map: "Attendance_teamId_fkey")
+  user                    User             @relation("AttendanceUser", fields: [userId], references: [id], map: "Attendance_userId_fkey")
 
   @@unique([orgId, userId, date], map: "Attendance_orgId_userId_date_key")
   @@index([markedById], map: "Attendance_markedById_fkey")
@@ -193,9 +193,15 @@ model Organization {
   referredByPartnerId  Int?
   agreementPdfUrl      String?
   agreementPdfPublicId String?
-  logoUrl              String?
   logoPublicId         String?
+  logoUrl              String?
+  fundBalance          Float                       @default(0)
+  hasERP               Boolean                     @default(false)
   attendances          Attendance[]
+  regularizations      AttendanceRegularization[]
+  expense_claim        expense_claim[]
+  expense_transaction  expense_transaction[]
+  instrument           instrument[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
   activeSubscription   Subscription?               @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id], map: "Organization_subscriptionId_fkey")
@@ -204,11 +210,11 @@ model Organization {
   payments             Payment[]
   posts                Post[]
   registrationRequests RegistrationRequest[]
+  stock                stock[]
   subscriptions        Subscription[]              @relation("OrganizationSubscriptions")
   renewalIntents       SubscriptionRenewalIntent[]
   teams                Team[]
   users                User[]                      @relation("OrganizationUsers")
-  regularizations      AttendanceRegularization[]
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -284,9 +290,9 @@ model Plan {
   memberLimit    Int                         @default(0)
   isActive       Boolean                     @default(true)
   isDefault      Boolean                     @default(false)
-  displayOrder   Int                         @default(0)
   createdAt      DateTime                    @default(now())
   updatedAt      DateTime                    @updatedAt
+  displayOrder   Int                         @default(0)
   organizations  Organization[]
   subscriptions  Subscription[]
   renewalIntents SubscriptionRenewalIntent[]
@@ -339,6 +345,7 @@ model Subscription {
   paymentOrderId          String?
   paymentReferenceId      String?
   paymentSignature        String?
+  hasERP                  Boolean                     @default(false)
   activeForOrganization   Organization?               @relation("OrganizationActiveSubscription")
   payments                Payment[]
   createdBy               User                        @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], map: "Subscription_createdById_fkey")
@@ -386,6 +393,7 @@ model SubscriptionRenewalIntent {
   paymentOrderId        String?             @unique(map: "SubscriptionRenewalIntent_paymentOrderId_key")
   paymentReferenceId    String?             @unique(map: "SubscriptionRenewalIntent_paymentReferenceId_key")
   paymentSignature      String?
+  hasERP                Boolean             @default(false)
   appliedSubscription   Subscription?       @relation("RenewalIntentAppliedSubscription", fields: [appliedSubscriptionId], references: [id], map: "SubscriptionRenewalIntent_appliedSubscriptionId_fkey")
   currentSubscription   Subscription?       @relation("RenewalIntentCurrentSubscription", fields: [currentSubscriptionId], references: [id], map: "SubscriptionRenewalIntent_currentSubscriptionId_fkey")
   organization          Organization        @relation(fields: [orgId], references: [id], map: "SubscriptionRenewalIntent_orgId_fkey")
@@ -414,7 +422,6 @@ model RegistrationRequest {
   permanentAddress  String?
   password          String
   gender            String?
-  bloodGroup        String?
   city              String?
   status            RegistrationRequestStatus @default(PENDING)
   reviewedById      Int?
@@ -423,6 +430,7 @@ model RegistrationRequest {
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   expiresAt         DateTime
+  bloodGroup        String?
   organization      Organization              @relation(fields: [orgId], references: [id])
 
   @@unique([orgId, email], map: "RegistrationRequest_orgId_email_key")
@@ -521,7 +529,6 @@ model User {
   currentAddress              String?
   permanentAddress            String?
   password                    String
-  bloodGroup                  String?
   role                        String                      @default("MEMBER")
   permissions                 Json?
   resetTokenHash              String?
@@ -534,11 +541,16 @@ model User {
   createdAt                   DateTime                    @default(now())
   updatedAt                   DateTime                    @updatedAt
   deletedAt                   DateTime?
+  expoPushToken               String?
   referredByPartnerId         Int?
+  bloodGroup                  String?
   markedAttendances           Attendance[]                @relation("AttendanceMarkedBy")
   attendances                 Attendance[]                @relation("AttendanceUser")
+  regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
+  regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
   assignedCoupons             Coupon[]                    @relation("CouponAssignedTo")
   createdCoupons              Coupon[]                    @relation("CouponCreatedBy")
+  expense_claim               expense_claim[]
   primaryAdminForOrganization Organization?               @relation("OrganizationPrimaryAdmin")
   memberships                 OrganizationMember[]
   payments                    Payment[]
@@ -552,9 +564,8 @@ model User {
   createdUsers                User[]                      @relation("UserCreatedBy")
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   referredByPartner           ReferralPartner?            @relation("ReferredUsers", fields: [referredByPartnerId], references: [id])
+  user_instrument             user_instrument[]
   notificationReads           UserNotificationRead[]
-  regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
-  regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
 
   @@index([createdById], map: "User_createdById_idx")
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
@@ -659,23 +670,23 @@ model email_sender_usage {
 }
 
 model Coupon {
-  id             Int          @id @default(autoincrement())
-  code           String       @unique
-  discountType   DiscountType
-  discountValue  Float
-  maxUses        Int?
-  usesCount      Int          @default(0)
-  assignedUserId Int?
-  createdById    Int
+  id                  Int          @id @default(autoincrement())
+  code                String       @unique
+  discountType        DiscountType
+  discountValue       Float
+  maxUses             Int?
+  usesCount           Int          @default(0)
+  assignedUserId      Int?
+  createdById         Int
   isActive            Boolean      @default(true)
-  validFrom           DateTime?
   validUntil          DateTime?
-  applicablePlanCodes Json?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
+  validFrom           DateTime?
+  applicablePlanCodes Json?
   assignedUser        User?        @relation("CouponAssignedTo", fields: [assignedUserId], references: [id])
-  createdBy      User         @relation("CouponCreatedBy", fields: [createdById], references: [id])
-  payments       Payment[]
+  createdBy           User         @relation("CouponCreatedBy", fields: [createdById], references: [id])
+  payments            Payment[]
 
   @@index([code])
   @@index([assignedUserId])
@@ -698,21 +709,125 @@ model ReferralPartner {
   @@map("referral_partner")
 }
 
+model Role {
+  code          String   @id
+  name          String
+  description   String?
+  dashboardPath String   @default("/member")
+  isSystem      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("role")
+}
+
+model AttendanceRegularization {
+  id           Int                  @id @default(autoincrement())
+  orgId        Int
+  userId       Int
+  date         String
+  reason       String               @db.Text
+  status       RegularizationStatus @default(PENDING)
+  reviewedById Int?
+  reviewedAt   DateTime?
+  reviewNote   String?              @default("")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  organization Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reviewer     User?                @relation("RegularizationReviews", fields: [reviewedById], references: [id])
+  user         User                 @relation("RegularizationRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([userId, date])
+  @@index([reviewedById], map: "attendance_regularization_reviewedById_fkey")
+  @@map("attendance_regularization")
+}
+
+model expense_claim {
+  id                  Int                  @id @default(autoincrement())
+  orgId               Int
+  userId              Int
+  claimNo             String?              @unique
+  expenseType         String
+  description         String?              @db.Text
+  amount              Float
+  receiptUrl          String?
+  receiptPublicId     String?
+  status              expense_claim_status @default(PENDING)
+  transactionId       Int?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime
+  organization        Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  expense_transaction expense_transaction? @relation(fields: [transactionId], references: [id])
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([transactionId], map: "expense_claim_transactionId_fkey")
+  @@index([userId])
+}
+
+model expense_transaction {
+  id              Int                      @id @default(autoincrement())
+  orgId           Int
+  type            expense_transaction_type
+  amount          Float
+  title           String
+  description     String?                  @db.Text
+  items           Json?
+  receiptUrl      String?
+  receiptPublicId String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime
+  expense_claim   expense_claim[]
+  organization    Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, type])
+}
+
+model instrument {
+  id              Int               @id @default(autoincrement())
+  orgId           Int
+  name            String
+  description     String?           @db.Text
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  organization    Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user_instrument user_instrument[]
+
+  @@index([orgId])
+}
+
+model stock {
+  id           Int          @id @default(autoincrement())
+  orgId        Int
+  name         String
+  type         String
+  quantity     Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+model user_instrument {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  instrumentId Int
+  assignedAt   DateTime   @default(now())
+  assetId      String?
+  instrument   instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([instrumentId, assetId])
+  @@unique([userId, instrumentId])
+  @@index([instrumentId])
+  @@index([userId])
+}
+
 enum DiscountType {
   PERCENTAGE
   FLAT_AMOUNT
-}
-
-model Role {
-  code          String    @id
-  name          String
-  description   String?
-  dashboardPath String    @default("/member")
-  isSystem      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@map("role")
 }
 
 enum UserStatus {
@@ -727,6 +842,7 @@ enum AttendanceStatus {
   ABSENT
   HALF_DAY
   REGULARIZED
+  DEFAULTER
 }
 
 enum SubscriptionStatus {
@@ -794,23 +910,14 @@ enum RegularizationStatus {
   REJECTED
 }
 
-model AttendanceRegularization {
-  id           Int                  @id @default(autoincrement())
-  orgId        Int
-  userId       Int
-  date         String
-  reason       String               @db.Text
-  status       RegularizationStatus @default(PENDING)
-  reviewedById Int?
-  reviewedAt   DateTime?
-  reviewNote   String?              @default("")
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  organization Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user         User                 @relation("RegularizationRequests", fields: [userId], references: [id], onDelete: Cascade)
-  reviewer     User?                @relation("RegularizationReviews", fields: [reviewedById], references: [id])
+enum expense_transaction_type {
+  DEPOSIT
+  WITHDRAWAL
+  CLAIM_SETTLEMENT
+}
 
-  @@index([orgId, status])
-  @@index([userId, date])
-  @@map("attendance_regularization")
+enum expense_claim_status {
+  PENDING
+  APPROVED
+  REJECTED
 }
