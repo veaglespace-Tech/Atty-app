@@ -829,7 +829,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 onPress={handleUpdate}
                 disabled={isLoading}
-                className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600 active:bg-blue-700 ${isLoading ? 'opacity-70' : ''}`}>
+                className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600  ${isLoading ? 'opacity-70' : ''}`}>
                 {isLoading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
@@ -924,7 +924,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 onPress={handleResetPassword}
                 disabled={isResetting}
-                className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 ${isResetting ? 'opacity-70' : ''}`}>
+                className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800   ${isResetting ? 'opacity-70' : ''}`}>
                 {isResetting ? (
                   <ActivityIndicator color="#3b82f6" size="small" />
                 ) : (
