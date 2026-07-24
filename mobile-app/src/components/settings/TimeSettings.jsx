@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { Clock, RotateCcw } from "lucide-react-native";
 import { useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation } from "@/services/api/orgApi";
 
@@ -59,9 +59,9 @@ export default function TimeSettings() {
           <Text className="text-xs font-semibold text-slate-500">Configure workspace working hours.</Text>
         </View>
         {hasChanges && (
-          <Pressable onPress={handleUndo} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <TouchableOpacity onPress={handleUndo} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
             <RotateCcw size={16} className="text-slate-500" />
-          </Pressable>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -97,12 +97,12 @@ export default function TimeSettings() {
             className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"
           />
         </View>
-        <Pressable
+        <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
           className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Time Settings</Text>}
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );

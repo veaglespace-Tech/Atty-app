@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { MapPin } from "lucide-react-native";
 import { useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation } from "@/services/api/orgApi";
 import { getCurrentCoordinates } from "@/utils/location";
@@ -100,20 +100,20 @@ export default function LocationSettings() {
           </View>
         </View>
 
-        <Pressable
+        <TouchableOpacity
           onPress={handleFetchCurrentLocation}
           disabled={isFetchingLocation}
           className="flex-row items-center justify-center gap-2 py-3 mt-1 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 active:scale-95">
           {isFetchingLocation ? <ActivityIndicator size="small" color="#3b82f6" /> : <MapPin size={16} className="text-blue-600 dark:text-blue-400" />}
           <Text className="font-bold text-blue-600 dark:text-blue-400 text-sm">Detect Location</Text>
-        </Pressable>
+        </TouchableOpacity>
 
-        <Pressable
+        <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
           className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Geofencing</Text>}
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
