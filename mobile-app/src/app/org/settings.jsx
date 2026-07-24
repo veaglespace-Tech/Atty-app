@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Alert, ActivityIndicator, Image, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TextInput, Alert, ActivityIndicator, Image, TouchableOpacity, ScrollView, useColorScheme } from "react-native";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
@@ -525,6 +525,9 @@ function OrgDetailsSettings() {
 
 // --- Main Settings Screen ---
 export default function SettingsScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   const dispatch = useDispatch();
   const { user } = useAuthSession();
   const [updateMe, { isLoading }] = useUpdateMeMutation();
