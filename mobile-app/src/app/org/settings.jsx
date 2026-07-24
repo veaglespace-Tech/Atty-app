@@ -131,7 +131,7 @@ function TimeSettings() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
+          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Time Settings</Text>}
         </TouchableOpacity>
       </View>
@@ -239,7 +239,7 @@ function LocationSettings() {
         <TouchableOpacity
           onPress={handleFetchCurrentLocation}
           disabled={isFetchingLocation}
-          className="flex-row items-center justify-center gap-2 py-3 mt-1 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 active:scale-95">
+          className="flex-row items-center justify-center gap-2 py-3 mt-1 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 ">
           {isFetchingLocation ? <ActivityIndicator size="small" color="#3b82f6" /> : <MapPin size={16} className="text-blue-600 dark:text-blue-400" />}
           <Text className="font-bold text-blue-600 dark:text-blue-400 text-sm">Detect Location</Text>
         </TouchableOpacity>
@@ -247,7 +247,7 @@ function LocationSettings() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
+          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Geofencing</Text>}
         </TouchableOpacity>
       </View>
@@ -355,7 +355,7 @@ function OrgLogoSettings() {
           <View className="flex-1 gap-2">
             <TouchableOpacity
               onPress={pickImage}
-              className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 active:scale-95">
+              className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ">
               <ImageUp size={14} className="text-slate-700 dark:text-slate-300" />
               <Text className="font-bold text-slate-700 dark:text-slate-300 text-xs">
                 {previewLogoUrl ? "Change Logo" : "Upload Logo"}
@@ -365,7 +365,7 @@ function OrgLogoSettings() {
             {(removeLogo || logoDataUrl || currentLogoUrl) ? (
               <TouchableOpacity
                 onPress={toggleLogoRemoval}
-                className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 active:scale-95">
+                className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 ">
                 <Trash2 size={14} className="text-rose-600 dark:text-rose-400" />
                 <Text className="font-bold text-rose-600 dark:text-rose-400 text-xs">
                   {removeLogo ? "Keep Current Logo" : logoDataUrl ? "Clear Selection" : "Remove Logo"}
@@ -378,7 +378,7 @@ function OrgLogoSettings() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={isLoading || !hasPendingChange}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isLoading || !hasPendingChange ? 'opacity-50' : ''}`}>
+          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isLoading || !hasPendingChange ? 'opacity-50' : ''}`}>
           {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Logo Update</Text>}
         </TouchableOpacity>
       </View>
@@ -515,7 +515,7 @@ function OrgDetailsSettings() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating}
-          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating ? 'opacity-50' : ''}`}>
+          className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isUpdating ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Details</Text>}
         </TouchableOpacity>
       </View>
@@ -649,7 +649,7 @@ export default function SettingsScreen() {
               router.replace("/org/dashboard");
             }
           }}
-          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900 active:scale-95 transition-transform">
+          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900  ">
           <ChevronLeft size={20} className="text-slate-700 dark:text-slate-300" />
         </TouchableOpacity>
         <View className="flex-1 flex-row items-center">
@@ -664,7 +664,7 @@ export default function SettingsScreen() {
         
         {/* Profile Header */}
         <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
-          <TouchableOpacity onPress={pickImage} className="relative mb-4 active:scale-95 transition-transform">
+          <TouchableOpacity onPress={pickImage} className="relative mb-4  ">
             {currentProfileImageUrl ? (
               <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
             ) : (
@@ -861,7 +861,7 @@ export default function SettingsScreen() {
                       </Text>
                       <TouchableOpacity 
                         onPress={copyCodeToClipboard}
-                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
+                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl  "
                       >
                         {copiedReferralCode ? (
                           <>
@@ -886,7 +886,7 @@ export default function SettingsScreen() {
                       </Text>
                       <TouchableOpacity 
                         onPress={copyToClipboard}
-                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
+                        className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl  "
                       >
                         {copiedReferral ? (
                           <>
