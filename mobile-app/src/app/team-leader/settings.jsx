@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Pressable, Alert } from "react-native";
+import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
@@ -139,12 +139,12 @@ export default function TeamLeaderSettings() {
   return (
     <SafeAreaView className="flex-1 bg-slate-100 dark:bg-slate-950">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
           {/* Header */}
           <View className="px-5 pt-4 pb-4 flex-row items-center bg-slate-100 dark:bg-slate-950">
-            <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 mr-4 active:opacity-70">
+            <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full bg-white dark:bg-slate-900/80 items-center justify-center shadow-sm border border-slate-200 dark:border-slate-800 mr-4 active:opacity-70">
               <ArrowLeft size={20} className="text-slate-700 dark:text-white" />
-            </Pressable>
+            </TouchableOpacity>
             <View className="flex-1 flex-row items-center">
               <Text className="text-xl font-black text-slate-900 dark:text-white truncate">Settings</Text>
             </View>

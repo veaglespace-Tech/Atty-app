@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator, Image } from "react-native";
+import { View, Text, ScrollView, TextInput, Alert, ActivityIndicator, Image, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
@@ -90,9 +90,9 @@ function TimeSettings() {
         </View>
         <ThemeToggle />
         {hasChanges && (
-          <Pressable onPress={handleUndo} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <TouchableOpacity onPress={handleUndo} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
             <RotateCcw size={16} className="text-slate-500" />
-          </Pressable>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -128,12 +128,12 @@ function TimeSettings() {
             className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"
           />
         </View>
-        <Pressable
+        <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
           className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Time Settings</Text>}
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -236,20 +236,20 @@ function LocationSettings() {
           </View>
         </View>
 
-        <Pressable
+        <TouchableOpacity
           onPress={handleFetchCurrentLocation}
           disabled={isFetchingLocation}
           className="flex-row items-center justify-center gap-2 py-3 mt-1 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 active:scale-95">
           {isFetchingLocation ? <ActivityIndicator size="small" color="#3b82f6" /> : <MapPin size={16} className="text-blue-600 dark:text-blue-400" />}
           <Text className="font-bold text-blue-600 dark:text-blue-400 text-sm">Detect Location</Text>
-        </Pressable>
+        </TouchableOpacity>
 
-        <Pressable
+        <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating || !hasChanges}
           className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating || !hasChanges ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Geofencing</Text>}
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -353,34 +353,34 @@ function OrgLogoSettings() {
           </View>
           
           <View className="flex-1 gap-2">
-            <Pressable
+            <TouchableOpacity
               onPress={pickImage}
               className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 active:scale-95">
               <ImageUp size={14} className="text-slate-700 dark:text-slate-300" />
               <Text className="font-bold text-slate-700 dark:text-slate-300 text-xs">
                 {previewLogoUrl ? "Change Logo" : "Upload Logo"}
               </Text>
-            </Pressable>
+            </TouchableOpacity>
             
             {(removeLogo || logoDataUrl || currentLogoUrl) ? (
-              <Pressable
+              <TouchableOpacity
                 onPress={toggleLogoRemoval}
                 className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 active:scale-95">
                 <Trash2 size={14} className="text-rose-600 dark:text-rose-400" />
                 <Text className="font-bold text-rose-600 dark:text-rose-400 text-xs">
                   {removeLogo ? "Keep Current Logo" : logoDataUrl ? "Clear Selection" : "Remove Logo"}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
             ) : null}
           </View>
         </View>
 
-        <Pressable
+        <TouchableOpacity
           onPress={handleSave}
           disabled={isLoading || !hasPendingChange}
           className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isLoading || !hasPendingChange ? 'opacity-50' : ''}`}>
           {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Logo Update</Text>}
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -512,12 +512,12 @@ function OrgDetailsSettings() {
           </View>
         </View>
 
-        <Pressable
+        <TouchableOpacity
           onPress={handleSave}
           disabled={isUpdating}
           className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white active:scale-95 transition-transform ${isUpdating ? 'opacity-50' : ''}`}>
           {isUpdating ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Details</Text>}
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -641,7 +641,7 @@ export default function SettingsScreen() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <View className="px-6 pt-12 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] flex-row items-center gap-3">
-        <Pressable 
+        <TouchableOpacity 
           onPress={() => {
             if (router.canGoBack()) {
               router.back();
@@ -651,7 +651,7 @@ export default function SettingsScreen() {
           }}
           className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900 active:scale-95 transition-transform">
           <ChevronLeft size={20} className="text-slate-700 dark:text-slate-300" />
-        </Pressable>
+        </TouchableOpacity>
         <View className="flex-1 flex-row items-center">
           <Text className="text-xl font-black text-slate-900 dark:text-white truncate">
             Settings
@@ -660,11 +660,11 @@ export default function SettingsScreen() {
         <ThemeToggle />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
         
         {/* Profile Header */}
         <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
-          <Pressable onPress={pickImage} className="relative mb-4 active:scale-95 transition-transform">
+          <TouchableOpacity onPress={pickImage} className="relative mb-4 active:scale-95 transition-transform">
             {currentProfileImageUrl ? (
               <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
             ) : (
@@ -675,7 +675,7 @@ export default function SettingsScreen() {
             <View className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 rounded-full items-center justify-center border-2 border-white dark:border-slate-800">
               <Camera size={14} color="#fff" />
             </View>
-          </Pressable>
+          </TouchableOpacity>
           <Text className="text-2xl font-black text-slate-900 dark:text-white text-center">
             {user?.name || "User"}
           </Text>
@@ -703,32 +703,32 @@ export default function SettingsScreen() {
 
         {/* Modern Tabs */}
         <View className="flex-row mb-6 bg-slate-200/50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <Pressable 
+          <TouchableOpacity 
             onPress={() => setActiveTab("personal")}
             className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "personal" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
           >
             <Text className={`text-sm font-bold ${activeTab === "personal" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
               Personal
             </Text>
-          </Pressable>
+          </TouchableOpacity>
           {canSeeAdminSettings && (
-            <Pressable 
+            <TouchableOpacity 
               onPress={() => setActiveTab("organization")}
               className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "organization" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
             >
               <Text className={`text-sm font-bold ${activeTab === "organization" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
                 Workspace
               </Text>
-            </Pressable>
+            </TouchableOpacity>
           )}
-          <Pressable 
+          <TouchableOpacity 
             onPress={() => setActiveTab("security")}
             className={`flex-1 items-center justify-center py-2.5 rounded-xl transition-all ${activeTab === "security" ? "bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800" : ""}`}
           >
             <Text className={`text-sm font-bold ${activeTab === "security" ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>
               Security
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
         {activeTab === "organization" && canSeeAdminSettings && (
