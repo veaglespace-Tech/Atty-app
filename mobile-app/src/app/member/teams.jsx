@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
+import { View, Text, TouchableOpacity, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { router } from "expo-router";
 import {  ChevronLeft, MapPin, Users, X, User  } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
@@ -87,7 +87,7 @@ export default function MyTeamsPage(props) {
       ) : (
         <ScrollView className="flex-1 px-6 pt-2" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           {teams.map((team) => (
-            <Pressable 
+            <TouchableOpacity 
               key={team.id} 
               onPress={() => setSelectedTeam(team)}              className="bg-white dark:bg-slate-900/80 rounded-[28px] p-6 mb-5 shadow-sm border border-slate-100 dark:border-slate-800 active:opacity-90 active:scale-[0.98]"
             >
@@ -115,7 +115,7 @@ export default function MyTeamsPage(props) {
                   </View>
                 )}
               </View>
-            </Pressable>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}

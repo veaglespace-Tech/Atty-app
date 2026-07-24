@@ -820,7 +820,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
               
-              <Pressable
+              <TouchableOpacity
                 onPress={handleUpdate}
                 disabled={isLoading}
                 className={`mt-4 flex-row items-center justify-center gap-2 py-4 rounded-2xl bg-blue-600 active:bg-blue-700 ${isLoading ? 'opacity-70' : ''}`}>
@@ -832,7 +832,7 @@ export default function SettingsScreen() {
                     <Text className="font-bold text-white text-[15px]">Save Profile Changes</Text>
                   </>
                 )}
-              </Pressable>
+              </TouchableOpacity>
 
             </View>
           </View>
@@ -859,7 +859,7 @@ export default function SettingsScreen() {
                       <Text className="flex-1 text-sm font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
                         {referralCode}
                       </Text>
-                      <Pressable 
+                      <TouchableOpacity 
                         onPress={copyCodeToClipboard}
                         className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
                       >
@@ -874,7 +874,7 @@ export default function SettingsScreen() {
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Code</Text>
                           </>
                         )}
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
                   </View>
 
@@ -884,7 +884,7 @@ export default function SettingsScreen() {
                       <Text className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300" numberOfLines={1} ellipsizeMode="tail">
                         {referralLink}
                       </Text>
-                      <Pressable 
+                      <TouchableOpacity 
                         onPress={copyToClipboard}
                         className="flex-row items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
                       >
@@ -899,7 +899,7 @@ export default function SettingsScreen() {
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Link</Text>
                           </>
                         )}
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
@@ -915,7 +915,7 @@ export default function SettingsScreen() {
                 Manage your account security and password.
               </Text>
               
-              <Pressable
+              <TouchableOpacity
                 onPress={handleResetPassword}
                 disabled={isResetting}
                 className={`flex-row items-center justify-center py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 ${isResetting ? 'opacity-70' : ''}`}>
@@ -924,7 +924,7 @@ export default function SettingsScreen() {
                 ) : (
                   <Text className="font-bold text-slate-900 dark:text-white text-[15px]">Request Password Reset</Text>
                 )}
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
         )}
