@@ -549,6 +549,7 @@ model User {
   profileImagePublicId        String?
   createdAt                   DateTime                    @default(now())
   updatedAt                   DateTime                    @updatedAt
+  expoPushToken         String? 
   deletedAt                   DateTime?
   referredByPartnerId         Int?
   markedAttendances           Attendance[]                @relation("AttendanceMarkedBy")

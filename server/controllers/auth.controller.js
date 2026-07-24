@@ -1855,3 +1855,16 @@ exports.saveLead = asyncHandler(async (req, res) => {
 
   res.status(200).json({ success: true, data: lead });
 });
+
+exports.updatePushToken = asyncHandler(async (req, res) => {
+  const { pushToken } = req.body;
+  if (!pushToken) {
+    return res.status(400).json({ success: false, message: "Push token is required" });
+  }
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { expoPushToken: pushToken }
+  });
+  res.status(200).json({ success: true, message: "Push token updated successfully" });
+});
+

@@ -1,5 +1,5 @@
-require("./config/load-env")();
-const prisma = require("./lib/prisma");
+require("../config/load-env")();
+const prisma = require("../lib/prisma");
 
 const buildPlanFeatures = (userLimit) => [
   `Up to ${userLimit} Users`,
