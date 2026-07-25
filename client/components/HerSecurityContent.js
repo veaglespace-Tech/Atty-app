@@ -238,7 +238,6 @@ export default function HerSecurityContent() {
         {/* Modern decorative background elements */}
         <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-rose-500/20 blur-3xl mix-blend-screen" />
         <div className="absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-indigo-500/20 blur-3xl mix-blend-screen -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay" />
 
         <div className="relative z-10 flex flex-col items-center justify-center w-full">
           <div className="space-y-6">
@@ -285,7 +284,6 @@ export default function HerSecurityContent() {
       </div>
 
     </div>
-
       {/* SOS EMERGENCY ACTION (Moved to Top) */}
       <div className="rounded-[2.5rem] border-2 border-rose-500/40 bg-white p-6 sm:p-10 shadow-2xl shadow-rose-500/10 dark:border-rose-900/60 dark:bg-slate-900/90 dark:shadow-black/50 overflow-hidden relative">
         <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-rose-500/10 blur-3xl" />
