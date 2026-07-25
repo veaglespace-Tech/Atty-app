@@ -79,10 +79,11 @@ export async function registerForPushNotificationsAsync() {
 
 export async function sendPushTokenToServer(pushToken) {
   try {
-    const token = await AsyncStorage.getItem('token');
+    const { store } = require('@/store');
+    const token = store.getState().auth.token;
     
-    // In some environments, we might want to check if the token changed
-    // before sending it to save server requests, but for now we just send it
+    if (!token) return;
+
     const res = await fetch(`${API_BASE_URL}/auth/push-token`, {
       method: 'POST',
       headers: {
