@@ -88,6 +88,8 @@ const sendSosAlert = async (req, res) => {
       ? `<a href="${calculatedMapsUrl}" target="_blank" style="display:inline-block; max-width:100%; box-sizing:border-box; padding:12px 20px; background-color:#dc2626; color:#ffffff; font-weight:bold; text-decoration:none; border-radius:8px; margin-top:10px; word-break:break-word; text-align:center;">📍 View Live Location on Google Maps</a>`
       : "<p style='color:#ef4444; font-weight:bold; margin:10px 0 0 0;'>Location unavailable or permission denied by device.</p>";
 
+    const userPhotoUrl = user.profileImageUrl || user.profileImage || null;
+
     const htmlBody = `
       <div style="font-family: Arial, Helvetica, sans-serif; width: 100%; max-width: 600px; margin: 0 auto; border: 2px solid #dc2626; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-sizing: border-box; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">
         <div style="background-color: #dc2626; color: #ffffff; padding: 20px 16px; text-align: center; box-sizing: border-box;">
@@ -104,6 +106,12 @@ const sendSosAlert = async (req, res) => {
           </div>
 
           <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; color: #0f172a; margin: 0 0 14px 0; font-size: 16px;">👤 User Details</h3>
+          ${userPhotoUrl ? `
+            <div style="text-align: center; margin-bottom: 16px;">
+              <img src="${userPhotoUrl}" alt="${user.name}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #dc2626; display: inline-block;" />
+              <div style="margin-top: 4px;"><a href="${userPhotoUrl}" target="_blank" style="font-size: 11px; color: #2563eb; text-decoration: underline;">Open Full Size Photo</a></div>
+            </div>
+          ` : ""}
           <table style="width: 100%; table-layout: fixed; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; box-sizing: border-box;">
             <tr>
               <td style="padding: 8px 6px 8px 0; color: #64748b; width: 38%; vertical-align: top; word-break: break-word;"><strong>Full Name:</strong></td>
@@ -121,10 +129,6 @@ const sendSosAlert = async (req, res) => {
               <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Emergency Contact:</strong></td>
               <td style="padding: 8px 0 8px 6px; color: #dc2626; font-weight: 700; vertical-align: top; word-break: break-word;">${user.emergencyContact || user.mobile || "N/A"}</td>
             </tr>
-            ${user.profileImageUrl || user.profileImage ? `<tr>
-              <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Profile Photo:</strong></td>
-              <td style="padding: 8px 0 8px 6px; color: #0f172a; vertical-align: top; word-break: break-word;"><a href="${user.profileImageUrl || user.profileImage}" target="_blank" style="color: #2563eb; font-weight: bold; text-decoration: underline;">🖼️ View Profile Photo</a></td>
-            </tr>` : ""}
             <tr>
               <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Organisation:</strong></td>
               <td style="padding: 8px 0 8px 6px; color: #0f172a; vertical-align: top; word-break: break-word;">${user.organization?.name || "N/A"} (ID: ${user.orgId || "N/A"})</td>
