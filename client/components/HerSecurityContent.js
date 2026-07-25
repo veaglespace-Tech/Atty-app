@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 
-const EMERGENCY_TEST_NUMBER = "7756099153";
+const EMERGENCY_TEST_NUMBER = "8237999101";
 
 export default function HerSecurityContent() {
   const { user, token } = useAuthSession();
@@ -101,14 +101,16 @@ export default function HerSecurityContent() {
 
   // WhatsApp Message Generator
   const generateWhatsAppUrl = () => {
+    const emergencyNum = user?.emergencyContact || user?.mobile || EMERGENCY_TEST_NUMBER;
     const text = encodeURIComponent(
       `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
-        `👤 *Name:* ${user?.name || "User"}\n` +
-        `📧 *Email:* ${user?.email || "N/A"}\n` +
-        `📱 *Contact:* ${user?.mobile || "N/A"}\n` +
-        `🏢 *Organisation:* ${user?.organization?.name || user?.orgName || "Veagle Member"} (ID: ${user?.orgId || "N/A"})\n\n` +
-        `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
-        `⚠️ *I need immediate assistance! Please verify my safety.*`
+      `👤 *Name:* ${user?.name || "User"}\n` +
+      `📧 *Email:* ${user?.email || "N/A"}\n` +
+      `📱 *Contact:* ${user?.mobile || "N/A"}\n` +
+      `🆘 *Emergency Contact:* ${emergencyNum}\n` +
+      `🏢 *Organisation:* ${user?.organization?.name || user?.orgName || "Veagle Member"} (ID: ${user?.orgId || "N/A"})\n\n` +
+      `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
+      `⚠️ *I need immediate assistance! Please verify my safety.*`
     );
     return `https://api.whatsapp.com/send?text=${text}`;
   };
@@ -219,7 +221,7 @@ export default function HerSecurityContent() {
               {/* Simple Typography */}
               <div className="space-y-1.5 md:space-y-3 flex flex-col items-center">
                 <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-md whitespace-nowrap">
-                  "तिची सुरक्षा"
+                  “तिची सुरक्षा”
                 </h1>
                 <div className="inline-block rounded-full bg-white/10 px-2 sm:px-4 py-1 sm:py-1.5 backdrop-blur-sm border border-white/20 shadow-sm">
                   <p className="text-[10px] sm:text-xs md:text-sm lg:text-lg font-bold text-white tracking-wide whitespace-nowrap">
@@ -451,10 +453,10 @@ export default function HerSecurityContent() {
           <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div className="relative">
               {user?.profilePhoto || user?.photo ? (
-                <img 
-                  src={user.profilePhoto || user.photo} 
-                  alt={user?.name || "User"} 
-                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 shadow-md object-cover" 
+                <img
+                  src={user.profilePhoto || user.photo}
+                  alt={user?.name || "User"}
+                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 shadow-md object-cover"
                 />
               ) : (
                 <UserAvatar

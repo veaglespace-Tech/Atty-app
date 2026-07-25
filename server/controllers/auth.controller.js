@@ -206,8 +206,8 @@ const sendPasswordResetEmail = async ({ user, token }) => {
   const organizationSummary =
     user.organization && !user.organization.deletedAt
       ? [user.organization.name, user.organization.organizationCode]
-          .filter(Boolean)
-          .join(" - ")
+        .filter(Boolean)
+        .join(" - ")
       : "Platform account";
   const subject = "Reset your Veagle Attendee password";
   const message = `Hello ${user.name},
@@ -710,8 +710,8 @@ const resolveAuthMembership = ({
     const candidateMemberships = listActiveOrganizationMemberships(user);
     const roleMatchedMemberships = requestedRole
       ? candidateMemberships.filter(
-          (membership) => normalizeRole(membership?.role) === normalizeRole(requestedRole)
-        )
+        (membership) => normalizeRole(membership?.role) === normalizeRole(requestedRole)
+      )
       : candidateMemberships;
 
     if (roleMatchedMemberships.length === 1) {
@@ -853,14 +853,14 @@ const serializeSessionUser = (user, organization = null) => {
     })),
     currentMembership: normalized.currentMembership
       ? {
-          orgId: normalized.currentMembership.orgId,
-          role: normalized.currentMembership.role,
-          isActive: normalized.currentMembership.isActive !== false,
-        }
+        orgId: normalized.currentMembership.orgId,
+        role: normalized.currentMembership.role,
+        isActive: normalized.currentMembership.isActive !== false,
+      }
       : null,
     currentRole: normalized.currentRole || null,
-    permissions: Array.isArray(normalized.permissions) 
-      ? normalized.permissions 
+    permissions: Array.isArray(normalized.permissions)
+      ? normalized.permissions
       : resolveUserPermissions(normalized, normalized.currentMembership?.orgId),
     status: normalized.status,
     isActive: normalized.isActive !== false,
@@ -869,26 +869,26 @@ const serializeSessionUser = (user, organization = null) => {
     city: org?.city || null,
     organization: org
       ? {
-          id: org.id,
-          name: org.name,
-          organizationCode: org.organizationCode,
-          referralCode: org.referralCode || null,
-          city: org.city || null,
-          state: org.state || null,
-          country: org.country || null,
-          subscriptionStatus: org.subscriptionStatus || null,
-          logoUrl: org.logoUrl || null,
-          hasERP: org.hasERP || false,
-          plan: org.plan
-            ? {
-                id: org.plan.id,
-                name: org.plan.name,
-                code: org.plan.code,
-                memberLimit: org.plan.memberLimit || 0,
-                maxUsers: org.plan.maxUsers || 0,
-              }
-            : null,
-        }
+        id: org.id,
+        name: org.name,
+        organizationCode: org.organizationCode,
+        referralCode: org.referralCode || null,
+        city: org.city || null,
+        state: org.state || null,
+        country: org.country || null,
+        subscriptionStatus: org.subscriptionStatus || null,
+        logoUrl: org.logoUrl || null,
+        hasERP: org.hasERP || false,
+        plan: org.plan
+          ? {
+            id: org.plan.id,
+            name: org.plan.name,
+            code: org.plan.code,
+            memberLimit: org.plan.memberLimit || 0,
+            maxUsers: org.plan.maxUsers || 0,
+          }
+          : null,
+      }
       : null,
     dashboardPath: getDashboardPathByRole(normalized.currentRole),
   };
@@ -1341,15 +1341,15 @@ exports.login = asyncHandler(async (req, res) => {
   const sessionUser =
     currentRole === "SUPER_ADMIN"
       ? {
-          ...hydratedUser,
-          orgId: null,
-          organization: null,
-        }
+        ...hydratedUser,
+        orgId: null,
+        organization: null,
+      }
       : hydratedUser;
 
   const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
   const token = jwt.sign(
-    { 
+    {
       id: user.id,
       name: user.name,
       email: user.email,
@@ -1472,7 +1472,7 @@ exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
 
   const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
   const token = jwt.sign(
-    { 
+    {
       id: user.id,
       name: user.name,
       email: user.email,
@@ -1856,15 +1856,41 @@ exports.saveLead = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: lead });
 });
 
+// exports.updatePushToken = asyncHandler(async (req, res) => {
+//   const { pushToken } = req.body;
+//   if (!pushToken) {
+//     return res.status(400).json({ success: false, message: "Push token is required" });
+//   }
+//   await prisma.user.update({
+//     where: { id: req.user.id },
+//     data: { expoPushToken: pushToken }
+//   });
+//   res.status(200).json({ success: true, message: "Push token updated successfully" });
+// });
+
 exports.updatePushToken = asyncHandler(async (req, res) => {
   const { pushToken } = req.body;
+
   if (!pushToken) {
     return res.status(400).json({ success: false, message: "Push token is required" });
   }
+
+  // NEW FIX: Clear this token from any other accounts to prevent duplicate notifications
+  // if the user switches accounts on the same physical phone.
+  await prisma.user.updateMany({
+    where: {
+      expoPushToken: pushToken,
+      id: { not: req.user.id }
+    },
+    data: { expoPushToken: null }
+  });
+
+  // Assign to the currently logged-in user
   await prisma.user.update({
     where: { id: req.user.id },
     data: { expoPushToken: pushToken }
   });
+
   res.status(200).json({ success: true, message: "Push token updated successfully" });
 });
 
