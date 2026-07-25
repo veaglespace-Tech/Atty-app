@@ -978,23 +978,29 @@ export default function WorkspaceSettingsPage() {
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        let { width, height } = img;
-        const MAX_DIM = 1200;
+        const { width, height } = img;
+        const TARGET_SIZE = 512;
         
-        if (width > height && width > MAX_DIM) {
-          height *= MAX_DIM / width;
-          width = MAX_DIM;
-        } else if (height > MAX_DIM) {
-          width *= MAX_DIM / height;
-          height = MAX_DIM;
-        }
+        const minDim = Math.min(width, height);
+        const sourceX = (width - minDim) / 2;
+        const sourceY = (height - minDim) / 2;
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = TARGET_SIZE;
+        canvas.height = TARGET_SIZE;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(
+          img,
+          sourceX,
+          sourceY,
+          minDim,
+          minDim,
+          0,
+          0,
+          TARGET_SIZE,
+          TARGET_SIZE
+        );
         
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error("Failed to read the selected image."));

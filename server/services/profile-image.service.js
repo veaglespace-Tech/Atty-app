@@ -35,7 +35,7 @@ const uploadProfileImage = async ({ userId, dataUrl }) => {
         width: 512,
         height: 512,
         crop: "fill",
-        gravity: "face",
+        gravity: "center",
         quality: "auto",
         fetch_format: "auto",
       },
