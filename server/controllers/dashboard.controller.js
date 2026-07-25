@@ -95,16 +95,66 @@ exports.getStats = asyncHandler(async (req, res) => {
     return;
   }
 
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  // Calculate total days in current month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  // Get start and end of current month
+  const startOfMonth = new Date(year, month, 1);
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+  
+  // Create YYYY-MM-DD keys for querying
+  const startKey = startOfMonth.toISOString().split('T')[0];
+  const endKey = endOfMonth.toISOString().split('T')[0];
+
   const myAttendance = await prisma.attendance.count({
     where: {
       userId,
       deletedAt: null,
+      date: {
+        gte: startKey,
+        lte: endKey
+      },
+      status: "PRESENT" // Only count actual present days
     },
   });
 
+  // Basic streak calculation: count consecutive previous days present
+  let streak = 0;
+  const recentLogs = await prisma.attendance.findMany({
+    where: { userId, deletedAt: null, status: "PRESENT" },
+    orderBy: { date: 'desc' },
+    take: 30
+  });
+
+  if (recentLogs.length > 0) {
+    let currentDate = new Date();
+    // Start checking from today
+    for (let i = 0; i < 30; i++) {
+      const dateToCheck = new Date(currentDate);
+      dateToCheck.setDate(currentDate.getDate() - i);
+      const dateKey = dateToCheck.toISOString().split('T')[0];
+      
+      const log = recentLogs.find(l => l.date === dateKey);
+      if (log) {
+        streak++;
+      } else if (i > 0) {
+        // If it's not today and there's no log, streak breaks
+        // If it is today, maybe they just haven't punched in yet, so don't break immediately
+        // but for simplicity, we break on first missing past day.
+        const yesterdayDateKey = new Date(currentDate.setDate(currentDate.getDate() - 1)).toISOString().split('T')[0];
+        if(i === 0) continue; // skip missing today
+        break;
+      }
+    }
+  }
+
   res.status(200).json({
-    myAttendance: `${myAttendance}/30`,
-    streak: 5,
+    myAttendance: `${myAttendance}/${daysInMonth}`,
+    streak: streak,
   });
 });
 

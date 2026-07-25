@@ -486,6 +486,7 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       throw new Error("isActive must be boolean");
     }
     membershipPayload.isActive = isActive;
+    userPayload.isActive = isActive;
   }
 
   if (Object.prototype.hasOwnProperty.call(req.body || {}, "permissions")) {
@@ -789,17 +790,23 @@ exports.toggleOrgUserActive = asyncHandler(async (req, res) => {
     targetUserId: req.params.userId,
   });
 
-  await prisma.organizationMember.update({
-    where: {
-      userId_orgId: {
-        userId: user.id,
-        orgId,
+  await prisma.$transaction([
+    prisma.organizationMember.update({
+      where: {
+        userId_orgId: {
+          userId: user.id,
+          orgId,
+        },
       },
-    },
-    data: {
-      isActive,
-    },
-  });
+      data: {
+        isActive,
+      },
+    }),
+    prisma.user.update({
+      where: { id: user.id },
+      data: { isActive },
+    })
+  ]);
 
   const updated = await prisma.user.findUnique({
     where: { id: user.id },

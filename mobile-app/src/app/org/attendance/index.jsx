@@ -111,6 +111,7 @@ export default function OrgAttendancePage() {
  const [teamId, setTeamId] = useState("");
  const [showTeamMenu, setShowTeamMenu] = useState(false);
  const [searchPlace, setSearchPlace] = useState("");
+ const [showPageSizeModal, setShowPageSizeModal] = useState(false);
 
  const [placeSuggestions, setPlaceSuggestions] = useState([]);
  const [searchingPlace, setSearchingPlace] = useState(false);
@@ -623,9 +624,13 @@ export default function OrgAttendancePage() {
  <View className="flex-row flex-wrap items-center justify-between gap-4">
  <View className="flex-row items-center gap-2">
  <Text className="text-xs font-semibold text-slate-400">Rows</Text>
- <View className="bg-[#1e293b] rounded-lg border border-[#334155] px-3 py-1.5 flex-row items-center">
- <Text className="text-xs font-bold text-slate-300">{pageSize.toString()}</Text>
- </View>
+ <Pressable 
+ onPress={() => setShowPageSizeModal(true)}
+ className="bg-[#1e293b] rounded-lg border border-[#334155] px-3 py-1.5 flex-row items-center active:bg-[#334155]"
+ >
+ <Text className="text-xs font-bold text-slate-300 mr-1">{pageSize.toString()}</Text>
+ <ChevronRight size={12} className="text-slate-400" />
+ </Pressable>
  </View>
 
  <View className="flex-row items-center gap-2">
@@ -660,7 +665,27 @@ export default function OrgAttendancePage() {
  </View>
  </View>
  </ScrollView>
+
+ <Modal visible={showPageSizeModal} transparent animationType="fade" onRequestClose={() => setShowPageSizeModal(false)}>
+   <Pressable className="flex-1 bg-black/50 justify-center items-center" onPress={() => setShowPageSizeModal(false)}>
+     <Pressable className="bg-slate-900 rounded-2xl w-64 p-2 border border-slate-800" onPress={(e) => e.stopPropagation()}>
+       <Text className="text-white font-bold text-center py-4 border-b border-slate-800">Select Rows per Page</Text>
+       {[10, 25, 50, 100].map(size => (
+         <Pressable 
+           key={size}
+           className="py-4 items-center border-b border-slate-800/50 active:bg-slate-800"
+           onPress={() => {
+             setPageSize(size);
+             setPage(1);
+             setShowPageSizeModal(false);
+           }}
+         >
+           <Text className={`font-bold ${pageSize === size ? 'text-blue-500' : 'text-slate-300'}`}>{size} Rows</Text>
+         </Pressable>
+       ))}
+     </Pressable>
+   </Pressable>
+ </Modal>
  </View>
- 
  );
 }

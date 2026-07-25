@@ -63,7 +63,6 @@ export default function MemberLayout() {
         options={{
           title: 'Posts',
           tabBarIcon: ({ color }) => <MessageSquare size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.POSTS.CREATE) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -71,7 +70,7 @@ export default function MemberLayout() {
         options={{
           title: 'Teams',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) ? undefined : null,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -79,7 +78,6 @@ export default function MemberLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
-          href: null,
         }}
       />
       <Tabs.Screen

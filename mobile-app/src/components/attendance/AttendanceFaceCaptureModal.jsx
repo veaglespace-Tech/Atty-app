@@ -44,7 +44,8 @@ export default function AttendanceFaceCaptureModal({
     try {
       setIsCapturing(true);
       setCameraError("");
-      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.3 });
+      // Increased quality to 0.8 for high-resolution images
+      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.8 });
 
       if (photo?.base64) {
         setCapturedImage(`data:image/jpeg;base64,${photo.base64}`);
@@ -67,108 +68,111 @@ export default function AttendanceFaceCaptureModal({
   if (!open) return null;
 
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={handleClose}>
-      <View className="flex-1 items-center justify-center bg-slate-950/80 px-4">
-        <View className="w-full max-w-sm rounded-[2rem] bg-white p-5 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          
+    <Modal visible={open} transparent animationType="slide" onRequestClose={handleClose}>
+      <View className="flex-1 bg-black">
+        <View className="flex-1 relative bg-slate-950">
+
+          {/* Main Camera / Image View */}
+          {capturedImage ? (
+            <Image
+              source={{ uri: capturedImage }}
+              className="flex-1 w-full h-full"
+              resizeMode="cover"
+            />
+          ) : !permission?.granted ? (
+            <View className="flex-1 items-center justify-center p-6">
+              <Text className="text-center text-sm font-medium text-slate-400 mb-4">
+                Camera permission is required to capture attendance selfies.
+              </Text>
+              <Button variant="outline" onPress={requestPermission}>
+                <Text>Grant Permission</Text>
+              </Button>
+            </View>
+          ) : (
+            <View className="flex-1 relative">
+              <CameraView
+                ref={cameraRef}
+                style={{ flex: 1 }}
+                facing="front"
+              />
+              <View className="absolute bottom-32 left-0 right-0 items-center">
+                <View className="flex-row items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-md">
+                  <ShieldCheck size={12} color="white" />
+                  <Text className="text-[10px] font-bold text-white">Keep your face in frame</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Close Button Top Right */}
           <Pressable
             onPress={handleClose}
             disabled={isSubmitting}
-            className="absolute right-4 top-4 z-10 h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:scale-95">
-            
-            <X size={16} className="text-slate-600 dark:text-slate-300" />
+            className="absolute right-6 top-14 z-10 h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md active:scale-95"
+          >
+            <X size={20} color="white" />
           </Pressable>
 
-          <View className="pr-8 mb-4 mt-2">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-1">
-              Attendance Face Check
+          {/* Header Info Top Left */}
+          <View className="absolute left-6 top-14 z-10 bg-black/40 px-4 py-2 rounded-2xl backdrop-blur-md">
+            <Text className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">
+              Attendance Check
             </Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white leading-tight">
-              Selfie for {actionLabel}
-            </Text>
-            <Text className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400 leading-snug">
-              Capture a clear live selfie. This proof is visible in admin logs.
+            <Text className="text-lg font-black text-white leading-tight">
+              {actionLabel}
             </Text>
           </View>
 
-          <View className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-950 aspect-[3/4] w-full mb-4">
-            {capturedImage ?
-            <Image
-              source={{ uri: capturedImage }}
-              className="h-full w-full"
-              resizeMode="cover" /> :
+          {/* Error Message */}
+          {cameraError ? (
+            <View className="absolute top-36 left-6 right-6 z-10 rounded-xl border border-rose-500 bg-rose-500/80 px-4 py-3 backdrop-blur-md">
+              <Text className="text-sm font-bold text-white text-center">{cameraError}</Text>
+            </View>
+          ) : null}
 
-            !permission?.granted ?
-            <View className="flex-1 items-center justify-center p-4">
-                <Text className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">
-                  Camera permission is required to capture attendance selfies.
-                </Text>
-                <Button variant="outline" onPress={requestPermission}>
-                  <Text>Grant Permission</Text>
-                </Button>
-              </View> :
-
-            <View className="flex-1 relative">
-                <CameraView
-                ref={cameraRef}
-                style={{ flex: 1 }}
-                facing="front" />
-              
-                <View className="absolute bottom-4 left-0 right-0 items-center">
-                  <View className="flex-row items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-md">
-                    <ShieldCheck size={12} color="white" />
-                    <Text className="text-[10px] font-bold text-white">Keep your face centered</Text>
-                  </View>
-                </View>
-              </View>
-            }
-          </View>
-
-          {cameraError ?
-          <View className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-900/50 dark:bg-rose-900/20">
-              <Text className="text-xs font-bold text-rose-700 dark:text-rose-300">{cameraError}</Text>
-            </View> :
-          null}
-
-          <View className="flex-row gap-3">
-            {!capturedImage ?
-            <Button
-              variant="primary"
-              className="flex-1"
-              disabled={isCapturing || isSubmitting || !permission?.granted}
-              onPress={captureSelfie}
-              leftIcon={isCapturing ? <ActivityIndicator size="small" color="white" /> : <Camera size={18} color="white" className="dark:text-slate-900" />}
-            >
-              Capture Selfie
-            </Button> :
-
-            <>
+          {/* Bottom Action Bar */}
+          <View className="absolute bottom-0 left-0 right-0 p-6 pb-12 pt-20">
+            <View className="flex-row gap-4">
+              {!capturedImage ? (
                 <Button
-                variant="outline"
-                className="flex-1"
-                disabled={isSubmitting}
-                onPress={() => setCapturedImage("")}
-                leftIcon={<RefreshCcw size={16} className="text-slate-600 dark:text-slate-300" />}
+                  variant="primary"
+                  className="flex-1 h-14 rounded-full"
+                  disabled={isCapturing || isSubmitting || !permission?.granted}
+                  onPress={captureSelfie}
+                  leftIcon={isCapturing ? <ActivityIndicator size="small" color="white" /> : <Camera size={24} color="white" />}
                 >
-                  Retake
+                  <Text className="text-base font-bold text-white ml-2">Capture Photo</Text>
                 </Button>
-                
-                <Button
-                variant="primary"
-                className="flex-1"
-                disabled={isSubmitting}
-                isLoading={isSubmitting}
-                onPress={handleSubmit}
-                leftIcon={!isSubmitting && <ShieldCheck size={18} color="white" />}
-                >
-                  Submit
-                </Button>
-              </>
-            }
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-14 rounded-full border-white/30 bg-black/40"
+                    disabled={isSubmitting}
+                    onPress={() => setCapturedImage("")}
+                    leftIcon={<RefreshCcw size={20} color="white" />}
+                  >
+                    <Text className="text-base font-bold text-white ml-2">Retake</Text>
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    className="flex-1 h-14 rounded-full"
+                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    onPress={handleSubmit}
+                    leftIcon={!isSubmitting && <ShieldCheck size={20} color="white" />}
+                  >
+                    <Text className="text-base font-bold text-white ml-2">Upload</Text>
+                  </Button>
+                </>
+              )}
+            </View>
           </View>
 
         </View>
       </View>
-    </Modal>);
+    </Modal>
+  );
 
 }

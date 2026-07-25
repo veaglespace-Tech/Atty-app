@@ -142,6 +142,7 @@ export default function OrgUserDetailPage() {
     try {
       setTogglingAccess(true); setError(""); setMessage("");
       await patchUserMutation({ userId, isActive: !form.active }).unwrap();
+      setForm((prev) => ({ ...prev, active: !prev.active }));
       setMessage(!form.active ? "User unblocked" : "User blocked"); await refetch();
     } catch (e) { setError(getErrorMessage(e, "Failed to toggle access")); } finally { setTogglingAccess(false); }
   };

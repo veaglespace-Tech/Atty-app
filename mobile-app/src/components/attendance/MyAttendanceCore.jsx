@@ -1,16 +1,17 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Alert, Pressable } from "react-native";
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Alert, Pressable, Modal } from "react-native";
 import { Timer, MapPinned, FileWarning } from "lucide-react-native";
 
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
-import { usePunchInMutation, usePunchOutMutation, useRequestRegularizationMutation } from "@/services/api/attendanceApi";
+import { usePunchInMutation, usePunchOutMutation, useRequestRegularizationMutation, useReachedHomeMutation } from "@/services/api/attendanceApi";
 import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
 import RegularizationModal from "@/components/attendance/RegularizationModal";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import { getTodayDateKey, getDateKey } from "@/utils/date";
 import { useDownloadMemberAttendancePdfMutation, useDownloadMemberAttendanceExcelMutation } from "@/services/api/memberApi";
-import { Download } from "lucide-react-native";
+import { Download, ChevronLeft, ChevronRight } from "lucide-react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
+import useLocalPagination from "@/hooks/useLocalPagination";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
@@ -54,10 +55,11 @@ const formatPunchLocation = (record) => {
   return formatCoordinates(record?.punchInCoordinates);
 };
 
-export default function MyAttendanceCore({ user, isEmbedded = false }) {
+export default function MyAttendanceCore({ user, isEmbedded = false, showActions = true, showStats = true }) {
   const [actionLoading, setActionLoading] = useState("");
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [isRegularizeModalOpen, setIsRegularizeModalOpen] = useState(false);
+  const [showPageSizeModal, setShowPageSizeModal] = useState(false);
   const [filterType, setFilterType] = useState("ALL");
   const [customRange, setCustomRange] = useState({ from: new Date(), to: new Date() });
   const [showFromPicker, setShowFromPicker] = useState(false);
@@ -69,22 +71,22 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
     const today = new Date();
     if (filterType === "DAILY") {
       const dateStr = getTodayDateKey();
-      return { from: dateStr, to: dateStr, limit: 100 };
+      return { from: dateStr, to: dateStr, limit: 730 };
     }
     if (filterType === "WEEKLY") {
       const fromDate = new Date(today);
       fromDate.setDate(today.getDate() - 6);
-      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 730 };
     }
     if (filterType === "MONTHLY") {
       const fromDate = new Date(today);
       fromDate.setDate(today.getDate() - 29);
-      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 730 };
     }
     if (filterType === "CUSTOM") {
-      return { from: getDateKey(customRange.from), to: getDateKey(customRange.to), limit: 100 };
+      return { from: getDateKey(customRange.from), to: getDateKey(customRange.to), limit: 730 };
     }
-    return { limit: 100 };
+    return { limit: 730 };
   }, [filterType, customRange]);
 
   const handleDownloadPdf = async () => {
@@ -134,6 +136,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
   const [punchInMutation] = usePunchInMutation();
   const [punchOutMutation] = usePunchOutMutation();
   const [requestRegularizationMutation, { isLoading: isSubmittingRegularization }] = useRequestRegularizationMutation();
+  const [reachedHomeMutation] = useReachedHomeMutation();
 
   const records = useMemo(() => Array.isArray(attendanceData?.items) ? attendanceData.items : [], [attendanceData]);
   const summary = useMemo(() => Array.isArray(dashboardData?.summary) ? dashboardData.summary : [], [dashboardData]);
@@ -143,6 +146,17 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
 
   const todayRecord = useMemo(() => records.find((record) => String(record.date) === todayKey()) || null, [records]);
   const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "No Record";
+
+  const {
+    page,
+    pageSize,
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedItems,
+    setPage,
+    setPageSize,
+  } = useLocalPagination(records, { initialPageSize: 10, dependencies: [filterType, customRange] });
 
   const fetchAttendance = async () => {
     try {
@@ -193,6 +207,26 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
     }
   };
 
+  const submitReachedHome = async () => {
+    try {
+      setActionLoading("home");
+      const locationPayload = await resolvePunchLocationPayload();
+
+      const payload = {
+        userLocation: locationPayload.coordinates,
+        location: locationPayload.location,
+      };
+
+      await reachedHomeMutation(payload).unwrap();
+      Alert.alert("Success", "Marked as reached home successfully!");
+      await fetchAttendance();
+    } catch (err) {
+      Alert.alert("Error", err?.data?.message || err?.message || "Failed to submit reached home");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
   const submitRegularization = async (payload) => {
     try {
       await requestRegularizationMutation(payload).unwrap();
@@ -205,6 +239,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
 
   const canPunchIn = !todayRecord?.punchInAt;
   const canPunchOut = Boolean(todayRecord?.punchInAt) && !todayRecord?.punchOutAt;
+  const canReachHome = Boolean(todayRecord?.punchOutAt) && !todayRecord?.reachedHomeAt;
 
   const Container = isEmbedded ? View : ScrollView;
   const containerProps = isEmbedded ?
@@ -217,6 +252,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
 
   return (
     <Container {...containerProps}>
+      {showActions && (
       <View className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden mb-4">
         <Text className="text-xl font-black text-slate-900 dark:text-white mb-4">Actions</Text>
         
@@ -240,6 +276,14 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
           </Pressable>
         </View>
 
+        <Pressable
+          onPress={submitReachedHome}
+          disabled={!canReachHome || actionLoading !== "" || loading}
+          className={`mt-3 flex-row items-center justify-center py-3 rounded-xl ${!canReachHome || loading ? 'bg-slate-100 dark:bg-slate-800' : 'bg-emerald-600 border border-emerald-500'}`}>
+          {actionLoading === "home" ? <ActivityIndicator color={!canReachHome || loading ? "#94a3b8" : "white"} /> : <MapPinned size={18} color={!canReachHome || loading ? "#94a3b8" : "white"} />}
+          <Text className={`font-bold ml-2 ${!canReachHome || loading ? 'text-slate-400' : 'text-white'}`}>Reached Home</Text>
+        </Pressable>
+
         {user?.role === "MEMBER" &&
         <Pressable
           onPress={() => setIsRegularizeModalOpen(true)}
@@ -250,7 +294,9 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
           </Pressable>
         }
       </View>
+      )}
 
+      {showStats && (
       <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
         <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800">
           <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Today Status</Text>
@@ -269,6 +315,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
           <Text className="text-2xl font-black text-rose-700 dark:text-rose-300">{summaryMap.get("Absent This Month") || 0}</Text>
         </View>
       </View>
+      )}
 
       <View className="mb-4">
         <View className="flex-row items-center justify-between mb-2 ml-1">
@@ -348,7 +395,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
         </View> :
 
       <View className="gap-3">
-          {records.map((record) =>
+          {paginatedItems.map((record) =>
         <View key={record.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
               <View className="flex-row items-center justify-between mb-3">
                 <Text className="text-base font-bold text-slate-900 dark:text-white">{record.date}</Text>
@@ -390,25 +437,96 @@ export default function MyAttendanceCore({ user, isEmbedded = false }) {
           }
             </View>
         )}
+
+        {totalPages > 1 && (
+          <View className="bg-slate-900 dark:bg-slate-900 rounded-[24px] p-5 mt-2 flex-col gap-4 border border-[#1e293b]">
+            <View>
+              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Page View</Text>
+              <Text className="text-xs font-semibold text-slate-300">
+                Showing {startIndex}-{endIndex} of {records.length} records
+              </Text>
+            </View>
+            
+            <View className="flex-row flex-wrap items-center justify-between gap-4">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-xs font-semibold text-slate-400">Rows</Text>
+                <Pressable 
+                  onPress={() => setShowPageSizeModal(true)}
+                  className="bg-[#1e293b] rounded-lg border border-[#334155] px-3 py-1.5 flex-row items-center active:bg-[#334155]"
+                >
+                  <Text className="text-xs font-bold text-slate-300 mr-1">{pageSize.toString()}</Text>
+                  <ChevronRight size={12} className="text-slate-400" />
+                </Pressable>
+              </View>
+
+              <View className="flex-row items-center gap-2">
+                <Pressable 
+                  onPress={() => setPage(page - 1)}
+                  disabled={page === 1}
+                  className={`flex-row items-center gap-1 px-3 py-1.5 rounded-lg border border-[#334155] ${page === 1 ? 'opacity-40' : 'active:bg-[#1e293b]'}`}
+                >
+                  <ChevronLeft size={14} className="text-slate-300" />
+                  <Text className="text-xs font-bold text-slate-300">Prev</Text>
+                </Pressable>
+
+                <Text className="text-xs font-bold text-white px-2">
+                  {page} / {totalPages}
+                </Text>
+
+                <Pressable 
+                  onPress={() => setPage(page + 1)}
+                  disabled={page === totalPages}
+                  className={`flex-row items-center gap-1 px-3 py-1.5 rounded-lg border border-[#334155] ${page === totalPages ? 'opacity-40' : 'active:bg-[#1e293b]'}`}
+                >
+                  <Text className="text-xs font-bold text-slate-300">Next</Text>
+                  <ChevronRight size={14} className="text-slate-300" />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
         </View>
       }
 
-      <AttendanceFaceCaptureModal
-        open={Boolean(pendingPunchType)}
-        actionLabel={pendingPunchType === "out" ? "Punch Out" : "Punch In"}
-        isSubmitting={actionLoading !== ""}
-        onClose={() => setPendingPunchType("")}
-        onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)} />
-      
+      {showActions && (
+        <>
+          <AttendanceFaceCaptureModal
+            open={Boolean(pendingPunchType)}
+            actionLabel={pendingPunchType === "out" ? "Punch Out" : "Punch In"}
+            isSubmitting={actionLoading !== ""}
+            onClose={() => setPendingPunchType("")}
+            onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)} />
+          
+          {user?.role === "MEMBER" && (
+            <RegularizationModal
+              open={isRegularizeModalOpen}
+              onClose={() => setIsRegularizeModalOpen(false)}
+              onSubmit={submitRegularization}
+              isSubmitting={isSubmittingRegularization} />
+          )}
+        </>
+      )}
 
-      {user?.role === "MEMBER" &&
-      <RegularizationModal
-        open={isRegularizeModalOpen}
-        onClose={() => setIsRegularizeModalOpen(false)}
-        onSubmit={submitRegularization}
-        isSubmitting={isSubmittingRegularization} />
-
-      }
+      <Modal visible={showPageSizeModal} transparent animationType="fade" onRequestClose={() => setShowPageSizeModal(false)}>
+        <Pressable className="flex-1 bg-black/50 justify-center items-center" onPress={() => setShowPageSizeModal(false)}>
+          <Pressable className="bg-slate-900 rounded-2xl w-64 p-2 border border-slate-800" onPress={(e) => e.stopPropagation()}>
+            <Text className="text-white font-bold text-center py-4 border-b border-slate-800">Select Rows per Page</Text>
+            {[10, 25, 50, 100].map(size => (
+              <Pressable 
+                key={size}
+                className="py-4 items-center border-b border-slate-800/50 active:bg-slate-800"
+                onPress={() => {
+                  setPageSize(size);
+                  setPage(1);
+                  setShowPageSizeModal(false);
+                }}
+              >
+                <Text className={`font-bold ${pageSize === size ? 'text-blue-500' : 'text-slate-300'}`}>{size} Rows</Text>
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Container>);
 
 }

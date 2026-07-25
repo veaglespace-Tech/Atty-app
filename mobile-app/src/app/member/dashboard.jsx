@@ -51,14 +51,6 @@ export default function MemberDashboard(props) {
       href: "teams"
     },
     {
-      title: "Posts",
-      description: "Company updates",
-      icon: <MessageSquare size={26} color="#8b5cf6" strokeWidth={2.5} />,
-      bg: "bg-purple-50 dark:bg-purple-900/30",
-      border: "border-purple-100 dark:border-purple-800/50",
-      href: "posts"
-    },
-    {
       title: "Reports",
       description: "Analytics & history",
       icon: <FileBarChart size={26} color="#10b981" strokeWidth={2.5} />,
@@ -142,37 +134,6 @@ export default function MemberDashboard(props) {
           </View>
         </Pressable>
       </Animated.View>
-
-      {/* App Grid Navigation */}
-      <View className="px-6">
-        <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-4 ml-1">
-          Workspace Apps
-        </Text>
-        
-        <View className="flex-row flex-wrap justify-between gap-y-4">
-          {menuItems.map((item, index) => (
-            <Animated.View key={index} entering={FadeInDown.duration(400).delay(index * 100 + 200).springify()} style={{ width: (width - 48 - 16) / 2 }}>
-              <Link href={`./${item.href}`} asChild>
-                <Pressable 
-                  className="bg-white dark:bg-slate-900 rounded-[28px] p-5 shadow-sm border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 active:scale-[0.98] transition-all flex-1"
-                >
-                  <View className={`h-14 w-14 rounded-2xl ${item.bg} ${item.border} border items-center justify-center mb-5 shrink-0`}>
-                    {item.icon}
-                  </View>
-                  <View className="flex-1 justify-center">
-                    <Text className="text-[16px] font-black text-slate-900 dark:text-white tracking-tight mb-1" numberOfLines={1} adjustsFontSizeToFit>
-                      {item.title}
-                    </Text>
-                    <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
-                      {item.description}
-                    </Text>
-                  </View>
-                </Pressable>
-              </Link>
-            </Animated.View>
-          ))}
-        </View>
-      </View>
     </ScrollView>
   );
 }

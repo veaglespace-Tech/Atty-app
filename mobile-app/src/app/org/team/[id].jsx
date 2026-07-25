@@ -144,7 +144,7 @@ export default function OrgTeamDetailPage() {
         <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{team.description || "No description"}</Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />}>
 
         {error ? <View className="mb-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"><Text className="text-sm text-red-700 dark:text-red-300">{error}</Text></View> : null}

@@ -85,16 +85,9 @@ const getTabsForRole = (user) => {
   
   // MEMBER fallback
   const fallbackTabs = [
-    { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" }
+    { title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" },
+    { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" }
   ];
-  if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
-    fallbackTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
-  }
-  if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
-    fallbackTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
-  }
-  fallbackTabs.push({ title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" });
-  fallbackTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
   
   return fallbackTabs;
 };
