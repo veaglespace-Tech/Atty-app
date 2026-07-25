@@ -262,9 +262,11 @@ exports.createPost = asyncHandler(async (req, res) => {
     include: POST_INCLUDE,
   });
 
+  console.log(`[DEBUG CONTROLLER PUSH] Calling notifyNewPost service...`);
   notifyNewPost(post, req.user.id, orgId, resolvedTeamId);
 
   // BACKGROUND TASK: Send Push Notifications
+  console.log(`[DEBUG CONTROLLER PUSH] Starting fallback push notifications...`);
   try {
     const usersWithTokens = await prisma.user.findMany({
       where: {
@@ -276,11 +278,16 @@ exports.createPost = asyncHandler(async (req, res) => {
       select: { expoPushToken: true }
     });
 
+    console.log(`[DEBUG CONTROLLER PUSH] Found ${usersWithTokens.length} users with push tokens`);
+
     const expo = new Expo();
     let messages = [];
 
     for (let user of usersWithTokens) {
-      if (!Expo.isExpoPushToken(user.expoPushToken)) continue;
+      if (!Expo.isExpoPushToken(user.expoPushToken)) {
+        console.log(`[DEBUG CONTROLLER PUSH] Invalid token: ${user.expoPushToken}`);
+        continue;
+      }
       messages.push({
         to: user.expoPushToken,
         sound: "default",
@@ -290,18 +297,24 @@ exports.createPost = asyncHandler(async (req, res) => {
       });
     }
 
+    console.log(`[DEBUG CONTROLLER PUSH] Prepared ${messages.length} messages`);
     const chunks = expo.chunkPushNotifications(messages);
+    console.log(`[DEBUG CONTROLLER PUSH] Split into ${chunks.length} chunks`);
+
     (async () => {
-      for (let chunk of chunks) {
+      for (let i = 0; i < chunks.length; i++) {
+        let chunk = chunks[i];
         try {
-          await expo.sendPushNotificationsAsync(chunk);
+          console.log(`[DEBUG CONTROLLER PUSH] Sending chunk ${i + 1}/${chunks.length}...`);
+          let tickets = await expo.sendPushNotificationsAsync(chunk);
+          console.log(`[DEBUG CONTROLLER PUSH] Chunk ${i + 1} sent. Tickets: ${JSON.stringify(tickets)}`);
         } catch (error) {
-          console.error("Push notification chunk error:", error);
+          console.error(`[DEBUG CONTROLLER PUSH ERROR] Chunk ${i + 1} error:`, error);
         }
       }
     })();
   } catch (error) {
-    console.error("Failed to queue push notifications:", error);
+    console.error("[DEBUG CONTROLLER PUSH ERROR] Failed to queue push notifications:", error);
   }
 
   res.status(201).json({

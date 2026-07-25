@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma");
 const { truncateText } = require("./common.service");
 exports.notifyNewPost = async (post, authorId, orgId, teamId = null) => {
   try {
+    console.log(`[DEBUG PUSH NOTIF] notifyNewPost called for post: ${post.id}, authorId: ${authorId}, orgId: ${orgId}, teamId: ${teamId}`);
     const usersWithTokens = await prisma.user.findMany({
       where: {
         orgId,
@@ -12,6 +13,7 @@ exports.notifyNewPost = async (post, authorId, orgId, teamId = null) => {
       },
       select: { expoPushToken: true },
     });
+    console.log(`[DEBUG PUSH NOTIF] Found ${usersWithTokens.length} users with push tokens`);
     if (!usersWithTokens.length) return;
     const expo = new Expo();
     let messages = [];
@@ -25,7 +27,10 @@ exports.notifyNewPost = async (post, authorId, orgId, teamId = null) => {
     };
     const notificationTitle = getNotificationTitle(post);
     for (let user of usersWithTokens) {
-      if (!Expo.isExpoPushToken(user.expoPushToken)) continue;
+      if (!Expo.isExpoPushToken(user.expoPushToken)) {
+        console.log(`[DEBUG PUSH NOTIF] Invalid push token: ${user.expoPushToken}`);
+        continue;
+      }
       
       messages.push({
         to: user.expoPushToken,
@@ -37,20 +42,25 @@ exports.notifyNewPost = async (post, authorId, orgId, teamId = null) => {
         data: { postId: post.id },
       });
     }
+    console.log(`[DEBUG PUSH NOTIF] Prepared ${messages.length} valid messages for sending`);
     if (!messages.length) return;
     const chunks = expo.chunkPushNotifications(messages);
+    console.log(`[DEBUG PUSH NOTIF] Created ${chunks.length} chunks of notifications`);
     
     // Run in background so it doesn't block the API response
     (async () => {
-      for (let chunk of chunks) {
+      for (let i = 0; i < chunks.length; i++) {
+        let chunk = chunks[i];
         try {
-          await expo.sendPushNotificationsAsync(chunk);
+          console.log(`[DEBUG PUSH NOTIF] Sending chunk ${i + 1}/${chunks.length} with ${chunk.length} messages...`);
+          const tickets = await expo.sendPushNotificationsAsync(chunk);
+          console.log(`[DEBUG PUSH NOTIF] Chunk ${i + 1} sent successfully. Tickets: ${JSON.stringify(tickets)}`);
         } catch (error) {
-          console.error("Push notification error:", error);
+          console.error(`[DEBUG PUSH NOTIF ERROR] Error sending chunk ${i + 1}:`, error);
         }
       }
     })();
   } catch (error) {
-    console.error("Failed to queue push notifications:", error);
+    console.error("[DEBUG PUSH NOTIF ERROR] Failed to queue push notifications:", error);
   }
 };
