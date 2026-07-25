@@ -241,55 +241,55 @@ export default function HerSecurityContent() {
 
         {/* Header Banner */}
         <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-gradient-to-br from-indigo-950 via-rose-900 to-pink-700 p-4 sm:p-6 md:p-8 text-white shadow-[0_30px_60px_rgba(225,29,72,0.3)] border border-white/10 order-3 md:order-2 col-span-2 justify-self-center mx-auto">
-        {/* Modern decorative background elements */}
-        <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-rose-500/20 blur-3xl mix-blend-screen" />
-        <div className="absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-indigo-500/20 blur-3xl mix-blend-screen -translate-y-1/2 translate-x-1/3" />
+          {/* Modern decorative background elements */}
+          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-rose-500/20 blur-3xl mix-blend-screen" />
+          <div className="absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-indigo-500/20 blur-3xl mix-blend-screen -translate-y-1/2 translate-x-1/3" />
 
-        <div className="relative z-10 flex flex-col items-center justify-center w-full">
-          <div className="space-y-6">
+          <div className="relative z-10 flex flex-col items-center justify-center w-full">
+            <div className="space-y-6">
 
-            <div className="flex flex-col items-center justify-center gap-5 md:gap-6 text-center">
+              <div className="flex flex-col items-center justify-center gap-5 md:gap-6 text-center">
 
-              {/* Logo Wrapper */}
-              <div className="relative shrink-0 group">
-                <div className="absolute inset-0 rounded-full bg-pink-300/50 blur-xl animate-pulse" />
-                <div className="relative h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-32 lg:w-32 rounded-full border-2 md:border-[4px] border-pink-200 bg-pink-100 shadow-xl md:shadow-2xl z-10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105 duration-300">
-                  <img
-                    src="/her-security-logo.png"
-                    alt="तिची सुरक्षा Logo"
-                    className="h-full w-full object-contain"
-                  />
+                {/* Logo Wrapper */}
+                <div className="relative shrink-0 group">
+                  <div className="absolute inset-0 rounded-full bg-pink-300/50 blur-xl animate-pulse" />
+                  <div className="relative h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-32 lg:w-32 rounded-full border-2 md:border-[4px] border-pink-200 bg-pink-100 shadow-xl md:shadow-2xl z-10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105 duration-300">
+                    <img
+                      src="/her-security-logo.png"
+                      alt="तिची सुरक्षा Logo"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Simple Typography */}
-              <div className="space-y-1.5 md:space-y-3 flex flex-col items-center">
-                <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-md whitespace-nowrap">
-                  “तिची सुरक्षा”
-                </h1>
-                <div className="inline-block rounded-full bg-white/10 px-2 sm:px-4 py-1 sm:py-1.5 backdrop-blur-sm border border-white/20 shadow-sm">
-                  <p className="text-[10px] sm:text-xs md:text-sm lg:text-lg font-bold text-white tracking-wide whitespace-nowrap">
-                    तिची सुरक्षा,आपली जबाबदारी
-                  </p>
+                {/* Simple Typography */}
+                <div className="space-y-1.5 md:space-y-3 flex flex-col items-center">
+                  <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-md whitespace-nowrap">
+                    “तिची सुरक्षा”
+                  </h1>
+                  <div className="inline-block rounded-full bg-white/10 px-2 sm:px-4 py-1 sm:py-1.5 backdrop-blur-sm border border-white/20 shadow-sm">
+                    <p className="text-[10px] sm:text-xs md:text-sm lg:text-lg font-bold text-white tracking-wide whitespace-nowrap">
+                      तिची सुरक्षा,आपली जबाबदारी
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Right Side Logo (Police / 112) */}
-      <div className="shrink-0 flex items-center justify-center order-2 md:order-3">
-        <div className="relative w-fit h-fit rounded-xl md:rounded-3xl bg-white shadow-xl md:shadow-2xl border-2 md:border-[3px] border-indigo-900/10 dark:border-slate-700 overflow-hidden transition-transform hover:scale-105 flex items-center justify-center">
-          <img
-            src="/police-logo.jpg"
-            alt="112 Police Logo"
-            className="h-28 sm:h-32 md:h-48 lg:h-64 w-auto max-w-[6rem] sm:max-w-[10rem] md:max-w-[14rem] lg:max-w-[20rem] object-contain"
-          />
+        {/* Right Side Logo (Police / 112) */}
+        <div className="shrink-0 flex items-center justify-center order-2 md:order-3">
+          <div className="relative w-fit h-fit rounded-xl md:rounded-3xl bg-white shadow-xl md:shadow-2xl border-2 md:border-[3px] border-indigo-900/10 dark:border-slate-700 overflow-hidden transition-transform hover:scale-105 flex items-center justify-center">
+            <img
+              src="/police-logo.jpg"
+              alt="112 Police Logo"
+              className="h-28 sm:h-32 md:h-48 lg:h-64 w-auto max-w-[6rem] sm:max-w-[10rem] md:max-w-[14rem] lg:max-w-[20rem] object-contain"
+            />
+          </div>
         </div>
-      </div>
 
-    </div>
+      </div>
       {/* SOS EMERGENCY ACTION (Moved to Top) */}
       <div className="rounded-[2.5rem] border-2 border-rose-500/40 bg-white p-6 sm:p-10 shadow-2xl shadow-rose-500/10 dark:border-rose-900/60 dark:bg-slate-900/90 dark:shadow-black/50 overflow-hidden relative">
         <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-rose-500/10 blur-3xl" />
@@ -332,11 +332,10 @@ export default function HerSecurityContent() {
           <div className="w-full lg:w-auto flex-1 max-w-2xl space-y-8">
             {sosResult && (
               <div
-                className={`rounded-2xl p-5 text-sm font-semibold shadow-inner ${
-                  sosResult.success
+                className={`rounded-2xl p-5 text-sm font-semibold shadow-inner ${sosResult.success
                     ? "bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800"
                     : "bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   {sosResult.success ? (
@@ -506,14 +505,14 @@ export default function HerSecurityContent() {
 
             <div className="flex-1 text-center sm:text-left space-y-1">
               <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                {user?.name || "User Name"}
+                {displayName}
               </h3>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                {user?.email || "email@example.com"}
+                {displayEmail}
               </p>
               <div className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                 <Building className="h-3.5 w-3.5 text-blue-500" />
-                {user?.organization?.name || user?.orgName || "Organisation"} (ID: {user?.orgId || "N/A"})
+                {displayOrgName} (ID: {displayOrgId})
               </div>
             </div>
           </div>
@@ -521,12 +520,12 @@ export default function HerSecurityContent() {
           <div className="mt-6 divide-y divide-slate-100 rounded-2xl bg-slate-50/80 p-4 dark:divide-slate-800 dark:bg-slate-950/60 text-sm">
             <div className="flex justify-between py-2">
               <span className="text-slate-500 dark:text-slate-400">Contact Number:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">{user?.mobile || "N/A"}</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{displayMobile}</span>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-slate-500 dark:text-slate-400">Emergency Contact:</span>
               <span className="font-bold text-rose-600 dark:text-rose-400">
-                {user?.emergencyContact || user?.mobile || EMERGENCY_TEST_NUMBER}
+                {displayEmergencyContact}
               </span>
             </div>
             <div className="flex justify-between py-2">
@@ -559,7 +558,11 @@ export default function HerSecurityContent() {
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-rose-500 font-bold">•</span>
+<<<<<<< HEAD
             <span><strong>व्हॉट्सॲप व कॉल:</strong> Direct Call व WhatsApp शेअर लिंकद्वारे तुम्ही एका क्लिकवर तुमच्या जवळच्या व्यक्तींना माहिती पाठवू शकता.</span>
+=======
+            <span><strong>व्हॉट्सॲप:</strong> Direct Call व WhatsApp शेअर लिंकद्वारे तुम्ही एका क्लिकवर तुमच्या जवळच्या व्यक्तींना माहिती पाठवू शकता.</span>
+>>>>>>> 82cf1b0 (feat: update Her Security profile avatar link and email template)
           </li>
         </ul>
       </div>
