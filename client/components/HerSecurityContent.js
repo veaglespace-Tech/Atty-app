@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { useGetMeQuery } from "@/services/api/authApi";
 import { API_BASE_URL } from "@/services/api/baseApi";
 import {
   ShieldAlert,
@@ -24,6 +25,43 @@ const EMERGENCY_TEST_NUMBER = "8237999101";
 
 export default function HerSecurityContent() {
   const { user, token } = useAuthSession();
+  const { data: meData } = useGetMeQuery(undefined, { skip: !token });
+  const currentUser = meData?.data || meData?.user || meData?.result || user;
+
+  const displayName = currentUser?.name || user?.name || "User Name";
+  const displayEmail = currentUser?.email || user?.email || "N/A";
+  const displayMobile = currentUser?.mobile || user?.mobile || "N/A";
+  const displayEmergencyContact =
+    currentUser?.emergencyContact || user?.emergencyContact || displayMobile || EMERGENCY_TEST_NUMBER;
+  const avatarSrc =
+    currentUser?.profileImageUrl ||
+    currentUser?.profileImage ||
+    currentUser?.avatarUrl ||
+    currentUser?.avatar ||
+    user?.profileImageUrl ||
+    user?.profileImage ||
+    user?.avatarUrl ||
+    user?.avatar ||
+    null;
+  const displayOrgName =
+    currentUser?.organization?.name ||
+    currentUser?.orgName ||
+    currentUser?.organizationName ||
+    user?.organization?.name ||
+    user?.orgName ||
+    "Organisation";
+  const displayOrgId =
+    currentUser?.orgId ||
+    currentUser?.organizationId ||
+    currentUser?.organization?.id ||
+    currentUser?.organizationCode ||
+    currentUser?.organization?.organizationCode ||
+    user?.orgId ||
+    user?.organizationId ||
+    user?.organization?.id ||
+    user?.organizationCode ||
+    user?.organization?.organizationCode ||
+    "N/A";
 
   // Location states
   const [location, setLocation] = useState({
@@ -101,14 +139,14 @@ export default function HerSecurityContent() {
 
   // WhatsApp Message Generator
   const generateWhatsAppUrl = () => {
-    const emergencyNum = user?.emergencyContact || user?.mobile || EMERGENCY_TEST_NUMBER;
+    const emergencyNum = displayEmergencyContact;
     const text = encodeURIComponent(
       `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
-      `👤 *Name:* ${user?.name || "User"}\n` +
-      `📧 *Email:* ${user?.email || "N/A"}\n` +
-      `📱 *Contact:* ${user?.mobile || "N/A"}\n` +
+      `👤 *Name:* ${displayName}\n` +
+      `📧 *Email:* ${displayEmail}\n` +
+      `📱 *Contact:* ${displayMobile}\n` +
       `🆘 *Emergency Contact:* ${emergencyNum}\n` +
-      `🏢 *Organisation:* ${user?.organization?.name || user?.orgName || "Veagle Member"} (ID: ${user?.orgId || "N/A"})\n\n` +
+      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})\n\n` +
       `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
       `⚠️ *I need immediate assistance! Please verify my safety.*`
     );
@@ -127,10 +165,10 @@ export default function HerSecurityContent() {
       window.open(waUrl, "_blank");
     }
 
-    // 2. Open device Phone Dialer with emergency number (7756099153)
+    // 2. Open device Phone Dialer with emergency number
     if (typeof window !== "undefined") {
       setTimeout(() => {
-        window.location.href = `tel:${EMERGENCY_TEST_NUMBER}`;
+        window.location.href = `tel:${displayEmergencyContact}`;
       }, 400);
     }
 
@@ -220,8 +258,10 @@ export default function HerSecurityContent() {
             <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
               <div className="relative">
                 <UserAvatar
-                  user={user}
-                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 text-xl font-bold shadow-md"
+                  src={avatarSrc}
+                  name={displayName}
+                  alt={displayName}
+                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 text-2xl font-black shadow-md"
                 />
                 <div className="absolute -bottom-1 -right-1 rounded-full bg-rose-600 p-1 text-white shadow">
                   <Shield className="h-3.5 w-3.5" />
@@ -230,14 +270,14 @@ export default function HerSecurityContent() {
 
               <div className="flex-1 text-center sm:text-left space-y-1">
                 <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  {user?.name || "User Name"}
+                  {displayName}
                 </h3>
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  {user?.email || "email@example.com"}
+                  {displayEmail}
                 </p>
                 <div className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   <Building className="h-3.5 w-3.5 text-blue-500" />
-                  {user?.organization?.name || user?.orgName || "Organisation"} (ID: {user?.orgId || "N/A"})
+                  {displayOrgName} (ID: {displayOrgId})
                 </div>
               </div>
             </div>
@@ -245,17 +285,19 @@ export default function HerSecurityContent() {
             <div className="mt-6 divide-y divide-slate-100 rounded-2xl bg-slate-50/80 p-4 dark:divide-slate-800 dark:bg-slate-950/60 text-sm">
               <div className="flex justify-between py-2">
                 <span className="text-slate-500 dark:text-slate-400">Contact Number:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{user?.mobile || "N/A"}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{displayMobile}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-slate-500 dark:text-slate-400">Emergency Contact:</span>
                 <span className="font-bold text-rose-600 dark:text-rose-400">
-                  {user?.emergencyContact || user?.mobile || EMERGENCY_TEST_NUMBER}
+                  {displayEmergencyContact}
                 </span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-slate-500 dark:text-slate-400">System Role:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{user?.role || "MEMBER"}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {currentUser?.role || user?.role || "MEMBER"}
+                </span>
               </div>
             </div>
           </div>
