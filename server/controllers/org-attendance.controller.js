@@ -7,6 +7,7 @@ const {
 } = require("../services/common.service");
 const {
   assertPermission,
+  assertAnyPermission,
 } = require("../services/access.service");
 const { normalizeCoordinatesInput } = require("../services/location.service");
 const {
@@ -63,7 +64,11 @@ exports.getOrgAttendance = asyncHandler(async (req, res) => {
 
 exports.getOrgAttendanceSettings = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
+  assertAnyPermission(res, req.user, [
+    PERMISSIONS.ATTENDANCE.VIEW_ALL,
+    PERMISSIONS.ATTENDANCE.VIEW_TEAM,
+    PERMISSIONS.ATTENDANCE.VIEW_OWN,
+  ]);
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },

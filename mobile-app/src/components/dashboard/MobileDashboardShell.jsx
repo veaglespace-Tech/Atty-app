@@ -37,53 +37,34 @@ const getTabsForRole = (user) => {
   
   if (role === ROLES.ORG_ADMIN || role === ROLES.SUB_ADMIN) {
     const tabs = [
-      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
     ];
     
     const isAdmin = role === ROLES.ORG_ADMIN;
 
-    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
-      tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
-    }
-    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
-      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
-    }
     if (isAdmin || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
-    if (isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
-      tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
+      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
     }
+    tabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
     if (isAdmin || hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
     if (isAdmin || hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
-    if (isAdmin) {
-      tabs.push({ title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" });
-      tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
-    }
+    tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
     return tabs;
   }
   
   if (role === ROLES.TEAM_LEADER) {
-    const tabs = [
-      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" }
-    ];
-    // We map TEAM_VIEW_OWN to TEAM_VIEW as per roles.js
-    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
-      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
-    }
-    tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    const tabs = [];
     if (hasPermission(user, PERMISSIONS.USERS.VIEW)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
     }
-    if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
-      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "requests" });
-    }
+    tabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
     if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
@@ -96,12 +77,8 @@ const getTabsForRole = (user) => {
   
   // MEMBER fallback
   const fallbackTabs = [
-    { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-    { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" }
+    { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" }
   ];
-  if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
-    fallbackTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
-  }
   if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
     fallbackTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
   }

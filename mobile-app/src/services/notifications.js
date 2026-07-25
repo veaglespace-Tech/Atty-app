@@ -1,70 +1,78 @@
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from './api/baseApi';
 import { store } from '@/store';
 
-// Set global notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
-export async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
+let Notifications = null;
+try {
+  // Safe require for Expo Go SDK 53+ compatibility
+  Notifications = require('expo-notifications');
+  if (Notifications?.setNotificationHandler) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        priority: Notifications.AndroidNotificationPriority?.HIGH ?? 4,
+      }),
     });
   }
+} catch (error) {
+  console.warn('[Notifications] Push notifications are disabled in Expo Go (SDK 53+). Use a development build for push notifications.');
+}
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+export async function registerForPushNotificationsAsync() {
+  if (!Notifications) {
+    return null;
+  }
+
+  let token;
+
+  try {
+    if (Platform.OS === 'android' && Notifications.setNotificationChannelAsync) {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance?.MAX ?? 4,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
     }
-    
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token! Permission denied by Android.');
-      console.log('Failed to get push token for push notification!');
-      return;
-    }
-    
-    // Get the Expo Push Token using project ID from app config
-    const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId ?? "d782f29a-35b0-49b7-9d97-eedd9d486a98";
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
       
-    if (!projectId) {
-      alert('Error: Project ID not found!');
-      console.log('Project ID not found. Ensure app.json has an eas.projectId');
-      return;
-    }
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== 'granted') {
+        console.log('Failed to get push token for push notification!');
+        return null;
+      }
+      
+      // Get the Expo Push Token using project ID from app config
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId ?? "d782f29a-35b0-49b7-9d97-eedd9d486a98";
+        
+      if (!projectId) {
+        console.log('Project ID not found. Ensure app.json has an eas.projectId');
+        return null;
+      }
 
-    try {
       token = (
         await Notifications.getExpoPushTokenAsync({
           projectId,
         })
       ).data;
-      // alert('Success! Token generated: ' + token.substring(0, 15) + '...');
-    } catch (e) {
-      alert('Expo Push Token Error: ' + e.message);
-      console.error('Error fetching push token:', e);
+      console.log('Got Expo Push Token:', token);
+    } else {
+      console.log('Must use physical device for Push Notifications');
     }
-  } else {
-    alert('Must use physical device for Push Notifications');
-    console.log('Must use physical device for Push Notifications');
+  } catch (e) {
+    console.warn('Error fetching push token:', e.message);
+  }
   }
 
   return token;
@@ -96,3 +104,35 @@ export async function sendPushTokenToServer(pushToken) {
     console.error('Failed to send push token to server:', error);
   }
 }
+
+export function addNotificationResponseListener(callback) {
+  if (!Notifications || !Notifications.addNotificationResponseReceivedListener) {
+    return { remove: () => {} };
+  }
+  try {
+    return Notifications.addNotificationResponseReceivedListener(callback);
+  } catch (error) {
+    console.warn('[Notifications] Listener error:', error.message);
+    return { remove: () => {} };
+  }
+}
+
+export async function showLocalNotification({ title, body, data = {} }) {
+  if (!Notifications || !Notifications.scheduleNotificationAsync) {
+    return;
+  }
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data,
+        sound: true,
+      },
+      trigger: null, // trigger immediately
+    });
+  } catch (error) {
+    console.warn('[Notifications] Error scheduling local notification:', error.message);
+  }
+}
+

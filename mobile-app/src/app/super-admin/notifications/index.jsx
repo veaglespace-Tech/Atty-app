@@ -236,7 +236,8 @@ export default function NotificationsPage() {
                       <Icon size={10} className={config.color.split(' ')[0]} />
                       <Text className={`text-[9px] font-black uppercase tracking-[0.15em] ${config.color}`}>
                         {config.label}
-                      </Text>                    </View>
+                      </Text>
+                    </View>
 
                     <View className="flex-row items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 dark:border-slate-700 dark:bg-slate-800">
                       <User size={10} className="text-slate-400" />
@@ -255,27 +256,27 @@ export default function NotificationsPage() {
 
                   {/* Content block */}
                   <View className="mb-4">
-                    <Text className="text-base font-black text-slate-900 dark:text-white mb-2 line-clamp-1">
+                    <Text className="text-base font-black text-slate-900 dark:text-white mb-2" numberOfLines={1}>
                       {post.title}
                     </Text>
-                    <Text className="text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-400 line-clamp-3">
+                    <Text className="text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-400" numberOfLines={3}>
                       {post.content}
                     </Text>
                   </View>
 
                   {/* Organization badge if available */}
-                  {post.organization && (
-                    <View className="flex-row items-center gap-1.5 mb-4 text-slate-400 dark:text-slate-500">
+                  {post.organization ? (
+                    <View className="flex-row items-center gap-1.5 mb-4">
                       <Building2 size={12} className="text-slate-400" />
                       <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500" numberOfLines={1}>
                         Organization: {post.organization.name}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
                   
                   {/* Footer */}
                   <View className="flex-row items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <View className="flex-row items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500">
+                    <View className="flex-row items-center gap-2">
                       <User size={12} className="text-slate-400" />
                       <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                         Posted by {authorName}

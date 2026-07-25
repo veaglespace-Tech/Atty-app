@@ -39,6 +39,13 @@ const resolveLocalApiBaseUrl = () => {
 };
 
 const resolveApiBaseUrl = () => {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return `http://${host}:5000/api`;
+    }
+  }
+
   const explicitApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL);
   if (explicitApiUrl) {
     return explicitApiUrl;

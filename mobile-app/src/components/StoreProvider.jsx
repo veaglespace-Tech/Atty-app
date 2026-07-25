@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Provider, useSelector } from "react-redux";
 import { store } from "@/store";
 import { hydrateFromStorage, loadPersistedSession } from "@/store/slices/authSlice";
-import { registerForPushNotificationsAsync, sendPushTokenToServer } from "@/services/notifications";
-import * as Notifications from "expo-notifications";
+import { registerForPushNotificationsAsync, sendPushTokenToServer, addNotificationResponseListener } from "@/services/notifications";
 import { router } from "expo-router";
 
 // Helper component that can access Redux state
@@ -24,8 +23,8 @@ function NotificationSetup({ children }) {
 
   useEffect(() => {
     // This listener is fired whenever a user taps on or interacts with a notification
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data;
+    responseListener.current = addNotificationResponseListener(response => {
+      const data = response?.notification?.request?.content?.data;
       if (data?.postId) {
         // Find the current user role to navigate to the correct tab
         const state = store.getState();
@@ -42,7 +41,7 @@ function NotificationSetup({ children }) {
     });
 
     return () => {
-      if (responseListener.current) {
+      if (responseListener.current && typeof responseListener.current.remove === 'function') {
         responseListener.current.remove();
       }
     };

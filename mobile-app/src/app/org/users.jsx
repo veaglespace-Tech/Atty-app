@@ -218,10 +218,21 @@ export default function OrgUsersPage() {
                     return;
                   }
                   
-                  const header = "Name,Email,Mobile,Role,Status\n";
-                  const csvData = filteredUsers.map(u => 
-                    `"${u.name || ''}","${u.email || ''}","${u.mobileCountryCode || ''}${u.mobile || ''}","${u.role || ''}","${u.approvalStatus || ''}"`
-                  ).join("\n");
+                  const header = "ID,Name,Email,Mobile,Role,Approval Status,Access Status,Joined Date,Emergency Contact,Address,Teams\n";
+                  const csvData = filteredUsers.map(u => {
+                    const id = u.id || u._id || '';
+                    const name = (u.name || '').replace(/"/g, '""');
+                    const email = (u.email || '').replace(/"/g, '""');
+                    const mobile = `${u.mobileCountryCode || ''}${u.mobile || ''}`;
+                    const role = u.role || '';
+                    const approvalStatus = u.approvalStatus || u.status || '';
+                    const accessStatus = u.active ? 'Active' : 'Blocked';
+                    const joined = u.joinedAt || u.createdAt ? new Date(u.joinedAt || u.createdAt).toLocaleDateString() : '';
+                    const emergency = u.emergencyContact || '';
+                    const address = (u.currentAddress || u.address || '').replace(/"/g, '""');
+                    const teams = (Array.isArray(u.teamNames) ? u.teamNames : []).join('; ');
+                    return `"${id}","${name}","${email}","${mobile}","${role}","${approvalStatus}","${accessStatus}","${joined}","${emergency}","${address}","${teams}"`;
+                  }).join("\n");
                   const csvString = header + csvData;
 
                   if (Platform.OS === 'web') {

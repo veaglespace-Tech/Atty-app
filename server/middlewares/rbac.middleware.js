@@ -45,7 +45,7 @@ function allowRoles(...roles) {
 
     const accessibleRoles = resolveAccessibleRoles(req.user);
 
-    let hasAccess = accessibleRoles.some((role) => normalizedAllowedRoles.includes(role));
+    let hasAccess = accessibleRoles.some((role) => normalizedAllowedRoles.includes(role)) || accessibleRoles.includes("SUPER_ADMIN");
 
     if (!hasAccess && normalizedAllowedRoles.includes("MEMBER")) {
       const { ALL_ROLES } = require("../constants/rbac");

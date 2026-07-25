@@ -353,11 +353,11 @@ function TeamCard({ team, index = 0 }) {
       <View className="mt-4 flex-row flex-wrap gap-y-4 gap-x-2">
         <View className="w-[45%]">
           <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Leader</Text>
-          <Text className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200" numberOfLines={1}>{team.teamLeader?.name || "-"}</Text>
+          <Text className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200" numberOfLines={1}>{team.leaderName || team.teamLeader?.name || "-"}</Text>
         </View>
         <View className="w-[45%]">
           <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Members</Text>
-          <Text className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{team.membersCount || 0}</Text>
+          <Text className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{team.memberCount ?? team.membersCount ?? team._count?.members ?? 0}</Text>
         </View>
         <View className="w-[45%]">
           <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Radius</Text>

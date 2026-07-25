@@ -161,6 +161,19 @@ const syncOrganizationSubscriptionState = async ({ organizationId, organization 
   });
 
   if (!activeSubscription) {
+    const isOrgExpiryValid =
+      currentOrganization.subscriptionStatus === "ACTIVE" &&
+      currentOrganization.subscriptionExpiry &&
+      new Date(currentOrganization.subscriptionExpiry).getTime() > now.getTime();
+
+    if (isOrgExpiryValid) {
+      return {
+        organization: currentOrganization,
+        activeSubscription: null,
+        expired: false,
+      };
+    }
+
     const expiredOrganization = await expireOrganizationSubscriptions({
       organizationId: orgId,
       now,

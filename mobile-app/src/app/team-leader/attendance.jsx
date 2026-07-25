@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, SafeAreaView } from "react-native";
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, SafeAreaView, Alert } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, CalendarCheck2, Clock, X, UserCheck } from "lucide-react-native";
-import { useGetTeamLeaderAttendanceQuery } from "@/services/api/teamLeaderApi";
+import { ChevronLeft, CalendarCheck2, Clock, X, UserCheck, Download, FileBox, FileText } from "lucide-react-native";
+import { useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation } from "@/services/api/teamLeaderApi";
 import { formatHoursValue } from "@/utils/time";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const MetricCard = ({ label, value, bgClass, textClass }) => (
   <View className={`flex-1 rounded-[24px] p-4 border border-slate-100 dark:border-slate-800 ${bgClass}`}>
@@ -20,6 +21,8 @@ export default function TeamLeaderAttendancePage() {
   const [showMyAttendance, setShowMyAttendance] = useState(false);
   
   const { data, isLoading, isFetching, refetch } = useGetTeamLeaderAttendanceQuery(`period=${period}&limit=50`);
+  const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderReportsPdfMutation();
+  const [downloadExcel, { isLoading: downloadingExcel }] = useDownloadTeamLeaderReportsExcelMutation();
 
   const records = useMemo(() => data?.items || [], [data]);
   const summary = useMemo(() => data?.summary || [], [data]);
@@ -51,9 +54,40 @@ export default function TeamLeaderAttendancePage() {
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
           </Pressable>
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Team Attendance</Text>
-          <Pressable onPress={() => setShowMyAttendance(true)} className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30">
-            <UserCheck size={18} className="text-blue-600 dark:text-blue-400" />
-          </Pressable>
+          
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={async () => {
+                try {
+                  const blob = await downloadPdf(`period=${period}`).unwrap();
+                  await downloadAndShareBlob(blob, `team-attendance-${period}.pdf`);
+                } catch (e) {
+                  Alert.alert("Error", "Failed to download PDF report");
+                }
+              }}
+              disabled={downloadingPdf}
+              className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:scale-95"
+            >
+              {downloadingPdf ? <ActivityIndicator size="small" color="#2563eb" /> : <FileBox size={18} className="text-slate-700 dark:text-slate-300" />}
+            </Pressable>
+            <Pressable
+              onPress={async () => {
+                try {
+                  const blob = await downloadExcel(`period=${period}`).unwrap();
+                  await downloadAndShareBlob(blob, `team-attendance-${period}.xlsx`);
+                } catch (e) {
+                  Alert.alert("Error", "Failed to download Excel report");
+                }
+              }}
+              disabled={downloadingExcel}
+              className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:scale-95"
+            >
+              {downloadingExcel ? <ActivityIndicator size="small" color="#2563eb" /> : <FileText size={18} className="text-slate-700 dark:text-slate-300" />}
+            </Pressable>
+            <Pressable onPress={() => setShowMyAttendance(true)} className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30">
+              <UserCheck size={18} className="text-blue-600 dark:text-blue-400" />
+            </Pressable>
+          </View>
         </View>
 
         <View className="flex-row gap-2 mt-2">
@@ -74,19 +108,19 @@ export default function TeamLeaderAttendancePage() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
       >
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
             {period} Records ({records.length})
           </Text>
           <View className="flex-row bg-slate-200 dark:bg-slate-800 rounded-lg p-1">
-            {["weekly", "monthly"].map((p) => (
+            {["daily", "weekly", "monthly"].map((p) => (
               <Pressable
                 key={p}
                 onPress={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-md ${period === p ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                className={`px-2.5 py-1.5 rounded-md ${period === p ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
               >
                 <Text className={`text-[10px] font-bold uppercase tracking-wider ${period === p ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
                   {p}

@@ -1,6 +1,4 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 const normalizePage = (value, fallback = 1) => {
   const parsed = Number(value);
@@ -10,50 +8,48 @@ const normalizePage = (value, fallback = 1) => {
 
 export default function useLocalPagination(
   items,
-  { initialPage = 1, initialPageSize = 12, dependencies = [] } = {}
+  { initialPage = 1, initialPageSize = 10, dependencies = [] } = {}
 ) {
   const safeItems = useMemo(() => (Array.isArray(items) ? items : []), [items]);
-  const resetToken = JSON.stringify(dependencies);
-  const [state, setState] = useState(() => ({
-    page: normalizePage(initialPage),
-    pageSize: normalizePage(initialPageSize, 12),
-    token: resetToken,
-  }));
+  const [page, setPageState] = useState(() => normalizePage(initialPage));
+  const [pageSize, setPageSizeState] = useState(() => normalizePage(initialPageSize, 10));
 
-  const pageSize = normalizePage(state.pageSize, initialPageSize);
-  const requestedPage =
-    state.token === resetToken ? normalizePage(state.page, initialPage) : normalizePage(initialPage);
+  const depKey = useMemo(() => JSON.stringify(dependencies), [dependencies]);
+  const isFirstRender = useRef(true);
+
+  // Reset page to 1 when filters/search/period change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setPageState(1);
+  }, [depKey]);
+
   const totalItems = safeItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const page = Math.min(requestedPage, totalPages);
+  const currentPage = Math.min(Math.max(1, page), totalPages);
 
   const paginatedItems = useMemo(() => {
-    const start = (page - 1) * pageSize;
+    const start = (currentPage - 1) * pageSize;
     return safeItems.slice(start, start + pageSize);
-  }, [page, pageSize, safeItems]);
+  }, [currentPage, pageSize, safeItems]);
 
-  const startIndex = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
-  const endIndex = totalItems === 0 ? 0 : Math.min(page * pageSize, totalItems);
+  const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endIndex = totalItems === 0 ? 0 : Math.min(currentPage * pageSize, totalItems);
 
   const setPage = (nextPage) => {
-    setState((current) => ({
-      ...current,
-      page: normalizePage(nextPage, initialPage),
-      token: resetToken,
-    }));
+    const target = typeof nextPage === "function" ? nextPage(currentPage) : nextPage;
+    setPageState(normalizePage(target, 1));
   };
 
   const setPageSize = (nextPageSize) => {
-    setState((current) => ({
-      ...current,
-      page: normalizePage(initialPage),
-      pageSize: normalizePage(nextPageSize, initialPageSize),
-      token: resetToken,
-    }));
+    setPageSizeState(normalizePage(nextPageSize, initialPageSize));
+    setPageState(1);
   };
 
   return {
-    page,
+    page: currentPage,
     pageSize,
     totalItems,
     totalPages,

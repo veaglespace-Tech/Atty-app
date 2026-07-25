@@ -66,7 +66,7 @@ export default function OrgReportsPage() {
           <Text className="text-xs font-semibold uppercase tracking-widest text-slate-500 mt-1">{selectedMember.role || "Member"} • History</Text>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
           <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
             <MetricCard label="Present Days" value={selectedMember.presentDays} />
             <MetricCard label="Half Days" value={selectedMember.halfDays} />
@@ -197,7 +197,7 @@ export default function OrgReportsPage() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}>
         
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">

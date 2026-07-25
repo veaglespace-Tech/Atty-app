@@ -350,6 +350,7 @@ export default function OrgAttendancePage() {
  value={period}
  onSelect={setPeriod}
  options={[
+ { label: "Daily", value: "daily" },
  { label: "Weekly", value: "weekly" },
  { label: "Monthly", value: "monthly" }
  ]}

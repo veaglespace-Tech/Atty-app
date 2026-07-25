@@ -1260,7 +1260,13 @@ exports.login = asyncHandler(async (req, res) => {
 
     org = syncedOrganization || org;
 
-    if (!activeSubscription) {
+    const isSubscriptionValid = Boolean(activeSubscription) || (
+      org?.subscriptionStatus === "ACTIVE" &&
+      org?.subscriptionExpiry &&
+      new Date(org.subscriptionExpiry).getTime() > Date.now()
+    );
+
+    if (!isSubscriptionValid) {
       if (currentRole !== "ORG_ADMIN") {
         res.status(402);
         throw new Error("Organization subscription expired. Please contact your admin to renew.");

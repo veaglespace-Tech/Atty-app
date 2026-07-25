@@ -120,7 +120,7 @@ export default function TeamLeaderReportsPage(props) {
           </View>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
           <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
             <MetricCard label="Present" value={selectedMember.presentDays} icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
             <MetricCard label="Half Day" value={selectedMember.halfDays} icon={<Timer size={16} className="text-amber-500" />} />
@@ -224,7 +224,7 @@ export default function TeamLeaderReportsPage(props) {
 
       <ScrollView 
         className="flex-1" 
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
       >
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">

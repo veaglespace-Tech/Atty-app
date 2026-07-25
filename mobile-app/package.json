@@ -58,16 +58,17 @@
     "@babel/plugin-syntax-jsx": "^7.29.7",
     "@babel/plugin-transform-typescript": "^7.29.7",
     "@types/react": "~19.2.2",
+    "cross-env": "^10.1.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "EXPO_NO_DEVTOOLS=1 expo start",
+    "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "EXPO_NO_DEVTOOLS=1 expo start --android",
-    "ios": "EXPO_NO_DEVTOOLS=1 expo start --ios",
-    "web": "EXPO_NO_DEVTOOLS=1 expo start --web",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
     "lint": "expo lint"
   },
   "private": true

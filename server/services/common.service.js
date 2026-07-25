@@ -104,10 +104,31 @@ const normalizeStatus = (value, fallback = "") =>
     .trim()
     .toUpperCase();
 
+const parsePositiveInteger = (value, fallback = null) => {
+  const parsed = Number.parseInt(String(value || "").trim(), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 const resolveOrganizationId = (user) => resolveMembershipOrganizationId(user);
 
 const ensureOrganizationId = (req, res) => {
-  const organizationId = resolveOrganizationId(req.user);
+  const paramOrgId = parsePositiveInteger(req?.params?.orgId || req?.params?.organizationId);
+  const queryOrgId = parsePositiveInteger(req?.query?.orgId || req?.query?.organizationId);
+  const headerOrgId = parsePositiveInteger(req?.headers?.["x-organization-id"]);
+  const bodyOrgId = parsePositiveInteger(req?.body?.orgId || req?.body?.organizationId);
+
+  const directUserOrgId = resolveMembershipOrganizationId(req?.user);
+
+  let organizationId = paramOrgId || queryOrgId || headerOrgId || bodyOrgId || directUserOrgId;
+
+  if (!organizationId && req?.user) {
+    if (Array.isArray(req.user.memberships) && req.user.memberships.length > 0) {
+      organizationId = parsePositiveInteger(req.user.memberships[0]?.orgId);
+    } else if (req.user.role === "SUPER_ADMIN" || req.user.currentRole === "SUPER_ADMIN") {
+      organizationId = 1;
+    }
+  }
+
   if (!organizationId) {
     res.status(403);
     throw new Error("Organization context missing");
