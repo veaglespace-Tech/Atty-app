@@ -36,15 +36,17 @@ export async function registerForPushNotificationsAsync() {
     }
     
     if (finalStatus !== 'granted') {
+      alert('Failed to get push token! Permission denied by Android.');
       console.log('Failed to get push token for push notification!');
       return;
     }
     
     // Get the Expo Push Token using project ID from app config
     const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId ?? "d782f29a-35b0-49b7-9d97-eedd9d486a98";
       
     if (!projectId) {
+      alert('Error: Project ID not found!');
       console.log('Project ID not found. Ensure app.json has an eas.projectId');
       return;
     }
@@ -55,11 +57,13 @@ export async function registerForPushNotificationsAsync() {
           projectId,
         })
       ).data;
-      console.log('Got Expo Push Token:', token);
+      // alert('Success! Token generated: ' + token.substring(0, 15) + '...');
     } catch (e) {
+      alert('Expo Push Token Error: ' + e.message);
       console.error('Error fetching push token:', e);
     }
   } else {
+    alert('Must use physical device for Push Notifications');
     console.log('Must use physical device for Push Notifications');
   }
 
@@ -68,19 +72,27 @@ export async function registerForPushNotificationsAsync() {
 
 export async function sendPushTokenToServer(pushToken) {
   try {
-    const authToken = store.getState().auth.token;
-    if (!authToken || !pushToken) return;
-
-    await fetch(`${API_BASE_URL}/auth/push-token`, {
+    const token = await AsyncStorage.getItem('token');
+    
+    // In some environments, we might want to check if the token changed
+    // before sending it to save server requests, but for now we just send it
+    const res = await fetch(`${API_BASE_URL}/auth/push-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ pushToken }),
     });
-    console.log('Successfully saved push token to server.');
+
+    if (!res.ok) {
+      const text = await res.text();
+      alert('Failed to save token to server: ' + res.status + ' ' + text);
+    } else {
+      alert('SUCCESS! Token saved to Live Server!');
+    }
   } catch (error) {
-    console.error('Error saving push token to server:', error);
+    alert('Network Error saving token: ' + error.message);
+    console.error('Failed to send push token to server:', error);
   }
 }
