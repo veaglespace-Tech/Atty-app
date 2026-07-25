@@ -79,9 +79,6 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-    if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
-      tabs.push({ title: "Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
-    }
     tabs.push({ title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" });
     return tabs;
   }
@@ -98,9 +95,6 @@ const getTabsForRole = (user) => {
   }
   fallbackTabs.push({ title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" });
   fallbackTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-  if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
-    fallbackTabs.push({ title: "Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
-  }
   
   return fallbackTabs;
 };

@@ -86,7 +86,6 @@ export default function MemberLayout() {
         name="instruments"
         options={{ href: null }}
       />
-      <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="expenses/index" options={{ href: null }} />
