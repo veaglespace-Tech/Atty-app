@@ -6,7 +6,7 @@ import { PERMISSIONS } from "@/utils/roles";
 
 const baseNavItems = [
   { label: "Dashboard", href: "/member/dashboard" },
-  { label: "Her Security", href: "/her-security", target: "_blank" },
+  { label: "तिची सुरक्षा", href: "/her-security", target: "_blank" },
   { label: "Attendance", href: "/member/attendance" },
   { label: "Teams", href: "/member/teams", permission: PERMISSIONS.TEAM.VIEW_ALL },
   { label: "Instruments", href: "/member/instruments" },

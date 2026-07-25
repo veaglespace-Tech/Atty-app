@@ -30,11 +30,11 @@ const MENU_ITEMS = [
     colorClass: "text-blue-500 dark:text-blue-400",
   },
   {
-    label: "Her Security",
+    label: "तिची सुरक्षा",
     Icon: ShieldAlert,
     href: "/her-security",
     target: "_blank",
-    colorClass: "text-rose-500 dark:text-rose-400 font-bold",
+    colorClass: "text-pink-500 dark:text-pink-400 font-bold",
   },
   {
     label: "Attendance",

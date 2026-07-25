@@ -35,7 +35,7 @@ function StandaloneHerSecurity() {
             <div className="flex items-center gap-2">
               <ShieldAlert className="h-6 w-6 text-rose-600 animate-pulse" />
               <span className="text-base font-black tracking-tight">
-                तिची सुरक्षा <span className="text-rose-600 dark:text-rose-400">/ Her Security Portal</span>
+                तिची सुरक्षा
               </span>
             </div>
           </div>
