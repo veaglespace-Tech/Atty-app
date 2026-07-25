@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/images/atty-adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.veaglespace.atty"
+      "package": "com.veaglespace.atty",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",

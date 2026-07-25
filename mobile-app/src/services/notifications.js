@@ -71,7 +71,7 @@ export async function sendPushTokenToServer(pushToken) {
     const authToken = store.getState().auth.token;
     if (!authToken || !pushToken) return;
 
-    await fetch(`${API_BASE_URL}/users/push-token`, {
+    await fetch(`${API_BASE_URL}/auth/push-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
