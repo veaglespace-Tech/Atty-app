@@ -558,11 +558,7 @@ export default function HerSecurityContent() {
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-rose-500 font-bold">•</span>
-<<<<<<< HEAD
             <span><strong>व्हॉट्सॲप व कॉल:</strong> Direct Call व WhatsApp शेअर लिंकद्वारे तुम्ही एका क्लिकवर तुमच्या जवळच्या व्यक्तींना माहिती पाठवू शकता.</span>
-=======
-            <span><strong>व्हॉट्सॲप:</strong> Direct Call व WhatsApp शेअर लिंकद्वारे तुम्ही एका क्लिकवर तुमच्या जवळच्या व्यक्तींना माहिती पाठवू शकता.</span>
->>>>>>> 82cf1b0 (feat: update Her Security profile avatar link and email template)
           </li>
         </ul>
       </div>
