@@ -92,6 +92,12 @@ const sendSosAlert = async (req, res) => {
     if (rawPhoto && !rawPhoto.startsWith("http")) {
       rawPhoto = `${process.env.SERVER_BASE_URL || "http://localhost:5002"}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`;
     }
+    
+    // Gmail cannot load images from localhost. If testing locally, fallback to initials avatar to prevent a broken image icon.
+    if (rawPhoto && (rawPhoto.includes("localhost") || rawPhoto.includes("127.0.0.1"))) {
+      rawPhoto = null;
+    }
+
     const userPhotoUrl =
       rawPhoto ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=dc2626&color=ffffff&size=200&bold=true`;
