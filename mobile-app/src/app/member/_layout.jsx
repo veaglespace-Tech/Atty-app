@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, CalendarCheck2, Users, Settings, CreditCard } from 'lucide-react-native';
+import { Home, CalendarCheck2, Users, Settings, CreditCard, MessageSquare, Component } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -17,7 +17,7 @@ export default function MemberLayout() {
       <Tabs
         backBehavior="history"
       screenOptions={{
-        headerShown: false,
+        headerShown: false, tabBarShowLabel: false,
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
         tabBarStyle: {
@@ -34,14 +34,14 @@ export default function MemberLayout() {
           boxShadow: '0px -10px 20px rgba(0,0,0,0.1)',
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 12,
+          height: 65,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: 'bold',
-          marginBottom: 4,
+          marginBottom: 6,
         }
       }}>
       <Tabs.Screen
@@ -59,11 +59,19 @@ export default function MemberLayout() {
         }}
       />
       <Tabs.Screen
+        name="posts"
+        options={{
+          title: 'Posts',
+          tabBarIcon: ({ color }) => <MessageSquare size={24} color={color} />,
+          href: hasPermission(user, PERMISSIONS.POSTS.CREATE) ? undefined : null,
+        }}
+      />
+      <Tabs.Screen
         name="teams"
         options={{
           title: 'Teams',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
-          href: hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) ? undefined : null,
+          href: hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -71,6 +79,7 @@ export default function MemberLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -80,6 +89,8 @@ export default function MemberLayout() {
       <Tabs.Screen name="posts" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="expenses/index" options={{ href: null }} />
+      <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );

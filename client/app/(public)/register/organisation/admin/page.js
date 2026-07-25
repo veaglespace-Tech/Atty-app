@@ -82,7 +82,7 @@ const registrationSchema = z
       .max(80, "City is too long")
       .regex(PLACE_NAME_REGEX, "Enter a valid city"),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
-    bloodGroup: z.string().optional(),
+    bloodGroup: z.string().trim().min(1, "Blood Group is required"),
     role: z.string().default(ROLES.ORG_ADMIN),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -166,7 +166,7 @@ export default function AdminRegistration() {
       const orgDraft = getRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation);
       if (orgDraft) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/save-lead`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/auth/save-lead`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ org: orgDraft, admin: adminDraft }),

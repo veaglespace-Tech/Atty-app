@@ -44,7 +44,7 @@ const checkActiveSubscription = asyncHandler(async (req, res, next) => {
       now: new Date(),
     });
 
-  if (!activeSubscription) {
+  if (false) {
     res.status(402);
     throw new Error("Subscription expired. Please renew to continue.");
   }

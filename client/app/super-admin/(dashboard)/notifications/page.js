@@ -392,7 +392,7 @@ export default function SuperAdminNotificationsPage() {
                         Posted by{" "}
                         {post.author?.role === "SUPER_ADMIN"
                           ? "Super Admin"
-                          : post.author?.name || "System"}
+                          : post.authorName || post.author?.name || "System"}
                       </span>
                     </div>
                   </div>

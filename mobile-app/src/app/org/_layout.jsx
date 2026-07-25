@@ -20,7 +20,7 @@ export default function OrgLayout() {
       <Tabs
         backBehavior="history"
       screenOptions={{
-        headerShown: false,
+        headerShown: false, tabBarShowLabel: false,
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
         tabBarStyle: {
@@ -37,14 +37,14 @@ export default function OrgLayout() {
           boxShadow: '0px -10px 20px rgba(0,0,0,0.1)',
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 12,
+          height: 65,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: 'bold',
-          marginBottom: 4,
+          marginBottom: 6,
         }
       }}>
       <Tabs.Screen
@@ -95,9 +95,11 @@ export default function OrgLayout() {
       <Tabs.Screen name="user/[id]" options={{ href: null }} />
       <Tabs.Screen name="attendance/[logId]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
-      <Tabs.Screen name="employees" options={{ href: null }} />
       <Tabs.Screen name="expenses/index" options={{ href: null }} />
       <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
+      <Tabs.Screen name="settings/personal" options={{ href: null }} />
+      <Tabs.Screen name="settings/security" options={{ href: null }} />
+      <Tabs.Screen name="settings/workspace" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );

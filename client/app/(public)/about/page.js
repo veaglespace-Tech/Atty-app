@@ -5,7 +5,7 @@ import { knowledgeCards } from "./knowledgeData";
 
 const iconMap = {
   "user-guide": BookOpen,
-  "policy-templates": FileText,
+  "privacy-policy": FileText,
   faqs: HelpCircle,
 };
 

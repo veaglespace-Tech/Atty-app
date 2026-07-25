@@ -19,8 +19,23 @@ const getIconForLabel = (label) => {
 };
 
 export default function OrgDashboard() {
-  const { data, isLoading, isFetching, refetch } = useGetOrgDashboardQuery(undefined);
+  const { data, isLoading, isFetching, refetch, error } = useGetOrgDashboardQuery(undefined);
   const { user } = useAuthSession();
+
+  if (error?.status === 402) {
+    return (
+      <View className="flex-1 items-center justify-center p-6 bg-slate-50 dark:bg-[#020617]">
+        <ShieldAlert size={64} className="text-amber-500 mb-4" />
+        <Text className="text-2xl font-black text-slate-900 dark:text-white mb-2 text-center">Subscription Expired</Text>
+        <Text className="text-base text-slate-500 dark:text-slate-400 text-center mb-6">
+          Your organization's subscription has expired. Please log into the web platform to renew.
+        </Text>
+        <Pressable onPress={refetch} className="bg-blue-600 px-6 py-3 rounded-xl active:opacity-80">
+          <Text className="text-white font-bold text-center">Refresh</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   const summary = (data?.summary || []).filter(item => !item.label.toLowerCase().includes('subscription') && !item.label.toLowerCase().includes('payment'));
   const records = data?.items || [];
@@ -40,7 +55,7 @@ export default function OrgDashboard() {
     
       <ScrollView
           className="flex-1"
-          contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 100 }}
           refreshControl={
             <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />
           }

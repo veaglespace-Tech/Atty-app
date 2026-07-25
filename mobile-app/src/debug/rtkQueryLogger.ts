@@ -12,7 +12,10 @@ export const rtkQueryErrorLogger: Middleware =
       const endpointName = action?.meta?.arg?.endpointName || 'UnknownEndpoint';
       const status = action?.payload?.status || 'ERROR';
       
-      AppLogger.error(`RTK_QUERY`, `Endpoint: ${endpointName} failed with status: ${status}`, action.payload);
+      // Do not trigger the scary red LogBox for expected auth/subscription errors (401, 402, 403)
+      if (status !== 401 && status !== 402 && status !== 403) {
+        AppLogger.error(`RTK_QUERY`, `Endpoint: ${endpointName} failed with status: ${status}`, action.payload);
+      }
       AppLogger.api('FAIL', endpointName, status);
     } else if (action?.type?.endsWith('/fulfilled')) {
       const endpointName = action?.meta?.arg?.endpointName || 'UnknownEndpoint';

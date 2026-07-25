@@ -24,9 +24,9 @@ export default function TeamLeaderLayout({ children }) {
     const items = [...baseNavItems];
     const subIndex = items.findIndex(item => item.label === "Subscription");
     if (subIndex !== -1) {
-      items.splice(subIndex, 0, { label: "Expenses", href: "/team-leader/expenses" });
+      items.splice(subIndex, 0, { label: "Expenses", href: "/team-leader/expenses", permission: PERMISSIONS.EXPENSES.MANAGE });
     } else {
-      items.push({ label: "Expenses", href: "/team-leader/expenses" });
+      items.push({ label: "Expenses", href: "/team-leader/expenses", permission: PERMISSIONS.EXPENSES.MANAGE });
     }
     return items;
   }, []);

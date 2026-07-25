@@ -17,7 +17,7 @@ export default function TeamLeaderLayout() {
       <Tabs
         backBehavior="history"
       screenOptions={{
-        headerShown: false,
+        headerShown: false, tabBarShowLabel: false,
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
         tabBarStyle: {
@@ -34,14 +34,14 @@ export default function TeamLeaderLayout() {
           boxShadow: '0px -10px 20px rgba(0,0,0,0.1)',
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 12,
+          height: 65,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: 'bold',
-          marginBottom: 4,
+          marginBottom: 6,
         }
       }}>
       <Tabs.Screen
@@ -82,9 +82,11 @@ export default function TeamLeaderLayout() {
 
       <Tabs.Screen name="settings" options={{ href: null }} />
 
-      <Tabs.Screen name="team" options={{ href: null }} />
       <Tabs.Screen name="team/[id]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
+      <Tabs.Screen name="my-attendance" options={{ href: null }} />
+      <Tabs.Screen name="expenses/index" options={{ href: null }} />
+      <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );

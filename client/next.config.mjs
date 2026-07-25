@@ -13,8 +13,10 @@ const parseEnvList = (value) =>
 const allowedDevOrigins = parseEnvList(process.env.NEXT_ALLOWED_DEV_ORIGINS);
 
 const nextConfig = {
+  
   reactCompiler: true,
   outputFileTracingRoot: projectRoot,
+
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   turbopack: {
     root: projectRoot,

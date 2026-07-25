@@ -82,7 +82,7 @@ const organisationSchema = z.object({
     .min(1, "Country is required")
     .max(80, "Country is too long")
     .regex(PLACE_NAME_REGEX, "Enter a valid country"),
-  address: z.string().trim().max(180, "Address is too long").optional(),
+  address: z.string().trim().min(5, "Address must be at least 5 characters").max(180, "Address is too long"),
 });
 
 const fieldClassName =
@@ -181,7 +181,7 @@ function OrganisationFormContent() {
     setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, orgDraft);
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/save-lead`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/auth/save-lead`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ org: orgDraft, admin: {} }),

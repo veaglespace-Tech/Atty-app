@@ -640,9 +640,9 @@ function OrgLogoSettings() {
 
       <div className="mt-6 space-y-5">
         <div className="brand-panel-soft rounded-[1.5rem] p-4 flex flex-col sm:flex-row gap-4 items-center">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] bg-slate-100 dark:bg-slate-800 shadow-inner">
+          <div className="flex h-20 w-auto min-w-20 shrink-0 items-center justify-center rounded-[1rem] bg-slate-100 dark:bg-slate-800 shadow-inner px-2">
             {previewLogoUrl ? (
-              <img src={previewLogoUrl} alt="Org Logo Preview" className="h-full w-full object-cover" />
+              <img src={previewLogoUrl} alt="Org Logo Preview" className="h-full w-auto max-w-none object-contain" />
             ) : (
               <Building2 className="h-8 w-8 text-slate-400" />
             )}
@@ -940,7 +940,7 @@ export default function WorkspaceSettingsPage() {
       percentage: Math.round((filled / fields.length) * 100),
       missing,
     };
-  }, [user, effectiveRole, isSuperAdmin, canSkipEmergencyContact]);
+  }, [user, canSkipEmergencyContact]);
 
   const detailCards = useMemo(
     () => [

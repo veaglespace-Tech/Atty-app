@@ -7,10 +7,10 @@ export const knowledgeCards = [
     accent: "blue",
   },
   {
-    slug: "policy-templates",
-    title: "Policy Templates",
-    desc: "Ready-to-adapt templates for attendance rules, shift policy, and compliance communication.",
-    eyebrow: "HR & Compliance",
+    slug: "privacy-policy",
+    title: "Privacy Policy",
+    desc: "Read our privacy policy regarding data collection, usage, and protection.",
+    eyebrow: "Legal & Privacy",
     accent: "indigo",
   },
   {

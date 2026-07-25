@@ -117,7 +117,7 @@ export default function SuperAdminNotificationDetailPage() {
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {notification.author?.role === "SUPER_ADMIN" ? "S" : (notification.author?.name?.charAt(0).toUpperCase() || "S")}
             </span>
-            <span>Posted by {notification.author?.role === "SUPER_ADMIN" ? "Super Admin" : (notification.author?.name || "System")}</span>
+            <span>Posted by {notification.author?.role === "SUPER_ADMIN" ? "Super Admin" : (notification.authorName || notification.author?.name || "System")}</span>
           </div>
         </div>
 

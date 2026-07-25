@@ -564,7 +564,7 @@ model User {
   createdUsers                User[]                      @relation("UserCreatedBy")
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   referredByPartner           ReferralPartner?            @relation("ReferredUsers", fields: [referredByPartnerId], references: [id])
-  user_instrument             user_instrument[]
+  assignedInstruments         instrument[]                @relation("InstrumentAssignedUser")
   notificationReads           UserNotificationRead[]
 
   @@index([createdById], map: "User_createdById_idx")
@@ -788,13 +788,18 @@ model instrument {
   id              Int               @id @default(autoincrement())
   orgId           Int
   name            String
+  type            String            @default("IT")
+  serialNumber    String?
+  status          String            @default("ACTIVE")
   description     String?           @db.Text
+  assignedUserId  Int?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime
   organization    Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user_instrument user_instrument[]
+  assignedUser    User?             @relation("InstrumentAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
 
   @@index([orgId])
+  @@index([assignedUserId])
 }
 
 model stock {
@@ -810,20 +815,6 @@ model stock {
   @@index([orgId])
 }
 
-model user_instrument {
-  id           Int        @id @default(autoincrement())
-  userId       Int
-  instrumentId Int
-  assignedAt   DateTime   @default(now())
-  assetId      String?
-  instrument   instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([instrumentId, assetId])
-  @@unique([userId, instrumentId])
-  @@index([instrumentId])
-  @@index([userId])
-}
 
 enum DiscountType {
   PERCENTAGE

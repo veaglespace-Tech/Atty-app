@@ -44,6 +44,14 @@ const {
   acceptRegistrationRequest,
   rejectRegistrationRequest,
 } = require("../controllers/registration-request.controller");
+const {
+  getOrgInstruments,
+  createOrgInstrument,
+  patchOrgInstrument,
+  deleteOrgInstrument,
+  assignInstrumentToUsers,
+  unassignInstrumentFromUser,
+} = require("../controllers/org-instrument.controller");
 
 const {
   getOrgDashboard,
@@ -110,6 +118,13 @@ router.post("/teams", createOrgTeam);
 router.patch("/teams/:teamId", patchOrgTeam);
 router.delete("/teams/:teamId", deleteOrgTeam);
 
+router.get("/instruments", getOrgInstruments);
+router.post("/instruments", createOrgInstrument);
+router.patch("/instruments/:id", patchOrgInstrument);
+router.delete("/instruments/:id", deleteOrgInstrument);
+router.post("/instruments/:id/assign", assignInstrumentToUsers);
+router.post("/instruments/:id/revoke", unassignInstrumentFromUser);
+
 router.get("/attendance", getOrgAttendance);
 router.get("/attendance/pdf", downloadOrgAttendancePdf);
 router.get("/attendance/excel", downloadOrgAttendanceExcel);
@@ -120,5 +135,7 @@ router.get("/attendance/:id", getOrgAttendanceLogById);
 router.get("/regularization-requests", getOrgRegularizationRequests);
 router.patch("/regularization-requests/:id/approve", approveRegularizationRequest);
 router.patch("/regularization-requests/:id/reject", rejectRegularizationRequest);
+
+router.use("/expenses", require("./expenses.route"));
 
 module.exports = router;

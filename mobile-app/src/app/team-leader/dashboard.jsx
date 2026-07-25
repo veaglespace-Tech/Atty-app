@@ -11,8 +11,23 @@ export default function TeamLeaderDashboard() {
   const router = useRouter();
   const { user } = useAuthSession();
   
-  const { data, isLoading } = useGetTeamLeaderDashboardQuery();
+  const { data, isLoading, error, refetch } = useGetTeamLeaderDashboardQuery();
   const summary = data?.summary || [];
+
+  if (error?.status === 402) {
+    return (
+      <View className="flex-1 items-center justify-center p-6 bg-slate-50 dark:bg-[#020617]">
+        <ShieldCheck size={64} className="text-amber-500 mb-4" />
+        <Text className="text-2xl font-black text-slate-900 dark:text-white mb-2 text-center">Subscription Expired</Text>
+        <Text className="text-base text-slate-500 dark:text-slate-400 text-center mb-6">
+          Your organization's subscription has expired. Please log into the web platform to renew.
+        </Text>
+        <Pressable onPress={refetch} className="bg-blue-600 px-6 py-3 rounded-xl active:opacity-80">
+          <Text className="text-white font-bold text-center">Refresh</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   const groups = [
     {
@@ -51,7 +66,7 @@ export default function TeamLeaderDashboard() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-slate-50 dark:bg-[#020617]" contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-slate-50 dark:bg-[#020617]" contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
       
       {/* Welcome & Stats Hero Section */}
       <View className="mb-8">

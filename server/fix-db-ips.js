@@ -2,8 +2,8 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function fixIPs() {
-  const oldIp = 'http://10.25.234.174:5001';
-  const newIp = 'http://10.199.45.182:5001';
+  const oldIp = 'http://172.24.105.27:5001';
+  const newIp = 'http://localhost:5001';
 
   const orgs = await prisma.organization.findMany();
   for (const org of orgs) {

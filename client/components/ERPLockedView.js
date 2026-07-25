@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { Lock, CreditCard, ShieldAlert } from "lucide-react";
-import { ROLES } from "@/utils/roles";
+import { PERMISSIONS, hasPermission } from "@/utils/roles";
 
-export default function ERPLockedView({ role }) {
-  const isOrgAdmin = role === ROLES.ORG_ADMIN;
+export default function ERPLockedView({ user }) {
+  const canManageSubscription = hasPermission(user, PERMISSIONS.SUBSCRIPTION.MANAGE);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
@@ -24,7 +24,7 @@ export default function ERPLockedView({ role }) {
         The Funds & Expenses ERP module is not active for this workspace. This premium add-on unlocks advanced financial management, claims, and wallet features.
       </p>
 
-      {isOrgAdmin ? (
+      {canManageSubscription ? (
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <Link 
             href="/pricing"

@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments", "OrgExpenses"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -311,6 +311,52 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgInstruments", "OrgUsers"],
     }),
+    getOrgExpensesBalance: builder.query({
+      query: (params = "") => `/org/expenses/balance${params ? `?${params}` : ""}`,
+      providesTags: ["OrgExpenses"],
+    }),
+    getOrgExpenseById: builder.query({
+      query: (id) => `/org/expenses/${id}`,
+      providesTags: (result, error, id) => [{ type: "OrgExpenses", id }],
+    }),
+    addOrgDeposit: builder.mutation({
+      query: (payload) => ({
+        url: "/org/expenses/deposit",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgExpenses"],
+    }),
+    addOrgWithdrawal: builder.mutation({
+      query: (payload) => ({
+        url: "/org/expenses/withdrawal",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgExpenses"],
+    }),
+    settleOrgClaim: builder.mutation({
+      query: (payload) => ({
+        url: "/org/expenses/settle-claim",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgExpenses"],
+    }),
+    exportOrgExpensesExcel: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/expenses/export/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    exportOrgExpensesPdf: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/expenses/export/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -365,4 +411,11 @@ export const {
   useDeleteOrgInstrumentMutation,
   useAssignOrgInstrumentMutation,
   useRevokeOrgInstrumentMutation,
+  useGetOrgExpensesBalanceQuery,
+  useGetOrgExpenseByIdQuery,
+  useAddOrgDepositMutation,
+  useAddOrgWithdrawalMutation,
+  useSettleOrgClaimMutation,
+  useExportOrgExpensesExcelMutation,
+  useExportOrgExpensesPdfMutation,
 } = orgApi;

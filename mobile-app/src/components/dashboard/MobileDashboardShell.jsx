@@ -52,10 +52,17 @@ const getTabsForRole = (user) => {
     if (isAdmin || hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
+      tabs.push({ title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" });
+    }
     if (isAdmin || hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    if (isAdmin) {
+      tabs.push({ title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" });
+      tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
+    }
     return tabs;
   }
   
@@ -72,6 +79,10 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
+      tabs.push({ title: "Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
+    }
+    tabs.push({ title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" });
     return tabs;
   }
   
@@ -85,7 +96,11 @@ const getTabsForRole = (user) => {
   if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
     fallbackTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
+  fallbackTabs.push({ title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" });
   fallbackTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+  if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
+    fallbackTabs.push({ title: "Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
+  }
   
   return fallbackTabs;
 };

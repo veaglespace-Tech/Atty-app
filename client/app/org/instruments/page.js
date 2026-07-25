@@ -22,7 +22,13 @@ const fieldClassName = "dashboard-field-control";
 const NumberCombobox = ({ value, onChange, placeholder = "0-999" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value || "");
+  const [prevValue, setPrevValue] = useState(value);
   const wrapperRef = useRef(null);
+
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setSearchTerm(value || "");
+  }
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -34,10 +40,6 @@ const NumberCombobox = ({ value, onChange, placeholder = "0-999" }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [searchTerm, onChange]);
-
-  useEffect(() => {
-    setSearchTerm(value || "");
-  }, [value]);
 
   const filteredOptions = useMemo(() => {
     const all = Array.from({ length: 1000 }, (_, i) => i.toString());
@@ -734,7 +736,7 @@ export default function OrgInstrumentsPage() {
 
         {instruments.length === 0 ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-800/30 dark:text-slate-400">
-            No instruments have been created yet. Click "Create Instrument" to add one.
+            No instruments have been created yet. Click &quot;Create Instrument&quot; to add one.
           </div>
         ) : (
           <div className="overflow-x-auto">

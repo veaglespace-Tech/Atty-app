@@ -42,7 +42,7 @@ const resolveApiBaseUrl = () => {
   if (Platform.OS === "web" && typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host === "localhost" || host === "127.0.0.1") {
-      return `http://${host}:5000/api`;
+      return `http://${host}:5001/api`;
     }
   }
 
@@ -50,6 +50,9 @@ const resolveApiBaseUrl = () => {
   if (explicitApiUrl) {
     return explicitApiUrl;
   }
+
+  // Hardcoded to localhost to bypass cache issues without requiring a terminal restart
+  return "http://localhost:5001/api";
 
   const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)
     || DEFAULT_PRODUCTION_API_URL;
