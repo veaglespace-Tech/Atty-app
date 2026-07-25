@@ -7,13 +7,13 @@ import {
   useDeleteOrgInstrumentMutation,
   useAssignOrgInstrumentMutation,
   useRevokeOrgInstrumentMutation,
-  useGetOrgWorkspaceUsersQuery 
+  useGetOrgUsersQuery 
 } from "@/services/api/orgApi";
 import { Box, Plus, X, Pencil, Trash2, Calendar, Hash, User } from "lucide-react-native";
 
 export default function OrgInstrumentsPage() {
   const { data, isLoading, isFetching, refetch } = useGetOrgInstrumentsQuery();
-  const { data: usersData } = useGetOrgWorkspaceUsersQuery({ limit: 1000 });
+  const { data: usersData } = useGetOrgUsersQuery(1000);
   
   const [createInstrument, { isLoading: isCreating }] = useCreateOrgInstrumentMutation();
   const [updateInstrument, { isLoading: isUpdating }] = useUpdateOrgInstrumentMutation();
