@@ -140,13 +140,14 @@ export default function HerSecurityContent() {
   // WhatsApp Message Generator
   const generateWhatsAppUrl = () => {
     const emergencyNum = displayEmergencyContact;
+    const photoLine = avatarSrc ? `\n🖼️ *Profile Photo:* ${avatarSrc}` : "";
     const text = encodeURIComponent(
       `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
       `👤 *Name:* ${displayName}\n` +
       `📧 *Email:* ${displayEmail}\n` +
       `📱 *Contact:* ${displayMobile}\n` +
       `🆘 *Emergency Contact:* ${emergencyNum}\n` +
-      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})\n\n` +
+      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})${photoLine}\n\n` +
       `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
       `⚠️ *I need immediate assistance! Please verify my safety.*`
     );

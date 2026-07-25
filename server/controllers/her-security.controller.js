@@ -121,6 +121,10 @@ const sendSosAlert = async (req, res) => {
               <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Emergency Contact:</strong></td>
               <td style="padding: 8px 0 8px 6px; color: #dc2626; font-weight: 700; vertical-align: top; word-break: break-word;">${user.emergencyContact || user.mobile || "N/A"}</td>
             </tr>
+            ${user.profileImageUrl || user.profileImage ? `<tr>
+              <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Profile Photo:</strong></td>
+              <td style="padding: 8px 0 8px 6px; color: #0f172a; vertical-align: top; word-break: break-word;"><a href="${user.profileImageUrl || user.profileImage}" target="_blank" style="color: #2563eb; font-weight: bold; text-decoration: underline;">🖼️ View Profile Photo</a></td>
+            </tr>` : ""}
             <tr>
               <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Organisation:</strong></td>
               <td style="padding: 8px 0 8px 6px; color: #0f172a; vertical-align: top; word-break: break-word;">${user.organization?.name || "N/A"} (ID: ${user.orgId || "N/A"})</td>
