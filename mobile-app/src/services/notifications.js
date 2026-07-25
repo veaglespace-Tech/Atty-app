@@ -73,7 +73,6 @@ export async function registerForPushNotificationsAsync() {
   } catch (e) {
     console.warn('Error fetching push token:', e.message);
   }
-  }
 
   return token;
 }
