@@ -496,8 +496,8 @@ export default function HerSecurityContent() {
           <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div className="relative">
               <UserAvatar
-                src={user?.profileImageUrl || user?.profilePhoto || user?.photo || user?.avatar}
-                name={user?.name}
+                src={avatarSrc?.startsWith('http') ? avatarSrc : (avatarSrc ? `${API_BASE_URL?.replace('/api/v1', '')}${avatarSrc.startsWith('/') ? '' : '/'}${avatarSrc}` : null)}
+                name={displayName}
                 className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 text-2xl font-black shadow-md"
               />
               <div className="absolute -bottom-1 -right-1 rounded-full bg-rose-600 p-1 text-white shadow">

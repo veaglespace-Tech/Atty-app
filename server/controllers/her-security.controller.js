@@ -96,13 +96,13 @@ const sendSosAlert = async (req, res) => {
     const htmlBody = `
       <div style="font-family: Arial, Helvetica, sans-serif; width: 100%; max-width: 600px; margin: 0 auto; border: 2px solid #dc2626; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-sizing: border-box; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">
         <div style="background-color: #dc2626; color: #ffffff; padding: 20px 16px; text-align: center; box-sizing: border-box;">
-          <h1 style="margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; word-break: break-word;">🚨 EMERGENCY SOS ALERT 🚨</h1>
-          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;"> तिची सुरक्षा / Her Security Emergency System </p>
+          <h1 style="margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; word-break: break-word;">Emergency Security Alert</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;"> Tichi Suraksha / Her Security Emergency System </p>
         </div>
         
         <div style="padding: 20px 16px; color: #1e293b; box-sizing: border-box;">
           <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 14px; margin-bottom: 20px; border-radius: 4px; box-sizing: border-box;">
-            <strong style="color: #991b1b; font-size: 14px;">IMMEDIATE ATTENTION REQUIRED</strong>
+            <strong style="color: #991b1b; font-size: 14px;">Immediate Attention Required</strong>
             <p style="margin: 4px 0 0 0; color: #7f1d1d; font-size: 13px; line-height: 1.4;">
               An emergency distress trigger was activated by the user below. Please verify their safety immediately.
             </p>
@@ -166,9 +166,9 @@ const sendSosAlert = async (req, res) => {
     if (recipients.length > 0) {
       await sendEmail({
         email: recipients.join(","),
-        subject: `🚨 URGENT SOS ALERT: ${user.name} (${user.organization?.name || "Attendee User"})`,
+        subject: `Security Alert: Assistance required for ${user.name} (${user.organization?.name || "Attendee User"})`,
         html: htmlBody,
-        fromName: "Tichi Suraksha SOS System",
+        fromName: "Attendee Security System",
       });
     }
 
