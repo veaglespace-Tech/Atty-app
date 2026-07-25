@@ -88,15 +88,13 @@ const sendSosAlert = async (req, res) => {
       ? `<a href="${calculatedMapsUrl}" target="_blank" style="display:inline-block; max-width:100%; box-sizing:border-box; padding:12px 20px; background-color:#dc2626; color:#ffffff; font-weight:bold; text-decoration:none; border-radius:8px; margin-top:10px; word-break:break-word; text-align:center;">📍 View Live Location on Google Maps</a>`
       : "<p style='color:#ef4444; font-weight:bold; margin:10px 0 0 0;'>Location unavailable or permission denied by device.</p>";
 
-    let rawAvatar = user.profileImageUrl || user.profileImage;
-    if (rawAvatar && !rawAvatar.startsWith("http")) {
-      const baseUrl = process.env.SERVER_BASE_URL || "http://localhost:5002";
-      rawAvatar = \`\${baseUrl}\${rawAvatar.startsWith("/") ? "" : "/"}\${rawAvatar}\`;
+    let rawPhoto = user.profileImageUrl || user.profileImage;
+    if (rawPhoto && !rawPhoto.startsWith("http")) {
+      rawPhoto = `${process.env.SERVER_BASE_URL || "http://localhost:5002"}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`;
     }
-
     const userPhotoUrl =
-      rawAvatar ||
-      \`https://ui-avatars.com/api/?name=\${encodeURIComponent(user.name || "User")}&background=dc2626&color=ffffff&size=200&bold=true\`;
+      rawPhoto ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=dc2626&color=ffffff&size=200&bold=true`;
 
     const htmlBody = `
       <div style="font-family: Arial, Helvetica, sans-serif; width: 100%; max-width: 600px; margin: 0 auto; border: 2px solid #dc2626; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-sizing: border-box; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">

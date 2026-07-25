@@ -166,18 +166,17 @@ export default function HerSecurityContent() {
     setIsSendingSos(true);
     setSosResult(null);
 
-    // 1. WhatsApp auto-open disabled because browsers only allow one external app launch per click.
-    // The user can still use the dedicated WhatsApp button below.
-    /*
+    // 1. Immediately open WhatsApp with pre-filled distress message & live GPS location
     if (typeof window !== "undefined") {
       const waUrl = generateWhatsAppUrl();
       window.open(waUrl, "_blank");
     }
-    */
 
     // 2. Open device Phone Dialer with emergency number
     if (typeof window !== "undefined") {
-      window.location.href = `tel:${displayEmergencyContact}`;
+      setTimeout(() => {
+        window.location.href = `tel:${displayEmergencyContact}`;
+      }, 400);
     }
 
     // 3. Dispatch high-priority emergency Email to Org Admin & Support
