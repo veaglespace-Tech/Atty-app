@@ -270,165 +270,21 @@ export default function HerSecurityContent() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
 
-<<<<<<< HEAD
-        {/* Right Side Logo (Police / 112) */}
-        <div className="shrink-0 flex items-center justify-center order-2 md:order-3">
-          <div className="relative w-fit h-fit rounded-xl md:rounded-3xl bg-white shadow-xl md:shadow-2xl border-2 md:border-[3px] border-indigo-900/10 dark:border-slate-700 overflow-hidden transition-transform hover:scale-105 flex items-center justify-center">
-            <img
-              src="/police-logo.jpg"
-              alt="112 Police Logo"
-              className="h-28 sm:h-32 md:h-48 lg:h-64 w-auto max-w-[6rem] sm:max-w-[10rem] md:max-w-[14rem] lg:max-w-[20rem] object-contain"
-            />
-=======
-      {/* Main Grid Section */}
-      <div className="grid gap-6 md:grid-cols-12">
-        {/* Left Column: User Profile Card (6 cols) */}
-        <div className="md:col-span-6 space-y-6">
-          {/* User Auto-Filled Profile Card */}
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-black/40">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-              <h2 className="flex items-center gap-2.5 text-base font-bold text-slate-900 dark:text-white">
-                <UserCheck className="h-5 w-5 text-rose-500" />
-                Auto-Filled Profile Information
-              </h2>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                Verified Profile
-              </span>
-            </div>
-
-            <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-              <div className="relative">
-                <UserAvatar
-                  src={avatarSrc}
-                  name={displayName}
-                  alt={displayName}
-                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 text-2xl font-black shadow-md"
-                />
-                <div className="absolute -bottom-1 -right-1 rounded-full bg-rose-600 p-1 text-white shadow">
-                  <Shield className="h-3.5 w-3.5" />
-                </div>
-              </div>
-
-              <div className="flex-1 text-center sm:text-left space-y-1">
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  {displayName}
-                </h3>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  {displayEmail}
-                </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  <Building className="h-3.5 w-3.5 text-blue-500" />
-                  {displayOrgName} (ID: {displayOrgId})
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 divide-y divide-slate-100 rounded-2xl bg-slate-50/80 p-4 dark:divide-slate-800 dark:bg-slate-950/60 text-sm">
-              <div className="flex justify-between py-2">
-                <span className="text-slate-500 dark:text-slate-400">Contact Number:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{displayMobile}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-slate-500 dark:text-slate-400">Emergency Contact:</span>
-                <span className="font-bold text-rose-600 dark:text-rose-400">
-                  {displayEmergencyContact}
-                </span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-slate-500 dark:text-slate-400">System Role:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {currentUser?.role || user?.role || "MEMBER"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Live Location Card */}
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-black/40">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-              <h2 className="flex items-center gap-2.5 text-base font-bold text-slate-900 dark:text-white">
-                <MapPin className="h-5 w-5 text-rose-500" />
-                Live Real-Time GPS Location
-              </h2>
-              <button
-                onClick={requestLocation}
-                className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${location.status === "initializing" ? "animate-spin" : ""}`} />
-                Refresh
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              {location.status === "initializing" && (
-                <div className="flex items-center gap-3 rounded-2xl bg-amber-50 p-4 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                  <RefreshCw className="h-5 w-5 animate-spin text-amber-600" />
-                  <p className="text-sm font-medium">Acquiring high-accuracy GPS coordinates...</p>
-                </div>
-              )}
-
-              {location.status === "success" && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between rounded-2xl bg-emerald-50 p-3.5 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                      Live Location Locked
-                    </div>
-                    <span className="rounded-lg bg-emerald-200/60 px-2 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
-                      ±{location.accuracy}m Accuracy
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50">
-                      <span className="text-slate-500 dark:text-slate-400">Latitude</span>
-                      <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">{location.latitude}</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50">
-                      <span className="text-slate-500 dark:text-slate-400">Longitude</span>
-                      <p className="font-mono text-sm font-bold text-slate-900 dark:text-white">{location.longitude}</p>
-                    </div>
-                  </div>
-
-                  {mapsUrl && (
-                    <a
-                      href={mapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full rounded-2xl bg-slate-900 py-3 text-xs font-bold text-white shadow hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      View Live Map on Google Maps
-                    </a>
-                  )}
-                </div>
-              )}
-
-              {location.status === "denied" && (
-                <div className="rounded-2xl bg-rose-50 p-4 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-400">
-                    <AlertTriangle className="h-4 w-4 shrink-0" />
-                    GPS Permission Required
-                  </div>
-                  <p>{location.errorMessage}</p>
-                  <button
-                    onClick={requestLocation}
-                    className="mt-1 font-bold underline hover:text-rose-900"
-                  >
-                    Click to retry location access
-                  </button>
-                </div>
-              )}
-            </div>
->>>>>>> d19483c1eea3f8cb3f80a0f36443ebfe41ea3e6a
-          </div>
+      {/* Right Side Logo (Police / 112) */}
+      <div className="shrink-0 flex items-center justify-center order-2 md:order-3">
+        <div className="relative w-fit h-fit rounded-xl md:rounded-3xl bg-white shadow-xl md:shadow-2xl border-2 md:border-[3px] border-indigo-900/10 dark:border-slate-700 overflow-hidden transition-transform hover:scale-105 flex items-center justify-center">
+          <img
+            src="/police-logo.jpg"
+            alt="112 Police Logo"
+            className="h-28 sm:h-32 md:h-48 lg:h-64 w-auto max-w-[6rem] sm:max-w-[10rem] md:max-w-[14rem] lg:max-w-[20rem] object-contain"
+          />
         </div>
-
       </div>
+
+    </div>
 
       {/* SOS EMERGENCY ACTION (Moved to Top) */}
       <div className="rounded-[2.5rem] border-2 border-rose-500/40 bg-white p-6 sm:p-10 shadow-2xl shadow-rose-500/10 dark:border-rose-900/60 dark:bg-slate-900/90 dark:shadow-black/50 overflow-hidden relative">
