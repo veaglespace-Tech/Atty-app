@@ -95,12 +95,11 @@ export async function sendPushTokenToServer(pushToken) {
 
     if (!res.ok) {
       const text = await res.text();
-      alert('Failed to save token to server: ' + res.status + ' ' + text);
+      console.warn('Failed to save token to server:', res.status, text);
     } else {
-      alert('SUCCESS! Token saved to Live Server!');
+      console.log('SUCCESS! Token saved to Live Server!');
     }
   } catch (error) {
-    alert('Network Error saving token: ' + error.message);
     console.error('Failed to send push token to server:', error);
   }
 }
