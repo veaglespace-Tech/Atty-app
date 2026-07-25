@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "167243617404",
+    "project_id": "atty-app-e6ad8",
+    "storage_bucket": "atty-app-e6ad8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167243617404:android:0204f306501df606f765f9",
+        "android_client_info": {
+          "package_name": "com.veaglespace.atty"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHPmZpJ8j4imv1I4czo2LhGZ_SNJGAmw8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
