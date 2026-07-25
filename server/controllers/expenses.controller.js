@@ -30,7 +30,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
       orderBy.createdAt = 'desc';
     }
 
-    const transactions = await prisma.expenseTransaction.findMany({
+    const transactions = await prisma.expense_transaction.findMany({
       where,
       orderBy,
     });
@@ -58,7 +58,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
 
     const transaction = await prisma.$transaction(async (tx) => {
       // 1. Create Transaction
-      const newTransaction = await tx.expenseTransaction.create({
+      const newTransaction = await tx.expense_transaction.create({
         data: {
           orgId: parseInt(orgId),
           type: "DEPOSIT",
@@ -129,7 +129,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
 
     const transaction = await prisma.$transaction(async (tx) => {
       // 1. Create Transaction
-      const newTransaction = await tx.expenseTransaction.create({
+      const newTransaction = await tx.expense_transaction.create({
         data: {
           orgId: parseInt(orgId),
           type: "WITHDRAWAL",
@@ -170,7 +170,7 @@ exports.settleClaim = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Please provide claimNo and amountPaid" });
     }
 
-    const claim = await prisma.expenseClaim.findUnique({
+    const claim = await prisma.expense_claim.findUnique({
       where: { claimNo },
     });
 
@@ -206,7 +206,7 @@ exports.settleClaim = async (req, res, next) => {
 
     const transaction = await prisma.$transaction(async (tx) => {
       // 1. Create Transaction
-      const newTransaction = await tx.expenseTransaction.create({
+      const newTransaction = await tx.expense_transaction.create({
         data: {
           orgId: parseInt(orgId),
           type: "CLAIM_SETTLEMENT",
@@ -219,7 +219,7 @@ exports.settleClaim = async (req, res, next) => {
       });
 
       // 2. Link transaction to claim & approve
-      const updatedClaim = await tx.expenseClaim.update({
+      const updatedClaim = await tx.expense_claim.update({
         where: { id: claim.id },
         data: { 
           status: "APPROVED",
@@ -262,7 +262,7 @@ exports.exportTransactionsExcel = async (req, res, next) => {
       ];
     }
 
-    const transactions = await prisma.expenseTransaction.findMany({
+    const transactions = await prisma.expense_transaction.findMany({
       where,
       orderBy: { createdAt: "desc" },
     });
@@ -322,7 +322,7 @@ exports.exportTransactionsPdf = async (req, res, next) => {
       ];
     }
 
-    const transactions = await prisma.expenseTransaction.findMany({
+    const transactions = await prisma.expense_transaction.findMany({
       where,
       orderBy: { createdAt: "desc" },
     });
@@ -365,7 +365,7 @@ exports.getTransactionById = async (req, res, next) => {
     const orgId = req.user.organizationId || req.user.orgId;
     const { id } = req.params;
 
-    const transaction = await prisma.expenseTransaction.findFirst({
+    const transaction = await prisma.expense_transaction.findFirst({
       where: {
         id: parseInt(id),
         orgId: parseInt(orgId),
@@ -379,7 +379,7 @@ exports.getTransactionById = async (req, res, next) => {
     // Attempt to fetch related claim if it's a claim settlement
     let claimDetails = null;
     if (transaction.type === "CLAIM_SETTLEMENT") {
-      claimDetails = await prisma.expenseClaim.findFirst({
+      claimDetails = await prisma.expense_claim.findFirst({
         where: { transactionId: transaction.id },
         include: {
           user: {

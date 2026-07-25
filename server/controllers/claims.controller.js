@@ -6,7 +6,7 @@ exports.getMyClaims = async (req, res, next) => {
     const userId = req.user.id;
     const orgId = req.user.organizationId || req.user.orgId;
 
-    const claims = await prisma.expenseClaim.findMany({
+    const claims = await prisma.expense_claim.findMany({
       where: { orgId: parseInt(orgId), userId: parseInt(userId) },
       orderBy: { createdAt: "desc" },
     });
@@ -54,7 +54,7 @@ exports.raiseClaim = async (req, res, next) => {
 
       const claimNo = `CLM-${Date.now()}`;
 
-      const claim = await prisma.expenseClaim.create({
+      const claim = await prisma.expense_claim.create({
         data: {
           orgId: parseInt(orgId),
           userId: parseInt(userId),
@@ -101,7 +101,7 @@ exports.getAllClaims = async (req, res, next) => {
       orderBy.createdAt = "desc";
     }
 
-    const claims = await prisma.expenseClaim.findMany({
+    const claims = await prisma.expense_claim.findMany({
       where,
       include: {
         user: {
@@ -130,7 +130,7 @@ exports.updateClaimStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Invalid status" });
     }
 
-    const claim = await prisma.expenseClaim.findUnique({
+    const claim = await prisma.expense_claim.findUnique({
       where: { id: parseInt(id) },
     });
 
@@ -145,13 +145,13 @@ exports.updateClaimStatus = async (req, res, next) => {
     if (status === "APPROVED") {
       const transaction = await prisma.$transaction(async (tx) => {
         // 1. Update Claim Status
-        const updatedClaim = await tx.expenseClaim.update({
+        const updatedClaim = await tx.expense_claim.update({
           where: { id: parseInt(id) },
           data: { status: "APPROVED" },
         });
 
         // 2. Create Expense Transaction
-        const newTransaction = await tx.expenseTransaction.create({
+        const newTransaction = await tx.expense_transaction.create({
           data: {
             orgId: parseInt(orgId),
             type: "CLAIM_SETTLEMENT",
@@ -162,7 +162,7 @@ exports.updateClaimStatus = async (req, res, next) => {
         });
 
         // 3. Link transaction to claim
-        await tx.expenseClaim.update({
+        await tx.expense_claim.update({
           where: { id: parseInt(id) },
           data: { transactionId: newTransaction.id },
         });
@@ -178,7 +178,7 @@ exports.updateClaimStatus = async (req, res, next) => {
 
       return res.status(200).json({ success: true, data: transaction });
     } else {
-      const updatedClaim = await prisma.expenseClaim.update({
+      const updatedClaim = await prisma.expense_claim.update({
         where: { id: parseInt(id) },
         data: { status: "REJECTED" },
       });
@@ -195,7 +195,7 @@ exports.getClaimByNo = async (req, res, next) => {
     const { claimNo } = req.params;
     const orgId = req.user.organizationId || req.user.orgId;
 
-    const claim = await prisma.expenseClaim.findUnique({
+    const claim = await prisma.expense_claim.findUnique({
       where: { claimNo },
       include: {
         user: {
