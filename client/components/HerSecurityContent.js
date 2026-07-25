@@ -559,7 +559,7 @@ export default function HerSecurityContent() {
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-rose-500 font-bold">•</span>
-            <span><strong>व्हॉट्सअॅप व कॉल:</strong> Direct Call व WhatsApp शेअर लिंकद्वारे तुम्ही एका क्लिकवर तुमच्या जवळच्या व्यक्तींना माहिती पाठवू शकता.</span>
+            <span><strong>व्हॉट्सॲप व कॉल:</strong> Direct Call व WhatsApp शेअर लिंकद्वारे तुम्ही एका क्लिकवर तुमच्या जवळच्या व्यक्तींना माहिती पाठवू शकता.</span>
           </li>
         </ul>
       </div>
