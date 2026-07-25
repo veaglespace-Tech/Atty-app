@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 
-const EMERGENCY_TEST_NUMBER = "7756099153";
+const EMERGENCY_TEST_NUMBER = "8237999101";
 
 export default function HerSecurityContent() {
   const { user, token } = useAuthSession();
@@ -104,13 +104,13 @@ export default function HerSecurityContent() {
     const emergencyNum = user?.emergencyContact || user?.mobile || EMERGENCY_TEST_NUMBER;
     const text = encodeURIComponent(
       `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
-        `👤 *Name:* ${user?.name || "User"}\n` +
-        `📧 *Email:* ${user?.email || "N/A"}\n` +
-        `📱 *Contact:* ${user?.mobile || "N/A"}\n` +
-        `🆘 *Emergency Contact:* ${emergencyNum}\n` +
-        `🏢 *Organisation:* ${user?.organization?.name || user?.orgName || "Veagle Member"} (ID: ${user?.orgId || "N/A"})\n\n` +
-        `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
-        `⚠️ *I need immediate assistance! Please verify my safety.*`
+      `👤 *Name:* ${user?.name || "User"}\n` +
+      `📧 *Email:* ${user?.email || "N/A"}\n` +
+      `📱 *Contact:* ${user?.mobile || "N/A"}\n` +
+      `🆘 *Emergency Contact:* ${emergencyNum}\n` +
+      `🏢 *Organisation:* ${user?.organization?.name || user?.orgName || "Veagle Member"} (ID: ${user?.orgId || "N/A"})\n\n` +
+      `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
+      `⚠️ *I need immediate assistance! Please verify my safety.*`
     );
     return `https://api.whatsapp.com/send?text=${text}`;
   };
@@ -385,11 +385,10 @@ export default function HerSecurityContent() {
             {/* SOS Dispatch Result Banner */}
             {sosResult && (
               <div
-                className={`mb-6 rounded-2xl p-4 text-sm font-semibold shadow-inner ${
-                  sosResult.success
-                    ? "bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800"
-                    : "bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
-                }`}
+                className={`mb-6 rounded-2xl p-4 text-sm font-semibold shadow-inner ${sosResult.success
+                  ? "bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800"
+                  : "bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   {sosResult.success ? (
