@@ -12,7 +12,7 @@ const sendSosAlert = async (req, res) => {
     }
 
     // Fetch full user and organization details
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: Number(userId) },
       include: {
         organization: true,
@@ -23,14 +23,39 @@ const sendSosAlert = async (req, res) => {
       return res.status(404).json({ success: false, message: "User profile not found." });
     }
 
+    // Fallback: If user.orgId / user.organization is null, find organization via TeamMember
+    let effectiveOrgId = user.orgId || user.organization?.id || null;
+    let effectiveOrgName = user.organization?.name || null;
+    let effectiveOrgCode = user.organization?.organizationCode || null;
+
+    if (!effectiveOrgId) {
+      const teamMember = await prisma.teamMember.findFirst({
+        where: { userId: user.id },
+        include: {
+          team: {
+            include: {
+              organization: true,
+            },
+          },
+        },
+      });
+
+      if (teamMember?.team?.organization) {
+        effectiveOrgId = teamMember.team.organization.id;
+        effectiveOrgName = teamMember.team.organization.name;
+        effectiveOrgCode = teamMember.team.organization.organizationCode;
+        user.organization = teamMember.team.organization;
+      }
+    }
+
     const { latitude, longitude, mapsUrl, address, note } = req.body || {};
 
     // Determine Org Admin Email
     let orgAdminEmail = user.organization?.email || null;
-    if (user.orgId) {
+    if (effectiveOrgId) {
       const orgAdminUser = await prisma.user.findFirst({
         where: {
-          orgId: user.orgId,
+          orgId: effectiveOrgId,
           role: "ORG_ADMIN",
           isActive: true,
         },
@@ -67,7 +92,7 @@ const sendSosAlert = async (req, res) => {
       <div style="font-family: Arial, Helvetica, sans-serif; width: 100%; max-width: 600px; margin: 0 auto; border: 2px solid #dc2626; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-sizing: border-box; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">
         <div style="background-color: #dc2626; color: #ffffff; padding: 20px 16px; text-align: center; box-sizing: border-box;">
           <h1 style="margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; word-break: break-word;">🚨 EMERGENCY SOS ALERT 🚨</h1>
-          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">Tichi Suraksha / Her Security Emergency System</p>
+          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;"> तिची सुरक्षा / Her Security Emergency System </p>
         </div>
         
         <div style="padding: 20px 16px; color: #1e293b; box-sizing: border-box;">
@@ -96,6 +121,10 @@ const sendSosAlert = async (req, res) => {
               <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Emergency Contact:</strong></td>
               <td style="padding: 8px 0 8px 6px; color: #dc2626; font-weight: 700; vertical-align: top; word-break: break-word;">${user.emergencyContact || user.mobile || "N/A"}</td>
             </tr>
+            ${user.profileImageUrl || user.profileImage ? `<tr>
+              <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Profile Photo:</strong></td>
+              <td style="padding: 8px 0 8px 6px; color: #0f172a; vertical-align: top; word-break: break-word;"><a href="${user.profileImageUrl || user.profileImage}" target="_blank" style="color: #2563eb; font-weight: bold; text-decoration: underline;">🖼️ View Profile Photo</a></td>
+            </tr>` : ""}
             <tr>
               <td style="padding: 8px 6px 8px 0; color: #64748b; vertical-align: top; word-break: break-word;"><strong>Organisation:</strong></td>
               <td style="padding: 8px 0 8px 6px; color: #0f172a; vertical-align: top; word-break: break-word;">${user.organization?.name || "N/A"} (ID: ${user.orgId || "N/A"})</td>
