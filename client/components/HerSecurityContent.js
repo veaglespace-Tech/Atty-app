@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useGetMeQuery } from "@/services/api/authApi";
 import { API_BASE_URL } from "@/services/api/baseApi";
+import { CLIENT_BASE_URL } from "@/config";
 import {
   ShieldAlert,
   PhoneCall,
@@ -43,6 +44,11 @@ export default function HerSecurityContent() {
     user?.avatarUrl ||
     user?.avatar ||
     null;
+
+  const publicPhotoUrl = avatarSrc
+    ? (avatarSrc.startsWith("http") ? avatarSrc : `${CLIENT_BASE_URL}${avatarSrc.startsWith("/") ? "" : "/"}${avatarSrc}`)
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=dc2626&color=ffffff&size=250&bold=true`;
+
   const displayOrgName =
     currentUser?.organization?.name ||
     currentUser?.orgName ||
@@ -140,14 +146,14 @@ export default function HerSecurityContent() {
   // WhatsApp Message Generator
   const generateWhatsAppUrl = () => {
     const emergencyNum = displayEmergencyContact;
-    const photoLine = avatarSrc ? `\n🖼️ *Profile Photo:* ${avatarSrc}` : "";
     const text = encodeURIComponent(
       `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
       `👤 *Name:* ${displayName}\n` +
       `📧 *Email:* ${displayEmail}\n` +
       `📱 *Contact:* ${displayMobile}\n` +
       `🆘 *Emergency Contact:* ${emergencyNum}\n` +
-      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})${photoLine}\n\n` +
+      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})\n` +
+      `🖼️ *Profile Photo:* ${publicPhotoUrl}\n\n` +
       `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
       `⚠️ *I need immediate assistance! Please verify my safety.*`
     );
