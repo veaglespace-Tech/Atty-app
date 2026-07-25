@@ -11,6 +11,7 @@ const {
   truncateText,
 } = require("../services/common.service");
 const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/image-upload.service");
+const { notifyNewPost } = require("../services/push-notification.service");
 
 const POST_TYPES = new Set([
   "NOTIFICATION",
@@ -260,6 +261,8 @@ exports.createPost = asyncHandler(async (req, res) => {
     },
     include: POST_INCLUDE,
   });
+
+  notifyNewPost(post, req.user.id, orgId, resolvedTeamId);
 
   // BACKGROUND TASK: Send Push Notifications
   try {
