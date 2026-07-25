@@ -110,12 +110,42 @@ exports.getStats = asyncHandler(async (req, res) => {
 
 exports.getActivities = asyncHandler(async (req, res) => {
   const orgId = Number(req.user.organizationId || req.user.organization);
+  const userId = Number(req.user.id);
+  const role = resolveUserRole(req.user, orgId);
+
+  let whereClause = {
+    orgId,
+    deletedAt: null,
+  };
+
+  if (role === "MEMBER" || role === "LIFE_MEMBER") {
+    whereClause.userId = userId;
+  } else if (role === "TEAM_LEADER") {
+    const accessibleTeams = await prisma.team.findMany({
+      where: {
+        orgId,
+        deletedAt: null,
+        OR: [
+          { leaderId: userId },
+          { createdById: userId },
+          { members: { some: { userId } } }
+        ],
+      },
+      select: { id: true }
+    });
+    const teamIds = accessibleTeams.map(t => t.id);
+    if (teamIds.length > 0) {
+      whereClause.OR = [
+        { teamId: { in: teamIds } },
+        { userId: userId }
+      ];
+    } else {
+      whereClause.userId = userId;
+    }
+  }
 
   const attendances = await prisma.attendance.findMany({
-    where: {
-      orgId,
-      deletedAt: null,
-    },
+    where: whereClause,
     orderBy: {
       createdAt: "desc",
     },
