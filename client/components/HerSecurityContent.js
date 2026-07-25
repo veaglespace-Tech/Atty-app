@@ -488,18 +488,11 @@ export default function HerSecurityContent() {
 
           <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div className="relative">
-              {user?.profilePhoto || user?.photo ? (
-                <img
-                  src={user.profilePhoto || user.photo}
-                  alt={user?.name || "User"}
-                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 shadow-md object-cover"
-                />
-              ) : (
-                <UserAvatar
-                  user={user}
-                  className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 text-xl font-bold shadow-md"
-                />
-              )}
+              <UserAvatar
+                src={user?.profilePhoto || user?.photo || user?.avatar}
+                name={user?.name}
+                className="h-20 w-20 rounded-2xl border-2 border-rose-500/30 text-2xl font-black shadow-md"
+              />
               <div className="absolute -bottom-1 -right-1 rounded-full bg-rose-600 p-1 text-white shadow">
                 <Shield className="h-3.5 w-3.5" />
               </div>
