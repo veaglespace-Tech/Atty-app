@@ -101,11 +101,13 @@ export default function HerSecurityContent() {
 
   // WhatsApp Message Generator
   const generateWhatsAppUrl = () => {
+    const emergencyNum = user?.emergencyContact || user?.mobile || EMERGENCY_TEST_NUMBER;
     const text = encodeURIComponent(
       `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
         `👤 *Name:* ${user?.name || "User"}\n` +
         `📧 *Email:* ${user?.email || "N/A"}\n` +
         `📱 *Contact:* ${user?.mobile || "N/A"}\n` +
+        `🆘 *Emergency Contact:* ${emergencyNum}\n` +
         `🏢 *Organisation:* ${user?.organization?.name || user?.orgName || "Veagle Member"} (ID: ${user?.orgId || "N/A"})\n\n` +
         `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
         `⚠️ *I need immediate assistance! Please verify my safety.*`
