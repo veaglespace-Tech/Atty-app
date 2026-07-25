@@ -1711,6 +1711,17 @@ exports.updatePushToken = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Push token is required" });
   }
 
+  // Clear this token from any other accounts to prevent duplicate notifications
+  // if the user switches accounts on the same physical phone.
+  await prisma.user.updateMany({
+    where: {
+      expoPushToken: pushToken,
+      id: { not: req.user.id }
+    },
+    data: { expoPushToken: null }
+  });
+
+  // Assign to the currently logged-in user
   await prisma.user.update({
     where: { id: req.user.id },
     data: { expoPushToken: pushToken }

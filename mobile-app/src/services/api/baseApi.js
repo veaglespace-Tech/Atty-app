@@ -51,9 +51,6 @@ const resolveApiBaseUrl = () => {
     return explicitApiUrl;
   }
 
-  // Hardcoded to localhost to bypass cache issues without requiring a terminal restart
-  return "http://localhost:5001/api";
-
   const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)
     || DEFAULT_PRODUCTION_API_URL;
 
