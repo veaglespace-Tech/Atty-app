@@ -98,6 +98,47 @@ export default function HerSecurityContent() {
     }
   }, []);
 
+  // Hold-to-activate logic
+  const [holdProgress, setHoldProgress] = useState(0); // 0 to 3 seconds
+  const [isHolding, setIsHolding] = useState(false);
+  const holdIntervalRef = useRef(null);
+
+  const startHold = () => {
+    if (isSendingSos) return;
+    
+    // Immediate click to stop
+    if (isSosActive) {
+      handleStopSosAlert();
+      return;
+    }
+
+    setIsHolding(true);
+    setHoldProgress(0);
+
+    let progress = 0;
+    holdIntervalRef.current = setInterval(() => {
+      progress += 1;
+      setHoldProgress(progress);
+
+      if (progress >= 3) {
+        clearInterval(holdIntervalRef.current);
+        holdIntervalRef.current = null;
+        setIsHolding(false);
+        setHoldProgress(0);
+        handleTriggerSosAlert();
+      }
+    }, 1000); // 1 second intervals
+  };
+
+  const cancelHold = () => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setIsHolding(false);
+    setHoldProgress(0);
+  };
+
   const releaseWakeLock = useCallback(async () => {
     if (wakeLockRef.current !== null) {
       await wakeLockRef.current.release();
@@ -126,7 +167,7 @@ export default function HerSecurityContent() {
     } else {
       releaseWakeLock();
     }
-    
+
     // Cleanup on unmount
     return () => {
       releaseWakeLock();
@@ -191,17 +232,17 @@ export default function HerSecurityContent() {
   // Periodic Location Updates during active SOS
   useEffect(() => {
     let intervalId;
-    
+
     if (isSosActive) {
       intervalId = setInterval(() => {
         if (typeof window === "undefined" || !navigator.geolocation) return;
-        
+
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const liveMapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-            
+
             try {
               const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
               await fetch(`${API_BASE_URL}/her-security/sos-alert`, {
@@ -228,9 +269,9 @@ export default function HerSecurityContent() {
           },
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
-      }, 10 * 60 * 1000); // 10 minutes in milliseconds
+      }, 15 * 60 * 1000); // 15 minutes in milliseconds
     }
-    
+
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
@@ -447,11 +488,15 @@ export default function HerSecurityContent() {
               <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6 animate-bounce" />
               EMERGENCY SOS DISPATCH
             </h2>
-            <div className="flex flex-row items-center justify-center gap-4 sm:gap-6 md:gap-8">
+            <div className="flex flex-col items-center justify-center gap-4 sm:gap-6 md:gap-8">
               <button
-                onClick={isSosActive ? handleStopSosAlert : handleTriggerSosAlert}
+                onMouseDown={startHold}
+                onMouseUp={cancelHold}
+                onMouseLeave={cancelHold}
+                onTouchStart={(e) => { startHold(); }}
+                onTouchEnd={cancelHold}
                 disabled={isSendingSos}
-                className={`group relative flex h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 items-center justify-center rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${
+                className={`group relative flex h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 items-center justify-center rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 touch-none select-none ${
                   isSosActive
                     ? "bg-gradient-to-br from-rose-500 via-rose-600 to-red-700 shadow-[0_0_50px_rgba(225,29,72,0.6)]"
                     : "bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 shadow-[0_0_50px_rgba(16,185,129,0.6)]"
@@ -470,12 +515,18 @@ export default function HerSecurityContent() {
                       <ShieldAlert className="h-10 w-10 sm:h-14 sm:w-14" />
                     )
                   )}
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide drop-shadow-md text-center leading-tight">
-                    {isSendingSos ? "..." : (isSosActive ? "STOP SOS" : "START SOS")}
-                  </span>
+                  {isHolding ? (
+                    <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide drop-shadow-md text-center leading-tight">
+                      Hold... {3 - holdProgress}s
+                    </span>
+                  ) : (
+                    <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide drop-shadow-md text-center leading-tight">
+                      {isSendingSos ? "..." : (isSosActive ? "STOP SOS" : "START SOS")}
+                    </span>
+                  )}
                   {!isSendingSos && (
                      <span className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-widest opacity-80 mt-1">
-                       {isSosActive ? "Cancel Alert" : "Urgent Alert"}
+                       {isHolding ? "Keep Holding" : (isSosActive ? "Tap to Cancel" : "Hold 3s to Alert")}
                      </span>
                   )}
                 </div>
