@@ -4,7 +4,7 @@ import notificationReducer from "./slices/notificationSlice";
 import { apiErrorNotificationMiddleware } from "./middleware/apiErrorNotificationMiddleware";
 import { rtkQueryErrorLogger } from "@/debug/rtkQueryLogger";
 import { authApi } from "@/services/api/authApi";
-import { planApi } from "@/services/api/planApi";
+
 import { orgApi } from "@/services/api/orgApi";
 import { teamLeaderApi } from "@/services/api/teamLeaderApi";
 import { memberApi } from "@/services/api/memberApi";
@@ -22,7 +22,7 @@ export const store = configureStore({
     auth: authReducer,
     notifications: notificationReducer,
     [authApi.reducerPath]: authApi.reducer,
-    [planApi.reducerPath]: planApi.reducer,
+
     [orgApi.reducerPath]: orgApi.reducer,
     [teamLeaderApi.reducerPath]: teamLeaderApi.reducer,
     [memberApi.reducerPath]: memberApi.reducer,
@@ -43,7 +43,7 @@ export const store = configureStore({
       apiErrorNotificationMiddleware,
       rtkQueryErrorLogger,
       authApi.middleware,
-      planApi.middleware,
+
       orgApi.middleware,
       teamLeaderApi.middleware,
       memberApi.middleware,
