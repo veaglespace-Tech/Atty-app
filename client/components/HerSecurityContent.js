@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useGetMeQuery } from "@/services/api/authApi";
 import { API_BASE_URL } from "@/services/api/baseApi";
@@ -21,6 +21,7 @@ import {
   Shield,
 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
+import DashboardFooter from "@/components/dashboard/DashboardFooter";
 
 const EMERGENCY_TEST_NUMBER = "8237999101";
 
@@ -81,6 +82,56 @@ export default function HerSecurityContent() {
   // Alert execution states
   const [isSendingSos, setIsSendingSos] = useState(false);
   const [sosResult, setSosResult] = useState(null); // { success: boolean, message: string }
+  const [isSosActive, setIsSosActive] = useState(false); // Tracks if SOS is currently active
+
+  // Screen Wake Lock API to prevent phone from sleeping during SOS
+  const wakeLockRef = useRef(null);
+
+  const requestWakeLock = useCallback(async () => {
+    try {
+      if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        console.log('Screen Wake Lock is active. Screen will not turn off automatically.');
+      }
+    } catch (err) {
+      console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current !== null) {
+      await wakeLockRef.current.release();
+      wakeLockRef.current = null;
+      console.log('Screen Wake Lock released.');
+    }
+  }, []);
+
+  // Re-acquire wake lock if document becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isSosActive) {
+        requestWakeLock();
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
+  }, [isSosActive, requestWakeLock]);
+
+  // Request or release on isSosActive change
+  useEffect(() => {
+    if (isSosActive) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      releaseWakeLock();
+    };
+  }, [isSosActive, requestWakeLock, releaseWakeLock]);
 
   // Function to capture Geolocation
   const requestLocation = useCallback(() => {
@@ -136,6 +187,54 @@ export default function HerSecurityContent() {
   useEffect(() => {
     requestLocation();
   }, [requestLocation]);
+
+  // Periodic Location Updates during active SOS
+  useEffect(() => {
+    let intervalId;
+    
+    if (isSosActive) {
+      intervalId = setInterval(() => {
+        if (typeof window === "undefined" || !navigator.geolocation) return;
+        
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const liveMapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+            
+            try {
+              const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
+              await fetch(`${API_BASE_URL}/her-security/sos-alert`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(authToken ? { Authorization: authToken } : {}),
+                },
+                body: JSON.stringify({
+                  latitude: lat,
+                  longitude: lng,
+                  mapsUrl: liveMapsUrl,
+                  isUpdate: true,
+                  deviceInfo: navigator.userAgent,
+                }),
+              });
+            } catch (e) {
+              console.error("Failed to send background location update", e);
+            }
+          },
+          (error) => {
+            console.error("Background location tracking error:", error);
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      }, 10 * 60 * 1000); // 10 minutes in milliseconds
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isSosActive, token]);
 
   // Construct Google Maps Live Link
   const mapsUrl =
@@ -200,9 +299,10 @@ export default function HerSecurityContent() {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        setIsSosActive(true);
         setSosResult({
           success: true,
-          message: "🚨 SOS Alert successfully triggered across Email, WhatsApp & Dialer!",
+          message: "🚨 SOS Alert successfully triggered across Email, WhatsApp & Dialer! Live location tracking is active.",
           recipients: data.recipientsSent || [],
         });
       } else {
@@ -222,9 +322,53 @@ export default function HerSecurityContent() {
     }
   };
 
+  // Stop SOS Alert
+  const handleStopSosAlert = async () => {
+    if (isSendingSos) return;
+    setIsSendingSos(true);
+    setSosResult(null);
+
+    try {
+      const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
+      const response = await fetch(`${API_BASE_URL}/her-security/stop-sos-alert`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: authToken } : {}),
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsSosActive(false);
+        setSosResult({
+          success: true,
+          message: "✅ SOS Alert has been successfully stopped and cancelled.",
+          recipients: data.recipientsSent || [],
+        });
+      } else {
+        setSosResult({
+          success: false,
+          message: data.message || "Failed to cancel SOS alert.",
+        });
+      }
+    } catch (err) {
+      console.error("SOS Stop Error:", err);
+      setSosResult({
+        success: false,
+        message: "Network error occurred while cancelling SOS alert.",
+      });
+    } finally {
+      setIsSendingSos(false);
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-12 bg-pink-50/50 dark:bg-pink-950/20 p-4 sm:p-8 rounded-[3rem]">
-      {/* Header Banner Area */}
+    <div className="flex flex-col min-h-screen">
+      <div className="flex-1 mx-auto w-full max-w-5xl space-y-6 pb-12 bg-pink-50/50 dark:bg-pink-950/20 p-4 sm:p-8 rounded-[3rem]">
+        {/* Header Banner Area */}
       <div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-4 md:gap-8 lg:gap-10 relative w-full">
         {/* Organization Logo */}
         {user?.organization?.logoUrl && (
@@ -240,10 +384,10 @@ export default function HerSecurityContent() {
         )}
 
         {/* Header Banner */}
-        <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-gradient-to-br from-indigo-950 via-rose-900 to-pink-700 p-4 sm:p-6 md:p-8 text-white shadow-[0_30px_60px_rgba(225,29,72,0.3)] border border-white/10 order-3 md:order-2 col-span-2 justify-self-center mx-auto">
+        <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 p-4 sm:p-6 md:p-8 text-white shadow-[0_30px_60px_rgba(249,115,22,0.3)] border border-white/20 order-3 md:order-2 col-span-2 justify-self-center mx-auto">
           {/* Modern decorative background elements */}
-          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-rose-500/20 blur-3xl mix-blend-screen" />
-          <div className="absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-indigo-500/20 blur-3xl mix-blend-screen -translate-y-1/2 translate-x-1/3" />
+          <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-yellow-400/30 blur-3xl mix-blend-screen" />
+          <div className="absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-red-400/20 blur-3xl mix-blend-screen -translate-y-1/2 translate-x-1/3" />
 
           <div className="relative z-10 flex flex-col items-center justify-center w-full">
             <div className="space-y-6">
@@ -297,34 +441,48 @@ export default function HerSecurityContent() {
 
         <div className="relative z-10 flex flex-col lg:flex-row items-center gap-10 lg:gap-16 justify-center">
 
-          {/* Left Side: SOS Button */}
+          {/* Left Side: SOS Buttons */}
           <div className="flex flex-col items-center justify-center text-center shrink-0">
             <h2 className="flex items-center justify-center gap-2 text-base sm:text-lg font-bold text-rose-600 dark:text-rose-400 mb-6 whitespace-nowrap">
               <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6 animate-bounce" />
               EMERGENCY SOS DISPATCH
             </h2>
-            <button
-              onClick={handleTriggerSosAlert}
-              disabled={isSendingSos}
-              className="group relative flex h-48 w-48 sm:h-56 sm:w-56 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-rose-600 to-red-700 text-white shadow-[0_0_40px_rgba(225,29,72,0.4)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-            >
-              <span className="absolute inset-0 rounded-full bg-rose-600 animate-[ping_2s_ease-in-out_infinite] opacity-40 group-hover:opacity-60" />
-              <div className="relative z-10 flex flex-col items-center justify-center gap-2">
-                {isSendingSos ? (
-                  <RefreshCw className="h-12 w-12 animate-spin" />
-                ) : (
-                  <ShieldAlert className="h-16 w-16" />
-                )}
-                <span className="text-2xl sm:text-3xl font-black tracking-wider drop-shadow-md">
-                  {isSendingSos ? "DISPATCHING" : "PRESS SOS"}
-                </span>
-                <span className="text-xs sm:text-sm font-bold tracking-widest text-rose-200 uppercase">
-                  Urgent Alert
-                </span>
-              </div>
-            </button>
+            <div className="flex flex-row items-center justify-center gap-4 sm:gap-6 md:gap-8">
+              <button
+                onClick={isSosActive ? handleStopSosAlert : handleTriggerSosAlert}
+                disabled={isSendingSos}
+                className={`group relative flex h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 items-center justify-center rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${
+                  isSosActive
+                    ? "bg-gradient-to-br from-rose-500 via-rose-600 to-red-700 shadow-[0_0_50px_rgba(225,29,72,0.6)]"
+                    : "bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 shadow-[0_0_50px_rgba(16,185,129,0.6)]"
+                }`}
+              >
+                <span className={`absolute inset-0 rounded-full animate-[ping_2s_ease-in-out_infinite] opacity-40 group-hover:opacity-60 ${
+                  isSosActive ? "bg-rose-600" : "bg-emerald-600"
+                }`} />
+                <div className="relative z-10 flex flex-col items-center justify-center gap-2 sm:gap-3">
+                  {isSendingSos ? (
+                    <RefreshCw className="h-10 w-10 sm:h-14 sm:w-14 animate-spin" />
+                  ) : (
+                    isSosActive ? (
+                      <Shield className="h-10 w-10 sm:h-14 sm:w-14" />
+                    ) : (
+                      <ShieldAlert className="h-10 w-10 sm:h-14 sm:w-14" />
+                    )
+                  )}
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide drop-shadow-md text-center leading-tight">
+                    {isSendingSos ? "..." : (isSosActive ? "STOP SOS" : "START SOS")}
+                  </span>
+                  {!isSendingSos && (
+                     <span className="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-widest opacity-80 mt-1">
+                       {isSosActive ? "Cancel Alert" : "Urgent Alert"}
+                     </span>
+                  )}
+                </div>
+              </button>
+            </div>
             <p className="mt-8 max-w-sm text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Clicking this button automatically dispatches an emergency email with your live location & details to your Org Admin and Support Team.
+              Click START SOS to automatically dispatch an emergency email with your live location. Click STOP SOS to cancel the alert when safe.
             </p>
           </div>
 
@@ -563,5 +721,7 @@ export default function HerSecurityContent() {
         </ul>
       </div>
     </div>
+    <DashboardFooter />
+  </div>
   );
 }
