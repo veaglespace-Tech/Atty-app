@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, CalendarCheck2, Users, Settings, CreditCard, MessageSquare, Component } from 'lucide-react-native';
+import { ShieldAlert,  Home, CalendarCheck2, Users, Settings, CreditCard, MessageSquare, Component  } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -71,6 +71,13 @@ export default function MemberLayout() {
           title: 'Teams',
           tabBarIcon: ({ color }) => <Users size={24} color={color} />,
           href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="her-security"
+        options={{
+          title: 'तिची सुरक्षा',
+          tabBarIcon: ({ color }) => <ShieldAlert size={24} color={color} />,
         }}
       />
       <Tabs.Screen

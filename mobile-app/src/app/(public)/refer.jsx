@@ -45,7 +45,7 @@ export default function PartnerReferralDashboard() {
 
     return (
       <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           
           <View className="mb-6 flex-row items-center justify-between">
             <Text className="text-xl font-black text-slate-900 dark:text-white">Partner Portal</Text>

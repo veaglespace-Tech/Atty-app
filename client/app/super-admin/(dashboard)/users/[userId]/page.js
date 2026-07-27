@@ -102,6 +102,9 @@ export default function SuperAdminUserDetailStandalonePage() {
     currentAddress: "",
     permanentAddress: "",
     bloodGroup: "",
+    gender: "",
+    existingMember: "",
+    referenceBy: "",
     role: "MEMBER",
     approvalStatus: "APPROVED",
     active: true,
@@ -153,6 +156,9 @@ export default function SuperAdminUserDetailStandalonePage() {
       currentAddress: user.currentAddress || "",
       permanentAddress: user.permanentAddress || "",
       bloodGroup: user.bloodGroup || "",
+      gender: user.gender || "",
+      existingMember: user.existingMember?.toUpperCase() || "",
+      referenceBy: user.referenceBy || "",
       role: user.role || "MEMBER",
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
@@ -194,6 +200,9 @@ export default function SuperAdminUserDetailStandalonePage() {
         currentAddress: normalizeTextInput(form.currentAddress),
         permanentAddress: normalizeTextInput(form.permanentAddress),
         bloodGroup: normalizeTextInput(form.bloodGroup),
+        gender: form.gender,
+        existingMember: form.existingMember,
+        referenceBy: form.referenceBy,
         permissions: form.permissions,
       }).unwrap();
 
@@ -366,6 +375,9 @@ export default function SuperAdminUserDetailStandalonePage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Gender" value={toDisplayText(user.gender)} />
+          <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
+          <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(user.createdAt)} />
@@ -464,6 +476,42 @@ export default function SuperAdminUserDetailStandalonePage() {
                 rows={2}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Reference By</label>
+              <input
+                value={form.referenceBy}
+                onChange={(event) => setForm((prev) => ({ ...prev, referenceBy: event.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Gender</label>
+              <select
+                value={form.gender}
+                onChange={(event) => setForm((prev) => ({ ...prev, gender: event.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Member Type</label>
+              <select
+                value={form.existingMember}
+                onChange={(event) => setForm((prev) => ({ ...prev, existingMember: event.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="">Select Member Type</option>
+                <option value="SENIOR">Senior</option>
+                <option value="JUNIOR">Junior</option>
+              </select>
             </div>
 
             <div className="space-y-2 sm:col-span-2">

@@ -111,7 +111,7 @@ export default function RaiseClaimModal({ visible, onClose, onSuccess }) {
             </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
             {/* Title */}
             <View className="mb-5">
               <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-2">Expense Type / Title</Text>

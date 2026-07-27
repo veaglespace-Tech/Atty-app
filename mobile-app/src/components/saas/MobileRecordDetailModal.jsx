@@ -94,7 +94,7 @@ export default function MobileRecordDetailModal({ record, onClose, visible }) {
         </View>
 
         {/* Body */}
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
           {isAttendance ? (
             <View className="gap-4">
               {/* Member Profile */}

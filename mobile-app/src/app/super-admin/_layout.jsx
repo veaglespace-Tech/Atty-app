@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Building2, Users, CreditCard, Settings } from 'lucide-react-native';
+import { ShieldAlert,  Home, Building2, Users, CreditCard, Settings  } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
@@ -63,6 +63,13 @@ export default function SuperAdminLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="her-security"
+        options={{
+          title: 'तिची सुरक्षा',
+          tabBarIcon: ({ color }) => <ShieldAlert size={24} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="settings"
         options={{

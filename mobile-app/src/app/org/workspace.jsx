@@ -219,7 +219,7 @@ export default function OrgWorkspacePage() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}>
         
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
           <Text className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 ml-1">Configurations</Text>
           <Text className="text-3xl font-black text-slate-900 dark:text-white mb-6 tracking-tight ml-1">Attendance Settings</Text>
           

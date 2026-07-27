@@ -122,7 +122,7 @@ export default function OrgMyAttendancePage() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchAttendance} tintColor="#2563eb" />}>
         
         <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden mb-4 shadow-sm">

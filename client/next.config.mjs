@@ -36,6 +36,10 @@ const nextConfig = {
         hostname: "res.cloudinary.com",
       },
       {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
       },
@@ -48,3 +52,5 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
+// Trigger reload

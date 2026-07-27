@@ -1,16 +1,32 @@
 import React, { useState, useRef } from "react";
 import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
-import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield } from "lucide-react-native";
+import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 import { useColorScheme } from "nativewind";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
 import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission } from "@/utils/roles";
+import { API_BASE_URL } from "@/services/api/baseApi";
 import AnimatedLogo from '../AnimatedLogo.jsx';
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer 
+
+export const getFullImageUrl = (url) => {
+  if (!url) return null;
+  const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api(\/v1)?\/?$/, '') : '';
+  if (url.startsWith("http")) {
+    if (url.includes("localhost:") || url.includes("127.0.0.1:")) {
+      try {
+        const urlObj = new URL(url);
+        return `${baseUrl}${urlObj.pathname}${urlObj.search}`;
+      } catch (e) { return url; }
+    }
+    return url;
+  }
+  return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 
 const getTabsForRole = (user) => {
   if (!user) return [];
@@ -30,6 +46,7 @@ const getTabsForRole = (user) => {
       { title: "Roles", icon: <Shield {...commonIconProps} />, href: "roles" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
+      { title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" },
       { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
       { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" }
     ];
@@ -59,6 +76,7 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
     if (isAdmin) {
       tabs.push({ title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" });
       tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
@@ -79,6 +97,7 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
     tabs.push({ title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" });
     return tabs;
   }
@@ -86,7 +105,8 @@ const getTabsForRole = (user) => {
   // MEMBER fallback
   const fallbackTabs = [
     { title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" },
-    { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" }
+    { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
+    { title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" }
   ];
   
   return fallbackTabs;
@@ -102,6 +122,9 @@ export default function MobileDashboardShell({ children }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const [avatarError, setAvatarError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const onLogout = () => {
     dispatch(logout());
@@ -141,6 +164,9 @@ export default function MobileDashboardShell({ children }) {
     });
   };
 
+  const headerOrgLogoUrl = getFullImageUrl(user?.organization?.logoUrl);
+  const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
+
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       
@@ -155,14 +181,15 @@ export default function MobileDashboardShell({ children }) {
               <Menu size={20} color={isDark ? "#ffffff" : "#0f172a"} />
             </Pressable>
           </View>
-          
+
           {/* Center: Org Logo or Brand */}
           <View className="absolute left-0 right-0 items-center justify-center pointer-events-none" style={{ top: 0, bottom: 0, zIndex: 1 }}>
-            {user?.organization?.logoUrl ? (
+            {headerOrgLogoUrl && !logoError ? (
               <Image 
-                source={{ uri: user.organization.logoUrl }} 
+                source={{ uri: headerOrgLogoUrl }} 
                 style={{ height: 32, width: 120 }} 
                 resizeMode="contain" 
+                onError={() => setLogoError(true)}
               />
             ) : (
               <View className="flex-row items-center justify-center">
@@ -171,7 +198,7 @@ export default function MobileDashboardShell({ children }) {
                   Veagle
                 </Text>
                 <Text className="text-xl font-black text-blue-500 leading-tight tracking-tight">
-                  Attendee
+                  Atty
                 </Text>
               </View>
             )}
@@ -182,8 +209,13 @@ export default function MobileDashboardShell({ children }) {
             onPress={() => router.push('/org/settings')}
             className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform z-10 shadow-sm overflow-hidden"
           >
-            {user?.profileImageUrl || user?.avatar || user?.profilePicture ? (
-              <Image source={{ uri: user?.profileImageUrl || user?.avatar || user?.profilePicture }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            {headerProfileUrl && !avatarError ? (
+              <Image 
+                source={{ uri: headerProfileUrl }} 
+                style={{ width: '100%', height: '100%' }} 
+                resizeMode="cover" 
+                onError={() => setAvatarError(true)}
+              />
             ) : (
               <Text className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
                 {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}

@@ -27,7 +27,7 @@ export default function CreateOrgUserModal({
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
           <View className="gap-4">
             {/* Name */}
             <View className="gap-1.5">

@@ -105,7 +105,7 @@ export default function OrgAttendanceLogDetailPage() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         
         {/* Member Profile */}
         <View className="flex-row items-center gap-4 bg-white dark:bg-slate-900/80 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm mb-4">

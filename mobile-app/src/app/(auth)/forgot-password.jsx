@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,12 +11,16 @@ import AuthPageShell, {
   authFieldErrorClassName,
   authFieldNormalClassName
 } from '@/components/auth/AuthPageShell';
+import OrganizationLookupField from '@/components/auth/OrganizationLookupField';
 import { useForgotPasswordMutation } from '@/services/api/authApi';
 import { ROLES, LOGIN_ROLE_OPTIONS } from '@/utils/roles';
 
 const forgotPasswordSchema = z.object({
   loginAs: z.string().min(1, 'Role is required'),
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
+  organizationId: z.string().min(1, "Please select your organization"),
+  organizationCode: z.string().optional(),
+  organizationName: z.string().optional(),
 });
 
 const roleOptions = LOGIN_ROLE_OPTIONS.filter((roleOption) => roleOption.value !== ROLES.SUPER_ADMIN);
@@ -26,16 +30,24 @@ export default function ForgotPasswordPage() {
   const [forgotPassword] = useForgotPasswordMutation();
   const [requestSent, setRequestSent] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [selectedOrganization, setSelectedOrganization] = useState(null);
 
   const {
     control,
     handleSubmit,
     setValue,
+    clearErrors,
     watch,
     formState: { errors, isSubmitting }
   } = useForm({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '', loginAs: ROLES.MEMBER }
+    defaultValues: { 
+      email: '', 
+      loginAs: ROLES.MEMBER,
+      organizationId: "",
+      organizationCode: "",
+      organizationName: ""
+    }
   });
 
   const selectedRole = watch("loginAs");
@@ -47,6 +59,8 @@ export default function ForgotPasswordPage() {
       await forgotPassword({
         loginAs: values.loginAs,
         email: values.email.trim(),
+        organizationId: Number(values.organizationId),
+        organizationCode: values.organizationCode?.trim().toUpperCase() || undefined,
       }).unwrap();
       setRequestSent(true);
     } catch (err) {
@@ -136,6 +150,34 @@ export default function ForgotPasswordPage() {
                       ))}
                     </View>
                   )}
+                  {errors.loginAs && (
+                    <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
+                      {errors.loginAs.message}
+                    </Text>
+                  )}
+                </View>
+
+                <View className="group relative z-10">
+                  <OrganizationLookupField
+                    label="Organization"
+                    placeholder="Search by organization name or code"
+                    helperText="Select the same organization that is linked to your account."
+                    error={errors.organizationId?.message}
+                    selectedOrganization={selectedOrganization}
+                    onSelect={(organization) => {
+                      setSelectedOrganization(organization);
+                      setValue("organizationId", String(organization.id), { shouldValidate: true, shouldDirty: true });
+                      setValue("organizationCode", organization.organizationCode || "", { shouldDirty: true });
+                      setValue("organizationName", organization.name || "", { shouldDirty: true });
+                      clearErrors("organizationId");
+                    }}
+                    onClear={() => {
+                      setSelectedOrganization(null);
+                      setValue("organizationId", "", { shouldValidate: true, shouldDirty: true });
+                      setValue("organizationCode", "", { shouldDirty: true });
+                      setValue("organizationName", "", { shouldDirty: true });
+                    }}
+                  />
                 </View>
 
                 <View className="group relative z-10">

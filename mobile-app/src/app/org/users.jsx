@@ -187,7 +187,7 @@ export default function OrgUsersPage() {
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}>
         
         {/* HEADER */}

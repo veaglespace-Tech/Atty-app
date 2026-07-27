@@ -13,13 +13,21 @@ import AuthPageShell, {
 } from '@/components/auth/AuthPageShell';
 import { useValidateResetPasswordTokenMutation, useResetPasswordMutation } from '@/services/api/authApi';
 
-const resetPasswordSchema = z.object({
-  newPassword: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password is too long'),
-  confirmPassword: z.string().min(1, 'Confirm password is required'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  path: ['confirmPassword'],
-  message: 'Passwords do not match',
-});
+const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password is too long"),
+    confirmPassword: z
+      .string()
+      .min(8, "Confirm password must be at least 8 characters")
+      .max(128, "Password is too long"),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -65,7 +73,7 @@ export default function ResetPasswordPage() {
     formState: { errors, isSubmitting }
   } = useForm({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { newPassword: '', confirmPassword: '' }
+    defaultValues: { password: '', confirmPassword: '' }
   });
 
   const onSubmit = async (values) => {
@@ -73,7 +81,7 @@ export default function ResetPasswordPage() {
       setAuthError("");
       await resetPassword({
         token,
-        newPassword: values.newPassword,
+        password: values.password,
       }).unwrap();
       setSuccess(true);
     } catch (err) {
@@ -162,10 +170,10 @@ export default function ResetPasswordPage() {
                     </View>
                     <Controller
                       control={control}
-                      name="newPassword"
+                      name="password"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput
-                          className={`${authFieldClassName} pl-12 pr-12 ${errors.newPassword ? authFieldErrorClassName : authFieldNormalClassName}`}
+                          className={`${authFieldClassName} pl-12 pr-12 ${errors.password ? authFieldErrorClassName : authFieldNormalClassName}`}
                           placeholder="Enter new password"
                           placeholderTextColor="#94a3b8"
                           secureTextEntry={!showPassword}
@@ -181,9 +189,9 @@ export default function ResetPasswordPage() {
                       {showPassword ? <EyeOff size={20} className="text-slate-400" /> : <Eye size={20} className="text-slate-400" />}
                     </Pressable>
                   </View>
-                  {errors.newPassword && (
+                  {errors.password && (
                     <Text className="ml-1 mt-1.5 text-xs font-medium text-red-500">
-                      {errors.newPassword.message}
+                      {errors.password.message}
                     </Text>
                   )}
                 </View>

@@ -144,7 +144,7 @@ export default function TeamLeaderTeamDetailPage() {
         <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{team.description || "No description"}</Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />}>
 
         {error ? <View className="mb-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"><Text className="text-sm text-red-700 dark:text-red-300">{error}</Text></View> : null}
@@ -265,7 +265,7 @@ export default function TeamLeaderTeamDetailPage() {
                 className="flex-1 ml-3 text-[14px] font-semibold text-slate-900 dark:text-white" />
             </View>
           </View>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
             {filteredAddMembers.length === 0 ? (
               <View className="py-8 items-center"><Text className="text-sm font-semibold text-slate-500">No available users.</Text></View>
             ) : (

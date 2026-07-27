@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Users, CalendarCheck2, Inbox, Settings } from 'lucide-react-native';
+import { ShieldAlert,  Home, Users, CalendarCheck2, Inbox, Settings  } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -80,7 +80,15 @@ export default function TeamLeaderLayout() {
       <Tabs.Screen name="notifications/index" options={{ href: null }} />
       <Tabs.Screen name="reports" options={{ href: null }} />
 
-      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen
+        name="her-security"
+        options={{
+          title: 'तिची सुरक्षा',
+          tabBarIcon: ({ color }) => <ShieldAlert size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings" options={{ href: null }} />
 
       <Tabs.Screen name="team/[id]" options={{ href: null }} />
       <Tabs.Screen name="notifications/[id]" options={{ href: null }} />

@@ -20,27 +20,93 @@ import {
   isNotCommonEmailTypo } from
 "@/utils/formValidation";
 
-const userSchema = z.object({
-  name: z.string().trim().min(2, "Required").max(120, "Too long").regex(PERSON_NAME_REGEX, "Invalid chars"),
-  email: z.string().trim().min(1, "Required").email("Invalid email").refine(isNotCommonEmailTypo, { message: "Typo in email?" }),
-  mobileCountryCode: z.string().regex(/^\+\d{1,3}$/, "Invalid code"),
-  mobile: z.string().trim().refine((value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN, "Too short").refine((value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX, "Too long"),
-  password: z.string().min(8, "Min 8 chars").max(64, "Max 64 chars").regex(/[A-Z]/, "Needs capital").regex(/[a-z]/, "Needs small letter").regex(/\d/, "Needs number").regex(/[!@#$%^&*(),.?":{}|<>]/, "Needs special char"),
-  confirmPassword: z.string(),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"], { message: "Gender is required" }),
-  city: z.string().trim().min(1, "Required").max(80, "Too long").regex(PLACE_NAME_REGEX, "Invalid city"),
-  emergencyContact: z.string().trim().refine((value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN, "Too short").refine((value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX, "Too long"),
-  currentAddress: z.string().trim().min(5, "Required").max(191, "Too long"),
-  permanentAddress: z.string().trim().min(5, "Required").max(191, "Too long"),
-  referralCode: z.string().trim().min(1, "Required").regex(/^REF-[A-Za-z0-9]{8}$/i, "Format: REF-XXXXXXXX")
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords must match",
-  path: ["confirmPassword"]
-});
+const userSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Full name is required")
+      .max(120, "Full name is too long")
+      .regex(
+        PERSON_NAME_REGEX,
+        "Full name can only include letters, spaces, apostrophes, dots, or hyphens"
+      ),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Invalid email address")
+      .refine(isNotCommonEmailTypo, {
+        message: "Did you mean .com or .co.in? Please enter a valid email address.",
+      }),
+    mobileCountryCode: z.string().regex(/^\+\d{1,3}$/, "Select a valid country code"),
+    mobile: z
+      .string()
+      .trim()
+      .refine(
+        (value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
+        "Mobile number is too short"
+      )
+      .refine(
+        (value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
+        "Mobile number is too long"
+      ),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(64, "Password must be at most 64 characters")
+      .regex(/[A-Z]/, "Password must contain at least one capital letter")
+      .regex(/[a-z]/, "Password must contain at least one small letter")
+      .regex(/\d/, "Password must contain at least one number")
+      .regex(/[!@#$%^&*(),.?\":{}|<>]/, "Password must contain at least one special character"),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }).refine(val => val !== "", { message: "Gender is required" }),
+    existingMember: z.enum(["SENIOR", "JUNIOR"], { required_error: "Existing Member Type is required" }),
+    referenceBy: z.string().trim().max(100, "Reference name is too long").optional().or(z.literal("")),
+    bloodGroup: z.string().trim().min(1, "Blood Group is required"),
+    city: z
+      .string()
+      .trim()
+      .min(1, "City is required")
+      .max(80, "City is too long")
+      .regex(PLACE_NAME_REGEX, "Enter a valid city"),
+    emergencyContact: z
+      .string()
+      .trim()
+      .refine(
+        (value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
+        "Emergency contact number is too short"
+      )
+      .refine(
+        (value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
+        "Emergency contact number is too long"
+      ),
+    currentAddress: z
+      .string()
+      .trim()
+      .min(5, "Current address is required")
+      .max(191, "Current address is too long"),
+    permanentAddress: z
+      .string()
+      .trim()
+      .min(5, "Permanent address is required")
+      .max(191, "Permanent address is too long"),
+    referralCode: z
+      .string()
+      .trim()
+      .min(1, "Referral code is required")
+      .regex(/^REF-[A-Za-z0-9]{8}$/i, "Referral code format should be REF-XXXXXXXX"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match",
+    path: ["confirmPassword"],
+  });
 
 const fieldClassName = "w-full rounded-[1.6rem] border-2 bg-white px-4 py-4 text-sm text-slate-900 shadow-[0_16px_40px_rgba(15,23,42,0.08)] dark:bg-slate-950 dark:text-slate-100";
 const normalFieldClassName = "border-slate-200 dark:border-slate-800";
 const errorFieldClassName = "border-red-400 bg-red-50/70 dark:border-red-900 dark:bg-red-900/20";
+
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export default function UserRegisterPage() {
   const router = useRouter();
@@ -56,13 +122,16 @@ export default function UserRegisterPage() {
     resolver: zodResolver(userSchema),
     defaultValues: {
       name: "", email: "", mobileCountryCode: "+91", mobile: "",
-      password: "", confirmPassword: "", gender: "MALE",
+      password: "", confirmPassword: "", gender: "",
+      existingMember: "", referenceBy: "", bloodGroup: "",
       city: "", emergencyContact: "", currentAddress: "",
       permanentAddress: "", referralCode: ""
     }
   });
 
   const genderValue = useWatch({ control, name: "gender" });
+  const existingMemberValue = useWatch({ control, name: "existingMember" });
+  const bloodGroupValue = useWatch({ control, name: "bloodGroup" });
 
   useEffect(() => {
     if (refParam) {
@@ -83,7 +152,8 @@ export default function UserRegisterPage() {
         mobile: toDigitsOnly(values.mobile),
         emergencyContact: toDigitsOnly(values.emergencyContact),
         currentAddress: normalizeTextInput(values.currentAddress),
-        permanentAddress: normalizeTextInput(values.permanentAddress)
+        permanentAddress: normalizeTextInput(values.permanentAddress),
+        referenceBy: values.referenceBy ? normalizeTextInput(values.referenceBy) : null,
       };
       const normalizedReferralCode = values.referralCode.trim().toUpperCase();
 
@@ -100,15 +170,16 @@ export default function UserRegisterPage() {
   };
 
   const fields = [
-  { name: "referralCode", label: "Referral Code", icon: Link2, placeholder: "REF-XXXXXXXX", type: "default" },
-  { name: "name", label: "Full Name", icon: User, placeholder: "John Doe", type: "default" },
-  { name: "email", label: "Email Address", icon: Mail, placeholder: "john@company.com", type: "email-address" },
-  { name: "mobile", label: "Mobile Number", icon: Globe, placeholder: "9876543210", type: "phone-pad" },
-  { name: "password", label: "Password", icon: Lock, placeholder: "Enter your password", type: "password" },
-  { name: "confirmPassword", label: "Confirm Password", icon: ShieldCheck, placeholder: "Confirm your password", type: "password" },
-  { name: "city", label: "City", icon: MapPin, placeholder: "Pune", type: "default" },
-  { name: "emergencyContact", label: "Emergency Contact", icon: Phone, placeholder: "Emergency contact number", type: "phone-pad" }];
-
+    { name: "referralCode", label: "Referral Code", icon: Link2, placeholder: "REF-XXXXXXXX", type: "default" },
+    { name: "name", label: "Full Name", icon: User, placeholder: "John Doe", type: "default" },
+    { name: "email", label: "Email Address", icon: Mail, placeholder: "john@company.com", type: "email-address" },
+    { name: "mobile", label: "Mobile Number", icon: Globe, placeholder: "9876543210", type: "phone-pad" },
+    { name: "password", label: "Password", icon: Lock, placeholder: "Enter your password", type: "password" },
+    { name: "confirmPassword", label: "Confirm Password", icon: ShieldCheck, placeholder: "Confirm your password", type: "password" },
+    { name: "referenceBy", label: "Reference By (Optional)", icon: User, placeholder: "Name of person referring you", type: "default" },
+    { name: "city", label: "City", icon: MapPin, placeholder: "Pune", type: "default" },
+    { name: "emergencyContact", label: "Emergency Contact", icon: Phone, placeholder: "Emergency contact number", type: "phone-pad" }
+  ];
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -220,11 +291,12 @@ export default function UserRegisterPage() {
 
             })}
 
+            {/* Gender Select */}
             <View className="space-y-1.5 mt-2">
               <Text className="ml-1 mb-2 text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">
                 Gender
               </Text>
-              <View className="flex-row gap-3">
+              <View className="flex-row gap-2">
                 {["MALE", "FEMALE", "OTHER"].map((gender) =>
                 <Pressable
                   key={gender}
@@ -248,6 +320,72 @@ export default function UserRegisterPage() {
               {errors.gender &&
               <Text className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">
                   {errors.gender.message}
+                </Text>
+              }
+            </View>
+
+            {/* Member Type Select */}
+            <View className="space-y-1.5 mt-2">
+              <Text className="ml-1 mb-2 text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                Member Type
+              </Text>
+              <View className="flex-row gap-2">
+                {["SENIOR", "JUNIOR"].map((type) =>
+                <Pressable
+                  key={type}
+                  onPress={() => setValue("existingMember", type, { shouldValidate: true })}
+                  className={`flex-1 items-center justify-center rounded-2xl border-2 py-4 ${
+                  existingMemberValue === type ?
+                  "border-blue-600 bg-blue-600 dark:border-blue-400 dark:bg-blue-400" :
+                  "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"}`
+                  }>
+                  
+                    <Text
+                    className={`text-xs font-black uppercase tracking-wider ${
+                    existingMemberValue === type ? "text-white dark:text-slate-950" : "text-slate-500 dark:text-slate-400"}`
+                    }>
+                    
+                      {type}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+              {errors.existingMember &&
+              <Text className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">
+                  {errors.existingMember.message}
+                </Text>
+              }
+            </View>
+
+            {/* Blood Group Select */}
+            <View className="space-y-1.5 mt-2">
+              <Text className="ml-1 mb-2 text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                Blood Group
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {BLOOD_GROUPS.map((bg) =>
+                <Pressable
+                  key={bg}
+                  onPress={() => setValue("bloodGroup", bg, { shouldValidate: true })}
+                  className={`w-[23%] items-center justify-center rounded-xl border-2 py-3 ${
+                  bloodGroupValue === bg ?
+                  "border-rose-500 bg-rose-500 dark:border-rose-400 dark:bg-rose-400" :
+                  "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"}`
+                  }>
+                  
+                    <Text
+                    className={`text-xs font-black tracking-wider ${
+                    bloodGroupValue === bg ? "text-white dark:text-slate-950" : "text-slate-500 dark:text-slate-400"}`
+                    }>
+                    
+                      {bg}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+              {errors.bloodGroup &&
+              <Text className="ml-1 mt-1 text-[10px] font-black uppercase text-red-500">
+                  {errors.bloodGroup.message}
                 </Text>
               }
             </View>

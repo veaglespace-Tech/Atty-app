@@ -22,7 +22,7 @@ export default function WorkspaceSettings() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <OrgLogoSettings />
         <OrgDetailsSettings />
         <LocationSettings />

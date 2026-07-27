@@ -38,6 +38,7 @@ import { getLocalPhoneNumber } from "@/utils/phone";
 import {
   getErrorMessage,
   normalizeTextInput,
+  normalizeEmailInput,
   toDigitsOnly,
   validateManagedUserForm,
 } from "@/utils/formValidation";
@@ -116,12 +117,20 @@ export default function OrgUserDetailPage() {
   const [togglingAccess, setTogglingAccess] = useState(false);
   const [form, setForm] = useState({
     name: "",
+    email: "",
     mobileCountryCode: "+91",
     mobile: "",
     role: "MEMBER",
     approvalStatus: "APPROVED",
     active: true,
     permissions: [],
+    gender: "",
+    existingMember: "",
+    referenceBy: "",
+    bloodGroup: "",
+    emergencyContact: "",
+    currentAddress: "",
+    permanentAddress: "",
   });
 
   const [period, setPeriod] = useState("monthly");
@@ -213,6 +222,7 @@ export default function OrgUserDetailPage() {
     if (!user) return;
     setForm({
       name: user.name || "",
+      email: user.email || "",
       mobileCountryCode: user.mobileCountryCode || "+91",
       mobile: getLocalPhoneNumber(user.mobile, user.mobileCountryCode),
       role: normalizeRole(user.role),
@@ -221,13 +231,20 @@ export default function OrgUserDetailPage() {
       permissions: Array.isArray(user.permissions)
         ? user.permissions
         : getDefaultPermissionsForRole(normalizeRole(user.role)),
+      gender: user.gender || "",
+      existingMember: user.existingMember?.toUpperCase() || "",
+      referenceBy: user.referenceBy || "",
+      bloodGroup: user.bloodGroup || "",
+      emergencyContact: user.emergencyContact || "",
+      currentAddress: user.currentAddress || "",
+      permanentAddress: user.permanentAddress || "",
     });
   }, [user]);
 
   const saveProfile = async () => {
     const validationError = validateManagedUserForm({
       name: form.name,
-      email: user?.email,
+      email: form.email,
       mobile: form.mobile,
       password: "",
       passwordRequired: false,
@@ -246,10 +263,18 @@ export default function OrgUserDetailPage() {
       await patchUserMutation({
         userId,
         name: normalizeTextInput(form.name),
+        email: normalizeEmailInput(form.email),
         mobileCountryCode: form.mobileCountryCode,
         mobile: toDigitsOnly(form.mobile),
         role: form.role,
         permissions: form.permissions,
+        gender: form.gender,
+        existingMember: form.existingMember,
+        referenceBy: form.referenceBy,
+        bloodGroup: form.bloodGroup,
+        emergencyContact: form.emergencyContact,
+        currentAddress: form.currentAddress,
+        permanentAddress: form.permanentAddress,
         ...(canUpdateStatus ? { status: form.approvalStatus } : {}),
       }).unwrap();
 
@@ -495,6 +520,9 @@ export default function OrgUserDetailPage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Gender" value={toDisplayText(user.gender)} />
+          <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
+          <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(joiningDate)} />
@@ -593,6 +621,108 @@ export default function OrgUserDetailPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Email Address</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Gender</label>
+              <select
+                value={form.gender}
+                onChange={(event) => setForm((prev) => ({ ...prev, gender: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              >
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Member Type</label>
+              <select
+                value={form.existingMember}
+                onChange={(event) => setForm((prev) => ({ ...prev, existingMember: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              >
+                <option value="">Select Member Type</option>
+                <option value="SENIOR">Senior</option>
+                <option value="JUNIOR">Junior</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Blood Group</label>
+              <select
+                value={form.bloodGroup}
+                onChange={(event) => setForm((prev) => ({ ...prev, bloodGroup: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Emergency Contact</label>
+              <input
+                value={form.emergencyContact}
+                onChange={(event) => setForm((prev) => ({ ...prev, emergencyContact: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Reference By</label>
+              <input
+                value={form.referenceBy}
+                onChange={(event) => setForm((prev) => ({ ...prev, referenceBy: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Current Address</label>
+              <textarea
+                value={form.currentAddress}
+                onChange={(event) => setForm((prev) => ({ ...prev, currentAddress: event.target.value }))}
+                disabled={!canEditUser}
+                rows={2}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Permanent Address</label>
+              <textarea
+                value={form.permanentAddress}
+                onChange={(event) => setForm((prev) => ({ ...prev, permanentAddress: event.target.value }))}
+                disabled={!canEditUser}
+                rows={2}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:col-span-2">

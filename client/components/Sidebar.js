@@ -14,6 +14,7 @@ import {
   Users,
   X,
   Newspaper,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DashboardBrandBlock from "@/components/DashboardBrandBlock";
@@ -27,6 +28,13 @@ const MENU_ITEMS = [
     Icon: LayoutDashboard,
     href: "/dashboard",
     colorClass: "text-blue-500 dark:text-blue-400",
+  },
+  {
+    label: "तिची सुरक्षा",
+    Icon: ShieldAlert,
+    href: "/her-security",
+    target: "_blank",
+    colorClass: "text-pink-500 dark:text-pink-400 font-bold",
   },
   {
     label: "Attendance",
@@ -138,6 +146,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                target={item.target || undefined}
                 onClick={() => setIsOpen(false)}
                 className={cn(
                   "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5",

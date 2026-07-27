@@ -91,7 +91,7 @@ export default function NotificationDetailScreen() {
         <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Notification Details</Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] shadow-sm overflow-hidden">
           <View className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <View className="flex-row flex-wrap gap-2 mb-4">

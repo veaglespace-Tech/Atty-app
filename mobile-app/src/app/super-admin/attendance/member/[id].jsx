@@ -32,7 +32,7 @@ export default function MemberAttendancePage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingTop: 40, paddingBottom: 40 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingTop: 40, paddingBottom: 100 }}>
         {/* Profile Card */}
         <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] p-6 mb-6 flex-col lg:flex-row lg:justify-between lg:items-center gap-6 shadow-sm">
           <View className="flex-row items-center gap-4">

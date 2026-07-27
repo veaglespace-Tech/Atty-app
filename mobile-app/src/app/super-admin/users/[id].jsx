@@ -240,7 +240,7 @@ export default function SuperAdminUserDetailScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         
         {/* Top Profile Card */}
         <View className="bg-white dark:bg-slate-900/80 rounded-[24px] p-5 mb-4 border border-slate-200 dark:border-slate-800 shadow-sm">

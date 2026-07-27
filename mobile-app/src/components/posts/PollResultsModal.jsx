@@ -36,7 +36,7 @@ export default function PollResultsModal({ postId, open, onClose }) {
             </Pressable>
           </View>
 
-          <ScrollView className="p-6" contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView className="p-6" contentContainerStyle={{ paddingBottom: 100 }}>
             {isLoading ? (
               <View className="py-12 items-center justify-center">
                 <ActivityIndicator size="large" color="#2563eb" />

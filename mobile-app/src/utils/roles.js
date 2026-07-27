@@ -94,10 +94,7 @@ export const PERMISSIONS = Object.freeze({
     UPDATE: "posts:update",
     DELETE: "posts:delete",
   },
-  SUBSCRIPTION: {
-    VIEW: "subscription:view",
-    MANAGE: "subscription:manage",
-  },
+
   LOCATION: {
     VIEW: "location:view",
     MANAGE: "location:manage",
@@ -143,8 +140,6 @@ export const PERMISSION_LABELS = Object.freeze({
   [PERMISSIONS.USERS.UPDATE_STATUS]: "Approve/Reject Users",
   [PERMISSIONS.USERS.TOGGLE_ACTIVE]: "Activate/Deactivate Users",
   [PERMISSIONS.USERS.DELETE]: "Delete Users",
-  [PERMISSIONS.SUBSCRIPTION.VIEW]: "View Subscription",
-  [PERMISSIONS.SUBSCRIPTION.MANAGE]: "Manage Subscription",
   [PERMISSIONS.LOCATION.VIEW]: "View Location",
   [PERMISSIONS.LOCATION.MANAGE]: "Manage Location",
   [PERMISSIONS.POSTS.VIEW]: "View Posts",
@@ -175,7 +170,6 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.POSTS.VIEW,
     PERMISSIONS.POSTS.CREATE,
     PERMISSIONS.POSTS.UPDATE,
-    PERMISSIONS.SUBSCRIPTION.VIEW,
     PERMISSIONS.LOCATION.VIEW,
     PERMISSIONS.LOCATION.MANAGE,
     PERMISSIONS.ROLES.VIEW,
@@ -192,7 +186,6 @@ export const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.USERS.VIEW,
     PERMISSIONS.POSTS.VIEW,
     PERMISSIONS.POSTS.CREATE,
-    PERMISSIONS.SUBSCRIPTION.VIEW,
     PERMISSIONS.LOCATION.VIEW,
     PERMISSIONS.LOCATION.MANAGE
   ]),
@@ -245,11 +238,7 @@ export const PERMISSION_GROUPS = Object.freeze([
       PERMISSIONS.USERS.DELETE,
     ],
   },
-  {
-    key: "SUBSCRIPTION",
-    label: "Subscription",
-    items: [PERMISSIONS.SUBSCRIPTION.VIEW, PERMISSIONS.SUBSCRIPTION.MANAGE],
-  },
+
   {
     key: "CONFIGURATION",
     label: "Configuration",

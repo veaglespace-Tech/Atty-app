@@ -16,6 +16,7 @@ import {
   Menu,
   Settings,
   ShieldCheck,
+  ShieldAlert,
   UserPlus,
   Users,
   UsersRound,
@@ -48,6 +49,7 @@ function extractRootFromDashboardPath(dashboardPath) {
 function getNavIcon(label) {
   const normalized = String(label || "").toLowerCase();
 
+  if (normalized.includes("security") || normalized.includes("suraksha") || normalized.includes("her")) return ShieldAlert;
   if (normalized.includes("dashboard")) return LayoutDashboard;
   if (normalized.includes("attendance")) return CalendarDays;
   if (normalized.includes("report") || normalized.includes("analytic")) return BarChart3;
@@ -72,6 +74,7 @@ function getNavIcon(label) {
 function getNavColor(label) {
   const normalized = String(label || "").toLowerCase();
 
+  if (normalized.includes("security") || normalized.includes("suraksha") || normalized.includes("her")) return "text-rose-500 dark:text-rose-400";
   if (normalized.includes("dashboard")) return "text-blue-500 dark:text-blue-400";
   if (normalized.includes("attendance")) return "text-indigo-500 dark:text-indigo-400";
   if (normalized.includes("report") || normalized.includes("analytic")) return "text-purple-500 dark:text-purple-400";
@@ -279,6 +282,7 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
               <Link
                 key={item.href}
                 href={item.href}
+                target={item.target || (item.href === "/her-security" ? "_blank" : undefined)}
                 onClick={() => setMobileNavOpen(false)}
                 className={cn(
                   "group flex items-center gap-4 rounded-[1.4rem] px-4 py-3.5 transition-all duration-300",

@@ -135,7 +135,7 @@ export default function RolesPage() {
 
       <ScrollView 
         className="flex-1" 
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={handleRefresh} tintColor="#4f46e5" />}
       >
         {isLoading && roles.length === 0 ? (

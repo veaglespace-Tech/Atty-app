@@ -313,7 +313,7 @@ export default function OrgAttendancePage() {
 
  <ScrollView
  className="flex-1"
- contentContainerStyle={{ paddingBottom: 40, paddingTop: 24 }}
+ contentContainerStyle={{ paddingBottom: 100, paddingTop: 24 }}
  refreshControl={
  <RefreshControl refreshing={isFetching || loadingSettings} onRefresh={handleRefresh} tintColor="#2563eb" />
  }

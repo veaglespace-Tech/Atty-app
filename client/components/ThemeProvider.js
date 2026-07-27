@@ -12,8 +12,8 @@ import { useMounted } from "@/hooks/useMounted";
 const ThemeContext = createContext({
   theme: "light",
   isDarkMode: false,
-  toggleTheme: () => {},
-  setThemeMode: () => {},
+  toggleTheme: () => { },
+  setThemeMode: () => { },
   mounted: false,
 });
 

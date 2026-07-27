@@ -26,7 +26,7 @@ export default function OrganizationsPage(props) {
   const [isRowsModalOpen, setIsRowsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
-  const [activeFilter, setActiveFilter] = useState(null); // 'subscription', 'access', 'block' or null
+  const [activeFilter, setActiveFilter] = useState(null); // 'access', 'block' or null
 
   const [downloadOrganizationsExcel, { isLoading: downloadingExcel }] = useDownloadSuperAdminOrganizationsExcelMutation();
 
@@ -144,7 +144,7 @@ export default function OrganizationsPage(props) {
     <>
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#2563eb" />}
       >
         <View className="mb-6 flex-row items-start justify-between">

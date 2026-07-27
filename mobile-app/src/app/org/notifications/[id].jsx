@@ -105,7 +105,7 @@ export default function NotificationDetailPage() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />}
       >
         <View className="bg-white dark:bg-slate-900/80 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm">

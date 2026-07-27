@@ -95,6 +95,8 @@ const getSettingsSchema = (isAdmin) => z.object({
   currentAddress: z.string().trim().min(1, "Full address is required"),
   permanentAddress: z.string().trim().optional(),
   bloodGroup: z.string().trim().optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
+  existingMember: z.enum(["SENIOR", "JUNIOR", "senior", "junior"]).optional().or(z.literal("")),
 });
 
 const labelClassName = "brand-kicker mb-1.5 ml-1 block";
@@ -124,6 +126,8 @@ const getFormDefaults = (user) => ({
   currentAddress: user?.currentAddress || "",
   permanentAddress: user?.permanentAddress || "",
   bloodGroup: user?.bloodGroup || "",
+  gender: user?.gender || "",
+  existingMember: user?.existingMember?.toUpperCase() || "",
 });
 
 function DetailCard({ icon: Icon, label, value }) {
@@ -974,23 +978,29 @@ export default function WorkspaceSettingsPage() {
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        let { width, height } = img;
-        const MAX_DIM = 1200;
+        const { width, height } = img;
+        const TARGET_SIZE = 512;
         
-        if (width > height && width > MAX_DIM) {
-          height *= MAX_DIM / width;
-          width = MAX_DIM;
-        } else if (height > MAX_DIM) {
-          width *= MAX_DIM / height;
-          height = MAX_DIM;
-        }
+        const minDim = Math.min(width, height);
+        const sourceX = (width - minDim) / 2;
+        const sourceY = (height - minDim) / 2;
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = TARGET_SIZE;
+        canvas.height = TARGET_SIZE;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(
+          img,
+          sourceX,
+          sourceY,
+          minDim,
+          minDim,
+          0,
+          0,
+          TARGET_SIZE,
+          TARGET_SIZE
+        );
         
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error("Failed to read the selected image."));
@@ -1060,6 +1070,8 @@ export default function WorkspaceSettingsPage() {
     payload.currentAddress = values.currentAddress;
     payload.permanentAddress = values.permanentAddress;
     payload.bloodGroup = values.bloodGroup;
+    payload.gender = values.gender;
+    payload.existingMember = values.existingMember;
 
     if (profileImageDataUrl) {
       payload.profileImageDataUrl = profileImageDataUrl;
@@ -1257,6 +1269,25 @@ export default function WorkspaceSettingsPage() {
                     <option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option>
                   </select>
                   {errors.bloodGroup && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.bloodGroup.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-gender" className={labelClassName}>Gender</label>
+                  <select id="settings-gender" aria-invalid={errors.gender ? "true" : "false"} className={cn(inputClassName, errors.gender ? errorInputClassName : "")} {...register("gender")}>
+                    <option value="">Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                  {errors.gender && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.gender.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-existingMember" className={labelClassName}>Member Type</label>
+                  <select id="settings-existingMember" aria-invalid={errors.existingMember ? "true" : "false"} className={cn(inputClassName, errors.existingMember ? errorInputClassName : "")} {...register("existingMember")}>
+                    <option value="">Select Member Type</option>
+                    <option value="SENIOR">Senior</option>
+                    <option value="JUNIOR">Junior</option>
+                  </select>
+                  {errors.existingMember && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.existingMember.message}</p>}
                 </div>
               </div>
             </div>

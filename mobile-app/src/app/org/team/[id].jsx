@@ -265,7 +265,7 @@ export default function OrgTeamDetailPage() {
                 className="flex-1 ml-3 text-[14px] font-semibold text-slate-900 dark:text-white" />
             </View>
           </View>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
             {filteredAddMembers.length === 0 ? (
               <View className="py-8 items-center"><Text className="text-sm font-semibold text-slate-500">No available users.</Text></View>
             ) : (

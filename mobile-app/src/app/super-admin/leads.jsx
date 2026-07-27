@@ -99,7 +99,7 @@ export default function LeadsPage() {
 
       <ScrollView 
         className="flex-1" 
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#2563eb" />}
       >
         {isLoading && leads.length === 0 ? (
@@ -184,7 +184,7 @@ export default function LeadsPage() {
               </Pressable>
             </View>
             
-            <ScrollView className="p-5" contentContainerStyle={{ paddingBottom: 40 }}>
+            <ScrollView className="p-5" contentContainerStyle={{ paddingBottom: 100 }}>
               {selectedLead && (
                 <View className="space-y-6">
                   {/* Organization Details */}

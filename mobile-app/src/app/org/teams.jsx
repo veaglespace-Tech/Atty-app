@@ -124,7 +124,7 @@ export default function OrgTeamsPage() {
       {/* TEAM DIRECTORY SECTION */}
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetchTeams} tintColor="#2563eb" />}>
 
         <View className="mt-6 mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800/80 overflow-hidden mb-8">
@@ -173,7 +173,7 @@ export default function OrgTeamsPage() {
             <Text className="text-lg font-black text-slate-900 dark:text-white">Create Team</Text>
             <Pressable onPress={() => { resetForm(); setCreateOpen(false); }} className="rounded-full p-2 bg-slate-100 dark:bg-slate-800"><X size={18} color="#94a3b8" /></Pressable>
           </View>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
             <View className="gap-4">
               <View className="gap-1.5">
                 <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Team Name *</Text>
@@ -258,7 +258,7 @@ export default function OrgTeamsPage() {
               <TextInput value={leaderSearch} onChangeText={setLeaderSearch} placeholder="Search leader..." placeholderTextColor="#94a3b8" className="flex-1 ml-3 text-[14px] font-semibold text-slate-900 dark:text-white" />
             </View>
           </View>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
             {filteredLeaders.length === 0 ? <View className="py-8 items-center"><Text className="text-sm font-semibold text-slate-500">No available leaders.</Text></View> : (
               <View className="gap-2">
                 {filteredLeaders.map((u) => (
@@ -285,7 +285,7 @@ export default function OrgTeamsPage() {
               <TextInput value={memberSearch} onChangeText={setMemberSearch} placeholder="Search members..." placeholderTextColor="#94a3b8" className="flex-1 ml-3 text-[14px] font-semibold text-slate-900 dark:text-white" />
             </View>
           </View>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
             {filteredMembers.length === 0 ? <View className="py-8 items-center"><Text className="text-sm font-semibold text-slate-500">No available members.</Text></View> : (
               <View className="gap-2">
                 {filteredMembers.map((u) => (

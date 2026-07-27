@@ -103,7 +103,7 @@ export default function ReferralsPage() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40, flexGrow: 1 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100, flexGrow: 1 }}>
         {/* Stats */}
         <View className="flex-row gap-3 mb-6">
           <View className="flex-1 bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
