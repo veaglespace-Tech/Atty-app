@@ -106,6 +106,47 @@ export default function MobileHerSecurityContent() {
   const [sosResult, setSosResult] = useState(null);
   const [isSosActive, setIsSosActive] = useState(false);
 
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdIntervalRef = React.useRef(null);
+
+  const startHold = () => {
+    if (isSendingSos) return;
+
+    // Immediate click to stop
+    if (isSosActive) {
+      handleStopSosAlert();
+      return;
+    }
+
+    setIsHolding(true);
+    setHoldProgress(0);
+
+    let progress = 0;
+    holdIntervalRef.current = setInterval(() => {
+      progress += 1;
+      setHoldProgress(progress);
+      
+      if (progress >= 3) {
+        clearInterval(holdIntervalRef.current);
+        holdIntervalRef.current = null;
+        setIsHolding(false);
+        setHoldProgress(0);
+        // Only trigger because stop is handled immediately
+        handleTriggerSosAlert();
+      }
+    }, 1000);
+  };
+
+  const cancelHold = () => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setIsHolding(false);
+    setHoldProgress(0);
+  };
+
   const [avatarError, setAvatarError] = useState(false);
   const [orgLogoError, setOrgLogoError] = useState(false);
 
@@ -358,18 +399,13 @@ export default function MobileHerSecurityContent() {
         {/* Top Logos Row */}
         <View className="w-full flex-row justify-between items-center px-1">
           <View className="bg-white rounded-2xl shadow-xl border-2 border-indigo-900/10 p-2 h-20 w-32 items-center justify-center overflow-hidden">
-            {orgLogoUrl && !orgLogoError ? (
+            {orgLogoUrl ? (
               <Image
                 source={{ uri: orgLogoUrl }}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="contain"
-                onError={() => setOrgLogoError(true)}
               />
-            ) : (
-              <Text className="text-xs font-bold text-slate-500 text-center" numberOfLines={2}>
-                {displayOrgName}
-              </Text>
-            )}
+            ) : null}
           </View>
 
           <View className="bg-white rounded-2xl shadow-xl border-2 border-indigo-900/10 p-2 h-20 w-32 items-center justify-center">
@@ -415,7 +451,8 @@ export default function MobileHerSecurityContent() {
           </View>
           
           <Pressable
-            onPress={isSosActive ? handleStopSosAlert : handleTriggerSosAlert}
+            onPressIn={startHold}
+            onPressOut={cancelHold}
             disabled={isSendingSos}
             className={`h-56 w-56 rounded-full items-center justify-center active:scale-95 transition-all shadow-xl ${
               isSosActive ? "bg-emerald-600" : "bg-rose-600"
@@ -430,12 +467,18 @@ export default function MobileHerSecurityContent() {
                 <ShieldAlert size={64} color="#ffffff" />
               )
             )}
-            <Text className="text-3xl font-black text-white mt-3 text-center tracking-wide drop-shadow-md">
-              {isSendingSos ? "..." : (isSosActive ? "STOP SOS" : "START SOS")}
-            </Text>
+            {isHolding ? (
+              <Text className="text-3xl font-black text-white mt-3 text-center tracking-wide drop-shadow-md">
+                Hold... {3 - holdProgress}s
+              </Text>
+            ) : (
+              <Text className="text-3xl font-black text-white mt-3 text-center tracking-wide drop-shadow-md">
+                {isSendingSos ? "..." : (isSosActive ? "STOP SOS" : "START SOS")}
+              </Text>
+            )}
             {!isSendingSos && (
               <Text className="text-xs font-bold text-white/90 uppercase tracking-widest mt-2">
-                {isSosActive ? "Cancel Alert" : "Urgent Alert"}
+                {isHolding ? "Keep Holding" : (isSosActive ? "Tap to Cancel" : "Hold 3s to Alert")}
               </Text>
             )}
           </Pressable>
