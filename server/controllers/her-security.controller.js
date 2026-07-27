@@ -90,7 +90,7 @@ const sendSosAlert = async (req, res) => {
 
     let rawPhoto = user.profileImageUrl || user.profileImage;
     if (rawPhoto && !rawPhoto.startsWith("http")) {
-      rawPhoto = `${process.env.SERVER_BASE_URL || "http://localhost:5002"}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`;
+      rawPhoto = `${process.env.SERVER_BASE_URL || "http://localhost:5000"}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`;
     }
     
     // Gmail cannot load images from localhost. If testing locally, fallback to initials avatar to prevent a broken image icon.
@@ -279,7 +279,7 @@ const stopSosAlert = async (req, res) => {
 
     let rawPhoto = user.profileImageUrl || user.profileImage;
     if (rawPhoto && !rawPhoto.startsWith("http")) {
-      rawPhoto = `${process.env.SERVER_BASE_URL || "http://localhost:5002"}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`;
+      rawPhoto = `${process.env.SERVER_BASE_URL || "http://localhost:5000"}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`;
     }
     if (rawPhoto && (rawPhoto.includes("localhost") || rawPhoto.includes("127.0.0.1"))) {
       rawPhoto = null;
