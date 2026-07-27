@@ -51,19 +51,18 @@ export default function MobileHerSecurityContent() {
     // Get the base url from API_BASE_URL (strip /api)
     const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api(\/v1)?\/?$/, '') : '';
     
-    // If the DB stored a full URL with a different localhost port (e.g. 5002 instead of 5001)
     if (url.startsWith("http")) {
       if (url.includes("localhost:") || url.includes("127.0.0.1:")) {
         try {
           const urlObj = new URL(url);
-          return `${baseUrl}${urlObj.pathname}${urlObj.search}`;
+          const apiObj = new URL(API_BASE_URL);
+          return url.replace(urlObj.origin, apiObj.origin);
         } catch (e) {
           return url;
         }
       }
       return url;
     }
-    
     return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
@@ -107,8 +106,16 @@ export default function MobileHerSecurityContent() {
   const [sosResult, setSosResult] = useState(null);
   const [isSosActive, setIsSosActive] = useState(false);
 
-  const [orgLogoError, setOrgLogoError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [orgLogoError, setOrgLogoError] = useState(false);
+
+  useEffect(() => {
+    setOrgLogoError(false);
+  }, [orgLogoUrl]);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [publicPhotoUrl]);
 
   // Keep phone awake while SOS is active
   useEffect(() => {
