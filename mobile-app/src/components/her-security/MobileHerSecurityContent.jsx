@@ -550,21 +550,21 @@ export default function MobileHerSecurityContent() {
           </Text>
         </View>
 
-        {sosResult && (
+        {sosResult ? (
           <View className={`mt-6 rounded-2xl p-4 border shadow-inner ${sosResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
             <View className="flex-row items-start gap-3">
               {sosResult.success ? <CheckCircle2 size={24} color="#059669" /> : <AlertTriangle size={24} color="#e11d48" />}
               <View className="flex-1">
                 <Text className={`font-bold ${sosResult.success ? 'text-emerald-900' : 'text-rose-900'}`}>{sosResult.message}</Text>
-                {sosResult.recipients?.length > 0 && (
+                {sosResult.recipients && sosResult.recipients.length > 0 ? (
                   <Text className={`mt-2 text-xs font-medium opacity-90 p-1.5 rounded-lg inline-flex ${sosResult.success ? 'text-emerald-800 bg-emerald-100' : 'text-rose-800 bg-rose-100'}`}>
                     Dispatched to: {sosResult.recipients.join(", ")}
                   </Text>
-                )}
+                ) : null}
               </View>
             </View>
           </View>
-        )}
+        ) : null}
 
         <View className="mt-8 space-y-4">
           <View className="flex-row items-center justify-center gap-2 mb-2">

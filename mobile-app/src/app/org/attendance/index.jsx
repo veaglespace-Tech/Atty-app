@@ -471,7 +471,7 @@ export default function OrgAttendancePage() {
  {searchingPlace && <ActivityIndicator size="small" color="#94a3b8" className="absolute right-4 top-3.5" />}
  </View>
  
- {placeSuggestions.length > 0 && (
+ {placeSuggestions.length > 0 ? (
  <View className="mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden ">
  {placeSuggestions.map((loc, i) => (
  <Pressable 
@@ -485,7 +485,7 @@ export default function OrgAttendancePage() {
  </Pressable>
  ))}
  </View>
- )}
+ ) : null}
  </View>
 
  <Pressable 
