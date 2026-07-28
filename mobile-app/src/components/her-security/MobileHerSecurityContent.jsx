@@ -222,7 +222,17 @@ export default function MobileHerSecurityContent() {
     requestLocation();
   }, [requestLocation]);
 
-  // Periodic Location Updates during active SOS
+  const getSafeApiEndpoint = (endpointPath) => {
+    let baseUrl = API_BASE_URL || "https://atty.veaglespace.com/api";
+    if (Platform.OS !== "web" && (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))) {
+      baseUrl = "https://atty.veaglespace.com/api";
+    }
+    const cleanBase = baseUrl.replace(/\/+$/, "");
+    const cleanPath = endpointPath.startsWith("/") ? endpointPath : `/${endpointPath}`;
+    return `${cleanBase}${cleanPath}`;
+  };
+
+  // Periodic Location & Email Updates every 15 minutes during active SOS
   useEffect(() => {
     let intervalId;
     
@@ -237,7 +247,8 @@ export default function MobileHerSecurityContent() {
           const liveMapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
           
           const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
-          await fetch(`${API_BASE_URL}/her-security/sos-alert`, {
+          const targetUrl = getSafeApiEndpoint("/her-security/sos-alert");
+          await fetch(targetUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -248,13 +259,13 @@ export default function MobileHerSecurityContent() {
               longitude: lng,
               mapsUrl: liveMapsUrl,
               isUpdate: true,
-              deviceInfo: "Mobile App Interval",
+              deviceInfo: "Mobile App Interval (15 min)",
             }),
           });
         } catch (e) {
-          console.error("Failed to send background location update", e);
+          console.error("Failed to send 15-min background location update", e);
         }
-      }, 10 * 60 * 1000); // 10 minutes in milliseconds
+      }, 15 * 60 * 1000); // Every 15 minutes
     }
     
     return () => {
@@ -286,6 +297,7 @@ export default function MobileHerSecurityContent() {
   const handleTriggerSosAlert = async () => {
     if (isSendingSos) return;
     setIsSendingSos(true);
+    setIsSosActive(true); // Convert immediately to STOP state
     setSosResult(null);
 
     // 1. WhatsApp
@@ -313,7 +325,8 @@ export default function MobileHerSecurityContent() {
     // 3. Email API
     try {
       const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
-      const response = await fetch(`${API_BASE_URL}/her-security/sos-alert`, {
+      const targetUrl = getSafeApiEndpoint("/her-security/sos-alert");
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -330,7 +343,6 @@ export default function MobileHerSecurityContent() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setIsSosActive(true);
         setSosResult({
           success: true,
           message: "🚨 SOS Alert successfully triggered across Email, WhatsApp & Dialer! Live location tracking is active.",
@@ -360,7 +372,8 @@ export default function MobileHerSecurityContent() {
 
     try {
       const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
-      const response = await fetch(`${API_BASE_URL}/her-security/stop-sos-alert`, {
+      const targetUrl = getSafeApiEndpoint("/her-security/stop-sos-alert");
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -385,6 +398,7 @@ export default function MobileHerSecurityContent() {
       }
     } catch (err) {
       console.error("SOS Stop Error:", err);
+      setIsSosActive(false);
       setSosResult({
         success: false,
         message: "Network error occurred while cancelling SOS alert.",
@@ -446,15 +460,16 @@ export default function MobileHerSecurityContent() {
           </View>
         </View>
       </View>
-      <View className={`mx-5 my-4 bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 p-6 shadow-2xl relative overflow-hidden ${isSosActive ? "border-emerald-500/40" : "border-rose-500/40"}`}>
+
+      <View className={`mx-5 my-4 bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 p-6 shadow-2xl relative overflow-hidden ${isSosActive ? "border-rose-500/40" : "border-emerald-500/40"}`}>
         <View className="items-center z-10">
           <View className="flex-row items-center gap-2 mb-6">
             {isSosActive ? (
-              <ShieldAlert size={24} color="#10b981" />
-            ) : (
               <ShieldAlert size={24} color="#e11d48" />
+            ) : (
+              <ShieldAlert size={24} color="#10b981" />
             )}
-            <Text className={`text-lg font-bold uppercase tracking-tight ${isSosActive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+            <Text className={`text-lg font-bold uppercase tracking-tight ${isSosActive ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
               Emergency SOS Dispatch
             </Text>
           </View>
@@ -464,7 +479,7 @@ export default function MobileHerSecurityContent() {
             onPressOut={cancelHold}
             disabled={isSendingSos}
             className={`h-56 w-56 rounded-full items-center justify-center active:scale-95 transition-all shadow-xl ${
-              isSosActive ? "bg-emerald-600" : "bg-rose-600"
+              isSosActive ? "bg-rose-600" : "bg-emerald-600"
             }`}
           >
             {isSendingSos ? (
@@ -493,7 +508,9 @@ export default function MobileHerSecurityContent() {
           </Pressable>
 
           <Text className="mt-8 text-xs text-center font-semibold text-slate-500 dark:text-slate-400 px-2 leading-relaxed">
-            Tap START SOS to automatically dispatch an emergency email with your live location. Tap STOP SOS to cancel the alert when safe.
+            {isSosActive
+              ? "Tap STOP SOS to cancel the alert when safe."
+              : "Hold START SOS for 3 seconds to automatically dispatch an emergency email with your live location every 15 minutes."}
           </Text>
         </View>
 
