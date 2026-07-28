@@ -300,9 +300,45 @@ export default function MobileHerSecurityContent() {
     setIsSosActive(true); // Convert immediately to STOP state
     setSosResult(null);
 
+    // Fetch fresh live location right away
+    let currentLat = location.latitude;
+    let currentLng = location.longitude;
+    let currentMapsUrl = mapsUrl;
+
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        currentLat = loc.coords.latitude;
+        currentLng = loc.coords.longitude;
+        currentMapsUrl = `https://maps.google.com/?q=${currentLat},${currentLng}`;
+        setLocation({
+          latitude: currentLat,
+          longitude: currentLng,
+          accuracy: Math.round(loc.coords.accuracy || 0),
+          status: "success",
+          errorMessage: "",
+        });
+      }
+    } catch (err) {
+      console.log("Error getting live location on SOS trigger:", err);
+    }
+
     // 1. WhatsApp
     try {
-      const waUrl = generateWhatsAppUrl();
+      const emergencyNum = displayEmergencyContact;
+      const text = encodeURIComponent(
+        `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
+        `👤 *Name:* ${displayName}\n` +
+        `📧 *Email:* ${displayEmail}\n` +
+        `📱 *Contact:* ${displayMobile}\n` +
+        `🆘 *Emergency Contact:* ${emergencyNum}\n` +
+        `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})\n` +
+        `🖼️ *Profile Photo:* ${publicPhotoUrl}\n\n` +
+        `📍 *LIVE GPS LOCATION:* ${currentMapsUrl || "Location Permission Denied"}\n\n` +
+        `⚠️ *I need immediate assistance! Please verify my safety.*`
+      );
+      const waUrl = `whatsapp://send?text=${text}`;
       const supported = await Linking.canOpenURL(waUrl);
       if (supported) {
         await Linking.openURL(waUrl);
@@ -333,9 +369,9 @@ export default function MobileHerSecurityContent() {
           ...(authToken ? { Authorization: authToken } : {}),
         },
         body: JSON.stringify({
-          latitude: location.latitude,
-          longitude: location.longitude,
-          mapsUrl: mapsUrl,
+          latitude: currentLat,
+          longitude: currentLng,
+          mapsUrl: currentMapsUrl,
           deviceInfo: "Mobile App",
         }),
       });
