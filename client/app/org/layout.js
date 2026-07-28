@@ -16,6 +16,7 @@ const baseNavItems = [
   { label: "Attendance", href: "/org/attendance", permission: PERMISSIONS.ATTENDANCE.VIEW_ALL },
   { label: "Posts", href: "/org/posts", permission: PERMISSIONS.POSTS.CREATE },
   { label: "Instruments", href: "/org/instruments", permission: PERMISSIONS.USERS.CREATE },
+  { label: "Departments", href: "/org/departments", permission: PERMISSIONS.USERS.CREATE },
   { label: "Reports", href: "/org/reports", permission: PERMISSIONS.REPORTS.VIEW },
   { label: "Subscription", href: "/org/subscription", permission: PERMISSIONS.SUBSCRIPTION.VIEW },
 ];

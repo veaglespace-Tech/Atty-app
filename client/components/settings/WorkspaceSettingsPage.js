@@ -31,7 +31,7 @@ import { z } from "zod";
 import ThemeToggle from "@/components/ThemeToggle";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
-import { useForgotPasswordMutation, useUpdateMeMutation } from "@/services/api/authApi";
+import { useForgotPasswordMutation, useUpdateMeMutation, useGetMeQuery } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { addNotification } from "@/store/slices/notificationSlice";
 import {
@@ -49,6 +49,7 @@ import {
   useUpdateOrgAttendanceSettingsMutation,
   useUpdateOrgLogoMutation,
   useUpdateOrgDetailsMutation,
+  useGetOrgDepartmentsQuery,
 } from "@/services/api/orgApi";
 import {
   PERSON_NAME_REGEX,
@@ -97,6 +98,7 @@ const getSettingsSchema = (isAdmin) => z.object({
   bloodGroup: z.string().trim().optional(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
   existingMember: z.enum(["SENIOR", "JUNIOR", "senior", "junior"]).optional().or(z.literal("")),
+  departmentId: z.any().optional(),
 });
 
 const labelClassName = "brand-kicker mb-1.5 ml-1 block";
@@ -128,6 +130,7 @@ const getFormDefaults = (user) => ({
   bloodGroup: user?.bloodGroup || "",
   gender: user?.gender || "",
   existingMember: user?.existingMember?.toUpperCase() || "",
+  departmentId: user?.departmentId ? String(user.departmentId) : "",
 });
 
 function DetailCard({ icon: Icon, label, value }) {
@@ -859,6 +862,16 @@ export default function WorkspaceSettingsPage() {
   const { user } = useSelector((state) => state.auth);
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
   const [forgotPassword, { isLoading: sendingResetLink }] = useForgotPasswordMutation();
+  const { data: meData } = useGetMeQuery();
+  const organizationId = getUserOrganizationId(user);
+  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !organizationId });
+  const departmentsList = deptData?.items || [];
+
+  useEffect(() => {
+    if (meData?.user) {
+      dispatch(setCurrentUser(meData.user));
+    }
+  }, [meData, dispatch]);
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImageError, setProfileImageError] = useState("");
@@ -867,7 +880,6 @@ export default function WorkspaceSettingsPage() {
   const effectiveRole = currentRole || user?.role || ROLES.MEMBER;
   const roleLabel = formatRoleLabel(effectiveRole);
   const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN;
-  const organizationId = getUserOrganizationId(user);
   const permissionsCount = resolveUserPermissions(user).length;
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || null;
   const referralCode = user?.organization?.referralCode || null;
@@ -897,8 +909,10 @@ export default function WorkspaceSettingsPage() {
   });
 
   useEffect(() => {
-    reset(getFormDefaults(user));
-  }, [user, reset]);
+    if (user) {
+      reset(getFormDefaults(user));
+    }
+  }, [user, reset, departmentsList]);
 
   const formValues = useWatch({ control });
   const previewName = formValues.name || user?.name || "Workspace User";
@@ -911,7 +925,8 @@ export default function WorkspaceSettingsPage() {
   const previewProfileImageUrl =
     profileImageDataUrl || (removeProfileImage ? "" : currentProfileImageUrl);
   const hasPendingProfileImageChange = Boolean(profileImageDataUrl) || removeProfileImage;
-  const canSubmit = isDirty || hasPendingProfileImageChange;
+  const isDepartmentChanged = String(formValues.departmentId || "") !== String(user?.departmentId || "");
+  const canSubmit = isDirty || hasPendingProfileImageChange || isDepartmentChanged;
 
   const completionState = useMemo(() => {
     if (!user) return { percentage: 0, missing: [] };
@@ -1072,6 +1087,7 @@ export default function WorkspaceSettingsPage() {
     payload.bloodGroup = values.bloodGroup;
     payload.gender = values.gender;
     payload.existingMember = values.existingMember;
+    payload.departmentId = values.departmentId ? Number(values.departmentId) : null;
 
     if (profileImageDataUrl) {
       payload.profileImageDataUrl = profileImageDataUrl;
@@ -1254,7 +1270,19 @@ export default function WorkspaceSettingsPage() {
 
             {/* Basic Details Card */}
             <div className="light-glow-card-static rounded-[1.75rem] p-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Basic Details</h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Basic Details</h3>
+                {canSubmit && (
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="brand-btn brand-btn-primary brand-btn-sm flex items-center gap-1.5"
+                  >
+                    {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                    <span>Save Changes</span>
+                  </button>
+                )}
+              </div>
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <label htmlFor="settings-name" className={labelClassName}>Full Name</label>
@@ -1288,6 +1316,18 @@ export default function WorkspaceSettingsPage() {
                     <option value="JUNIOR">Junior</option>
                   </select>
                   {errors.existingMember && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.existingMember.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-departmentId" className={labelClassName}>Department</label>
+                  <select id="settings-departmentId" aria-invalid={errors.departmentId ? "true" : "false"} className={cn(inputClassName, errors.departmentId ? errorInputClassName : "")} {...register("departmentId")}>
+                    <option value="">Select Department</option>
+                    {departmentsList.map((d) => (
+                      <option key={d.id} value={String(d.id)}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.departmentId && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.departmentId.message}</p>}
                 </div>
               </div>
             </div>

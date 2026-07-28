@@ -303,8 +303,8 @@ const buildUserHallTicketPdf = async ({
       x: detailsX + detailsWidth * 0.58,
       y: topCardY + 218,
       width: detailsWidth * 0.42,
-      label: "Reference By",
-      value: normalizeText(user.referenceBy),
+      label: "Department",
+      value: normalizeText(user.department?.name || user.departmentName || (user.departmentId ? "Allocated" : "Unassigned")),
     });
 
     const lowerCardY = topCardY + topCardHeight + 14;

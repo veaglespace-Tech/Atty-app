@@ -532,6 +532,7 @@ const authUserInclude = {
       },
     },
   },
+  department: true,
 };
 
 const authUserWriteInclude = {
@@ -540,6 +541,7 @@ const authUserWriteInclude = {
       plan: true,
     },
   },
+  department: true,
 };
 
 const mergeSessionUserState = ({ previousUser, nextUser, organization = null }) => {
@@ -846,6 +848,8 @@ const serializeSessionUser = (user, organization = null) => {
     gender: normalized.gender || null,
     existingMember: normalized.existingMember || null,
     profileImageUrl: normalized.profileImageUrl || null,
+    departmentId: normalized.departmentId || null,
+    department: normalized.department ? { id: normalized.department.id, name: normalized.department.name } : null,
     memberships: normalized.memberships.map((membership) => ({
       orgId: membership.orgId,
       role: membership.role,
@@ -1638,6 +1642,7 @@ exports.updateMe = asyncHandler(async (req, res) => {
   const hasBloodGroup = Object.prototype.hasOwnProperty.call(requestBody, "bloodGroup");
   const hasGender = Object.prototype.hasOwnProperty.call(requestBody, "gender");
   const hasExistingMember = Object.prototype.hasOwnProperty.call(requestBody, "existingMember");
+  const hasDepartmentId = Object.prototype.hasOwnProperty.call(requestBody, "departmentId");
 
   if (hasEmergencyContact) {
     payload.emergencyContact = requestBody.emergencyContact;
@@ -1656,6 +1661,9 @@ exports.updateMe = asyncHandler(async (req, res) => {
   }
   if (hasExistingMember) {
     payload.existingMember = requestBody.existingMember;
+  }
+  if (hasDepartmentId) {
+    payload.departmentId = requestBody.departmentId ? Number(requestBody.departmentId) : null;
   }
 
   if (hasName) {

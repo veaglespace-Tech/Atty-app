@@ -509,6 +509,11 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
     userPayload.permanentAddress = req.body.permanentAddress || null;
   }
 
+  const hasDepartmentId = Object.prototype.hasOwnProperty.call(req.body || {}, "departmentId");
+  if (hasDepartmentId) {
+    userPayload.departmentId = req.body.departmentId ? Number(req.body.departmentId) : null;
+  }
+
   const hasRole = Object.prototype.hasOwnProperty.call(req.body || {}, "role");
   const currentRole = resolveUserRole(user, orgId) || "MEMBER";
   const nextRole = hasRole ? normalizeRole(req.body?.role || currentRole) : currentRole;
@@ -1218,6 +1223,7 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
       bloodGroup: true,
       existingMember: true,
       createdAt: true,
+      department: { select: { name: true } },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -1228,21 +1234,25 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
 
   const columns = [
     { key: "index", label: "No.", width: 25, align: "center" },
-    { key: "name", label: "Name", width: 100 },
-    { key: "gender", label: "Gender", width: 50 },
-    { key: "bloodGroup", label: "Blood Grp", width: 50 },
-    { key: "existingMember", label: "Type", width: 50 },
-    { key: "email", label: "Email", width: 120 },
-    { key: "mobile", label: "Contact No.", width: 80 },
-    { key: "role", label: "Role", width: 60 },
-    { key: "status", label: "Status", width: 60, align: "center" },
-    { key: "active", label: "Active", width: 45, align: "center" },
-    { key: "joinedAt", label: "Joined At", width: 65, align: "center" },
+    { key: "name", label: "Name", width: 90 },
+    { key: "department", label: "Department", width: 75 },
+    { key: "departmentStatus", label: "Allocation", width: 55, align: "center" },
+    { key: "gender", label: "Gender", width: 45 },
+    { key: "bloodGroup", label: "Blood Grp", width: 45 },
+    { key: "existingMember", label: "Type", width: 45 },
+    { key: "email", label: "Email", width: 110 },
+    { key: "mobile", label: "Contact No.", width: 75 },
+    { key: "role", label: "Role", width: 55 },
+    { key: "status", label: "Status", width: 55, align: "center" },
+    { key: "active", label: "Active", width: 40, align: "center" },
+    { key: "joinedAt", label: "Joined At", width: 60, align: "center" },
   ];
 
   const rows = users.map((user, index) => ({
     index: index + 1,
     name: user.name || "-",
+    department: user.department?.name || "Unassigned",
+    departmentStatus: user.department ? "Allocated" : "Unallocated",
     gender: user.gender || "-",
     bloodGroup: user.bloodGroup || "-",
     existingMember: user.existingMember || "-",
@@ -1309,6 +1319,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       status: true,
       isActive: true,
       createdAt: true,
+      department: { select: { name: true } },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -1320,6 +1331,8 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   const headers = [
     "Sr. No.",
     "Name",
+    "Department",
+    "Department Allocation",
     "Gender",
     "Member Type",
     "Blood Group",
@@ -1403,6 +1416,8 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     return {
       index: index + 1,
       name: user.name || "-",
+      department: user.department?.name || "Unassigned",
+      departmentStatus: user.department ? "Allocated" : "Unallocated",
       gender: user.gender || "-",
       existingMember: user.existingMember || "-",
       bloodGroup: user.bloodGroup || "-",
@@ -1426,6 +1441,8 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     const row = worksheet.addRow([
       rowData.index,
       rowData.name,
+      rowData.department,
+      rowData.departmentStatus,
       rowData.gender,
       rowData.existingMember,
       rowData.bloodGroup,

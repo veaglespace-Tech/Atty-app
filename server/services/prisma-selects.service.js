@@ -26,6 +26,14 @@ const userManagementSelect = {
   memberships: {
     select: membershipSelect,
   },
+  departmentId: true,
+  department: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+    },
+  },
   userInstruments: {
     select: {
       assetId: true,
@@ -86,6 +94,13 @@ const attendanceUserSelect = {
   currentAddress: true,
   permanentAddress: true,
   createdAt: true,
+  departmentId: true,
+  department: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
   memberships: {
     select: membershipSelect,
   },

@@ -62,6 +62,14 @@ const {
   unassignInstrumentFromUser,
   updateInstrumentAssignment
 } = require("../controllers/org-instrument.controller");
+const {
+  getOrgDepartments,
+  createOrgDepartment,
+  patchOrgDepartment,
+  deleteOrgDepartment,
+  assignDepartmentToUsers,
+  unassignDepartmentFromUser,
+} = require("../controllers/org-department.controller");
 
 const { userProtected } = require("../middlewares/auth.middleware");
 const { requireMembership, requirePermission } = require("../middlewares/rbac.middleware");
@@ -139,5 +147,12 @@ router.delete("/instruments/:id", requirePermission(PERMISSIONS.USERS.CREATE), d
 router.post("/instruments/assign", requirePermission(PERMISSIONS.USERS.CREATE), assignInstrumentToUsers);
 router.patch("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), updateInstrumentAssignment);
 router.delete("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), unassignInstrumentFromUser);
+
+router.get("/departments", getOrgDepartments);
+router.post("/departments", requirePermission(PERMISSIONS.USERS.CREATE), createOrgDepartment);
+router.patch("/departments/:id", requirePermission(PERMISSIONS.USERS.CREATE), patchOrgDepartment);
+router.delete("/departments/:id", requirePermission(PERMISSIONS.USERS.CREATE), deleteOrgDepartment);
+router.post("/departments/assign", requirePermission(PERMISSIONS.USERS.CREATE), assignDepartmentToUsers);
+router.delete("/departments/assign/:departmentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), unassignDepartmentFromUser);
 
 module.exports = router;

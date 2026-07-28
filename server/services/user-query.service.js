@@ -80,6 +80,8 @@ const mapUserForManagement = (user, orgId = null) => {
     createdAt: user.createdAt,
     memberships: Array.isArray(user.memberships) ? user.memberships : [],
     instruments: Array.isArray(user.userInstruments) ? user.userInstruments.map(ui => ({ ...ui.instrument, assetId: ui.assetId, assignedAt: ui.assignedAt })) : [],
+    departmentId: user.departmentId || null,
+    department: user.department ? { id: user.department.id, name: user.department.name } : null,
   };
 
 };

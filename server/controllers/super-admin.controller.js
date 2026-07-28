@@ -3781,6 +3781,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       status: true,
       isActive: true,
       createdAt: true,
+      department: { select: { name: true } },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -3790,7 +3791,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
   const headers = [
-    "Sr. No.", "Name", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
+    "Sr. No.", "Name", "Department", "Department Allocation", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
     "Current Address", "Permanent Address", "Profile Photo",
     "Role", "Status", "Active", "Joined At",
   ];
@@ -3862,6 +3863,8 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
     return {
       index: index + 1,
       name: user.name || "-",
+      department: user.department?.name || "Unassigned",
+      departmentStatus: user.department ? "Allocated" : "Unallocated",
       gender: user.gender || "-",
       existingMember: user.existingMember || "-",
       bloodGroup: user.bloodGroup || "-",
@@ -3885,6 +3888,8 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
     const row = worksheet.addRow([
       rowData.index,
       rowData.name,
+      rowData.department,
+      rowData.departmentStatus,
       rowData.gender,
       rowData.existingMember,
       rowData.bloodGroup,
@@ -3981,6 +3986,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       isActive: true,
       orgId: true,
       createdAt: true,
+      department: { select: { name: true } },
     },
     orderBy: [{ orgId: "asc" }, { name: "asc" }],
     take: 50000,
@@ -3989,7 +3995,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
   const orgMap = new Map(organizations.map((o) => [o.id, o.name]));
 
   const headers = [
-    "Sr. No.", "Organization", "Name", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
+    "Sr. No.", "Organization", "Name", "Department", "Department Allocation", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
     "Current Address", "Permanent Address", "Profile Photo",
     "Role", "Status", "Active", "Joined At",
   ];
@@ -4071,6 +4077,8 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       rowData.index,
       orgMap.get(rowData.orgId) || "-",
       rowData.name || "-",
+      rowData.department?.name || "Unassigned",
+      rowData.department ? "Allocated" : "Unallocated",
       rowData.gender || "-",
       rowData.existingMember || "-",
       rowData.bloodGroup || "-",

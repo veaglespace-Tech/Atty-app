@@ -119,6 +119,7 @@ const updateMeSchema = z
     bloodGroup: z.string().trim().optional(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
     existingMember: z.enum(["SENIOR", "JUNIOR"]).optional().or(z.literal("")),
+    departmentId: z.union([z.number(), z.string(), z.null()]).optional(),
     profileImageDataUrl: z
       .string()
       .trim()
