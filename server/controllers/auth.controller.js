@@ -1268,8 +1268,10 @@ exports.login = asyncHandler(async (req, res) => {
 
     if (!isSubscriptionValid) {
       if (currentRole !== "ORG_ADMIN") {
-        res.status(402);
-        throw new Error("Organization subscription expired. Please contact your admin to renew.");
+        res.status(403);
+        throw new Error("Workspace access is currently suspended. Please contact your administrator.");
+      } else {
+        org.isWorkspaceSuspended = true;
       }
     }
   }
@@ -1316,8 +1318,8 @@ exports.login = asyncHandler(async (req, res) => {
   );
 
   const redirectPath =
-    currentRole === "ORG_ADMIN" && org?.subscriptionStatus === "EXPIRED"
-      ? "/org/subscription"
+    currentRole === "ORG_ADMIN" && (org?.isWorkspaceSuspended || org?.subscriptionStatus === "EXPIRED" || org?.subscriptionStatus === "CANCELLED")
+      ? "/org/contact-support"
       : getDashboardPathByRole(currentRole);
 
   res.cookie("token", token, getSessionCookieOptions(rememberMe));

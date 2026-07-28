@@ -61,8 +61,8 @@ export default function CreateOrgUserModal({
               <View className="flex-row gap-2">
                 <TextInput
                   value={form.mobileCountryCode}
-                  onChangeText={(v) => setForm((p) => ({ ...p, mobileCountryCode: v }))}
-                  className="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white"
+                  editable={false}
+                  className="w-20 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-500 dark:text-slate-400 text-center"
                 />
                 <TextInput
                   value={form.mobile}
@@ -70,6 +70,7 @@ export default function CreateOrgUserModal({
                   placeholder="Mobile number"
                   placeholderTextColor="#94a3b8"
                   keyboardType="phone-pad"
+                  maxLength={10}
                   className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white"
                 />
               </View>

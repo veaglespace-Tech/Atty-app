@@ -329,3 +329,26 @@ exports.downloadMemberAttendanceExcel = asyncHandler(async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.status(200).send(excelBuffer);
 });
+
+exports.getMemberInstruments = asyncHandler(async (req, res) => {
+  const userId = Number(req.user.id);
+
+  const instruments = await prisma.instrument.findMany({
+    where: { assignedUserId: userId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      assignedUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    items: instruments,
+  });
+});

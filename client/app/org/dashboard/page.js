@@ -9,6 +9,8 @@ import { attendanceDashboardTableColumns } from "@/components/saas/attendanceDas
 export default function Page() {
   const { user } = useSelector((state) => state.auth);
   const referralCode = user?.organization?.referralCode || null;
+  const role = user?.currentRole;
+  const isMember = role === "MEMBER" || role === "LIFE_MEMBER";
   const [copiedReferral, setCopiedReferral] = useState(false);
   
   const referralLinkUrl = 
@@ -19,14 +21,14 @@ export default function Page() {
   return (
     <div className="flex flex-col gap-6">
       <DataPanelPage
-        title="Organization Dashboard"
-        description="Workspace summary for users, teams, attendance, and subscription usage."
-        endpoint="/org/dashboard"
+        title={isMember ? "Member Dashboard" : "Organization Dashboard"}
+        description={isMember ? "Your daily attendance status and monthly summary." : "Workspace summary for users, teams, attendance, and subscription usage."}
+        endpoint={isMember ? `/member/dashboard?timestamp=${new Date().getTime()}` : "/org/dashboard"}
         emptyMessage="No dashboard activity found."
         tableColumns={attendanceDashboardTableColumns}
         hiddenRecordColumns={["punchInLocationMeta", "punchOutLocationMeta"]}
         heroAction={
-          referralCode ? (
+          referralCode && !isMember ? (
             <div className="rounded-2xl border border-blue-200/60 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-950/30 backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Link2 size={16} className="text-blue-600 dark:text-blue-400" />

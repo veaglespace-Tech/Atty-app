@@ -22,19 +22,19 @@ export default function OrgLayout() {
       screenOptions={{
         headerShown: false, tabBarShowLabel: false,
         tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
+        tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: isDark ? '#020617' : '#ffffff',
-          borderTopColor: isDark ? '#1e293b' : '#e2e8f0',
+          backgroundColor: '#090d16',
+          borderTopColor: '#1e293b',
           borderTopWidth: 1,
           borderLeftWidth: 1,
           borderRightWidth: 1,
           elevation: 20,
-          boxShadow: '0px -10px 20px rgba(0,0,0,0.1)',
+          boxShadow: '0px -10px 20px rgba(0,0,0,0.3)',
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
           height: 65,
@@ -107,6 +107,7 @@ export default function OrgLayout() {
       <Tabs.Screen name="settings/personal" options={{ href: null }} />
       <Tabs.Screen name="settings/security" options={{ href: null }} />
       <Tabs.Screen name="settings/workspace" options={{ href: null }} />
+      <Tabs.Screen name="contact-support" options={{ href: null }} />
     </Tabs>
     </MobileDashboardShell>
   );

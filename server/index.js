@@ -92,6 +92,7 @@ app.use("/api/contact", require("./routes/contact.route"));
 app.use("/api/coupons", require("./routes/coupon.route"));
 app.use("/api/partner-referral", require("./routes/partner-referral.route"));
 app.use("/api/roles", require("./routes/role.route"));
+app.use("/api/her-security", require("./routes/her-security.route"));
 
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "resource not found" });

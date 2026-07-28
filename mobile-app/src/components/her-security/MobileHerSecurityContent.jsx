@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Linking, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Linking, Image, Platform } from "react-native";
 import * as Location from 'expo-location';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -28,21 +28,21 @@ export default function MobileHerSecurityContent() {
   const { data: meData } = useGetMeQuery(undefined, { skip: !token });
   const currentUser = meData?.data || meData?.user || meData?.result || user;
 
-  const displayName = currentUser?.name || user?.name || "User Name";
-  const displayEmail = currentUser?.email || user?.email || "N/A";
-  const displayMobile = currentUser?.mobile || user?.mobile || "N/A";
+  const displayName = user?.name || currentUser?.name || "User Name";
+  const displayEmail = user?.email || currentUser?.email || "N/A";
+  const displayMobile = user?.mobile || currentUser?.mobile || "N/A";
   const displayEmergencyContact =
-    currentUser?.emergencyContact || user?.emergencyContact || displayMobile || EMERGENCY_TEST_NUMBER;
+    user?.emergencyContact || currentUser?.emergencyContact || displayMobile || EMERGENCY_TEST_NUMBER;
   
   const avatarSrc =
-    currentUser?.profileImageUrl ||
-    currentUser?.profileImage ||
-    currentUser?.avatarUrl ||
-    currentUser?.avatar ||
     user?.profileImageUrl ||
     user?.profileImage ||
     user?.avatarUrl ||
     user?.avatar ||
+    currentUser?.profileImageUrl ||
+    currentUser?.profileImage ||
+    currentUser?.avatarUrl ||
+    currentUser?.avatar ||
     null;
 
   const getFullImageUrl = (url) => {
@@ -71,7 +71,7 @@ export default function MobileHerSecurityContent() {
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=dc2626&color=ffffff&size=250&bold=true`;
 
   const orgLogoUrl = getFullImageUrl(
-    currentUser?.organization?.logoUrl || user?.organization?.logoUrl || currentUser?.logoUrl || user?.logoUrl
+    user?.organization?.logoUrl || currentUser?.organization?.logoUrl || user?.logoUrl || currentUser?.logoUrl
   );
 
   const displayOrgName =
@@ -302,9 +302,13 @@ export default function MobileHerSecurityContent() {
     }
 
     // 2. Dialer
-    setTimeout(() => {
-      Linking.openURL(`tel:${displayEmergencyContact}`).catch((err) => console.log(err));
-    }, 400);
+    if (Platform.OS !== 'web') {
+      setTimeout(() => {
+        Linking.openURL(`tel:${displayEmergencyContact}`).catch((err) => console.log(err));
+      }, 400);
+    } else {
+      console.log("Web platform detected: Auto-dialing is disabled due to browser security restrictions.");
+    }
 
     // 3. Email API
     try {
@@ -399,13 +403,18 @@ export default function MobileHerSecurityContent() {
         {/* Top Logos Row */}
         <View className="w-full flex-row justify-between items-center px-1">
           <View className="bg-white rounded-2xl shadow-xl border-2 border-indigo-900/10 p-2 h-20 w-32 items-center justify-center overflow-hidden">
-            {orgLogoUrl ? (
+            {orgLogoUrl && !orgLogoError ? (
               <Image
                 source={{ uri: orgLogoUrl }}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="contain"
+                onError={() => setOrgLogoError(true)}
               />
-            ) : null}
+            ) : (
+              <Text className="text-sm font-black text-slate-800 text-center" numberOfLines={2}>
+                {displayOrgName}
+              </Text>
+            )}
           </View>
 
           <View className="bg-white rounded-2xl shadow-xl border-2 border-indigo-900/10 p-2 h-20 w-32 items-center justify-center">
@@ -659,35 +668,7 @@ export default function MobileHerSecurityContent() {
       </View>
     </ScrollView>
 
-    {/* Bottom Left Avatar & Status Row */}
-    <View className="absolute bottom-4 left-4 z-10 flex-row items-center gap-3">
-      <View className="relative">
-        <View className="h-14 w-14 rounded-full border-[3px] border-white shadow-xl overflow-hidden bg-slate-100">
-          {publicPhotoUrl && !avatarError ? (
-            <Image
-              source={{ uri: publicPhotoUrl }}
-              style={{ width: '100%', height: '100%' }}
-              onError={() => setAvatarError(true)}
-            />
-          ) : (
-            <View className="h-full w-full items-center justify-center bg-rose-100">
-              <Text className="text-xl font-bold text-rose-700">
-                {displayName.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
-        </View>
-        <View className="absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-white bg-green-500 shadow-sm" />
-      </View>
-      <View>
-        <Text className="text-sm font-black text-slate-800 tracking-tight">
-          {displayName}
-        </Text>
-        <Text className="text-xs font-semibold text-slate-500 mt-0.5">
-          Ready to protect
-        </Text>
-      </View>
-    </View>
+
     </View>
   );
 }

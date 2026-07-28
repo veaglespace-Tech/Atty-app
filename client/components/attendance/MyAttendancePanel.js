@@ -243,17 +243,15 @@ export default function MyAttendancePanel({
             Punch Out
           </button>
 
-          {currentRole !== "ORG_ADMIN" && (
-            <button
-              type="button"
-              onClick={() => submitPunch("home")}
-              disabled={loading || !canReachedHome || actionLoading !== ""}
-              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
-            >
-              {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <Home size={16} />}
-              Reached Home
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => submitPunch("home")}
+            disabled={loading || !canReachedHome || actionLoading !== ""}
+            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+          >
+            {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <Home size={16} />}
+            Reached Home
+          </button>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -285,9 +283,7 @@ export default function MyAttendancePanel({
           <Snapshot label="Today Status" value={todayStatusValue} />
           <Snapshot label="Punch In" value={formatDateTime(todayRecord?.punchInAt)} />
           <Snapshot label="Punch Out" value={formatDateTime(todayRecord?.punchOutAt)} />
-          {currentRole !== "ORG_ADMIN" && (
-            <Snapshot label="Reached Home" value={formatDateTime(todayRecord?.reachedHomeAt)} />
-          )}
+          <Snapshot label="Reached Home" value={formatDateTime(todayRecord?.reachedHomeAt)} />
         </div>
       </div>
 
@@ -371,9 +367,7 @@ export default function MyAttendancePanel({
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
-                    {currentRole !== "ORG_ADMIN" && (
-                      <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
-                    )}
+                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
@@ -387,9 +381,7 @@ export default function MyAttendancePanel({
                       <td className="px-3 py-2 text-slate-700">{record.status}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
-                      {currentRole !== "ORG_ADMIN" && (
-                        <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
-                      )}
+                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
                       <td className="px-3 py-2 text-slate-700">

@@ -6,6 +6,7 @@ import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
 import { Copy, Share2, Users, FileText, Component, ShieldAlert, CheckCircle, Activity, Bell } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 
 const getIconForLabel = (label) => {
   const lbl = label?.toLowerCase() || '';
@@ -19,8 +20,9 @@ const getIconForLabel = (label) => {
 };
 
 export default function OrgDashboard() {
-  const { data, isLoading, isFetching, refetch, error } = useGetOrgDashboardQuery(undefined);
   const { user } = useAuthSession();
+  const isAdmin = user?.currentRole === "ORG_ADMIN";
+  const { data, isLoading, isFetching, refetch, error } = useGetOrgDashboardQuery(undefined, { skip: !isAdmin });
 
   if (error?.status === 402) {
     return (
@@ -73,12 +75,22 @@ export default function OrgDashboard() {
                   <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">
                     {formatRoleLabel(user?.currentRole) || "Workspace"}
                   </Text>
-                  <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                    {`${user?.organization?.name || "Organization"} Dashboard`}
-                  </Text>
-                  <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                    Workspace summary for users, teams, and attendance.
-                  </Text>
+                  {user?.currentRole === "ORG_ADMIN" ? (
+                    <>
+                      <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                        {`${user?.organization?.name || "Organization"} Dashboard`}
+                      </Text>
+                      <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                        Workspace summary for users, teams, and attendance.
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                        {`${formatRoleLabel(user?.currentRole) || "Member"} Dashboard`}
+                      </Text>
+                    </>
+                  )}
                 </View>
               </View>
             </View>
@@ -98,41 +110,54 @@ export default function OrgDashboard() {
             </View>
           ) : null}
 
-          {isLoading ? (
-            <View className="py-8 items-center">
-              <ActivityIndicator size="large" color="#2563eb" />
+          {/* MY ATTENDANCE STATS (Only for non-admin members) */}
+          {!isAdmin && (
+            <View className="mb-6">
+              <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
+                <MyAttendanceCore isEmbedded={true} showActions={false} />
+              </Animated.View>
             </View>
-          ) : (
-            <View>
-              {/* STATS OVERVIEW */}
-              <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
-                {summary.map((item, index) => {
-                  const { icon: Icon, color, bg } = getIconForLabel(item.label);
-                  return (
-                    <Animated.View
-                      entering={FadeInDown.duration(400).delay(index * 100).springify()}
-                      key={index}
-                      className="w-[48%] bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-                      <View className="flex-row items-start justify-between mb-4">
-                        <Text
-                          className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3"
-                          numberOfLines={2}>
-                          {item.label}
-                        </Text>
-                        <View className={`h-8 w-8 rounded-full items-center justify-center shrink-0 ${bg}`}>
-                          <Icon size={14} className={color} />
-                        </View>
-                      </View>
-                      <Text
-                        className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
-                        numberOfLines={1}
-                        adjustsFontSizeToFit>
-                        {item.value}
-                      </Text>
-                    </Animated.View>
-                  );
-                })}
-              </View>
+          )}
+
+          {isAdmin && (
+            <>
+              {isLoading ? (
+                <View className="py-8 items-center">
+                  <ActivityIndicator size="large" color="#2563eb" />
+                </View>
+              ) : (
+                <View>
+                  {/* STATS OVERVIEW */}
+                  <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
+                    {summary.map((item, index) => {
+                      const { icon: Icon, color, bg } = getIconForLabel(item.label);
+                      return (
+                        <Animated.View
+                          entering={FadeInDown.duration(400).delay(index * 100).springify()}
+                          key={index}
+                          className="w-[48%]">
+                          <View className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between h-full">
+                            <View className="flex-row items-start justify-between mb-4">
+                              <Text
+                                className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3"
+                                numberOfLines={2}>
+                                {item.label}
+                              </Text>
+                              <View className={`h-8 w-8 rounded-full items-center justify-center shrink-0 ${bg}`}>
+                                <Icon size={14} className={color} />
+                              </View>
+                            </View>
+                            <Text
+                              className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
+                              numberOfLines={1}
+                              adjustsFontSizeToFit>
+                              {item.value}
+                            </Text>
+                          </View>
+                        </Animated.View>
+                      );
+                    })}
+                  </View>
 
               {/* RECORDS TABLE */}
               <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden shadow-sm">
@@ -197,6 +222,8 @@ export default function OrgDashboard() {
                 )}
               </View>
             </View>
+            )}
+            </>
           )}
       </ScrollView>
     

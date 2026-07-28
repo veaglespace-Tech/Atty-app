@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Pressable, Alert, Image } from "react-native";
+import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Pressable, Alert, Image, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, AlertCircle, HeartPulse, ShieldCheck, Lock, Building2, Users, Camera } from "lucide-react-native";
+import { ArrowLeft, Save, User, Mail, Phone, MapPin, AlertCircle, HeartPulse, ShieldCheck, Lock, Building2, Users, Camera, PhoneCall, ChevronRight } from "lucide-react-native";
 
 import { Button } from "@/components/ui/Button";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -14,13 +14,16 @@ import LocationSettings from "@/components/settings/LocationSettings";
 import TimeSettings from "@/components/settings/TimeSettings";
 import OrgLogoSettings from "@/components/settings/OrgLogoSettings";
 import ThemeToggle from "@/components/ThemeToggle";
-const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = "default" }) => (
+const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = "default", maxLength }) => (
   <View className="mb-4">
     <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider ml-1">
       {label}
     </Text>
     <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 px-4 py-3 shadow-sm">
       <Icon size={20} color="#64748b" className="mr-3" />
+      {keyboardType === 'phone-pad' && (
+        <Text className="text-base font-medium text-slate-900 dark:text-white mr-1">+91</Text>
+      )}
       <TextInput
         className="flex-1 text-base font-medium text-slate-900 dark:text-white"
         value={value}
@@ -28,6 +31,7 @@ const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keybo
         placeholder={placeholder}
         placeholderTextColor="#94a3b8"
         keyboardType={keyboardType}
+        maxLength={maxLength}
       />
     </View>
   </View>
@@ -108,10 +112,29 @@ export default function MemberSettings() {
   const handleSave = async () => {
     setError("");
     setSuccess("");
+    
     if (!form.name.trim() || !form.email.trim()) {
       setError("Name and Email are required.");
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const mobileRegex = /^[0-9+\-\s]{10,15}$/;
+    if (form.mobile && !mobileRegex.test(form.mobile.trim())) {
+      setError("Please enter a valid mobile number.");
+      return;
+    }
+
+    if (form.emergencyContact && !mobileRegex.test(form.emergencyContact.trim())) {
+      setError("Please enter a valid emergency contact number.");
+      return;
+    }
+
     try {
       const result = await updateMe(form).unwrap();
       dispatch(setCurrentUser(result.user));
@@ -236,11 +259,36 @@ export default function MemberSettings() {
                   Personal Details
                 </Text>
                 
+                {/* SOS Emergency Button */}
+                <Pressable 
+                  onPress={() => {
+                    if (user?.emergencyContact) {
+                      Linking.openURL(`tel:${user.emergencyContact}`);
+                    } else {
+                      Alert.alert("No Contact Found", "Please set your emergency contact below first.");
+                    }
+                  }}
+                  className="overflow-hidden rounded-[24px] bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 shadow-sm active:bg-rose-100 dark:active:bg-rose-900/50 active:scale-[0.98] transition-all mb-6"
+                >
+                  <View className="flex-row items-center p-2">
+                    <View className="bg-rose-500 dark:bg-rose-600 h-12 w-12 rounded-xl items-center justify-center shrink-0 shadow-sm shadow-rose-500/30">
+                      <PhoneCall size={20} color="#ffffff" strokeWidth={2.5} />
+                    </View>
+                    <View className="flex-1 px-4">
+                      <Text className="text-[15px] font-black text-rose-900 dark:text-rose-100 tracking-tight">Emergency SOS</Text>
+                      <Text className="text-[10px] font-bold text-rose-600/80 dark:text-rose-400/80 mt-0.5 uppercase tracking-widest">One-tap contact alert</Text>
+                    </View>
+                    <View className="px-2 shrink-0">
+                      <ChevronRight size={18} color="#f43f5e" />
+                    </View>
+                  </View>
+                </Pressable>
+                
                 <View className="gap-y-4">
                   <InputField label="Full Name" icon={User} value={form.name} onChangeText={(text) => setForm({ ...form, name: text })} placeholder="e.g. John Doe" />
                   <InputField label="Email Address" icon={Mail} value={form.email} onChangeText={(text) => setForm({ ...form, email: text })} placeholder="e.g. john@example.com" keyboardType="email-address" />
-                  <InputField label="Mobile Number" icon={Phone} value={form.mobile} onChangeText={(text) => setForm({ ...form, mobile: text })} placeholder="e.g. 9876543210" keyboardType="phone-pad" />
-                  <InputField label="Emergency Contact" icon={HeartPulse} value={form.emergencyContact} onChangeText={(text) => setForm({ ...form, emergencyContact: text })} placeholder="e.g. 1234567890" keyboardType="phone-pad" />
+                  <InputField label="Mobile Number" icon={Phone} value={form.mobile} onChangeText={(text) => setForm({ ...form, mobile: text.replace(/[^0-9]/g, '') })} placeholder="e.g. 9876543210" keyboardType="phone-pad" maxLength={10} />
+                  <InputField label="Emergency Contact" icon={HeartPulse} value={form.emergencyContact} onChangeText={(text) => setForm({ ...form, emergencyContact: text.replace(/[^0-9]/g, '') })} placeholder="e.g. 1234567890" keyboardType="phone-pad" maxLength={10} />
                   <InputField label="Current Address" icon={MapPin} value={form.currentAddress} onChangeText={(text) => setForm({ ...form, currentAddress: text })} placeholder="e.g. 123 Main St, City" />
                   <InputField label="Permanent Address" icon={MapPin} value={form.permanentAddress} onChangeText={(text) => setForm({ ...form, permanentAddress: text })} placeholder="e.g. 456 Home St, City" />
                   <InputField label="Blood Group" icon={HeartPulse} value={form.bloodGroup} onChangeText={(text) => setForm({ ...form, bloodGroup: text })} placeholder="e.g. O+" />

@@ -290,13 +290,15 @@ export default function SettingsScreen() {
                 <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Mobile Number</Text>
                 <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
                   <Smartphone size={16} className="text-slate-400 mr-3" />
+                  <Text className="text-sm font-semibold text-slate-900 dark:text-white mr-1">+91</Text>
                   <TextInput
                     value={formData.mobile}
-                    onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val }))}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val.replace(/[^0-9]/g, '') }))}
                     className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
                     placeholder="Enter mobile number"
                     keyboardType="phone-pad"
                     placeholderTextColor="#94a3b8"
+                    maxLength={10}
                   />
                 </View>
               </View>
@@ -347,6 +349,37 @@ export default function SettingsScreen() {
                 )}
               </Pressable>
 
+            </View>
+          </View>
+        )}
+
+        {activeTab === "personal" && (
+          <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
+            <Text className="text-base font-black text-slate-900 dark:text-white mb-2">
+              Help & Support
+            </Text>
+            <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-5">
+              Need assistance? Reach out to our support team.
+            </Text>
+            
+            <View className="flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 mb-3">
+              <View className="h-10 w-10 bg-blue-100 dark:bg-blue-500/20 rounded-full items-center justify-center">
+                <Mail size={20} className="text-blue-600 dark:text-blue-400" />
+              </View>
+              <View>
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Email Support</Text>
+                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">support@veagle.com</Text>
+              </View>
+            </View>
+            
+            <View className="flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <View className="h-10 w-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-full items-center justify-center">
+                <PhoneCall size={20} className="text-emerald-600 dark:text-emerald-400" />
+              </View>
+              <View>
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Call Us</Text>
+                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">+91 99999 99999</Text>
+              </View>
             </View>
           </View>
         )}

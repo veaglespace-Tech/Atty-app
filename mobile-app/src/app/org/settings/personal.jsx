@@ -23,9 +23,38 @@ export default function PersonalSettings() {
   const handleUpdate = useCallback(async () => {
     try {
       const payload = {};
+      
+      // Basic Email Validation
+      if (formData.email && formData.email !== user?.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          Alert.alert("Invalid Email", "Please enter a valid email address.");
+          return;
+        }
+        payload.email = formData.email;
+      }
+      
+      // Mobile Number Validation
+      if (formData.mobile && formData.mobile !== user?.mobile) {
+        const mobileRegex = /^[0-9+\-\s]{10,15}$/;
+        if (!mobileRegex.test(formData.mobile)) {
+          Alert.alert("Invalid Mobile", "Please enter a valid mobile number.");
+          return;
+        }
+        payload.mobile = formData.mobile;
+      }
+
+      // Emergency Contact Validation
+      if (formData.emergencyContact && formData.emergencyContact !== user?.emergencyContact) {
+        const mobileRegex = /^[0-9+\-\s]{10,15}$/;
+        if (!mobileRegex.test(formData.emergencyContact)) {
+          Alert.alert("Invalid Contact", "Please enter a valid emergency contact number.");
+          return;
+        }
+        payload.emergencyContact = formData.emergencyContact;
+      }
+
       if (formData.name && formData.name !== user?.name) payload.name = formData.name;
-      if (formData.mobile && formData.mobile !== user?.mobile) payload.mobile = formData.mobile;
-      if (formData.emergencyContact !== user?.emergencyContact) payload.emergencyContact = formData.emergencyContact;
       if (formData.currentAddress !== user?.currentAddress) payload.currentAddress = formData.currentAddress;
 
       if (Object.keys(payload).length === 0) {
@@ -89,7 +118,7 @@ export default function PersonalSettings() {
                 <Smartphone size={16} className="text-slate-400 mr-3" />
                 <TextInput
                   value={formData.mobile}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val }))}
+                  onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val.replace(/[^0-9+]/g, '') }))}
                   className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
                   placeholder="Enter mobile number"
                   keyboardType="phone-pad"
@@ -104,7 +133,7 @@ export default function PersonalSettings() {
                 <PhoneCall size={16} className="text-slate-400 mr-3" />
                 <TextInput
                   value={formData.emergencyContact}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val }))}
+                  onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val.replace(/[^0-9+]/g, '') }))}
                   className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
                   placeholder="Enter emergency contact"
                   keyboardType="phone-pad"

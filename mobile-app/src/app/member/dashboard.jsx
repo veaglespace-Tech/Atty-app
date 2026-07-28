@@ -8,6 +8,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useGetDashboardStatsQuery } from "@/services/api/dashboardApi";
+import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 
 const { width } = Dimensions.get("window");
 
@@ -41,32 +42,7 @@ export default function MemberDashboard(props) {
     }
   };
 
-  const menuItems = [
-    {
-      title: "My Teams",
-      description: "Colleagues & groups",
-      icon: <Component size={26} color="#3b82f6" strokeWidth={2.5} />,
-      bg: "bg-blue-50 dark:bg-blue-900/30",
-      border: "border-blue-100 dark:border-blue-800/50",
-      href: "teams"
-    },
-    {
-      title: "Reports",
-      description: "Analytics & history",
-      icon: <FileBarChart size={26} color="#10b981" strokeWidth={2.5} />,
-      bg: "bg-emerald-50 dark:bg-emerald-900/30",
-      border: "border-emerald-100 dark:border-emerald-800/50",
-      href: "reports"
-    },
-    {
-      title: "Alerts",
-      description: "Notifications",
-      icon: <Bell size={26} color="#f59e0b" strokeWidth={2.5} />,
-      bg: "bg-amber-50 dark:bg-amber-900/30",
-      border: "border-amber-100 dark:border-amber-800/50",
-      href: "notifications"
-    }
-  ];
+
 
   return (
     <ScrollView 
@@ -114,26 +90,12 @@ export default function MemberDashboard(props) {
         </Animated.View>
       </View>
 
-      {/* SOS Emergency Button */}
-      <Animated.View entering={FadeInDown.duration(400).delay(100).springify()} className="px-6 mb-10">
-        <Pressable 
-          onPress={handleSOS}
-          className="overflow-hidden rounded-[28px] bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 shadow-sm active:bg-rose-100 dark:active:bg-rose-900/50 active:scale-[0.98] transition-all"
-        >
-          <View className="flex-row items-center p-2">
-            <View className="bg-rose-500 dark:bg-rose-600 h-14 w-14 rounded-2xl items-center justify-center shrink-0 shadow-sm shadow-rose-500/30">
-              <PhoneCall size={24} color="#ffffff" strokeWidth={2.5} />
-            </View>
-            <View className="flex-1 px-4">
-              <Text className="text-[17px] font-black text-rose-900 dark:text-rose-100 tracking-tight">Emergency SOS</Text>
-              <Text className="text-xs font-bold text-rose-600/80 dark:text-rose-400/80 mt-0.5">One-tap contact alert</Text>
-            </View>
-            <View className="px-4 shrink-0">
-              <ChevronRight size={20} color="#f43f5e" />
-            </View>
-          </View>
-        </Pressable>
-      </Animated.View>
+
+      <View className="px-4 mb-10">
+        <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
+          <MyAttendanceCore isEmbedded={true} showActions={false} />
+        </Animated.View>
+      </View>
     </ScrollView>
   );
 }

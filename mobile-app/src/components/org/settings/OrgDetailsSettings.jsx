@@ -95,14 +95,14 @@ export default function OrgDetailsSettings() {
           <View className="w-1/3">
             <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Code</Text>
             <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-              <TextInput value={form.phoneCountryCode} onChangeText={(v) => setForm({ ...form, phoneCountryCode: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="+91" keyboardType="phone-pad" />
+              <TextInput value={form.phoneCountryCode} onChangeText={(v) => setForm({ ...form, phoneCountryCode: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="+91" placeholderTextColor="#94a3b8" keyboardType="phone-pad" />
             </View>
           </View>
           <View className="flex-1">
             <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Phone Number</Text>
             <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
               <PhoneCall size={16} className="text-slate-400 mr-2" />
-              <TextInput value={form.phone} onChangeText={(v) => setForm({ ...form, phone: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="e.g. 9876543210" keyboardType="phone-pad" />
+              <TextInput value={form.phone} onChangeText={(v) => setForm({ ...form, phone: v.replace(/[^0-9]/g, '') })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="e.g. 9876543210" placeholderTextColor="#94a3b8" keyboardType="phone-pad" />
             </View>
           </View>
         </View>
@@ -113,13 +113,13 @@ export default function OrgDetailsSettings() {
           <View className="flex-1">
             <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">City</Text>
             <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-              <TextInput value={form.city} onChangeText={(v) => setForm({ ...form, city: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="City" />
+              <TextInput value={form.city} onChangeText={(v) => setForm({ ...form, city: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="City" placeholderTextColor="#94a3b8" />
             </View>
           </View>
           <View className="flex-1">
             <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">State</Text>
             <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-              <TextInput value={form.state} onChangeText={(v) => setForm({ ...form, state: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="State" />
+              <TextInput value={form.state} onChangeText={(v) => setForm({ ...form, state: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="State" placeholderTextColor="#94a3b8" />
             </View>
           </View>
         </View>
@@ -127,7 +127,7 @@ export default function OrgDetailsSettings() {
         <View className="mb-4">
           <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Country</Text>
           <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
-            <TextInput value={form.country} onChangeText={(v) => setForm({ ...form, country: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="Country" />
+            <TextInput value={form.country} onChangeText={(v) => setForm({ ...form, country: v })} className="flex-1 text-sm font-semibold text-slate-900 dark:text-white" placeholder="Country" placeholderTextColor="#94a3b8" />
           </View>
         </View>
 
