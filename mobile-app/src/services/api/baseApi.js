@@ -48,6 +48,9 @@ const resolveApiBaseUrl = () => {
 
   const explicitApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL);
   if (explicitApiUrl) {
+    if (Platform.OS !== "web" && (explicitApiUrl.includes("localhost") || explicitApiUrl.includes("127.0.0.1"))) {
+      return DEFAULT_PRODUCTION_API_URL;
+    }
     return explicitApiUrl;
   }
 
