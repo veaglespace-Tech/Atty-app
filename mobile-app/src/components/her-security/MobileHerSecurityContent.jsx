@@ -536,11 +536,11 @@ export default function MobileHerSecurityContent() {
                 {isSendingSos ? "..." : (isSosActive ? "STOP SOS" : "START SOS")}
               </Text>
             )}
-            {!isSendingSos && (
+            {!isSendingSos ? (
               <Text className="text-xs font-bold text-white/90 uppercase tracking-widest mt-2">
                 {isHolding ? "Keep Holding" : (isSosActive ? "Tap to Cancel" : "Hold 3s to Alert")}
               </Text>
-            )}
+            ) : null}
           </Pressable>
 
           <Text className="mt-8 text-xs text-center font-semibold text-slate-500 dark:text-slate-400 px-2 leading-relaxed">

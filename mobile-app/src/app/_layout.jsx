@@ -17,6 +17,7 @@ LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   'Image: style.resizeMode is deprecated. Please use props.resizeMode.',
   "Can't perform a React state update on a component that hasn't mounted yet",
+  "Text strings must be rendered within a <Text> component",
 ]);
 
 import { StoreProvider } from '@/components/StoreProvider';
