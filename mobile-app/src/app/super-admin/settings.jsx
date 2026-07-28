@@ -11,6 +11,8 @@ import { useUpdateMeMutation, useForgotPasswordMutation } from "@/services/api/a
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { formatRoleLabel, resolveUserPermissions } from "@/utils/roles";
 import ThemeToggle from "@/components/ThemeToggle";
+import { getLocalPhoneNumber, formatPhoneNumberForSave } from "@/utils/phone";
+
 export default function SuperAdminSettings() {
   const { user } = useAuthSession();
   const dispatch = useDispatch();
@@ -21,8 +23,8 @@ export default function SuperAdminSettings() {
   const [form, setForm] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    mobile: user?.mobile || "",
-    emergencyContact: user?.emergencyContact || "",
+    mobile: getLocalPhoneNumber(user?.mobile),
+    emergencyContact: getLocalPhoneNumber(user?.emergencyContact),
     currentAddress: user?.currentAddress || "",
   });
   
@@ -60,7 +62,12 @@ export default function SuperAdminSettings() {
       return;
     }
     try {
-      const result = await updateMe(form).unwrap();
+      const payload = {
+        ...form,
+        mobile: formatPhoneNumberForSave(form.mobile),
+        emergencyContact: formatPhoneNumberForSave(form.emergencyContact),
+      };
+      const result = await updateMe(payload).unwrap();
       dispatch(setCurrentUser(result.user));
       setSuccess("Personal details updated successfully!");
     } catch (err) {

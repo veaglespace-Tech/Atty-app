@@ -36,6 +36,8 @@ import TimeSettings from "@/components/org/settings/TimeSettings";
 import LocationSettings from "@/components/org/settings/LocationSettings";
 import OrgLogoSettings from "@/components/org/settings/OrgLogoSettings";
 import OrgDetailsSettings from "@/components/org/settings/OrgDetailsSettings";
+import { getLocalPhoneNumber, formatPhoneNumberForSave } from "@/utils/phone";
+
 // --- Main Settings Screen ---
 export default function SettingsScreen() {
   const dispatch = useDispatch();
@@ -48,8 +50,8 @@ export default function SettingsScreen() {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    mobile: user?.mobile || "",
-    emergencyContact: user?.emergencyContact || "",
+    mobile: getLocalPhoneNumber(user?.mobile),
+    emergencyContact: getLocalPhoneNumber(user?.emergencyContact),
     currentAddress: user?.currentAddress || "",
   });
 
@@ -102,8 +104,8 @@ export default function SettingsScreen() {
     try {
       const payload = {};
       if (formData.name && formData.name !== user?.name) payload.name = formData.name;
-      if (formData.mobile && formData.mobile !== user?.mobile) payload.mobile = formData.mobile;
-      if (formData.emergencyContact !== user?.emergencyContact) payload.emergencyContact = formData.emergencyContact;
+      if (formData.mobile) payload.mobile = formatPhoneNumberForSave(formData.mobile);
+      if (formData.emergencyContact) payload.emergencyContact = formatPhoneNumberForSave(formData.emergencyContact);
       if (formData.currentAddress !== user?.currentAddress) payload.currentAddress = formData.currentAddress;
 
       if (profileImageDataUrl) {
@@ -307,13 +309,15 @@ export default function SettingsScreen() {
                 <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Emergency Contact</Text>
                 <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
                   <PhoneCall size={16} className="text-slate-400 mr-3" />
+                  <Text className="text-sm font-semibold text-slate-900 dark:text-white mr-1">+91</Text>
                   <TextInput
-                    value={formData.emergencyContact}
-                    onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val }))}
+                    value={getLocalPhoneNumber(formData.emergencyContact)}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val.replace(/[^0-9]/g, '') }))}
                     className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
                     placeholder="Enter emergency contact"
                     keyboardType="phone-pad"
                     placeholderTextColor="#94a3b8"
+                    maxLength={10}
                   />
                 </View>
               </View>

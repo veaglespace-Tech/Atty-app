@@ -14,6 +14,8 @@ import LocationSettings from "@/components/settings/LocationSettings";
 import TimeSettings from "@/components/settings/TimeSettings";
 import OrgLogoSettings from "@/components/settings/OrgLogoSettings";
 import ThemeToggle from "@/components/ThemeToggle";
+import { getLocalPhoneNumber, formatPhoneNumberForSave } from "@/utils/phone";
+
 const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = "default", maxLength }) => (
   <View className="mb-4">
     <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider ml-1">
@@ -26,7 +28,7 @@ const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, keybo
       )}
       <TextInput
         className="flex-1 text-base font-medium text-slate-900 dark:text-white"
-        value={value}
+        value={keyboardType === 'phone-pad' ? getLocalPhoneNumber(value) : value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor="#94a3b8"
@@ -68,8 +70,8 @@ export default function MemberSettings() {
   const [form, setForm] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    mobile: user?.mobile || "",
-    emergencyContact: user?.emergencyContact || "",
+    mobile: getLocalPhoneNumber(user?.mobile),
+    emergencyContact: getLocalPhoneNumber(user?.emergencyContact),
     currentAddress: user?.currentAddress || "",
     permanentAddress: user?.permanentAddress || "",
     bloodGroup: user?.bloodGroup || "",
@@ -136,7 +138,12 @@ export default function MemberSettings() {
     }
 
     try {
-      const result = await updateMe(form).unwrap();
+      const payload = {
+        ...form,
+        mobile: formatPhoneNumberForSave(form.mobile),
+        emergencyContact: formatPhoneNumberForSave(form.emergencyContact),
+      };
+      const result = await updateMe(payload).unwrap();
       dispatch(setCurrentUser(result.user));
       setSuccess("Personal details updated successfully!");
     } catch (err) {

@@ -26,20 +26,26 @@ export const getDefaultCountryCode = (value = "+91") => {
   return COUNTRY_PHONE_OPTIONS.some((item) => item.code === normalized) ? normalized : "+91";
 };
 
-export const getLocalPhoneNumber = (phone, countryCode) => {
+export const getLocalPhoneNumber = (phone, countryCode = "+91") => {
   const rawPhone = String(phone || "").trim();
   if (!rawPhone) return "";
 
-  const digitsOnly = rawPhone.replace(/\D/g, "");
-  const countryDigits = String(countryCode || "").replace(/\D/g, "");
+  let digitsOnly = rawPhone.replace(/\D/g, "");
+  const countryDigits = String(countryCode || "+91").replace(/\D/g, "");
 
-  if (rawPhone.startsWith("+") && countryDigits && digitsOnly.startsWith(countryDigits)) {
-    return digitsOnly.slice(countryDigits.length);
+  // Repeatedly strip leading country digits if duplicated (e.g. 91917276316768)
+  while (countryDigits && digitsOnly.startsWith(countryDigits) && digitsOnly.length > 10) {
+    digitsOnly = digitsOnly.slice(countryDigits.length);
   }
 
-  if (rawPhone.startsWith("+")) {
-    return digitsOnly;
+  if (digitsOnly.length > 10) {
+    return digitsOnly.slice(-10);
   }
 
-  return rawPhone;
+  return digitsOnly;
+};
+
+export const formatPhoneNumberForSave = (phone, countryCode = "+91") => {
+  const local = getLocalPhoneNumber(phone, countryCode);
+  return local ? `${countryCode}${local}` : "";
 };

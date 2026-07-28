@@ -14,6 +14,8 @@ import LocationSettings from "@/components/settings/LocationSettings";
 import TimeSettings from "@/components/settings/TimeSettings";
 import OrgLogoSettings from "@/components/settings/OrgLogoSettings";
 import ThemeToggle from "@/components/ThemeToggle";
+import { getLocalPhoneNumber, formatPhoneNumberForSave } from "@/utils/phone";
+
 export default function TeamLeaderSettings() {
   const { user } = useAuthSession();
   const dispatch = useDispatch();
@@ -24,8 +26,8 @@ export default function TeamLeaderSettings() {
   const [form, setForm] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    mobile: user?.mobile || "",
-    emergencyContact: user?.emergencyContact || "",
+    mobile: getLocalPhoneNumber(user?.mobile),
+    emergencyContact: getLocalPhoneNumber(user?.emergencyContact),
     currentAddress: user?.currentAddress || "",
     permanentAddress: user?.permanentAddress || "",
     bloodGroup: user?.bloodGroup || "",
@@ -73,7 +75,12 @@ export default function TeamLeaderSettings() {
       return;
     }
     try {
-      const result = await updateMe(form).unwrap();
+      const payload = {
+        ...form,
+        mobile: formatPhoneNumberForSave(form.mobile),
+        emergencyContact: formatPhoneNumberForSave(form.emergencyContact),
+      };
+      const result = await updateMe(payload).unwrap();
       dispatch(setCurrentUser(result.user));
       setSuccess("Personal details updated successfully!");
     } catch (err) {

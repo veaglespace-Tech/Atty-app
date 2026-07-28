@@ -7,6 +7,7 @@ import { ChevronLeft, User, Mail, Smartphone, MapPin, PhoneCall, Save } from "lu
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { useUpdateMeMutation } from "@/services/api/authApi";
+import { getLocalPhoneNumber, formatPhoneNumberForSave } from "@/utils/phone";
 
 export default function PersonalSettings() {
   const { user } = useAuthSession();
@@ -15,8 +16,8 @@ export default function PersonalSettings() {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    mobile: user?.mobile || "",
-    emergencyContact: user?.emergencyContact || "",
+    mobile: getLocalPhoneNumber(user?.mobile),
+    emergencyContact: getLocalPhoneNumber(user?.emergencyContact),
     currentAddress: user?.currentAddress || "",
   });
 
@@ -34,24 +35,14 @@ export default function PersonalSettings() {
         payload.email = formData.email;
       }
       
-      // Mobile Number Validation
-      if (formData.mobile && formData.mobile !== user?.mobile) {
-        const mobileRegex = /^[0-9+\-\s]{10,15}$/;
-        if (!mobileRegex.test(formData.mobile)) {
-          Alert.alert("Invalid Mobile", "Please enter a valid mobile number.");
-          return;
-        }
-        payload.mobile = formData.mobile;
+      // Mobile Number Validation & Formatting
+      if (formData.mobile) {
+        payload.mobile = formatPhoneNumberForSave(formData.mobile);
       }
 
-      // Emergency Contact Validation
-      if (formData.emergencyContact && formData.emergencyContact !== user?.emergencyContact) {
-        const mobileRegex = /^[0-9+\-\s]{10,15}$/;
-        if (!mobileRegex.test(formData.emergencyContact)) {
-          Alert.alert("Invalid Contact", "Please enter a valid emergency contact number.");
-          return;
-        }
-        payload.emergencyContact = formData.emergencyContact;
+      // Emergency Contact Validation & Formatting
+      if (formData.emergencyContact) {
+        payload.emergencyContact = formatPhoneNumberForSave(formData.emergencyContact);
       }
 
       if (formData.name && formData.name !== user?.name) payload.name = formData.name;
@@ -116,13 +107,15 @@ export default function PersonalSettings() {
               <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Mobile Number</Text>
               <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
                 <Smartphone size={16} className="text-slate-400 mr-3" />
+                <Text className="text-sm font-semibold text-slate-900 dark:text-white mr-1">+91</Text>
                 <TextInput
-                  value={formData.mobile}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val.replace(/[^0-9+]/g, '') }))}
+                  value={getLocalPhoneNumber(formData.mobile)}
+                  onChangeText={(val) => setFormData(prev => ({ ...prev, mobile: val.replace(/[^0-9]/g, '') }))}
                   className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
                   placeholder="Enter mobile number"
                   keyboardType="phone-pad"
                   placeholderTextColor="#94a3b8"
+                  maxLength={10}
                 />
               </View>
             </View>
@@ -131,13 +124,15 @@ export default function PersonalSettings() {
               <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Emergency Contact</Text>
               <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
                 <PhoneCall size={16} className="text-slate-400 mr-3" />
+                <Text className="text-sm font-semibold text-slate-900 dark:text-white mr-1">+91</Text>
                 <TextInput
-                  value={formData.emergencyContact}
-                  onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val.replace(/[^0-9+]/g, '') }))}
+                  value={getLocalPhoneNumber(formData.emergencyContact)}
+                  onChangeText={(val) => setFormData(prev => ({ ...prev, emergencyContact: val.replace(/[^0-9]/g, '') }))}
                   className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
                   placeholder="Enter emergency contact"
                   keyboardType="phone-pad"
                   placeholderTextColor="#94a3b8"
+                  maxLength={10}
                 />
               </View>
             </View>
