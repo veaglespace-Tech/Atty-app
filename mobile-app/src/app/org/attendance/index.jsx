@@ -372,7 +372,6 @@ export default function OrgAttendancePage() {
   </View>
   </View>
  </View>
- </View>
 
  {period === 'custom' && (
  <View className="mt-4 flex-col gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
