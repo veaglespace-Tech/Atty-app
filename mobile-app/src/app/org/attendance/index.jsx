@@ -40,15 +40,15 @@ const DropdownFilter = ({ label, value, options, onSelect }) => {
  const selectedLabel = options.find(o => o.value === value)?.label || label;
  
  return (
- <View className="flex-1 min-w-[140px]">
+ <View className="w-full">
  <Pressable onPress={() => setOpen(true)} className="flex-row items-center justify-between px-4 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl active:bg-slate-100 dark:active:bg-slate-800">
  <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300 mr-2" numberOfLines={1}>{selectedLabel}</Text>
  <ChevronDown size={14} className="text-slate-400" />
  </Pressable>
 
  <Modal visible={open} animationType="slide" transparent={true} onRequestClose={() => setOpen(false)}>
- <Pressable className="flex-1 justify-end bg-black dark:bg-black" onPress={() => setOpen(false)}>
- <Pressable onPress={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-950 rounded-t-[32px] pt-4 pb-8 max-h-[80%] border-t border-slate-200 dark:border-slate-800 ">
+ <Pressable className="flex-1 justify-end bg-black/60" onPress={() => setOpen(false)}>
+ <Pressable onPress={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-950 rounded-t-[32px] pt-4 pb-8 max-h-[80%] border-t border-slate-200 dark:border-slate-800">
  <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" />
  <Text className="text-xl font-black text-slate-900 dark:text-white px-6 mb-4">{label}</Text>
  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
@@ -56,7 +56,7 @@ const DropdownFilter = ({ label, value, options, onSelect }) => {
  <Pressable
  key={opt.value}
  onPress={() => { onSelect(opt.value); setOpen(false); }}
- className={`px-5 py-4 mb-2 rounded-2xl flex-row items-center justify-between ${value === opt.value ? 'bg-blue-50 dark:bg-blue-500 border border-blue-200 dark:border-blue-500' : 'bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800'}`}
+ className={`px-5 py-4 mb-2 rounded-2xl flex-row items-center justify-between ${value === opt.value ? 'bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500' : 'bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800'}`}
  >
  <Text className={`text-[15px] font-bold ${value === opt.value ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>{opt.label}</Text>
  </Pressable>
@@ -320,11 +320,11 @@ export default function OrgAttendancePage() {
  >
  {/* FILTERS */}
  <View className="mt-6 mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 p-5">
- <View className="flex-row flex-wrap gap-4">
- <View className="flex-1 min-w-[140px]">
+ <View className="gap-y-4">
+ <View>
  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Filter By Status</Text>
  <DropdownFilter
- label="All Statuses"
+ label="Filter By Status"
  value={statusFilter}
  onSelect={setStatusFilter}
  options={[
@@ -336,40 +336,44 @@ export default function OrgAttendancePage() {
  />
  </View>
  
- <View className="flex-[1.5] min-w-[200px]">
- <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Report Period</Text>
- <View className="flex-row gap-2">
- <Pressable 
- onPress={() => setPeriod('custom')} 
- className={`px-4 py-3.5 rounded-xl border flex-row items-center justify-center ${period === 'custom' ? 'bg-blue-600 border-blue-600 ' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800'}`}
- >
- <Text className={`text-[11px] font-black uppercase tracking-widest ${period === 'custom' ? 'text-white' : 'text-slate-700 dark:text-slate-400'}`}>Custom</Text>
- </Pressable>
- <View className="flex-1">
- <DropdownFilter
- label="Standard Periods"
- value={period}
- onSelect={setPeriod}
- options={[
- { label: "Daily", value: "daily" },
- { label: "Weekly", value: "weekly" },
- { label: "Monthly", value: "monthly" }
- ]}
- />
+ <View>
+  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Report Period</Text>
+  <View className="flex-row gap-2">
+  <Pressable 
+  onPress={() => setPeriod('custom')} 
+  className={`px-4 py-3.5 rounded-xl border flex-row items-center justify-center ${period === 'custom' ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800'}`}
+  >
+  <Text className={`text-[11px] font-black uppercase tracking-widest ${period === 'custom' ? 'text-white' : 'text-slate-700 dark:text-slate-400'}`}>Custom</Text>
+  </Pressable>
+  <View className="flex-1">
+  <DropdownFilter
+  label="Report Period"
+  value={period}
+  onSelect={setPeriod}
+  options={[
+  { label: "Daily", value: "daily" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Monthly", value: "monthly" },
+  { label: "Custom", value: "custom" }
+  ]}
+  />
+  </View>
+  </View>
+  </View>
+
+  <View>
+  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Search Member</Text>
+  <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3">
+  <Search size={16} className="text-slate-400" />
+  <TextInput
+  value={search} onChangeText={setSearch} placeholder="Name or email..." placeholderTextColor="#94a3b8"
+  className="flex-1 ml-3 text-[13px] font-semibold text-slate-900 dark:text-white outline-none"
+  />
+  </View>
+  </View>
  </View>
  </View>
- </View>
- </View>
- <View className="mt-4">
- <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Search Member</Text>
- <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3">
- <Search size={16} className="text-slate-400" />
- <TextInput
- value={search} onChangeText={setSearch} placeholder="Name or email..." placeholderTextColor="#94a3b8"
- className="flex-1 ml-3 text-[13px] font-semibold text-slate-900 dark:text-white outline-none"
- />
- </View>
- </View>
+
  {period === 'custom' && (
  <View className="mt-4 flex-col gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
  <View className="flex-row gap-4">
