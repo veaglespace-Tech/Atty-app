@@ -136,7 +136,7 @@ export default function OrgDashboard() {
                           entering={FadeInDown.duration(400).delay(index * 100).springify()}
                           key={index}
                           className="w-[48%]">
-                          <View className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between h-full">
+                          <View className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between min-h-[110px]">
                             <View className="flex-row items-start justify-between mb-4">
                               <Text
                                 className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3"

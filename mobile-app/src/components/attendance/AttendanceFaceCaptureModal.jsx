@@ -77,7 +77,7 @@ export default function AttendanceFaceCaptureModal({
             <Image
               source={{ uri: capturedImage }}
               className="flex-1 w-full h-full"
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ) : !permission?.granted ? (
             <View className="flex-1 items-center justify-center p-6">

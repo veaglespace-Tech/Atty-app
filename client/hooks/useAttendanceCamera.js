@@ -186,12 +186,9 @@ export function useAttendanceCamera({ open, onClose }) {
       return;
     }
 
-    const sourceSize = Math.min(sourceWidth, sourceHeight);
-    const offsetX = Math.max(0, Math.floor((sourceWidth - sourceSize) / 2));
-    const offsetY = Math.max(0, Math.floor((sourceHeight - sourceSize) / 2));
     const canvas = document.createElement("canvas");
-    canvas.width = PREVIEW_SIZE;
-    canvas.height = PREVIEW_SIZE;
+    canvas.width = sourceWidth;
+    canvas.height = sourceHeight;
     const context = canvas.getContext("2d");
 
     if (!context) {
@@ -199,17 +196,7 @@ export function useAttendanceCamera({ open, onClose }) {
       return;
     }
 
-    context.drawImage(
-      video,
-      offsetX,
-      offsetY,
-      sourceSize,
-      sourceSize,
-      0,
-      0,
-      PREVIEW_SIZE,
-      PREVIEW_SIZE
-    );
+    context.drawImage(video, 0, 0, sourceWidth, sourceHeight);
 
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.82));
     setCameraError("");

@@ -53,12 +53,18 @@ const getTabsForRole = (user) => {
   }
   
   if (role === ROLES.ORG_ADMIN || role === ROLES.SUB_ADMIN) {
+    const isAdmin = role === ROLES.ORG_ADMIN;
     const tabs = [
+      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
     ];
-    
-    const isAdmin = role === ROLES.ORG_ADMIN;
 
+    if (isAdmin || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
+      tabs.push({ title: "Attendance Logs", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    }
+    if (isAdmin || hasPermission(user, PERMISSIONS.USERS.CREATE) || hasPermission(user, PERMISSIONS.USERS.VIEW)) {
+      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
+    }
     if (isAdmin || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
@@ -85,9 +91,21 @@ const getTabsForRole = (user) => {
   }
   
   if (role === ROLES.TEAM_LEADER) {
-    const tabs = [];
+    const tabs = [
+      { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
+      { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
+    ];
+    if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_TEAM) || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
+      tabs.push({ title: "Attendance Logs", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    }
+    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
+      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+    }
     if (hasPermission(user, PERMISSIONS.USERS.VIEW)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
+    }
+    if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
+      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "requests" });
     }
     tabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
     if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
@@ -98,15 +116,22 @@ const getTabsForRole = (user) => {
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
     tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
-    tabs.push({ title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" });
+    tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
     return tabs;
   }
   
   // MEMBER fallback
   const fallbackTabs = [
+    { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
+    { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
+    { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
+    { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
     { title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" },
+    { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
+    { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
     { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-    { title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" }
+    { title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" },
+    { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
   ];
   
   return fallbackTabs;

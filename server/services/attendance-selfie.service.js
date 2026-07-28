@@ -43,16 +43,6 @@ const uploadAttendanceSelfie = async ({ userId, dateKey, stage, dataUrl }) => {
     tooLargeMessage: "Attendance selfie must be 3 MB or smaller.",
     uploadFailureMessage: "Failed to upload attendance selfie. Please try again.",
     errorFactory: createAttendanceSelfieError,
-    transformation: [
-      {
-        width: 720,
-        height: 720,
-        crop: "fill",
-        gravity: "face",
-        quality: "auto",
-        fetch_format: "auto",
-      },
-    ],
   });
 };
 
