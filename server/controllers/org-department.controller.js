@@ -310,7 +310,7 @@ exports.downloadOrgDepartmentsExcel = asyncHandler(async (req, res) => {
     return res.send(buffer);
   }
 
-  // All Departments report (Multi-Sheet: Overview + Detailed Allocations)
+  // All Departments report (Multi-Sheet: All Members with Allocated Department + Departments Summary)
   const departments = await prisma.department.findMany({
     where: { orgId },
     include: {
@@ -338,11 +338,50 @@ exports.downloadOrgDepartmentsExcel = asyncHandler(async (req, res) => {
       status: true,
       createdAt: true,
       department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
-    orderBy: [{ departmentId: "asc" }, { name: "asc" }],
+    orderBy: [{ name: "asc" }],
   });
 
-  // Sheet 1 Data: Departments Overview
+  // Sheet 1 Data: Allocated Department Members
+  const allocatedUsers = allUsers.filter((user) => Boolean(user.department?.name));
+  const memberHeaders = ["No.", "Member Name", "Allocated Department", "Email Address", "Role", "Contact No.", "Status", "Joined Date"];
+  const memberRows = allocatedUsers.map((user, index) => [
+    index + 1,
+    user.name || "-",
+    user.department?.name || "-",
+    user.email || "-",
+    user.role || "-",
+    user.mobile || "-",
+    user.status || "ACTIVE",
+    user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+  ]);
+
+  const memberSheetData = [
+    [`${orgName} — Allocated Departments Roster`],
+    [`Organization Code: ${organization?.organizationCode || "-"}`],
+    [],
+    memberHeaders,
+    ...memberRows,
+  ];
+
+  const memberWorksheet = xlsx.utils.aoa_to_sheet(memberSheetData);
+  memberWorksheet["!cols"] = [
+    { wch: 8 },
+    { wch: 25 },
+    { wch: 25 },
+    { wch: 30 },
+    { wch: 15 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 15 },
+  ];
+
+  // Sheet 2 Data: Departments Summary
   const overviewHeaders = ["No.", "Department Name", "Description", "Total Members", "Created Date"];
   const overviewRows = departments.map((dept, index) => [
     index + 1,
@@ -353,7 +392,7 @@ exports.downloadOrgDepartmentsExcel = asyncHandler(async (req, res) => {
   ]);
 
   const overviewSheetData = [
-    [`${orgName} — All Departments Overview`],
+    [`${orgName} — Departments Summary`],
     [`Organization Code: ${organization?.organizationCode || "-"}`],
     [],
     overviewHeaders,
@@ -369,42 +408,9 @@ exports.downloadOrgDepartmentsExcel = asyncHandler(async (req, res) => {
     { wch: 15 },
   ];
 
-  // Sheet 2 Data: All Member Allocations
-  const memberHeaders = ["No.", "Department Name", "Member Name", "Email Address", "Role", "Contact No.", "Status", "Joined Date"];
-  const memberRows = allUsers.map((user, index) => [
-    index + 1,
-    user.department?.name || "Unassigned",
-    user.name || "-",
-    user.email || "-",
-    user.role || "-",
-    user.mobile || "-",
-    user.status || "ACTIVE",
-    user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-  ]);
-
-  const memberSheetData = [
-    [`${orgName} — All Member Allocations`],
-    [`Organization Code: ${organization?.organizationCode || "-"}`],
-    [],
-    memberHeaders,
-    ...memberRows,
-  ];
-
-  const memberWorksheet = xlsx.utils.aoa_to_sheet(memberSheetData);
-  memberWorksheet["!cols"] = [
-    { wch: 8 },
-    { wch: 22 },
-    { wch: 25 },
-    { wch: 30 },
-    { wch: 15 },
-    { wch: 18 },
-    { wch: 12 },
-    { wch: 15 },
-  ];
-
   const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, overviewWorksheet, "Departments Overview");
-  xlsx.utils.book_append_sheet(workbook, memberWorksheet, "All Member Allocations");
+  xlsx.utils.book_append_sheet(workbook, memberWorksheet, "Allocated Members");
+  xlsx.utils.book_append_sheet(workbook, overviewWorksheet, "Departments Summary");
 
   const buffer = xlsx.write(workbook, {
     type: "buffer",
@@ -493,41 +499,56 @@ exports.downloadOrgDepartmentsPdf = asyncHandler(async (req, res) => {
     return res.send(pdfBuffer);
   }
 
-  // All Departments PDF
-  const departments = await prisma.department.findMany({
-    where: { orgId },
-    include: {
-      _count: {
-        select: { users: true },
-      },
+  // All Departments PDF (Includes Allocated Department Members only, NO Instrument column)
+  const allUsers = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+      departmentId: { not: null },
+      OR: [
+        { orgId },
+        { memberships: { some: { orgId } } },
+      ],
     },
-    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      mobile: true,
+      status: true,
+      createdAt: true,
+      department: { select: { name: true } },
+    },
+    orderBy: [{ name: "asc" }],
   });
 
+  const allocatedUsers = allUsers.filter((user) => Boolean(user.department?.name));
+
   const columns = [
-    { key: "index", label: "No.", width: 35, align: "center" },
-    { key: "name", label: "Department", width: 140, align: "left" },
-    { key: "description", label: "Description", width: 220, align: "left" },
-    { key: "totalMembers", label: "Total Members", width: 80, align: "center" },
-    { key: "createdAt", label: "Created On", width: 80, align: "center" },
+    { key: "index", label: "No.", width: 30, align: "center" },
+    { key: "name", label: "Member Name", width: 115, align: "left" },
+    { key: "department", label: "Allocated Department", width: 115, align: "left" },
+    { key: "email", label: "Email", width: 120, align: "left" },
+    { key: "role", label: "Role", width: 60, align: "left" },
+    { key: "mobile", label: "Contact No.", width: 75, align: "left" },
+    { key: "status", label: "Status", width: 55, align: "center" },
   ];
 
-  const rows = departments.map((dept, index) => ({
+  const rows = allocatedUsers.map((user, index) => ({
     index: index + 1,
-    name: dept.name || "-",
-    description: dept.description || "-",
-    totalMembers: dept._count?.users || 0,
-    createdAt: dept.createdAt ? new Date(dept.createdAt).toLocaleDateString("en-IN") : "-",
+    name: user.name || "-",
+    department: user.department?.name || "-",
+    email: user.email || "-",
+    role: user.role || "-",
+    mobile: user.mobile || "-",
+    status: user.status || "ACTIVE",
   }));
 
-  const totalAssignedUsers = departments.reduce((acc, d) => acc + (d._count?.users || 0), 0);
-
   const pdfBuffer = await buildGenericTablePdf({
-    title: `${orgName} — All Departments Directory`,
+    title: `${orgName} — Department Allocations & Roster`,
     subtitleLines: [`Organization Code: ${organization?.organizationCode || "-"}`],
     summaryCards: [
-      { label: "Total Departments", value: departments.length },
-      { label: "Total Assigned Users", value: totalAssignedUsers },
+      { label: "Allocated Members", value: allocatedUsers.length },
     ],
     columns,
     rows,

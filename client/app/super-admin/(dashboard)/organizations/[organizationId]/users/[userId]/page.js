@@ -362,6 +362,25 @@ export default function SuperAdminUserDetailPage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Physical Form No." value={toDisplayText(user.physicalFormNo)} />
+          {user.documentUrl ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-center">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Uploaded Document</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-bold text-slate-800 dark:text-slate-200">{user.documentName || "User Document"}</span>
+                <a
+                  href={user.documentUrl.includes("ik-attachment") ? user.documentUrl : `${user.documentUrl}${user.documentUrl.includes("?") ? "&" : "?"}ik-attachment=true`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline shrink-0"
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+          ) : (
+            <DetailTile label="Uploaded Document" value="No Document" />
+          )}
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
           <DetailTile label="Joined On" value={toDateLabel(user.createdAt)} />

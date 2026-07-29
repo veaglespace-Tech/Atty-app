@@ -120,6 +120,15 @@ const updateMeSchema = z
     gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
     existingMember: z.enum(["SENIOR", "JUNIOR"]).optional().or(z.literal("")),
     departmentId: z.union([z.number(), z.string(), z.null()]).optional(),
+    physicalFormNo: z.string().trim().optional(),
+    documentName: z.string().trim().optional(),
+    documentDataUrl: z
+      .string()
+      .trim()
+      .min(1, "Document is required")
+      .max(20_000_000, "Document file is too large (max 10MB)")
+      .optional(),
+    removeDocument: z.boolean().optional(),
     profileImageDataUrl: z
       .string()
       .trim()

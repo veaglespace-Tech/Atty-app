@@ -104,6 +104,20 @@ const toListLabel = (items = []) => {
   return values.length ? values.join(", ") : "-";
 };
 
+const getDirectDownloadUrl = (url) => {
+  if (!url || typeof url !== "string") return "#";
+  const trimmed = url.trim();
+  if (trimmed.includes("ik.imagekit.io") || trimmed.includes("imagekit.io")) {
+    if (trimmed.includes("ik-attachment")) return trimmed;
+    return `${trimmed}${trimmed.includes("?") ? "&" : "?"}ik-attachment=true`;
+  }
+  if (trimmed.includes("/uploads/")) {
+    if (trimmed.includes("download=true")) return trimmed;
+    return `${trimmed}${trimmed.includes("?") ? "&" : "?"}download=true`;
+  }
+  return trimmed;
+};
+
 export default function OrgUserDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -128,6 +142,7 @@ export default function OrgUserDetailPage() {
     existingMember: "",
     referenceBy: "",
     bloodGroup: "",
+    physicalFormNo: "",
     emergencyContact: "",
     currentAddress: "",
     permanentAddress: "",
@@ -235,6 +250,7 @@ export default function OrgUserDetailPage() {
       existingMember: user.existingMember?.toUpperCase() || "",
       referenceBy: user.referenceBy || "",
       bloodGroup: user.bloodGroup || "",
+      physicalFormNo: user.physicalFormNo || "",
       emergencyContact: user.emergencyContact || "",
       currentAddress: user.currentAddress || "",
       permanentAddress: user.permanentAddress || "",
@@ -272,6 +288,7 @@ export default function OrgUserDetailPage() {
         existingMember: form.existingMember,
         referenceBy: form.referenceBy,
         bloodGroup: form.bloodGroup,
+        physicalFormNo: form.physicalFormNo,
         emergencyContact: form.emergencyContact,
         currentAddress: form.currentAddress,
         permanentAddress: form.permanentAddress,
@@ -520,6 +537,25 @@ export default function OrgUserDetailPage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Physical Form No." value={toDisplayText(user.physicalFormNo)} />
+          {user.documentUrl ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
+              <p className="text-xs font-semibold text-slate-500">Uploaded Document</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-bold text-slate-800">{user.documentName || "User Document"}</span>
+                <a
+                  href={getDirectDownloadUrl(user.documentUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-700 underline shrink-0"
+                >
+                  <Download className="h-3.5 w-3.5" /> Download
+                </a>
+              </div>
+            </div>
+          ) : (
+            <DetailTile label="Uploaded Document" value="No Document" />
+          )}
           <DetailTile label="Gender" value={toDisplayText(user.gender)} />
           <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
           <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
@@ -681,6 +717,17 @@ export default function OrgUserDetailPage() {
                 <option value="O+">O+</option>
                 <option value="O-">O-</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Physical Form No.</label>
+              <input
+                value={form.physicalFormNo}
+                onChange={(event) => setForm((prev) => ({ ...prev, physicalFormNo: event.target.value }))}
+                disabled={!canEditUser}
+                placeholder="E.g., FORM-101"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
             </div>
 
             <div className="space-y-2">

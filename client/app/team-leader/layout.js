@@ -7,7 +7,7 @@ import { useMemo } from "react";
 
 const baseNavItems = [
   { label: "Dashboard", href: "/team-leader/dashboard" },
-  { label: "तिची सुरक्षा", href: "/her-security", target: "_blank" },
+  // { label: "तिची सुरक्षा", href: "/her-security", target: "_blank" },
   { label: "Teams", href: "/team-leader/teams", permission: PERMISSIONS.TEAM.VIEW_OWN },
   { label: "Attendance", href: "/team-leader/attendance" },
   { label: "Users", href: "/team-leader/users", permission: PERMISSIONS.USERS.VIEW },

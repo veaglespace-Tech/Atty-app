@@ -1,5 +1,6 @@
 "use client";
 
+/* TEMPORARILY DISABLED: HER SECURITY COMPONENT
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useGetMeQuery } from "@/services/api/authApi";
@@ -778,4 +779,9 @@ export default function HerSecurityContent() {
       <DashboardFooter />
     </div>
   );
+}
+*/
+
+export default function HerSecurityContent() {
+  return null;
 }

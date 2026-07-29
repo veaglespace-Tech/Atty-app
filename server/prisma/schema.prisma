@@ -548,6 +548,10 @@ model User {
   lastLoginAt                 DateTime?
   profileImageUrl             String?
   profileImagePublicId        String?
+  physicalFormNo              String?                     @map("physical_form_no")
+  documentUrl                 String?                     @map("document_url")
+  documentName                String?                     @map("document_name")
+  documentPublicId            String?                     @map("document_public_id")
   createdAt                   DateTime                    @default(now())
   updatedAt                   DateTime                    @updatedAt
   expoPushToken         String? 

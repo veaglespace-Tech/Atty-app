@@ -51,7 +51,12 @@ app.use(
 const path = require("path");
 app.use(cookieParser());
 app.use("/api/auth/login", loginRateLimiter);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", (req, res, next) => {
+  if (req.query.download === "true" || req.query.attachment === "true") {
+    res.setHeader("Content-Disposition", "attachment");
+  }
+  next();
+}, express.static(path.join(__dirname, "uploads")));
 
 app.get("/healthz", (req, res) => {
   res.status(200).json({
@@ -81,6 +86,7 @@ app.get("/readyz", async (req, res) => {
 
 app.use("/api/auth", require("./routes/auth.route"));
 app.use("/api/org", require("./routes/org.route"));
+app.use("/api/orgs", require("./routes/org.route"));
 app.use("/api/attendance", require("./routes/attendance.route"));
 app.use("/api/dashboard", require("./routes/dashboard.route"));
 app.use("/api/payment", require("./routes/payment.route"));
@@ -97,7 +103,7 @@ app.use("/api/roles", require("./routes/role.route"));
 app.use("/api/org/stock", require("./routes/stock.route"));
 app.use("/api/org/expenses", require("./routes/expenses.route"));
 app.use("/api/claims", require("./routes/claims.route"));
-app.use("/api/her-security", require("./routes/her-security.route"));
+// app.use("/api/her-security", require("./routes/her-security.route"));
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "resource not found" });
 });

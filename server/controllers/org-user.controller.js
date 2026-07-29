@@ -1,3 +1,6 @@
+const path = require("path");
+const fs = require("fs");
+const axios = require("axios");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
@@ -18,6 +21,7 @@ const {
   truncateText,
   normalizeStatus,
 } = require("../services/common.service");
+const { getDirectDownloadUrl } = require("../utils/download-url");
 const {
   validateEmail,
   validatePersonName,
@@ -507,6 +511,11 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
   const hasPermanentAddress = Object.prototype.hasOwnProperty.call(req.body || {}, "permanentAddress");
   if (hasPermanentAddress) {
     userPayload.permanentAddress = req.body.permanentAddress || null;
+  }
+
+  const hasPhysicalFormNo = Object.prototype.hasOwnProperty.call(req.body || {}, "physicalFormNo");
+  if (hasPhysicalFormNo) {
+    userPayload.physicalFormNo = req.body.physicalFormNo ? String(req.body.physicalFormNo).trim() : null;
   }
 
   const hasDepartmentId = Object.prototype.hasOwnProperty.call(req.body || {}, "departmentId");
@@ -1191,6 +1200,63 @@ exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
   });
 });
 
+exports.downloadUserDocumentFile = asyncHandler(async (req, res) => {
+  const userId = req.params.userId ? Number(req.params.userId) : null;
+  const rawUrl = req.query.url ? String(req.query.url).trim() : null;
+
+  let docUrl = rawUrl;
+  let docName = req.query.name ? String(req.query.name).trim() : "document";
+
+  if (userId && !docUrl) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { documentUrl: true, documentName: true, name: true },
+    });
+    if (user && user.documentUrl) {
+      docUrl = user.documentUrl;
+      docName = user.documentName || `${user.name || "user"}-document`;
+    }
+  }
+
+  if (!docUrl) {
+    res.status(404);
+    throw new Error("Document not found for this user");
+  }
+
+  let safeFileName = docName.replace(/[^a-zA-Z0-9_.-]/g, "_");
+  const ext = path.extname(safeFileName);
+  if (!ext) {
+    if (docUrl.toLowerCase().includes(".pdf")) safeFileName += ".pdf";
+    else if (docUrl.toLowerCase().includes(".png")) safeFileName += ".png";
+    else if (docUrl.toLowerCase().includes(".jpg") || docUrl.toLowerCase().includes(".jpeg")) safeFileName += ".jpg";
+    else if (docUrl.toLowerCase().includes(".webp")) safeFileName += ".webp";
+    else safeFileName += ".pdf";
+  }
+
+  if (docUrl.includes("/uploads/")) {
+    const relativePath = docUrl.substring(docUrl.indexOf("/uploads/"));
+    const localPath = path.join(__dirname, "..", relativePath);
+
+    if (fs.existsSync(localPath)) {
+      return res.download(localPath, safeFileName);
+    }
+  }
+
+  try {
+    const response = await axios.get(docUrl, { responseType: "arraybuffer" });
+    const contentType = response.headers["content-type"] || "application/pdf";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${safeFileName}"`);
+    res.setHeader("Content-Length", response.data.length);
+    return res.send(Buffer.from(response.data));
+  } catch (error) {
+    console.error("Failed to stream document file:", error?.message);
+    const directUrl = getDirectDownloadUrl(docUrl);
+    return res.redirect(directUrl);
+  }
+});
+
 exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertAnyPermission(
@@ -1223,7 +1289,15 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
       bloodGroup: true,
       existingMember: true,
       createdAt: true,
+      physicalFormNo: true,
+      documentUrl: true,
+      documentName: true,
       department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -1231,36 +1305,54 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
 
   const orgName = organization?.name || "Organization";
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.get("host") || "localhost:5000";
+  const serverBaseUrl = `${protocol}://${host}`;
 
   const columns = [
     { key: "index", label: "No.", width: 25, align: "center" },
-    { key: "name", label: "Name", width: 95 },
-    { key: "department", label: "Department", width: 85 },
-    { key: "gender", label: "Gender", width: 45 },
-    { key: "bloodGroup", label: "Blood Grp", width: 45 },
-    { key: "existingMember", label: "Type", width: 45 },
-    { key: "email", label: "Email", width: 110 },
-    { key: "mobile", label: "Contact No.", width: 75 },
-    { key: "role", label: "Role", width: 55 },
-    { key: "status", label: "Status", width: 55, align: "center" },
-    { key: "active", label: "Active", width: 40, align: "center" },
-    { key: "joinedAt", label: "Joined At", width: 60, align: "center" },
+    { key: "name", label: "Name", width: 85 },
+    { key: "department", label: "Department", width: 60 },
+    { key: "instrument", label: "Instrument", width: 60 },
+    { key: "physicalFormNo", label: "Form No.", width: 50 },
+    { key: "document", label: "Document", width: 65 },
+    { key: "gender", label: "Gender", width: 35 },
+    { key: "bloodGroup", label: "Blood Grp", width: 35 },
+    { key: "existingMember", label: "Type", width: 40 },
+    { key: "email", label: "Email", width: 90 },
+    { key: "mobile", label: "Contact No.", width: 65 },
+    { key: "role", label: "Role", width: 45 },
+    { key: "status", label: "Status", width: 45, align: "center" },
+    { key: "active", label: "Active", width: 35, align: "center" },
+    { key: "joinedAt", label: "Joined At", width: 50, align: "center" },
   ];
 
-  const rows = users.map((user, index) => ({
-    index: index + 1,
-    name: user.name || "-",
-    department: user.department?.name || "Unassigned",
-    gender: user.gender || "-",
-    bloodGroup: user.bloodGroup || "-",
-    existingMember: user.existingMember || "-",
-    email: user.email || "-",
-    mobile: user.mobile || "-",
-    role: user.role || "-",
-    status: user.status || "-",
-    active: user.isActive ? "Yes" : "No",
-    joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-  }));
+  const rows = users.map((user, index) => {
+    const instNames = (user.userInstruments || [])
+      .map((ui) => ui.instrument?.name + (ui.assetId ? ` (${ui.assetId})` : ""))
+      .filter(Boolean)
+      .join(", ");
+
+    const directLink = user.documentUrl ? getDirectDownloadUrl(user.documentUrl) : "-";
+
+    return {
+      index: index + 1,
+      name: user.name || "-",
+      department: user.department?.name || "Unassigned",
+      instrument: instNames || "-",
+      physicalFormNo: user.physicalFormNo || "-",
+      document: user.documentUrl ? { text: user.documentName || "Download PDF", link: directLink } : "-",
+      gender: user.gender || "-",
+      bloodGroup: user.bloodGroup || "-",
+      existingMember: user.existingMember || "-",
+      email: user.email || "-",
+      mobile: user.mobile || "-",
+      role: user.role || "-",
+      status: user.status || "-",
+      active: user.isActive ? "Yes" : "No",
+      joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+    };
+  });
 
   const pdfBuffer = await buildGenericTablePdf({
     title: `${orgName} — User Directory`,
@@ -1268,8 +1360,8 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
     columns,
     rows,
     summaryCards: [
-      { label: "Total Users", value: users.length },
-      { label: "Active Users", value: users.filter((u) => u.isActive).length },
+      { label: "Total Members", value: users.length },
+      { label: "Active Members", value: users.filter((u) => u.isActive).length },
     ],
   });
 
@@ -1291,12 +1383,15 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
   const organization = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { name: true },
+    select: { name: true, organizationCode: true },
   });
 
   const users = await prisma.user.findMany({
     where: {
-      memberships: { some: { orgId } },
+      OR: [
+        { orgId },
+        { memberships: { some: { orgId } } },
+      ],
       deletedAt: null,
     },
     select: {
@@ -1317,7 +1412,15 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       status: true,
       isActive: true,
       createdAt: true,
+      physicalFormNo: true,
+      documentUrl: true,
+      documentName: true,
       department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -1325,11 +1428,17 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
   const orgName = organization?.name || "Organization";
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.get("host") || "localhost:5000";
+  const serverBaseUrl = `${protocol}://${host}`;
 
   const headers = [
     "Sr. No.",
     "Name",
     "Department",
+    "Instrument",
+    "Physical Form No.",
+    "Uploaded Document",
     "Gender",
     "Member Type",
     "Blood Group",
@@ -1349,15 +1458,13 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Users");
 
-  // Title rows
   worksheet.addRow([`${orgName} — User Directory`]);
   worksheet.addRow([`Exported on: ${new Date().toLocaleString("en-IN")}`]);
-  worksheet.addRow([]); // Blank row
+  worksheet.addRow([]);
   worksheet.addRow(headers);
 
-  // Styling titles & merges
-  worksheet.mergeCells("A1:Q1");
-  worksheet.mergeCells("A2:Q2");
+  worksheet.mergeCells("A1:T1");
+  worksheet.mergeCells("A2:T2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -1372,21 +1479,21 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFE2E8F0" }, // Light gray background
+      fgColor: { argb: "FFE2E8F0" },
     };
   });
 
-  // Set column widths
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
     if (i === 0) col.width = 8;
-    else if (i === 12) col.width = 18; // Profile Photo (0-indexed 12)
-    else if (i === 10 || i === 11) col.width = 35; // Addresses
-    else if (i === 1 || i === 7) col.width = 25; // Name, Email
+    else if (i === 15) col.width = 18; // Profile Photo (0-indexed 15)
+    else if (i === 4) col.width = 20; // Physical Form No.
+    else if (i === 5) col.width = 35; // Uploaded Document
+    else if (i === 13 || i === 14) col.width = 35; // Addresses
+    else if (i === 1 || i === 10) col.width = 25; // Name, Email
     else col.width = 15;
   });
 
-  // Helper for parallel map with concurrency limit
   const mapConcurrent = async (array, limit, fn) => {
     const results = [];
     const promises = [];
@@ -1404,16 +1511,29 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     return results;
   };
 
-  // Fetch images in parallel with concurrency limit of 15
   const userRows = await mapConcurrent(users, 15, async (user, index) => {
     let imageBuffer = null;
     if (user.profileImageUrl) {
       imageBuffer = await fetchImageBuffer(user.profileImageUrl);
     }
+    const instNames = (user.userInstruments || [])
+      .map((ui) => ui.instrument?.name + (ui.assetId ? ` (${ui.assetId})` : ""))
+      .filter(Boolean)
+      .join(", ");
+
+    const documentDownloadLink = user.documentUrl
+      ? getDirectDownloadUrl(user.documentUrl)
+      : "-";
+
     return {
       index: index + 1,
       name: user.name || "-",
       department: user.department?.name || "Unassigned",
+      instrument: instNames || "-",
+      physicalFormNo: user.physicalFormNo || "-",
+      documentUrl: user.documentUrl || "-",
+      documentDownloadLink,
+      documentName: user.documentName || "Document",
       gender: user.gender || "-",
       existingMember: user.existingMember || "-",
       bloodGroup: user.bloodGroup || "-",
@@ -1438,6 +1558,9 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.index,
       rowData.name,
       rowData.department,
+      rowData.instrument,
+      rowData.physicalFormNo,
+      "-", // Uploaded Document placeholder to be formatted as hyperlink below
       rowData.gender,
       rowData.existingMember,
       rowData.bloodGroup,
@@ -1447,7 +1570,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.emergencyContact,
       rowData.currentAddress,
       rowData.permanentAddress,
-      "", // Profile Photo cell (Col 13 / Col M)
+      "", // Profile Photo cell (Col 16 / Col P)
       rowData.role,
       rowData.status,
       rowData.active,
@@ -1458,6 +1581,20 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     row.eachCell((cell) => {
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     });
+
+    const docCell = row.getCell(6);
+    if (rowData.documentDownloadLink && rowData.documentDownloadLink !== "-") {
+      const linkText = rowData.documentName || "Download PDF";
+      docCell.value = {
+        text: linkText,
+        hyperlink: rowData.documentDownloadLink,
+      };
+      docCell.font = {
+        color: { argb: "FF0563C1" },
+        underline: true,
+        bold: true,
+      };
+    }
 
     if (rowData.imageBuffer) {
       try {
@@ -1476,7 +1613,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
         worksheet.addImage(imageId, {
           tl: { 
-            nativeCol: 12, // Profile Photo column (0-indexed 12)
+            nativeCol: 15, // Profile Photo column (0-indexed 15)
             nativeColOff: Math.round(offsetX * 9525), 
             nativeRow: currentRowIndex - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
@@ -1485,10 +1622,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 13).value = "Error loading image";
+        worksheet.getCell(currentRowIndex, 16).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 13).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(currentRowIndex, 16).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;

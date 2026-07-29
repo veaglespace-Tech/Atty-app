@@ -20,6 +20,7 @@ const {
 } = require("../services/subscription.service");
 const { normalizeEmail, normalizePhoneNumber } = require("../utils/contact");
 const { validateEmail } = require("../utils/validation");
+const { getDirectDownloadUrl } = require("../utils/download-url");
 const { buildGenericTablePdf } = require("../utils/pdf-report");
 const { buildExportWorkbookBuffer } = require("../utils/excel-report");
 const { getCachedValue } = require("../services/runtime-cache.service");
@@ -3781,7 +3782,15 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       status: true,
       isActive: true,
       createdAt: true,
+      physicalFormNo: true,
+      documentUrl: true,
+      documentName: true,
       department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -3791,7 +3800,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
   const headers = [
-    "Sr. No.", "Name", "Department", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
+    "Sr. No.", "Name", "Department", "Instrument", "Physical Form No.", "Uploaded Document", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
     "Current Address", "Permanent Address", "Profile Photo",
     "Role", "Status", "Active", "Joined At",
   ];
@@ -3806,8 +3815,8 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
   worksheet.addRow(headers);
 
   // Styling titles & merges
-  worksheet.mergeCells("A1:Q1");
-  worksheet.mergeCells("A2:Q2");
+  worksheet.mergeCells("A1:T1");
+  worksheet.mergeCells("A2:T2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -3830,9 +3839,11 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
     if (i === 0) col.width = 8;
-    else if (i === 12) col.width = 18; // Profile Photo (0-indexed 12)
-    else if (i === 10 || i === 11) col.width = 35; // Addresses
-    else if (i === 1 || i === 7) col.width = 25; // Name, Email
+    else if (i === 15) col.width = 18; // Profile Photo (0-indexed 15)
+    else if (i === 4) col.width = 20; // Physical Form No.
+    else if (i === 5) col.width = 35; // Uploaded Document
+    else if (i === 13 || i === 14) col.width = 35; // Addresses
+    else if (i === 1 || i === 10) col.width = 25; // Name, Email
     else col.width = 15;
   });
 
@@ -3860,10 +3871,19 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
     if (user.profileImageUrl) {
       imageBuffer = await fetchImageBuffer(user.profileImageUrl);
     }
+    const instNames = (user.userInstruments || [])
+      .map((ui) => ui.instrument?.name + (ui.assetId ? ` (${ui.assetId})` : ""))
+      .filter(Boolean)
+      .join(", ");
+
     return {
       index: index + 1,
       name: user.name || "-",
       department: user.department?.name || "Unassigned",
+      instrument: instNames || "-",
+      physicalFormNo: user.physicalFormNo || "-",
+      documentUrl: user.documentUrl || "-",
+      documentName: user.documentName || "Document",
       gender: user.gender || "-",
       existingMember: user.existingMember || "-",
       bloodGroup: user.bloodGroup || "-",
@@ -3888,6 +3908,9 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       rowData.index,
       rowData.name,
       rowData.department,
+      rowData.instrument,
+      rowData.physicalFormNo,
+      "-", // Uploaded Document placeholder
       rowData.gender,
       rowData.existingMember,
       rowData.bloodGroup,
@@ -3897,7 +3920,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       rowData.emergencyContact,
       rowData.currentAddress,
       rowData.permanentAddress,
-      "", // Profile Photo cell (Col 13 / Col M)
+      "", // Profile Photo cell (Col 16 / Col P)
       rowData.role,
       rowData.status,
       rowData.active,
@@ -3908,6 +3931,21 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
     row.eachCell((cell) => {
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     });
+
+    const docCell = row.getCell(6);
+    if (rowData.documentUrl && rowData.documentUrl !== "-") {
+      const linkText = rowData.documentName || "Download PDF";
+      const directUrl = getDirectDownloadUrl(rowData.documentUrl);
+      docCell.value = {
+        text: linkText,
+        hyperlink: directUrl,
+      };
+      docCell.font = {
+        color: { argb: "FF0563C1" },
+        underline: true,
+        bold: true,
+      };
+    }
 
     if (rowData.imageBuffer) {
       try {
@@ -3926,7 +3964,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
 
         worksheet.addImage(imageId, {
           tl: { 
-            nativeCol: 12, // Profile Photo column (0-indexed 12)
+            nativeCol: 15, // Profile Photo column (0-indexed 15)
             nativeColOff: Math.round(offsetX * 9525), 
             nativeRow: currentRowIndex - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
@@ -3935,10 +3973,10 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 13).value = "Error loading image";
+        worksheet.getCell(currentRowIndex, 16).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 13).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(currentRowIndex, 16).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;
@@ -3984,7 +4022,15 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       isActive: true,
       orgId: true,
       createdAt: true,
+      physicalFormNo: true,
+      documentUrl: true,
+      documentName: true,
       department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ orgId: "asc" }, { name: "asc" }],
     take: 50000,
@@ -3993,7 +4039,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
   const orgMap = new Map(organizations.map((o) => [o.id, o.name]));
 
   const headers = [
-    "Sr. No.", "Organization", "Name", "Department", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
+    "Sr. No.", "Organization", "Name", "Department", "Instrument", "Physical Form No.", "Uploaded Document", "Gender", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
     "Current Address", "Permanent Address", "Profile Photo",
     "Role", "Status", "Active", "Joined At",
   ];
@@ -4024,8 +4070,17 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     if (user.profileImageUrl) {
       imageBuffer = await fetchImageBuffer(user.profileImageUrl);
     }
+    const instNames = (user.userInstruments || [])
+      .map((ui) => ui.instrument?.name + (ui.assetId ? ` (${ui.assetId})` : ""))
+      .filter(Boolean)
+      .join(", ");
+
     return {
       ...user,
+      instrument: instNames || "-",
+      physicalFormNo: user.physicalFormNo || "-",
+      documentUrl: user.documentUrl || "-",
+      documentName: user.documentName || "Document",
       index: index + 1,
       imageBuffer,
     };
@@ -4039,8 +4094,8 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
   allSheet.addRow(headers);
 
   // Styles & merges
-  allSheet.mergeCells("A1:R1");
-  allSheet.mergeCells("A2:R2");
+  allSheet.mergeCells("A1:U1");
+  allSheet.mergeCells("A2:U2");
   allSheet.getCell("A1").font = { size: 14, bold: true };
   allSheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
   allSheet.getCell("A2").font = { size: 10, italic: true };
@@ -4062,9 +4117,11 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
   headers.forEach((h, i) => {
     const col = allSheet.getColumn(i + 1);
     if (i === 0) col.width = 8;
-    else if (i === 13) col.width = 18; // Profile Photo (0-indexed 13)
-    else if (i === 11 || i === 12) col.width = 35; // Addresses
-    else if (i === 1 || i === 2 || i === 8) col.width = 25; // Org, Name, Email
+    else if (i === 16) col.width = 18; // Profile Photo (0-indexed 16)
+    else if (i === 5) col.width = 20; // Physical Form No.
+    else if (i === 6) col.width = 35; // Uploaded Document
+    else if (i === 14 || i === 15) col.width = 35; // Addresses
+    else if (i === 1 || i === 2 || i === 11) col.width = 25; // Org, Name, Email
     else col.width = 15;
   });
 
@@ -4076,6 +4133,9 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       orgMap.get(rowData.orgId) || "-",
       rowData.name || "-",
       rowData.department?.name || "Unassigned",
+      rowData.instrument || "-",
+      rowData.physicalFormNo || "-",
+      "-", // Uploaded Document placeholder
       rowData.gender || "-",
       rowData.existingMember || "-",
       rowData.bloodGroup || "-",
@@ -4085,7 +4145,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       rowData.emergencyContact || "-",
       rowData.currentAddress || "-",
       rowData.permanentAddress || "-",
-      "", // Profile Photo (Col 14 / Col N)
+      "", // Profile Photo (Col 17 / Col Q)
       rowData.role || "-",
       rowData.status || "-",
       rowData.isActive ? "Active" : "Blocked",
@@ -4096,6 +4156,21 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     row.eachCell((cell) => {
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     });
+
+    const docCell = row.getCell(7);
+    if (rowData.documentUrl && rowData.documentUrl !== "-") {
+      const linkText = rowData.documentName || "Download PDF";
+      const directUrl = getDirectDownloadUrl(rowData.documentUrl);
+      docCell.value = {
+        text: linkText,
+        hyperlink: directUrl,
+      };
+      docCell.font = {
+        color: { argb: "FF0563C1" },
+        underline: true,
+        bold: true,
+      };
+    }
 
     if (rowData.imageBuffer) {
       try {
@@ -4114,7 +4189,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
 
         allSheet.addImage(imageId, {
           tl: { 
-            nativeCol: 13, // Profile Photo column (0-indexed 13)
+            nativeCol: 16, // Profile Photo column (0-indexed 16)
             nativeColOff: Math.round(offsetX * 9525), 
             nativeRow: currentRowIndex - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
@@ -4123,10 +4198,10 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
           editAs: "oneCell",
         });
       } catch (err) {
-        allSheet.getCell(currentRowIndex, 14).value = "Error loading image";
+        allSheet.getCell(currentRowIndex, 17).value = "Error loading image";
       }
     } else {
-      allSheet.getCell(currentRowIndex, 14).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      allSheet.getCell(currentRowIndex, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;
@@ -4147,8 +4222,8 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     sheet.addRow([]);
     sheet.addRow(orgHeaders);
 
-    sheet.mergeCells("A1:Q1");
-    sheet.mergeCells("A2:Q2");
+    sheet.mergeCells("A1:T1");
+    sheet.mergeCells("A2:T2");
     sheet.getCell("A1").font = { size: 14, bold: true };
     sheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
     sheet.getCell("A2").font = { size: 10, italic: true };
@@ -4170,9 +4245,11 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     orgHeaders.forEach((h, i) => {
       const col = sheet.getColumn(i + 1);
       if (i === 0) col.width = 8;
-      else if (i === 12) col.width = 18; // Profile Photo (0-indexed 12)
-      else if (i === 10 || i === 11) col.width = 35; // Addresses
-      else if (i === 1 || i === 7) col.width = 25; // Name, Email
+      else if (i === 15) col.width = 18; // Profile Photo (0-indexed 15)
+      else if (i === 4) col.width = 20; // Physical Form No.
+      else if (i === 5) col.width = 35; // Uploaded Document
+      else if (i === 13 || i === 14) col.width = 35; // Addresses
+      else if (i === 1 || i === 10) col.width = 25; // Name, Email
       else col.width = 15;
     });
 
@@ -4182,6 +4259,9 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
         idx + 1,
         rowData.name || "-",
         rowData.department?.name || "Unassigned",
+        rowData.instrument || "-",
+        rowData.physicalFormNo || "-",
+        "-", // Uploaded Document placeholder
         rowData.gender || "-",
         rowData.existingMember || "-",
         rowData.bloodGroup || "-",
@@ -4191,7 +4271,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
         rowData.emergencyContact || "-",
         rowData.currentAddress || "-",
         rowData.permanentAddress || "-",
-        "", // Profile Photo (Col 13 / Col M)
+        "", // Profile Photo (Col 16 / Col P)
         rowData.role || "-",
         rowData.status || "-",
         rowData.isActive ? "Active" : "Blocked",
@@ -4202,6 +4282,21 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       row.eachCell((cell) => {
         cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
       });
+
+      const docCell = row.getCell(6);
+      if (rowData.documentUrl && rowData.documentUrl !== "-") {
+        const linkText = rowData.documentName || "Download PDF";
+        const directUrl = getDirectDownloadUrl(rowData.documentUrl);
+        docCell.value = {
+          text: linkText,
+          hyperlink: directUrl,
+        };
+        docCell.font = {
+          color: { argb: "FF0563C1" },
+          underline: true,
+          bold: true,
+        };
+      }
 
       if (rowData.imageBuffer) {
         try {
@@ -4220,7 +4315,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
 
           sheet.addImage(imageId, {
             tl: { 
-              nativeCol: 12, // Profile Photo column (0-indexed 12)
+              nativeCol: 15, // Profile Photo column (0-indexed 15)
               nativeColOff: Math.round(offsetX * 9525), 
               nativeRow: orgRowIndex - 1, 
               nativeRowOff: Math.round(offsetY * 9525)
@@ -4229,10 +4324,10 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
             editAs: "oneCell",
           });
         } catch (err) {
-          sheet.getCell(orgRowIndex, 13).value = "Error loading image";
+          sheet.getCell(orgRowIndex, 16).value = "Error loading image";
         }
       } else {
-        sheet.getCell(orgRowIndex, 13).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+        sheet.getCell(orgRowIndex, 16).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
       }
 
       orgRowIndex++;

@@ -9,6 +9,7 @@ import {
   Check,
   Clock,
   Copy,
+  FileText,
   ImageUp,
   Globe,
   Link2,
@@ -99,6 +100,7 @@ const getSettingsSchema = (isAdmin) => z.object({
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
   existingMember: z.enum(["SENIOR", "JUNIOR", "senior", "junior"]).optional().or(z.literal("")),
   departmentId: z.any().optional(),
+  physicalFormNo: z.string().trim().optional(),
 });
 
 const labelClassName = "brand-kicker mb-1.5 ml-1 block";
@@ -131,6 +133,7 @@ const getFormDefaults = (user) => ({
   gender: user?.gender || "",
   existingMember: user?.existingMember?.toUpperCase() || "",
   departmentId: user?.departmentId ? String(user.departmentId) : "",
+  physicalFormNo: user?.physicalFormNo || "",
 });
 
 function DetailCard({ icon: Icon, label, value }) {
@@ -876,6 +879,13 @@ export default function WorkspaceSettingsPage() {
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImageError, setProfileImageError] = useState("");
   const profileImageInputRef = useRef(null);
+
+  const [documentDataUrl, setDocumentDataUrl] = useState("");
+  const [documentName, setDocumentName] = useState("");
+  const [removeDocument, setRemoveDocument] = useState(false);
+  const [documentError, setDocumentError] = useState("");
+  const documentInputRef = useRef(null);
+
   const currentRole = user?.currentRole;
   const effectiveRole = currentRole || user?.role || ROLES.MEMBER;
   const roleLabel = formatRoleLabel(effectiveRole);
@@ -894,6 +904,49 @@ export default function WorkspaceSettingsPage() {
     hasPermission(user, PERMISSIONS.LOCATION.MANAGE);
   const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
   const canSkipEmergencyContact = hasPermission(user, PERMISSIONS.USERS.CREATE) || isSuperAdmin;
+
+  const onDocumentSelected = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setDocumentError("Document file size must be 10 MB or smaller.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDocumentDataUrl(reader.result);
+      setDocumentName(file.name);
+      setRemoveDocument(false);
+      setDocumentError("");
+    };
+    reader.onerror = () => {
+      setDocumentError("Failed to read the selected document.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const toggleDocumentRemoval = () => {
+    setDocumentError("");
+
+    if (removeDocument) {
+      setRemoveDocument(false);
+      return;
+    }
+
+    if (documentDataUrl) {
+      setDocumentDataUrl("");
+      setDocumentName("");
+      return;
+    }
+
+    if (user?.documentUrl) {
+      setRemoveDocument(true);
+    }
+  };
 
   const {
     control,
@@ -925,8 +978,9 @@ export default function WorkspaceSettingsPage() {
   const previewProfileImageUrl =
     profileImageDataUrl || (removeProfileImage ? "" : currentProfileImageUrl);
   const hasPendingProfileImageChange = Boolean(profileImageDataUrl) || removeProfileImage;
+  const hasPendingDocumentChange = Boolean(documentDataUrl) || removeDocument;
   const isDepartmentChanged = String(formValues.departmentId || "") !== String(user?.departmentId || "");
-  const canSubmit = isDirty || hasPendingProfileImageChange || isDepartmentChanged;
+  const canSubmit = isDirty || hasPendingProfileImageChange || hasPendingDocumentChange || isDepartmentChanged;
 
   const completionState = useMemo(() => {
     if (!user) return { percentage: 0, missing: [] };
@@ -985,6 +1039,10 @@ export default function WorkspaceSettingsPage() {
     setProfileImageDataUrl("");
     setRemoveProfileImage(false);
     setProfileImageError("");
+    setDocumentDataUrl("");
+    setDocumentName("");
+    setRemoveDocument(false);
+    setDocumentError("");
   };
 
   const compressImage = (file) =>
@@ -1068,6 +1126,7 @@ export default function WorkspaceSettingsPage() {
 
   const onSubmit = async (values) => {
     setProfileImageError("");
+    setDocumentError("");
 
     const nextMobile = values.mobile.trim();
     const nextMobileCountryCode = values.mobileCountryCode.trim();
@@ -1088,11 +1147,19 @@ export default function WorkspaceSettingsPage() {
     payload.gender = values.gender;
     payload.existingMember = values.existingMember;
     payload.departmentId = values.departmentId ? Number(values.departmentId) : null;
+    payload.physicalFormNo = values.physicalFormNo ? values.physicalFormNo.trim() : "";
 
     if (profileImageDataUrl) {
       payload.profileImageDataUrl = profileImageDataUrl;
     } else if (removeProfileImage) {
       payload.removeProfileImage = true;
+    }
+
+    if (documentDataUrl) {
+      payload.documentDataUrl = documentDataUrl;
+      payload.documentName = documentName;
+    } else if (removeDocument) {
+      payload.removeDocument = true;
     }
 
     try {
@@ -1102,6 +1169,10 @@ export default function WorkspaceSettingsPage() {
       setProfileImageDataUrl("");
       setRemoveProfileImage(false);
       setProfileImageError("");
+      setDocumentDataUrl("");
+      setDocumentName("");
+      setRemoveDocument(false);
+      setDocumentError("");
       dispatch(
         addNotification({
           type: "success",
@@ -1268,6 +1339,37 @@ export default function WorkspaceSettingsPage() {
               </div>
             </div>
 
+            {/* Document Upload Card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Document Uploader (Aadhar, PAN, etc.)</h3>
+              <p className="brand-copy-sm mt-1 mb-6">Upload your identity or reference document (PDF, PNG, JPG, WEBP). Max file size: 10 MB.</p>
+              
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <input ref={documentInputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={onDocumentSelected} />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={() => documentInputRef.current?.click()} className="brand-btn brand-btn-secondary brand-btn-md">
+                      <FileText size={16} /> {documentDataUrl || user?.documentUrl ? "Replace Document" : "Upload Document"}
+                    </button>
+                    {(removeDocument || documentDataUrl || user?.documentUrl) ? (
+                      <button type="button" onClick={toggleDocumentRemoval} className="brand-btn brand-btn-secondary brand-btn-md">
+                        <Trash2 size={16} /> {removeDocument ? "Keep Current Document" : documentDataUrl ? "Clear Selection" : "Remove Document"}
+                      </button>
+                    ) : null}
+                    {user?.documentUrl && !removeDocument && !documentDataUrl ? (
+                      <a href={user.documentUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                        <Link2 size={14} /> View Uploaded Document ({user.documentName || "File"})
+                      </a>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {removeDocument ? "Your document will be removed when you save." : documentDataUrl ? `Selected file: ${documentName}. Click Save Changes to upload.` : user?.documentUrl ? `Current document: ${user.documentName || "Uploaded File"}` : "No document uploaded yet."}
+                  </p>
+                  {documentError && <p className="mt-2 text-xs font-semibold text-rose-500">{documentError}</p>}
+                </div>
+              </div>
+            </div>
+
             {/* Basic Details Card */}
             <div className="light-glow-card-static rounded-[1.75rem] p-6">
               <div className="flex items-center justify-between mb-6">
@@ -1288,6 +1390,11 @@ export default function WorkspaceSettingsPage() {
                   <label htmlFor="settings-name" className={labelClassName}>Full Name</label>
                   <input id="settings-name" type="text" placeholder="Your full name" aria-invalid={errors.name ? "true" : "false"} className={cn(inputClassName, errors.name ? errorInputClassName : "")} {...register("name")} />
                   {errors.name && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-physicalFormNo" className={labelClassName}>Physical Form No.</label>
+                  <input id="settings-physicalFormNo" type="text" placeholder="Enter Physical Form No." aria-invalid={errors.physicalFormNo ? "true" : "false"} className={cn(inputClassName, errors.physicalFormNo ? errorInputClassName : "")} {...register("physicalFormNo")} />
+                  {errors.physicalFormNo && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.physicalFormNo.message}</p>}
                 </div>
                 <div>
                   <label htmlFor="settings-bloodGroup" className={labelClassName}>Blood Group</label>

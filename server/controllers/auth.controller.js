@@ -15,6 +15,7 @@ const { createOrganizationMembership } = require("../services/organization-membe
 const { truncateText } = require("../services/common.service");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
 const { deleteProfileImage, uploadProfileImage } = require("../services/profile-image.service");
+const { uploadFileDataUrl, deleteFile } = require("../services/image-upload.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
 const {
@@ -847,6 +848,9 @@ const serializeSessionUser = (user, organization = null) => {
     bloodGroup: normalized.bloodGroup || null,
     gender: normalized.gender || null,
     existingMember: normalized.existingMember || null,
+    physicalFormNo: normalized.physicalFormNo || null,
+    documentUrl: normalized.documentUrl || null,
+    documentName: normalized.documentName || null,
     profileImageUrl: normalized.profileImageUrl || null,
     departmentId: normalized.departmentId || null,
     department: normalized.department ? { id: normalized.department.id, name: normalized.department.name } : null,
@@ -1734,6 +1738,38 @@ exports.updateMe = asyncHandler(async (req, res) => {
     }
   }
 
+  if (Object.prototype.hasOwnProperty.call(requestBody, "physicalFormNo")) {
+    payload.physicalFormNo = requestBody.physicalFormNo ? String(requestBody.physicalFormNo).trim() : null;
+  }
+
+  const hasDocumentDataUrl = Object.prototype.hasOwnProperty.call(requestBody, "documentDataUrl");
+  const hasRemoveDocument = Object.prototype.hasOwnProperty.call(requestBody, "removeDocument");
+  const shouldUploadDocument = hasDocumentDataUrl && String(requestBody.documentDataUrl || "").trim().length > 0;
+  const shouldRemoveDocument = hasRemoveDocument && requestBody.removeDocument === true;
+
+  if (shouldUploadDocument) {
+    try {
+      const uploadedDoc = await uploadFileDataUrl({
+        dataUrl: requestBody.documentDataUrl,
+        folder: "veagle-attendee/user-documents",
+        publicId: `user-doc-${userId}-${Date.now()}`,
+        maxBytes: 10 * 1024 * 1024,
+        invalidMessage: "Upload a valid PDF, JPEG, PNG, or WEBP document.",
+        tooLargeMessage: "Document file must be 10 MB or smaller.",
+      });
+      payload.documentUrl = uploadedDoc.url;
+      payload.documentPublicId = uploadedDoc.publicId;
+      payload.documentName = requestBody.documentName ? String(requestBody.documentName).trim() : "Document";
+    } catch (error) {
+      res.status(error.statusCode || 400);
+      throw new Error(error.message || "Failed to upload document.");
+    }
+  } else if (shouldRemoveDocument) {
+    payload.documentUrl = null;
+    payload.documentPublicId = null;
+    payload.documentName = null;
+  }
+
   const shouldUploadProfileImage =
     hasProfileImageDataUrl && String(requestBody.profileImageDataUrl || "").trim().length > 0;
   const shouldRemoveProfileImage =
@@ -1787,6 +1823,10 @@ exports.updateMe = asyncHandler(async (req, res) => {
 
     if (shouldRemoveProfileImage && existingUser.profileImagePublicId) {
       await deleteProfileImage(existingUser.profileImagePublicId);
+    }
+
+    if (shouldRemoveDocument && existingUser.documentPublicId) {
+      await deleteFile(existingUser.documentPublicId);
     }
 
     res.status(200).json({

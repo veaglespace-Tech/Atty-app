@@ -316,11 +316,6 @@ const uploadFileDataUrl = async ({
   uploadFailureMessage = "Failed to upload file.",
   errorFactory = createImageUploadError,
 }) => {
-  ensureImageKitConfigured({
-    missingConfigMessage,
-    errorFactory,
-  });
-
   const parsed = parseFileDataUrl({
     value: dataUrl,
     maxBytes,
@@ -331,6 +326,11 @@ const uploadFileDataUrl = async ({
   });
 
   try {
+    ensureImageKitConfigured({
+      missingConfigMessage,
+      errorFactory,
+    });
+
     const fileName = publicId ? `${publicId}` : `file-${Date.now()}`;
     const normalizedFolder = folder && !folder.startsWith("/") ? `/${folder}` : folder;
 
@@ -348,7 +348,34 @@ const uploadFileDataUrl = async ({
       resourceType: result.fileType || "auto",
     };
   } catch (error) {
-    throw errorFactory(error?.message || uploadFailureMessage, 502);
+    console.warn("ImageKit file upload failed/unconfigured, falling back to local storage:", error?.message);
+    try {
+      let ext = "pdf";
+      if (parsed.mimeType.includes("png")) ext = "png";
+      else if (parsed.mimeType.includes("jpeg") || parsed.mimeType.includes("jpg")) ext = "jpg";
+      else if (parsed.mimeType.includes("webp")) ext = "webp";
+
+      const fileName = publicId ? `${publicId}.${ext}` : `doc-${Date.now()}.${ext}`;
+      const normalizedFolder = folder ? folder.replace(/^\//, "") : "documents";
+      const uploadsDir = path.join(__dirname, "../uploads", normalizedFolder);
+
+      fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const base64Data = parsed.dataUrl.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+
+      const filePath = path.join(uploadsDir, fileName);
+      fs.writeFileSync(filePath, buffer);
+
+      const backendUrl = process.env.API_URL || process.env.SERVER_BASE_URL || "http://localhost:5000";
+      return {
+        url: `${backendUrl}/uploads/${normalizedFolder}/${fileName}`,
+        publicId: `local-${normalizedFolder}-${fileName}`,
+        format: ext,
+      };
+    } catch (localError) {
+      throw errorFactory(localError?.message || uploadFailureMessage, 502);
+    }
   }
 };
 

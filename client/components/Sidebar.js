@@ -29,6 +29,7 @@ const MENU_ITEMS = [
     href: "/dashboard",
     colorClass: "text-blue-500 dark:text-blue-400",
   },
+  /* TEMPORARILY HIDE HER SECURITY:
   {
     label: "तिची सुरक्षा",
     Icon: ShieldAlert,
@@ -36,6 +37,7 @@ const MENU_ITEMS = [
     target: "_blank",
     colorClass: "text-pink-500 dark:text-pink-400 font-bold",
   },
+  */
   {
     label: "Attendance",
     Icon: CalendarCheck,
