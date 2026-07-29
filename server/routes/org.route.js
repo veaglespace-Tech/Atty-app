@@ -69,6 +69,8 @@ const {
   deleteOrgDepartment,
   assignDepartmentToUsers,
   unassignDepartmentFromUser,
+  downloadOrgDepartmentsExcel,
+  downloadOrgDepartmentsPdf,
 } = require("../controllers/org-department.controller");
 
 const { userProtected } = require("../middlewares/auth.middleware");
@@ -149,6 +151,8 @@ router.patch("/instruments/assign/:instrumentId/:userId", requirePermission(PERM
 router.delete("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), unassignInstrumentFromUser);
 
 router.get("/departments", getOrgDepartments);
+router.get("/departments/excel", downloadOrgDepartmentsExcel);
+router.get("/departments/pdf", downloadOrgDepartmentsPdf);
 router.post("/departments", requirePermission(PERMISSIONS.USERS.CREATE), createOrgDepartment);
 router.patch("/departments/:id", requirePermission(PERMISSIONS.USERS.CREATE), patchOrgDepartment);
 router.delete("/departments/:id", requirePermission(PERMISSIONS.USERS.CREATE), deleteOrgDepartment);

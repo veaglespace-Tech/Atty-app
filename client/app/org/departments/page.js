@@ -17,6 +17,8 @@ import {
   UserCog,
   UserPlus,
   Shield,
+  Download,
+  ChevronDown,
 } from "lucide-react";
 import {
   useGetOrgDepartmentsQuery,
@@ -27,9 +29,13 @@ import {
   useUnassignOrgDepartmentMutation,
   useGetOrgUsersQuery,
   usePatchOrgUserMutation,
+  useDownloadOrgDepartmentsExcelMutation,
+  useDownloadOrgDepartmentsPdfMutation,
 } from "@/services/api/orgApi";
 import { DASHBOARD_FETCH_LIMITS } from "@/utils/dashboardLimits";
 import { getErrorMessage } from "@/utils/formValidation";
+import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
+import { downloadBlobFile } from "@/utils/download";
 
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
@@ -53,6 +59,8 @@ export default function OrgDepartmentsPage() {
   const [targetDeptIdForMember, setTargetDeptIdForMember] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -69,6 +77,8 @@ export default function OrgDepartmentsPage() {
   const [assignDept] = useAssignOrgDepartmentMutation();
   const [unassignDept] = useUnassignOrgDepartmentMutation();
   const [patchOrgUser] = usePatchOrgUserMutation();
+  const [downloadExcelMutation] = useDownloadOrgDepartmentsExcelMutation();
+  const [downloadPdfMutation] = useDownloadOrgDepartmentsPdfMutation();
 
   const departments = useMemo(() => deptData?.items || [], [deptData]);
   const users = useMemo(() => usersData?.items || [], [usersData]);
@@ -283,6 +293,44 @@ export default function OrgDepartmentsPage() {
     }
   };
 
+  const handleDownloadExcel = async (deptId = null) => {
+    try {
+      setDownloadingExcel(true);
+      setError("");
+      const params = deptId ? `departmentId=${deptId}` : "";
+      const blob = await downloadExcelMutation(params).unwrap();
+      const targetDept = deptId ? departments.find((d) => String(d.id) === String(deptId)) : null;
+      const safeName = targetDept
+        ? targetDept.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+        : "all-departments";
+      downloadBlobFile(blob, `${safeName}-report.xlsx`);
+      setMessage(`${targetDept ? targetDept.name : "All departments"} Excel report downloaded successfully`);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download Excel report. Please try again."));
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
+  const handleDownloadPdf = async (deptId = null) => {
+    try {
+      setDownloadingPdf(true);
+      setError("");
+      const params = deptId ? `departmentId=${deptId}` : "";
+      const blob = await downloadPdfMutation(params).unwrap();
+      const targetDept = deptId ? departments.find((d) => String(d.id) === String(deptId)) : null;
+      const safeName = targetDept
+        ? targetDept.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+        : "all-departments";
+      downloadBlobFile(blob, `${safeName}-report.pdf`);
+      setMessage(`${targetDept ? targetDept.name : "All departments"} PDF report downloaded successfully`);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download PDF report. Please try again."));
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header Banner */}
@@ -301,13 +349,31 @@ export default function OrgDepartmentsPage() {
           </div>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-md shadow-blue-500/15 transition-all transform active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Department</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <DownloadMenuButton
+            label={
+              <span className="flex items-center justify-center gap-2">
+                <Download size={16} className="stroke-[2.5]" />
+                <span className="font-bold">Export All Departments</span>
+                <ChevronDown size={14} className="opacity-80" />
+              </span>
+            }
+            onDownloadExcel={() => handleDownloadExcel()}
+            onDownloadPdf={() => handleDownloadPdf()}
+            downloadingExcel={downloadingExcel}
+            downloadingPdf={downloadingPdf}
+            align="right"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 text-sm"
+          />
+
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-md shadow-blue-500/15 transition-all transform active:scale-95 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Department</span>
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -412,6 +478,20 @@ export default function OrgDepartmentsPage() {
                           <h3 className="font-bold text-slate-900 dark:text-white text-base">{dept.name}</h3>
                         </div>
                         <div className="flex items-center gap-1">
+                          <DownloadMenuButton
+                            label={
+                              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 font-bold text-xs border border-emerald-200 dark:border-emerald-800/80 shadow-sm transition-all">
+                                <Download size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                                <span>Export</span>
+                                <ChevronDown size={12} className="opacity-70" />
+                              </span>
+                            }
+                            onDownloadExcel={() => handleDownloadExcel(dept.id)}
+                            onDownloadPdf={() => handleDownloadPdf(dept.id)}
+                            downloadingExcel={downloadingExcel}
+                            downloadingPdf={downloadingPdf}
+                            align="right"
+                          />
                           <button
                             onClick={() => openEditModal(dept)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -524,15 +604,33 @@ export default function OrgDepartmentsPage() {
                     </p>
                   </div>
 
-                  {allocationSubTab === "unassigned" && selectedUserIds.length > 0 && (
-                    <button
-                      onClick={handleBatchAssign}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 active:scale-95 transition-all"
-                    >
-                      <UserCheck className="w-4 h-4" />
-                      <span>Assign ({selectedUserIds.length}) Selected to {activeDepartment?.name}</span>
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <DownloadMenuButton
+                      label={
+                        <span className="flex items-center justify-center gap-1.5 text-xs font-bold">
+                          <Download size={14} className="stroke-[2.5]" />
+                          <span>Export {activeDepartment?.name} Data</span>
+                          <ChevronDown size={13} className="opacity-80" />
+                        </span>
+                      }
+                      onDownloadExcel={() => handleDownloadExcel(activeDepartment?.id)}
+                      onDownloadPdf={() => handleDownloadPdf(activeDepartment?.id)}
+                      downloadingExcel={downloadingExcel}
+                      downloadingPdf={downloadingPdf}
+                      align="right"
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 active:scale-95 transition-all text-xs"
+                    />
+
+                    {allocationSubTab === "unassigned" && selectedUserIds.length > 0 && (
+                      <button
+                        onClick={handleBatchAssign}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 active:scale-95 transition-all"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                        <span>Assign ({selectedUserIds.length}) Selected to {activeDepartment?.name}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Sub-Tabs: Assigned Members vs Unassigned Users vs All Users */}

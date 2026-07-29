@@ -1234,9 +1234,8 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
 
   const columns = [
     { key: "index", label: "No.", width: 25, align: "center" },
-    { key: "name", label: "Name", width: 90 },
-    { key: "department", label: "Department", width: 75 },
-    { key: "departmentStatus", label: "Allocation", width: 55, align: "center" },
+    { key: "name", label: "Name", width: 95 },
+    { key: "department", label: "Department", width: 85 },
     { key: "gender", label: "Gender", width: 45 },
     { key: "bloodGroup", label: "Blood Grp", width: 45 },
     { key: "existingMember", label: "Type", width: 45 },
@@ -1252,7 +1251,6 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
     index: index + 1,
     name: user.name || "-",
     department: user.department?.name || "Unassigned",
-    departmentStatus: user.department ? "Allocated" : "Unallocated",
     gender: user.gender || "-",
     bloodGroup: user.bloodGroup || "-",
     existingMember: user.existingMember || "-",
@@ -1332,7 +1330,6 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     "Sr. No.",
     "Name",
     "Department",
-    "Department Allocation",
     "Gender",
     "Member Type",
     "Blood Group",
@@ -1359,8 +1356,8 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   worksheet.addRow(headers);
 
   // Styling titles & merges
-  worksheet.mergeCells("A1:L1");
-  worksheet.mergeCells("A2:L2");
+  worksheet.mergeCells("A1:Q1");
+  worksheet.mergeCells("A2:Q2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -1383,9 +1380,9 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
     if (i === 0) col.width = 8;
-    else if (i === 11) col.width = 18; // Profile Photo
-    else if (i === 9 || i === 10) col.width = 40; // Addresses
-    else if (i === 1 || i === 5 || i === 6) col.width = 25; // Name, Ref, Email
+    else if (i === 12) col.width = 18; // Profile Photo (0-indexed 12)
+    else if (i === 10 || i === 11) col.width = 35; // Addresses
+    else if (i === 1 || i === 7) col.width = 25; // Name, Email
     else col.width = 15;
   });
 
@@ -1417,7 +1414,6 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       index: index + 1,
       name: user.name || "-",
       department: user.department?.name || "Unassigned",
-      departmentStatus: user.department ? "Allocated" : "Unallocated",
       gender: user.gender || "-",
       existingMember: user.existingMember || "-",
       bloodGroup: user.bloodGroup || "-",
@@ -1442,7 +1438,6 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.index,
       rowData.name,
       rowData.department,
-      rowData.departmentStatus,
       rowData.gender,
       rowData.existingMember,
       rowData.bloodGroup,
@@ -1452,7 +1447,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.emergencyContact,
       rowData.currentAddress,
       rowData.permanentAddress,
-      "", // Profile Photo cell
+      "", // Profile Photo cell (Col 13 / Col M)
       rowData.role,
       rowData.status,
       rowData.active,
@@ -1481,7 +1476,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
         worksheet.addImage(imageId, {
           tl: { 
-            nativeCol: 11, 
+            nativeCol: 12, // Profile Photo column (0-indexed 12)
             nativeColOff: Math.round(offsetX * 9525), 
             nativeRow: currentRowIndex - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
@@ -1490,10 +1485,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 12).value = "Error loading image";
+        worksheet.getCell(currentRowIndex, 13).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 12).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(currentRowIndex, 13).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;

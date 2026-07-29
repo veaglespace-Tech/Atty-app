@@ -266,6 +266,20 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    downloadOrgDepartmentsExcel: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/departments/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadOrgDepartmentsPdf: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/departments/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
     getOrgInstruments: builder.query({
       query: () => "/org/instruments",
       providesTags: ["OrgInstruments"],
@@ -409,4 +423,6 @@ export const {
   useDeleteOrgDepartmentMutation,
   useAssignOrgDepartmentMutation,
   useUnassignOrgDepartmentMutation,
+  useDownloadOrgDepartmentsExcelMutation,
+  useDownloadOrgDepartmentsPdfMutation,
 } = orgApi;
