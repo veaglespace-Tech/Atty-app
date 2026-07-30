@@ -34,6 +34,7 @@ const mapAttendanceRecord = (record = {}) => {
     department: user.department?.name || "Unassigned",
     departmentStatus: user.department ? "Allocated" : "Unallocated",
     gender: user.gender || "-",
+    dob: user.dob || "-",
     existingMember: user.existingMember || "-",
     referenceBy: user.referenceBy || "-",
     bloodGroup: user.bloodGroup || "-",
