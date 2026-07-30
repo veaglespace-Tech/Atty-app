@@ -1474,8 +1474,8 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   worksheet.addRow([]);
   worksheet.addRow(headers);
 
-  worksheet.mergeCells("A1:T1");
-  worksheet.mergeCells("A2:T2");
+  worksheet.mergeCells("A1:U1");
+  worksheet.mergeCells("A2:U2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -1497,11 +1497,11 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
     if (i === 0) col.width = 8;
-    else if (i === 15) col.width = 18; // Profile Photo (0-indexed 15)
+    else if (i === 16) col.width = 18; // Profile Photo (0-indexed 16)
     else if (i === 4) col.width = 20; // Physical Form No.
     else if (i === 5) col.width = 35; // Uploaded Document
-    else if (i === 13 || i === 14) col.width = 35; // Addresses
-    else if (i === 1 || i === 10) col.width = 25; // Name, Email
+    else if (i === 14 || i === 15) col.width = 35; // Addresses
+    else if (i === 1 || i === 11) col.width = 25; // Name, Email
     else col.width = 15;
   });
 
@@ -1583,7 +1583,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.emergencyContact,
       rowData.currentAddress,
       rowData.permanentAddress,
-      "", // Profile Photo cell (Col 16 / Col P)
+      "", // Profile Photo cell (Col 17 / Col Q)
       rowData.role,
       rowData.status,
       rowData.active,
@@ -1626,7 +1626,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
         worksheet.addImage(imageId, {
           tl: { 
-            nativeCol: 15, // Profile Photo column (0-indexed 15)
+            nativeCol: 16, // Profile Photo column (0-indexed 16)
             nativeColOff: Math.round(offsetX * 9525), 
             nativeRow: currentRowIndex - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
@@ -1635,10 +1635,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 16).value = "Error loading image";
+        worksheet.getCell(currentRowIndex, 17).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 16).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(currentRowIndex, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;

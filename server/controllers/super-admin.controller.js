@@ -3822,8 +3822,8 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
   worksheet.addRow(headers);
 
   // Styling titles & merges
-  worksheet.mergeCells("A1:T1");
-  worksheet.mergeCells("A2:T2");
+  worksheet.mergeCells("A1:U1");
+  worksheet.mergeCells("A2:U2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -3929,7 +3929,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       rowData.emergencyContact,
       rowData.currentAddress,
       rowData.permanentAddress,
-      "", // Profile Photo cell (Col 16 / Col P)
+      "", // Profile Photo cell (Col 17 / Col Q)
       rowData.role,
       rowData.status,
       rowData.active,
@@ -4104,8 +4104,8 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
   allSheet.addRow(headers);
 
   // Styles & merges
-  allSheet.mergeCells("A1:U1");
-  allSheet.mergeCells("A2:U2");
+  allSheet.mergeCells("A1:V1");
+  allSheet.mergeCells("A2:V2");
   allSheet.getCell("A1").font = { size: 14, bold: true };
   allSheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
   allSheet.getCell("A2").font = { size: 10, italic: true };
@@ -4233,8 +4233,8 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     sheet.addRow([]);
     sheet.addRow(orgHeaders);
 
-    sheet.mergeCells("A1:T1");
-    sheet.mergeCells("A2:T2");
+    sheet.mergeCells("A1:U1");
+    sheet.mergeCells("A2:U2");
     sheet.getCell("A1").font = { size: 14, bold: true };
     sheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
     sheet.getCell("A2").font = { size: 10, italic: true };
@@ -4283,7 +4283,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
         rowData.emergencyContact || "-",
         rowData.currentAddress || "-",
         rowData.permanentAddress || "-",
-        "", // Profile Photo (Col 16 / Col P)
+        "", // Profile Photo (Col 17 / Col Q)
         rowData.role || "-",
         rowData.status || "-",
         rowData.isActive ? "Active" : "Blocked",

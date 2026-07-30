@@ -1561,7 +1561,7 @@ export default function DataPanelPage({
       ) : null}
 
       {summary.length > 0 || children ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {summary.map((card, index) => {
             const theme = RECORD_THEMES[index % RECORD_THEMES.length];
             const { value, valueClassName } = getSummaryDisplay(card);
@@ -1573,10 +1573,10 @@ export default function DataPanelPage({
               >
                 <div className={`absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl ${theme.glow}`} />
                 <div className="relative">
-                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+                  <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.22em] text-slate-400 dark:text-slate-500 line-clamp-1">
                     {toReadableLabel(card.label || `Metric ${index + 1}`)}
                   </p>
-                  <p className={`mt-3 font-black text-slate-900 dark:text-white ${valueClassName}`}>
+                  <p className={`mt-2 sm:mt-3 font-black text-slate-900 dark:text-white ${valueClassName.replace("text-3xl", "text-2xl sm:text-3xl")}`}>
                     {value}
                   </p>
                 </div>
