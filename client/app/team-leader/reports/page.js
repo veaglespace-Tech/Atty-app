@@ -639,7 +639,7 @@ export default function TeamLeaderReportsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h4 className="truncate text-base font-black text-slate-900">{item.member}</h4>
-                      <p className="mt-1 text-xs text-slate-500">{item.role || "-"}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.role || "-"} {item.dob && item.dob !== "-" ? `• DOB: ${item.dob}` : ""}</p>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                       Report
@@ -674,6 +674,9 @@ export default function TeamLeaderReportsPage() {
                       Member
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      DOB
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                       Role
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
@@ -698,6 +701,7 @@ export default function TeamLeaderReportsPage() {
                       className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
                     >
                       <td className="px-3 py-2 font-semibold text-slate-900">{item.member}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{item.dob || "-"}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.role}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>

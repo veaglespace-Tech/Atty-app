@@ -118,6 +118,7 @@ const updateMeSchema = z
     permanentAddress: z.string().trim().optional(),
     bloodGroup: z.string().trim().optional(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
+    dob: z.string().trim().optional(),
     existingMember: z.enum(["SENIOR", "JUNIOR"]).optional().or(z.literal("")),
     departmentId: z.union([z.number(), z.string(), z.null()]).optional(),
     physicalFormNo: z.string().trim().optional(),

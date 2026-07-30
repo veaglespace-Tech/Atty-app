@@ -103,6 +103,7 @@ export default function SuperAdminUserDetailStandalonePage() {
     permanentAddress: "",
     bloodGroup: "",
     gender: "",
+    dob: "",
     existingMember: "",
     referenceBy: "",
     role: "MEMBER",
@@ -157,6 +158,7 @@ export default function SuperAdminUserDetailStandalonePage() {
       permanentAddress: user.permanentAddress || "",
       bloodGroup: user.bloodGroup || "",
       gender: user.gender || "",
+      dob: user.dob || "",
       existingMember: user.existingMember?.toUpperCase() || "",
       referenceBy: user.referenceBy || "",
       role: user.role || "MEMBER",
@@ -201,6 +203,7 @@ export default function SuperAdminUserDetailStandalonePage() {
         permanentAddress: normalizeTextInput(form.permanentAddress),
         bloodGroup: normalizeTextInput(form.bloodGroup),
         gender: form.gender,
+        dob: form.dob,
         existingMember: form.existingMember,
         referenceBy: form.referenceBy,
         permissions: form.permissions,
@@ -395,6 +398,7 @@ export default function SuperAdminUserDetailStandalonePage() {
             <DetailTile label="Uploaded Document" value="No Document" />
           )}
           <DetailTile label="Gender" value={toDisplayText(user.gender)} />
+          <DetailTile label="Date of Birth" value={toDisplayText(user.dob)} />
           <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
           <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
@@ -518,6 +522,16 @@ export default function SuperAdminUserDetailStandalonePage() {
                 <option value="FEMALE">Female</option>
                 <option value="OTHER">Other</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Date of Birth</label>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(event) => setForm((prev) => ({ ...prev, dob: event.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
             </div>
 
             <div className="space-y-2">

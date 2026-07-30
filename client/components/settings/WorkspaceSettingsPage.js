@@ -98,6 +98,7 @@ const getSettingsSchema = (isAdmin) => z.object({
   permanentAddress: z.string().trim().optional(),
   bloodGroup: z.string().trim().optional(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
+  dob: z.string().trim().optional(),
   existingMember: z.enum(["SENIOR", "JUNIOR", "senior", "junior"]).optional().or(z.literal("")),
   departmentId: z.any().optional(),
   physicalFormNo: z.string().trim().optional(),
@@ -131,6 +132,7 @@ const getFormDefaults = (user) => ({
   permanentAddress: user?.permanentAddress || "",
   bloodGroup: user?.bloodGroup || "",
   gender: user?.gender || "",
+  dob: user?.dob || "",
   existingMember: user?.existingMember?.toUpperCase() || "",
   departmentId: user?.departmentId ? String(user.departmentId) : "",
   physicalFormNo: user?.physicalFormNo || "",
@@ -980,7 +982,8 @@ export default function WorkspaceSettingsPage() {
   const hasPendingProfileImageChange = Boolean(profileImageDataUrl) || removeProfileImage;
   const hasPendingDocumentChange = Boolean(documentDataUrl) || removeDocument;
   const isDepartmentChanged = String(formValues.departmentId || "") !== String(user?.departmentId || "");
-  const canSubmit = isDirty || hasPendingProfileImageChange || hasPendingDocumentChange || isDepartmentChanged;
+  const isDobChanged = String(formValues.dob || "") !== String(user?.dob || "");
+  const canSubmit = isDirty || hasPendingProfileImageChange || hasPendingDocumentChange || isDepartmentChanged || isDobChanged;
 
   const completionState = useMemo(() => {
     if (!user) return { percentage: 0, missing: [] };
@@ -995,6 +998,7 @@ export default function WorkspaceSettingsPage() {
       { key: "currentAddress", label: "Current Address" },
       { key: "permanentAddress", label: "Permanent Address" },
       { key: "bloodGroup", label: "Blood Group" },
+      { key: "dob", label: "Date of Birth" },
       { key: "profileImageUrl", label: "Profile Image" },
     ];
     
@@ -1145,6 +1149,7 @@ export default function WorkspaceSettingsPage() {
     payload.permanentAddress = values.permanentAddress;
     payload.bloodGroup = values.bloodGroup;
     payload.gender = values.gender;
+    payload.dob = values.dob;
     payload.existingMember = values.existingMember;
     payload.departmentId = values.departmentId ? Number(values.departmentId) : null;
     payload.physicalFormNo = values.physicalFormNo ? values.physicalFormNo.trim() : "";
@@ -1414,6 +1419,11 @@ export default function WorkspaceSettingsPage() {
                     <option value="OTHER">Other</option>
                   </select>
                   {errors.gender && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.gender.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-dob" className={labelClassName}>Date of Birth</label>
+                  <input id="settings-dob" type="date" aria-invalid={errors.dob ? "true" : "false"} className={cn(inputClassName, errors.dob ? errorInputClassName : "")} {...register("dob")} />
+                  {errors.dob && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.dob.message}</p>}
                 </div>
                 <div>
                   <label htmlFor="settings-existingMember" className={labelClassName}>Member Type</label>

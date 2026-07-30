@@ -63,6 +63,7 @@ model ArchiveUser {
   archiveReason     String      @default("")
   metadata          Json?
   gender            String?
+  dob               String?
   referenceBy       String?
   existingMember    String?
   createdById       Int?
@@ -426,6 +427,7 @@ model RegistrationRequest {
   permanentAddress  String?
   password          String
   gender            String?
+  dob               String?
   referenceBy       String?
   existingMember    String?
   bloodGroup        String?
@@ -536,6 +538,7 @@ model User {
   permanentAddress            String?
   password                    String
   gender                      String?
+  dob                         String?
   referenceBy                 String?
   existingMember              String?
   bloodGroup                  String?

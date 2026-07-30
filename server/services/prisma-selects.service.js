@@ -15,6 +15,7 @@ const userManagementSelect = {
   currentAddress: true,
   permanentAddress: true,
   gender: true,
+  dob: true,
   existingMember: true,
   referenceBy: true,
   bloodGroup: true,
@@ -91,6 +92,7 @@ const attendanceUserSelect = {
   id: true,
   name: true,
   gender: true,
+  dob: true,
   existingMember: true,
   referenceBy: true,
   bloodGroup: true,
@@ -233,6 +235,7 @@ const organizationSubscriptionSelect = {
 const reportUserSelect = {
   id: true,
   name: true,
+  dob: true,
   memberships: {
     select: membershipSelect,
   },
@@ -244,6 +247,7 @@ const reportPdfUserSelect = {
   email: true,
   mobile: true,
   mobileCountryCode: true,
+  dob: true,
 };
 
 module.exports = {

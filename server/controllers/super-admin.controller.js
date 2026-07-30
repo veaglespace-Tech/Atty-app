@@ -2656,6 +2656,10 @@ exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
     userPayload.gender = req.body.gender || null;
   }
 
+  if (req.body?.dob !== undefined) {
+    userPayload.dob = req.body.dob || null;
+  }
+
   if (req.body?.existingMember !== undefined) {
     userPayload.existingMember = req.body.existingMember || null;
   }

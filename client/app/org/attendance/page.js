@@ -966,6 +966,7 @@ export default function OrgAttendancePage() {
                   <tr>
                     <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
                     <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">DOB</th>
                     <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
@@ -983,6 +984,7 @@ export default function OrgAttendancePage() {
                     >
                       <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-medium">{record.date}</td>
                       <td className="px-3 py-3 text-slate-900 font-bold">{record.member}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-medium">{record.user?.dob || record.dob || "-"}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-semibold">{formatRoleLabel(record.role)}</td>
                       <td className="px-3 py-3 text-center">
                         <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">

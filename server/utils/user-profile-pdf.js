@@ -278,8 +278,8 @@ const buildUserHallTicketPdf = async ({
       x: detailsX,
       y: topCardY + 182,
       width: detailsWidth * 0.55,
-      label: "Gender",
-      value: normalizeText(user.gender),
+      label: "Gender / DOB",
+      value: `${normalizeText(user.gender)}${user.dob ? ` (${user.dob})` : ""}`,
     });
     drawLabelValue({
       doc,

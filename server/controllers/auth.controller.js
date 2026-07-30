@@ -847,6 +847,7 @@ const serializeSessionUser = (user, organization = null) => {
     permanentAddress: normalized.permanentAddress || null,
     bloodGroup: normalized.bloodGroup || null,
     gender: normalized.gender || null,
+    dob: normalized.dob || null,
     existingMember: normalized.existingMember || null,
     physicalFormNo: normalized.physicalFormNo || null,
     documentUrl: normalized.documentUrl || null,
@@ -1645,6 +1646,7 @@ exports.updateMe = asyncHandler(async (req, res) => {
   const hasPermanentAddress = Object.prototype.hasOwnProperty.call(requestBody, "permanentAddress");
   const hasBloodGroup = Object.prototype.hasOwnProperty.call(requestBody, "bloodGroup");
   const hasGender = Object.prototype.hasOwnProperty.call(requestBody, "gender");
+  const hasDob = Object.prototype.hasOwnProperty.call(requestBody, "dob");
   const hasExistingMember = Object.prototype.hasOwnProperty.call(requestBody, "existingMember");
   const hasDepartmentId = Object.prototype.hasOwnProperty.call(requestBody, "departmentId");
 
@@ -1662,6 +1664,9 @@ exports.updateMe = asyncHandler(async (req, res) => {
   }
   if (hasGender) {
     payload.gender = requestBody.gender;
+  }
+  if (hasDob) {
+    payload.dob = requestBody.dob ? String(requestBody.dob).trim() : null;
   }
   if (hasExistingMember) {
     payload.existingMember = requestBody.existingMember;

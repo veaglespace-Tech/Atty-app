@@ -139,6 +139,7 @@ export default function OrgUserDetailPage() {
     active: true,
     permissions: [],
     gender: "",
+    dob: "",
     existingMember: "",
     referenceBy: "",
     bloodGroup: "",
@@ -247,6 +248,7 @@ export default function OrgUserDetailPage() {
         ? user.permissions
         : getDefaultPermissionsForRole(normalizeRole(user.role)),
       gender: user.gender || "",
+      dob: user.dob || "",
       existingMember: user.existingMember?.toUpperCase() || "",
       referenceBy: user.referenceBy || "",
       bloodGroup: user.bloodGroup || "",
@@ -285,6 +287,7 @@ export default function OrgUserDetailPage() {
         role: form.role,
         permissions: form.permissions,
         gender: form.gender,
+        dob: form.dob,
         existingMember: form.existingMember,
         referenceBy: form.referenceBy,
         bloodGroup: form.bloodGroup,
@@ -557,6 +560,7 @@ export default function OrgUserDetailPage() {
             <DetailTile label="Uploaded Document" value="No Document" />
           )}
           <DetailTile label="Gender" value={toDisplayText(user.gender)} />
+          <DetailTile label="Date of Birth" value={toDisplayText(user.dob)} />
           <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
           <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
@@ -683,6 +687,17 @@ export default function OrgUserDetailPage() {
                 <option value="FEMALE">Female</option>
                 <option value="OTHER">Other</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Date of Birth</label>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(event) => setForm((prev) => ({ ...prev, dob: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
             </div>
 
             <div className="space-y-2">

@@ -69,6 +69,7 @@ export default function OrgUsersPage() {
     email: "",
     mobileCountryCode: "+91",
     mobile: "",
+    dob: "",
     role: ROLES.MEMBER,
     status: "APPROVED",
     password: "",
@@ -192,6 +193,7 @@ export default function OrgUsersPage() {
       email: "",
       mobileCountryCode: "+91",
       mobile: "",
+      dob: "",
       role: ROLES.MEMBER,
       status: "APPROVED",
       password: "",
@@ -229,6 +231,7 @@ export default function OrgUsersPage() {
         email: nextEmail,
         mobileCountryCode: form.mobileCountryCode,
         mobile: nextMobile,
+        dob: form.dob,
         role: form.role,
         status: form.status,
         permissions: form.permissions,
@@ -438,6 +441,17 @@ export default function OrgUsersPage() {
               </option>
             ))}
           </select>
+
+          <div>
+            <label className="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 mb-1.5 dark:text-slate-400">Date of Birth</label>
+            <input
+              type="date"
+              name="dob"
+              value={form.dob}
+              onChange={onInputChange}
+              className={fieldClassName}
+            />
+          </div>
 
           <PasswordInput
             icon={null}

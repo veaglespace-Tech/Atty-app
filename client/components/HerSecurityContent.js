@@ -1,6 +1,5 @@
 "use client";
 
-/* TEMPORARILY DISABLED: HER SECURITY COMPONENT
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useGetMeQuery } from "@/services/api/authApi";
@@ -108,6 +107,134 @@ export default function HerSecurityContent() {
   const [holdProgress, setHoldProgress] = useState(0); // 0 to 3 seconds
   const [isHolding, setIsHolding] = useState(false);
   const holdIntervalRef = useRef(null);
+
+  const handleStopSosAlert = async () => {
+    if (isSendingSos) return;
+    setIsSendingSos(true);
+    setSosResult(null);
+
+    try {
+      const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
+      const response = await fetch(`${API_BASE_URL}/her-security/stop-sos-alert`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: authToken } : {}),
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsSosActive(false);
+        setSosResult({
+          success: true,
+          message: "✅ SOS Alert has been successfully stopped and cancelled.",
+          recipients: data.recipientsSent || [],
+        });
+      } else {
+        setSosResult({
+          success: false,
+          message: data.message || "Failed to cancel SOS alert.",
+        });
+      }
+    } catch (err) {
+      console.error("SOS Stop Error:", err);
+      setSosResult({
+        success: false,
+        message: "Network error occurred while cancelling SOS alert.",
+      });
+    } finally {
+      setIsSendingSos(false);
+    }
+  };
+
+  // Construct Google Maps Live Link
+  const mapsUrl =
+    location.latitude && location.longitude
+      ? `https://maps.google.com/?q=${location.latitude},${location.longitude}`
+      : null;
+
+  // WhatsApp Message Generator
+  const generateWhatsAppUrl = () => {
+    const emergencyNum = displayEmergencyContact;
+    const text = encodeURIComponent(
+      `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
+      `👤 *Name:* ${displayName}\n` +
+      `📧 *Email:* ${displayEmail}\n` +
+      `📱 *Contact:* ${displayMobile}\n` +
+      `🆘 *Emergency Contact:* ${emergencyNum}\n` +
+      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})\n` +
+      `🖼️ *Profile Photo:* ${publicPhotoUrl}\n\n` +
+      `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
+      `⚠️ *I need immediate assistance! Please verify my safety.*`
+    );
+    return `https://api.whatsapp.com/send?text=${text}`;
+  };
+
+  // Trigger SOS Alert (Email, WhatsApp, and Dialer)
+  const handleTriggerSosAlert = async () => {
+    if (isSendingSos) return;
+    setIsSendingSos(true);
+    setSosResult(null);
+
+    // 1. Immediately open WhatsApp with pre-filled distress message & live GPS location
+    if (typeof window !== "undefined") {
+      const waUrl = generateWhatsAppUrl();
+      window.open(waUrl, "_blank");
+    }
+
+    // 2. Dispatch high-priority emergency Email to Org Admin & Support
+    try {
+      const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
+      const response = await fetch(`${API_BASE_URL}/her-security/sos-alert`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: authToken } : {}),
+        },
+        body: JSON.stringify({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          mapsUrl: mapsUrl,
+          deviceInfo: typeof window !== "undefined" ? navigator.userAgent : "",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsSosActive(true);
+        setSosResult({
+          success: true,
+          message: "🚨 SOS Alert successfully triggered across Email, WhatsApp & Dialer! Live location tracking is active.",
+          recipients: data.recipientsSent || [],
+        });
+      } else {
+        setSosResult({
+          success: false,
+          message: data.message || "Failed to dispatch SOS email alert.",
+        });
+      }
+    } catch (err) {
+      console.error("SOS Trigger Error:", err);
+      setSosResult({
+        success: false,
+        message: "Network error occurred while dispatching SOS email alert.",
+      });
+    } finally {
+      setIsSendingSos(false);
+    }
+
+    // 3. Open device Phone Dialer with emergency number after API call
+    if (typeof window !== "undefined" && displayEmergencyContact) {
+      setTimeout(() => {
+        window.location.href = `tel:${displayEmergencyContact}`;
+      }, 300);
+    }
+  };
 
   const startHold = () => {
     if (isSendingSos) return;
@@ -283,134 +410,11 @@ export default function HerSecurityContent() {
     };
   }, [isSosActive, token]);
 
-  // Construct Google Maps Live Link
-  const mapsUrl =
-    location.latitude && location.longitude
-      ? `https://maps.google.com/?q=${location.latitude},${location.longitude}`
-      : null;
-
-  // WhatsApp Message Generator
-  const generateWhatsAppUrl = () => {
-    const emergencyNum = displayEmergencyContact;
-    const text = encodeURIComponent(
-      `🚨 *EMERGENCY SOS DISTRESS ALERT* 🚨\n\n` +
-      `👤 *Name:* ${displayName}\n` +
-      `📧 *Email:* ${displayEmail}\n` +
-      `📱 *Contact:* ${displayMobile}\n` +
-      `🆘 *Emergency Contact:* ${emergencyNum}\n` +
-      `🏢 *Organisation:* ${displayOrgName} (ID: ${displayOrgId})\n` +
-      `🖼️ *Profile Photo:* ${publicPhotoUrl}\n\n` +
-      `📍 *LIVE GPS LOCATION:* ${mapsUrl || "Location Permission Denied"}\n\n` +
-      `⚠️ *I need immediate assistance! Please verify my safety.*`
-    );
-    return `https://api.whatsapp.com/send?text=${text}`;
-  };
-
-  // Trigger SOS Alert (Email, WhatsApp, and Dialer)
-  const handleTriggerSosAlert = async () => {
-    if (isSendingSos) return;
-    setIsSendingSos(true);
-    setSosResult(null);
-
-    // 1. Immediately open WhatsApp with pre-filled distress message & live GPS location
-    if (typeof window !== "undefined") {
-      const waUrl = generateWhatsAppUrl();
-      window.open(waUrl, "_blank");
-    }
-
-    // 2. Dispatch high-priority emergency Email to Org Admin & Support
-    try {
-      const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
-      const response = await fetch(`${API_BASE_URL}/her-security/sos-alert`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(authToken ? { Authorization: authToken } : {}),
-        },
-        body: JSON.stringify({
-          latitude: location.latitude,
-          longitude: location.longitude,
-          mapsUrl: mapsUrl,
-          deviceInfo: typeof window !== "undefined" ? navigator.userAgent : "",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setIsSosActive(true);
-        setSosResult({
-          success: true,
-          message: "🚨 SOS Alert successfully triggered across Email, WhatsApp & Dialer! Live location tracking is active.",
-          recipients: data.recipientsSent || [],
-        });
-      } else {
-        setSosResult({
-          success: false,
-          message: data.message || "Failed to dispatch SOS email alert.",
-        });
-      }
-    } catch (err) {
-      console.error("SOS Trigger Error:", err);
-      setSosResult({
-        success: false,
-        message: "Network error occurred while dispatching SOS email alert.",
-      });
-    } finally {
-      setIsSendingSos(false);
-    }
-
-    // 3. Open device Phone Dialer with emergency number after API call
-    if (typeof window !== "undefined" && displayEmergencyContact) {
-      setTimeout(() => {
-        window.location.href = `tel:${displayEmergencyContact}`;
-      }, 300);
-    }
-  };
-
-  // Stop SOS Alert
-  const handleStopSosAlert = async () => {
-    if (isSendingSos) return;
-    setIsSendingSos(true);
-    setSosResult(null);
-
-    try {
-      const authToken = token ? (String(token).startsWith("Bearer ") ? token : `Bearer ${token}`) : "";
-      const response = await fetch(`${API_BASE_URL}/her-security/stop-sos-alert`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(authToken ? { Authorization: authToken } : {}),
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setIsSosActive(false);
-        setSosResult({
-          success: true,
-          message: "✅ SOS Alert has been successfully stopped and cancelled.",
-          recipients: data.recipientsSent || [],
-        });
-      } else {
-        setSosResult({
-          success: false,
-          message: data.message || "Failed to cancel SOS alert.",
-        });
-      }
-    } catch (err) {
-      console.error("SOS Stop Error:", err);
-      setSosResult({
-        success: false,
-        message: "Network error occurred while cancelling SOS alert.",
-      });
-    } finally {
-      setIsSendingSos(false);
-    }
-  };
+  // TEMPORARILY DISABLED FEATURE SWITCH (Change to true to enable)
+  const IS_ENABLED = false;
+  if (!IS_ENABLED) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -499,7 +503,7 @@ export default function HerSecurityContent() {
                   onMouseDown={startHold}
                   onMouseUp={cancelHold}
                   onMouseLeave={cancelHold}
-                  onTouchStart={(e) => { startHold(); }}
+                  onTouchStart={() => startHold()}
                   onTouchEnd={cancelHold}
                   disabled={isSendingSos}
                   className={`group relative flex h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 items-center justify-center rounded-full text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50 touch-none select-none ${isSosActive
@@ -779,9 +783,4 @@ export default function HerSecurityContent() {
       <DashboardFooter />
     </div>
   );
-}
-*/
-
-export default function HerSecurityContent() {
-  return null;
 }

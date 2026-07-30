@@ -68,6 +68,7 @@ const mapUserForManagement = (user, orgId = null) => {
     currentAddress: user.currentAddress || null,
     permanentAddress: user.permanentAddress || null,
     gender: user.gender || null,
+    dob: user.dob || null,
     existingMember: user.existingMember || null,
     referenceBy: user.referenceBy || null,
     bloodGroup: user.bloodGroup || null,

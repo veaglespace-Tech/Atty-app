@@ -483,6 +483,11 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
     userPayload.gender = req.body.gender || null;
   }
 
+  const hasDob = Object.prototype.hasOwnProperty.call(req.body || {}, "dob");
+  if (hasDob) {
+    userPayload.dob = req.body.dob || null;
+  }
+
   const hasExistingMember = Object.prototype.hasOwnProperty.call(req.body || {}, "existingMember");
   if (hasExistingMember) {
     userPayload.existingMember = req.body.existingMember || null;
@@ -756,6 +761,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
           email,
           mobile: normalizedPhone.e164,
           mobileCountryCode: normalizedPhone.countryCode,
+          dob: req.body?.dob ? String(req.body.dob).trim() : null,
           password: hashedPassword,
           role,
           status,
@@ -1440,6 +1446,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     "Physical Form No.",
     "Uploaded Document",
     "Gender",
+    "Date of Birth",
     "Member Type",
     "Blood Group",
     "Reference By",
@@ -1535,6 +1542,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       documentDownloadLink,
       documentName: user.documentName || "Document",
       gender: user.gender || "-",
+      dob: user.dob || "-",
       existingMember: user.existingMember || "-",
       bloodGroup: user.bloodGroup || "-",
       referenceBy: user.referenceBy || "-",
@@ -1562,6 +1570,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.physicalFormNo,
       "-", // Uploaded Document placeholder to be formatted as hyperlink below
       rowData.gender,
+      rowData.dob,
       rowData.existingMember,
       rowData.bloodGroup,
       rowData.referenceBy,

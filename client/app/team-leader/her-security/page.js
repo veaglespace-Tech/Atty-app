@@ -1,13 +1,8 @@
 "use client";
 
-/* TEMPORARILY DISABLED:
 import HerSecurityContent from "@/components/HerSecurityContent";
 
 export default function TeamLeaderHerSecurityPage() {
-  return <HerSecurityContent />;
-}
-*/
-
-export default function TeamLeaderHerSecurityPage() {
+  // TEMPORARILY DISABLED: To show Her Security, change return null; to return <HerSecurityContent />;
   return null;
 }

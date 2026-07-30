@@ -403,6 +403,9 @@ function RegistrationRequestsTab({ items, loading, refetch }) {
                   {item.gender && (
                     <DetailRow icon={User} label={item.gender.charAt(0) + item.gender.slice(1).toLowerCase()} />
                   )}
+                  {item.dob && (
+                    <DetailRow icon={User} label={`DOB: ${item.dob}`} />
+                  )}
                   {item.bloodGroup && (
                     <DetailRow icon={User} label={`Blood Group: ${item.bloodGroup}`} />
                   )}
