@@ -1,19 +1,22 @@
+// Team Leader Dashboard Component
 import React from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { CalendarCheck2, FileBarChart, MapPinned, Users, Component, ClipboardCheck, MessageSquare, CreditCard, Bell, Gift, ChevronRight, CheckCircle2, ShieldCheck, Clock, CheckCircle } from "lucide-react-native";
+import { CalendarCheck2, FileBarChart, MapPinned, Users, Component, ClipboardCheck, MessageSquare, CreditCard, Bell, Gift, ChevronRight, CheckCircle2, ShieldCheck, Clock, CheckCircle, UserX } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useGetTeamLeaderDashboardQuery } from "@/services/api/teamLeaderApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 
 const getIconForSummary = (label) => {
   const lbl = label?.toLowerCase() || '';
-  if (lbl.includes("permission")) return { icon: ShieldCheck, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-950/30" };
-  if (lbl.includes("member")) return { icon: Users, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30" };
-  if (lbl.includes("present")) return { icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30" };
-  if (lbl.includes("pending") || lbl.includes("punch")) return { icon: Clock, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30" };
-  return { icon: Component, color: "text-slate-500", bg: "bg-slate-50 dark:bg-slate-900" };
+  if (lbl.includes("permission")) return { icon: ShieldCheck, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10" };
+  if (lbl.includes("member")) return { icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" };
+  if (lbl.includes("present")) return { icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" };
+  if (lbl.includes("absent")) return { icon: UserX, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10" };
+  if (lbl.includes("pending") || lbl.includes("punch")) return { icon: Clock, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" };
+  return { icon: Component, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-500/10" };
 };
 
 export default function TeamLeaderDashboard() {
@@ -21,7 +24,25 @@ export default function TeamLeaderDashboard() {
   const { user } = useAuthSession();
   
   const { data, isLoading, error, refetch } = useGetTeamLeaderDashboardQuery();
-  const summary = data?.summary || [];
+  let summary = [...(data?.summary || [])];
+  const hasAbsent = summary.some(item => item.label?.toLowerCase().includes('absent'));
+  if (!hasAbsent && summary.length > 0) {
+    let totalMembers = 0;
+    let presentCount = 0;
+    summary.forEach(item => {
+      const lbl = item.label?.toLowerCase() || '';
+      if (lbl.includes('member') || lbl.includes('user') || lbl.includes('total')) {
+        totalMembers = parseInt(String(item.value).split('/')[0], 10) || 0;
+      } else if (lbl.includes('present')) {
+        presentCount = parseInt(String(item.value), 10) || 0;
+      }
+    });
+    const absentCount = Math.max(0, totalMembers - presentCount);
+    summary.push({
+      label: "Absent Today",
+      value: absentCount
+    });
+  }
 
   if (error?.status === 402) {
     return (
@@ -29,7 +50,7 @@ export default function TeamLeaderDashboard() {
         <ShieldCheck size={64} className="text-amber-500 mb-4" />
         <Text className="text-2xl font-black text-slate-900 dark:text-white mb-2 text-center">Access Restricted</Text>
         <Text className="text-base text-slate-500 dark:text-slate-400 text-center mb-6">
-          Your organization's access is currently restricted. Please contact your administrator.
+          {"Your organization's access is currently restricted. Please contact your administrator."}
         </Text>
         <Pressable onPress={refetch} className="bg-blue-600 px-6 py-3 rounded-xl active:opacity-80">
           <Text className="text-white font-bold text-center">Refresh</Text>
@@ -42,44 +63,69 @@ export default function TeamLeaderDashboard() {
 
   return (
     <ScrollView className="flex-1 bg-slate-50 dark:bg-[#020617]" contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-      
+      <View className="max-w-2xl w-full mx-auto">
       {/* Welcome & Stats Hero Section */}
-      <View className="mb-6">
-        <Animated.View entering={FadeInDown.duration(400).springify()} className="bg-white dark:bg-slate-900 rounded-[32px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <View className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-500/5 rounded-full -translate-y-10 translate-x-10" />
-          
-          <Text className="text-[11px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-2">
-            Team Leader Workspace
-          </Text>
-          <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">
-            {user?.organization?.name || "Workspace"}
-          </Text>
-          <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-6">
-            Manage your assigned teams and track attendance.
-          </Text>
+      <View className="mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+        <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
+        <View className="p-5">
+          <View className="mb-5 flex-row items-start justify-between gap-4">
+            <View className="flex-1">
+              <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">
+                Team Leader Workspace
+              </Text>
+              <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white mb-1">
+                {user?.organization?.name || "Workspace"}
+              </Text>
+              <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                Manage your assigned teams and track attendance.
+              </Text>
+            </View>
+          </View>
 
           {isLoading ? (
              <View className="py-4 items-center">
                 <ActivityIndicator size="small" color="#2563eb" />
              </View>
           ) : (
-            <View className="flex-row flex-wrap justify-between gap-y-3">
+            <View className="flex-row flex-wrap mx-[-6px] mb-2">
               {summary.map((item, index) => {
                 const { icon: Icon, color, bg } = getIconForSummary(item.label);
                 return (
-                  <View key={index} className="w-[48%] bg-slate-800/60 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/50 justify-between">
-                    <View className="flex-row items-center mb-2">
-                      <View className={`p-1.5 rounded-lg ${bg} mr-2`}>
-                        <Icon size={14} className={color} />
+                  <View key={index} style={{ width: '50%', paddingHorizontal: 6, paddingBottom: 12 }}>
+                    <Animated.View
+                      entering={FadeInDown.duration(400).delay(index * 100).springify()}
+                      className="w-full">
+                    <View className="bg-white dark:bg-[#1E293B] p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between min-h-[96px]">
+                      <View className="flex-row items-start justify-between mb-3">
+                        <Text
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-2"
+                          numberOfLines={2}>
+                          {item.label}
+                        </Text>
+                        <View className={`h-7 w-7 rounded-full items-center justify-center shrink-0 ${bg}`}>
+                          <Icon size={12} className={color} />
+                        </View>
                       </View>
-                      <Text className="text-[10px] font-bold text-slate-300 dark:text-slate-300 uppercase tracking-wider flex-1" numberOfLines={1} adjustsFontSizeToFit>{item.label}</Text>
+                      <Text
+                        className="text-2xl font-black text-slate-900 dark:text-white tracking-tight"
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {item.value}
+                      </Text>
                     </View>
-                    <Text className="text-2xl font-black text-white">{item.value}</Text>
+                    </Animated.View>
                   </View>
                 );
               })}
             </View>
           )}
+        </View>
+      </View>
+
+      {/* MY ATTENDANCE ACTIONS & STATS */}
+      <View className="mb-6">
+        <Animated.View entering={FadeInDown.duration(400).delay(150).springify()}>
+          <MyAttendanceCore isEmbedded={true} showActions={true} />
         </Animated.View>
       </View>
 
@@ -89,7 +135,7 @@ export default function TeamLeaderDashboard() {
           <View className="flex-row items-center justify-between mb-4">
             <View>
               <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                Today's Team Activity
+                Today&apos;s Team Activity
               </Text>
               <Text className="text-[10px] text-slate-500 mt-1">
                 Real-time team member attendance and punch logs.
@@ -145,6 +191,7 @@ export default function TeamLeaderDashboard() {
           )}
         </View>
       </Animated.View>
+      </View>
     </ScrollView>
   );
 }

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator, Image, Platform } from "react-native";
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { 
   ChevronLeft, 
+  ChevronRight,
   LogOut, 
   User, 
   Mail, 
@@ -21,16 +23,25 @@ import {
   Trash2,
   Copy,
   CheckCircle2,
-  Link2
+  Link2,
+  Calendar,
+  FileText,
+  UploadCloud,
+  FileBox,
+  Download
 } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as WebBrowser from "expo-web-browser";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout, setCurrentUser } from "@/store/slices/authSlice";
 import { formatRoleLabel, ROLES, getUserOrganizationId, hasPermission, PERMISSIONS } from "@/utils/roles";
 import { useUpdateMeMutation, useForgotPasswordMutation } from "@/services/api/authApi";
-import { useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useUpdateOrgLogoMutation, useUpdateOrgDetailsMutation } from "@/services/api/orgApi";
+import { useGetOrgAttendanceSettingsQuery, useUpdateOrgAttendanceSettingsMutation, useUpdateOrgLogoMutation, useUpdateOrgDetailsMutation, useGetOrgDepartmentsQuery } from "@/services/api/orgApi";
 import { getCurrentCoordinates } from "@/utils/location";
+import { getFullImageUrl } from "@/components/dashboard/MobileDashboardShell";
 import ThemeToggle from "@/components/ThemeToggle";
 import TimeSettings from "@/components/org/settings/TimeSettings";
 import LocationSettings from "@/components/org/settings/LocationSettings";
@@ -47,13 +58,28 @@ export default function SettingsScreen() {
   const [activeTab, setActiveTab] = useState("personal");
   
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
+  const [documentDataUrl, setDocumentDataUrl] = useState("");
+  const [documentName, setDocumentName] = useState("");
+  const [removeDocument, setRemoveDocument] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
     mobile: getLocalPhoneNumber(user?.mobile),
     emergencyContact: getLocalPhoneNumber(user?.emergencyContact),
     currentAddress: user?.currentAddress || "",
+    permanentAddress: user?.permanentAddress || "",
+    dob: user?.dob ? user.dob.split("T")[0] : "",
+    physicalFormNo: user?.physicalFormNo || "",
+    bloodGroup: user?.bloodGroup || "",
+    gender: user?.gender || "",
+    existingMember: user?.existingMember || "",
+    departmentId: user?.departmentId ? String(user.departmentId) : "",
   });
+
+  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !user?.orgId });
+  const departmentsList = deptData?.items || [];
 
   const onLogout = () => {
     dispatch(logout());
@@ -96,20 +122,92 @@ export default function SettingsScreen() {
         setProfileImageDataUrl(base64Img);
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to pick image.");
+      Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        let dataUrl;
+        if (Platform.OS === "web") {
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+          dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+          const mimeType = asset.mimeType || "application/octet-stream";
+          dataUrl = `data:${mimeType};base64,${base64}`;
+        }
+
+        setDocumentDataUrl(dataUrl);
+        setDocumentName(asset.name);
+        setRemoveDocument(false);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Failed to pick document");
+    }
+  };
+
+  const toggleDocumentRemoval = () => {
+    if (documentDataUrl) {
+      setDocumentDataUrl("");
+      setDocumentName("");
+    } else if (user?.documentUrl) {
+      setRemoveDocument(!removeDocument);
+    }
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      const isoStr = selectedDate.toISOString().split("T")[0];
+      setFormData(prev => ({ ...prev, dob: isoStr }));
     }
   };
 
   const handleUpdate = async () => {
     try {
       const payload = {};
-      if (formData.name && formData.name !== user?.name) payload.name = formData.name;
-      if (formData.mobile) payload.mobile = formatPhoneNumberForSave(formData.mobile);
-      if (formData.emergencyContact) payload.emergencyContact = formatPhoneNumberForSave(formData.emergencyContact);
+      if (formData.name !== user?.name) payload.name = formData.name;
+      if (formData.mobile !== getLocalPhoneNumber(user?.mobile)) {
+        payload.mobileCountryCode = "+91";
+        payload.mobile = formatPhoneNumberForSave(formData.mobile);
+      }
+      if (formData.emergencyContact !== getLocalPhoneNumber(user?.emergencyContact)) {
+        payload.emergencyContactCountryCode = "+91";
+        payload.emergencyContact = formatPhoneNumberForSave(formData.emergencyContact);
+      }
       if (formData.currentAddress !== user?.currentAddress) payload.currentAddress = formData.currentAddress;
-
-      if (profileImageDataUrl) {
-        payload.profileImageDataUrl = profileImageDataUrl;
+      if (formData.permanentAddress !== user?.permanentAddress) payload.permanentAddress = formData.permanentAddress;
+      if (formData.dob !== (user?.dob ? user.dob.split("T")[0] : "")) payload.dob = formData.dob || undefined;
+      if (formData.physicalFormNo !== (user?.physicalFormNo || "")) payload.physicalFormNo = formData.physicalFormNo || undefined;
+      if (formData.bloodGroup !== (user?.bloodGroup || "")) payload.bloodGroup = formData.bloodGroup || undefined;
+      if (formData.gender !== (user?.gender || "")) payload.gender = formData.gender || undefined;
+      if (formData.existingMember !== (user?.existingMember || "")) payload.existingMember = formData.existingMember || undefined;
+      if (formData.departmentId !== (user?.departmentId ? String(user.departmentId) : "")) payload.departmentId = formData.departmentId ? Number(formData.departmentId) : null;
+      if (profileImageDataUrl) payload.profileImageDataUrl = profileImageDataUrl;
+      
+      if (documentDataUrl) {
+        payload.documentDataUrl = documentDataUrl;
+        payload.documentName = documentName;
+      } else if (removeDocument) {
+        payload.documentDataUrl = null;
+        payload.documentName = null;
       }
 
       if (Object.keys(payload).length === 0) {
@@ -149,7 +247,7 @@ export default function SettingsScreen() {
   // Decide if this user can see the Admin panels
   const canSeeAdminSettings = isAdmin;
 
-  const currentProfileImageUrl = profileImageDataUrl || user?.profileImageUrl;
+  const currentProfileImageUrl = profileImageDataUrl || (user?.profileImageUrl ? getFullImageUrl(user.profileImageUrl) : null);
 
   return (
     
@@ -176,7 +274,7 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        
+        <View className="max-w-2xl w-full mx-auto">
         {/* Profile Header */}
         <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
           <Pressable onPress={pickImage} className="relative mb-4 active:scale-95 transition-transform">
@@ -208,9 +306,9 @@ export default function SettingsScreen() {
             </View>
             <View className="flex-1 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 flex-row items-center gap-3">
               <Building2 size={18} className="text-blue-500" />
-              <View flex={1}>
+              <View className="flex-1 overflow-hidden pr-2">
                 <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400">Workspace</Text>
-                <Text className="font-bold text-slate-700 dark:text-slate-200" numberOfLines={1}>{organizationName}</Text>
+                <Text className="font-bold text-slate-700 dark:text-slate-200" numberOfLines={1} ellipsizeMode="tail">{organizationName}</Text>
               </View>
             </View>
           </View>
@@ -248,6 +346,22 @@ export default function SettingsScreen() {
 
         {activeTab === "organization" && canSeeAdminSettings && (
           <View className="mb-6">
+            <Pressable 
+              onPress={() => router.push("/org/departments")}
+              className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 flex-row items-center justify-between active:opacity-80"
+            >
+              <View className="flex-row items-center gap-4">
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-500/20">
+                  <Building2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                </View>
+                <View>
+                  <Text className="text-base font-black text-slate-900 dark:text-white">Manage Departments</Text>
+                  <Text className="text-xs font-semibold text-slate-500">Create departments and allocate users</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} className="text-slate-400" />
+            </Pressable>
+
             <OrgLogoSettings />
             <OrgDetailsSettings />
             <LocationSettings />
@@ -336,6 +450,168 @@ export default function SettingsScreen() {
                     textAlignVertical="top"
                     placeholderTextColor="#94a3b8"
                   />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Permanent Address</Text>
+                <View className="flex-row bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
+                  <MapPin size={16} className="text-slate-400 mr-3 mt-0.5" />
+                  <TextInput
+                    value={formData.permanentAddress}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, permanentAddress: val }))}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                    placeholder="Enter permanent address"
+                    multiline
+                    numberOfLines={2}
+                    textAlignVertical="top"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Gender</Text>
+                <View className="flex-row bg-slate-100 dark:bg-[#0f172a] rounded-2xl p-1 w-full border border-slate-200 dark:border-slate-800/60">
+                  {[{ label: "Male", value: "MALE" }, { label: "Female", value: "FEMALE" }, { label: "Other", value: "OTHER" }].map(opt => (
+                    <Pressable key={opt.value} onPress={() => setFormData(p => ({ ...p, gender: opt.value }))}
+                      className={`flex-1 items-center justify-center py-3 rounded-[12px] active:scale-[0.98] transition-transform ${formData.gender === opt.value ? "bg-white dark:bg-[#1e293b] shadow-sm border border-slate-200 dark:border-slate-700/50" : "border border-transparent"}`}>
+                      <Text className={`text-[13px] font-bold ${formData.gender === opt.value ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>{opt.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Blood Group</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(bg => (
+                    <Pressable key={bg} onPress={() => setFormData(p => ({ ...p, bloodGroup: bg }))}
+                      className={`flex-1 min-w-[22%] py-3 rounded-2xl items-center justify-center border active:scale-95 transition-transform ${formData.bloodGroup === bg ? "bg-rose-500 border-rose-500 shadow-sm" : "bg-slate-50 dark:bg-[#0f172a] border-slate-200 dark:border-slate-800/80"}`}>
+                      <Text className={`text-[14px] font-black ${formData.bloodGroup === bg ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{bg}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Member Type</Text>
+                <View className="flex-row bg-slate-100 dark:bg-[#0f172a] rounded-2xl p-1 w-full border border-slate-200 dark:border-slate-800/60">
+                  {[{ label: "Senior", value: "SENIOR" }, { label: "Junior", value: "JUNIOR" }].map(opt => (
+                    <Pressable key={opt.value} onPress={() => setFormData(p => ({ ...p, existingMember: opt.value }))}
+                      className={`flex-1 items-center justify-center py-3 rounded-[12px] active:scale-[0.98] transition-transform ${formData.existingMember === opt.value ? "bg-white dark:bg-[#1e293b] shadow-sm border border-slate-200 dark:border-slate-700/50" : "border border-transparent"}`}>
+                      <Text className={`text-[13px] font-bold ${formData.existingMember === opt.value ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>{opt.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Department</Text>
+                <View className="flex-row items-center bg-slate-100 dark:bg-[#0f172a] rounded-2xl p-1 w-full border border-slate-200 dark:border-slate-800/60 overflow-hidden">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 2 }}>
+                    {departmentsList.map(dept => (
+                      <Pressable key={dept.id} onPress={() => setFormData(p => ({ ...p, departmentId: String(dept.id) }))}
+                        className={`px-5 py-3 mx-1 rounded-[12px] active:scale-[0.98] transition-transform ${formData.departmentId === String(dept.id) ? "bg-white dark:bg-[#1e293b] shadow-sm border border-slate-200 dark:border-slate-700/50" : "border border-transparent"}`}>
+                        <Text className={`text-[13px] font-bold ${formData.departmentId === String(dept.id) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 dark:text-slate-400"}`}>{dept.name}</Text>
+                      </Pressable>
+                    ))}
+                    {departmentsList.length === 0 && (
+                      <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 px-4 py-3">No departments available</Text>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Date of Birth</Text>
+                {Platform.OS === "web" ? (
+                  <View className="flex-row items-center bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800/80 rounded-2xl px-4 py-3.5">
+                    <Calendar size={18} className="text-slate-400 dark:text-slate-500 mr-3" />
+                    <input
+                      type="date"
+                      value={formData.dob}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dob: e.target.value }))}
+                      className="flex-1 text-[14px] font-bold bg-transparent border-0 outline-none"
+                      style={{ color: formData.dob ? (document.documentElement.classList.contains('dark') ? 'white' : '#0f172a') : "#94a3b8", width: "100%" }}
+                    />
+                  </View>
+                ) : (
+                  <>
+                    <Pressable onPress={() => setShowDatePicker(true)} className="flex-row items-center bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800/80 rounded-2xl px-4 py-3.5">
+                      <Calendar size={18} className="text-slate-400 dark:text-slate-500 mr-3" />
+                      <Text className={`flex-1 text-[14px] font-bold ${formData.dob ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}>
+                        {formData.dob || "dd-mm-yyyy"}
+                      </Text>
+                    </Pressable>
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={formData.dob ? new Date(formData.dob) : new Date()}
+                        mode="date"
+                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        onChange={handleDateChange}
+                        maximumDate={new Date()}
+                      />
+                    )}
+                  </>
+                )}
+              </View>
+
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Physical Form No.</Text>
+                <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5">
+                  <FileText size={16} className="text-slate-400 mr-3" />
+                  <TextInput
+                    value={formData.physicalFormNo}
+                    onChangeText={(val) => setFormData(prev => ({ ...prev, physicalFormNo: val }))}
+                    className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+                    placeholder="Enter physical form number"
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Document Uploader (Aadhar, PAN, etc.)</Text>
+                <View className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                  <Text className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                    Upload your identity or reference document (PDF, PNG, JPG). Max file size: 10 MB.
+                  </Text>
+                  
+                  <View className="flex-row flex-wrap gap-2 mb-3">
+                    <Pressable onPress={handlePickDocument} className="flex-row items-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl px-4 py-3">
+                      <FileText size={16} className="text-blue-600 dark:text-blue-400" />
+                      <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                        {documentDataUrl || user?.documentUrl ? "Replace Document" : "Upload Document"}
+                      </Text>
+                    </Pressable>
+
+                    {(removeDocument || documentDataUrl || user?.documentUrl) && (
+                      <Pressable onPress={toggleDocumentRemoval} className="flex-row items-center gap-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl px-4 py-3">
+                        <Trash2 size={16} className="text-rose-600 dark:text-rose-400" />
+                        <Text className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+                          {removeDocument ? "Keep Document" : documentDataUrl ? "Clear Selection" : "Remove"}
+                        </Text>
+                      </Pressable>
+                    )}
+                    
+                    {user?.documentUrl && !removeDocument && !documentDataUrl && (
+                      <Pressable onPress={() => WebBrowser.openBrowserAsync(user.documentUrl)} className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3">
+                        <Link2 size={16} className="text-slate-600 dark:text-slate-300" />
+                        <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">View Current</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  <View className="bg-white dark:bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <Text className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                      {removeDocument ? "Your document will be removed when you save." 
+                        : documentDataUrl ? `Selected: ${documentName}. Click Save Changes.` 
+                        : user?.documentUrl ? `Current: ${user.documentName || "Uploaded File"}` 
+                        : "No document uploaded yet."}
+                    </Text>
+                  </View>
                 </View>
               </View>
               
@@ -478,6 +754,7 @@ export default function SettingsScreen() {
             </View>
           </View>
         )}
+        </View>
       </ScrollView>
     </View>
     

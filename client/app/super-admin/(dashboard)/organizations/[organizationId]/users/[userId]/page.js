@@ -104,6 +104,7 @@ export default function SuperAdminUserDetailPage() {
     emergencyContact: "",
     currentAddress: "",
     permanentAddress: "",
+    dob: "",
     role: "MEMBER",
     approvalStatus: "APPROVED",
     active: true,
@@ -152,6 +153,7 @@ export default function SuperAdminUserDetailPage() {
       emergencyContact: user.emergencyContact || "",
       currentAddress: user.currentAddress || "",
       permanentAddress: user.permanentAddress || "",
+      dob: user.dob || "",
       role: user.role || "MEMBER",
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
@@ -191,6 +193,7 @@ export default function SuperAdminUserDetailPage() {
         emergencyContact: normalizeTextInput(form.emergencyContact),
         currentAddress: normalizeTextInput(form.currentAddress),
         permanentAddress: normalizeTextInput(form.permanentAddress),
+        dob: form.dob,
         permissions: form.permissions,
       }).unwrap();
 
@@ -362,8 +365,28 @@ export default function SuperAdminUserDetailPage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Physical Form No." value={toDisplayText(user.physicalFormNo)} />
+          {user.documentUrl ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-center">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Uploaded Document</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-bold text-slate-800 dark:text-slate-200">{user.documentName || "User Document"}</span>
+                <a
+                  href={user.documentUrl.includes("ik-attachment") ? user.documentUrl : `${user.documentUrl}${user.documentUrl.includes("?") ? "&" : "?"}ik-attachment=true`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline shrink-0"
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+          ) : (
+            <DetailTile label="Uploaded Document" value="No Document" />
+          )}
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
           <DetailTile label="Permanent Address" value={toDisplayText(user.permanentAddress)} />
+          <DetailTile label="Date of Birth" value={toDisplayText(user.dob)} />
           <DetailTile label="Joined On" value={toDateLabel(user.createdAt)} />
           <DetailTile label="Last Login" value={toDateTimeLabel(user.lastLoginAt)} />
           <DetailTile label="Last Updated" value={toDateTimeLabel(user.updatedAt)} />
@@ -448,6 +471,16 @@ export default function SuperAdminUserDetailPage() {
                 value={form.currentAddress}
                 onChange={(event) => setForm((prev) => ({ ...prev, currentAddress: event.target.value }))}
                 rows={2}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Date of Birth</label>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(event) => setForm((prev) => ({ ...prev, dob: event.target.value }))}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>

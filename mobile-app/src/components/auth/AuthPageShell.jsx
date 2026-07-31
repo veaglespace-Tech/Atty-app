@@ -9,19 +9,19 @@ import { cn } from "@/lib/utils";
 import AnimatedLogo from '../AnimatedLogo.jsx';
 
 export const authPageShellClassName =
-"flex-1 justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950";
+"flex-1 justify-center bg-white px-6 py-8 dark:bg-[#0B1120]";
 
 export const authCardClassName =
-"overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900";
+"w-full bg-transparent";
 
 export const authFieldClassName =
-"w-full rounded-[24px] border-2 bg-white px-4 py-4 text-sm text-slate-900 dark:bg-white dark:text-slate-950";
+"w-full rounded-[16px] border bg-slate-50 px-4 py-4 text-[15px] font-medium text-slate-900 dark:bg-[#1E293B] dark:text-white";
 
 export const authFieldNormalClassName =
-"border-slate-200 dark:border-white/80";
+"border-slate-200 dark:border-slate-800 focus:border-blue-500 dark:focus:border-blue-500";
 
 export const authFieldErrorClassName =
-"border-red-400 bg-red-50/70 dark:border-red-300 dark:bg-white";
+"border-red-500 bg-red-50 dark:border-red-500/50 dark:bg-red-950/20";
 
 
 
@@ -40,7 +40,6 @@ export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassN
 
   return (
     <View className={authPageShellClassName}>
-      <View className="absolute left-0 right-0 top-0 h-56 bg-blue-50 dark:bg-slate-900" />
       <SafeAreaView style={{ position: 'absolute', top: 16, left: 16, zIndex: 50 }}>
         <Pressable 
           onPress={() => router.canGoBack() ? router.back() : router.replace('/')} 
@@ -52,21 +51,19 @@ export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassN
 
       <View className={cn("w-full self-center", maxWidthClassName)}>
         <Animated.View entering={FadeInUp.duration(600).springify()} className={cn(authCardClassName, cardClassName)}>
-          <View className="h-1.5 bg-blue-600 dark:bg-blue-400" />
-
-          <View className="p-5">
+          <View className="py-2">
             {eyebrow || title || description ?
             <View className="mb-8 items-center">
                 <AnimatedLogo 
                   style={{ width: 64, height: 64, marginBottom: 16 }}                />
-                {eyebrow ? <SectionEyebrow className="mb-5">{eyebrow}</SectionEyebrow> : null}
+                {eyebrow ? <SectionEyebrow className="mb-4">{eyebrow}</SectionEyebrow> : null}
                 {title ?
-              <Text className="mb-2 text-center text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl md:text-4xl">
+              <Text className="mb-3 text-center text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">
                     {title}
                   </Text> :
               null}
                 {description ?
-              <Text className="text-center font-medium tracking-wide text-slate-500 dark:text-slate-300">
+              <Text className="text-center text-sm font-medium leading-relaxed tracking-wide text-slate-500 dark:text-slate-400">
                     {description}
                   </Text> :
               null}

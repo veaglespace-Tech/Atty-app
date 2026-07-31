@@ -60,7 +60,7 @@ export default function LoginForm() {
         {step === 'LOGIN' && (
           <>
             <View className="group relative">
-              <Text className="mb-1.5 ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <Text className="mb-2 ml-1 text-[13px] font-bold text-slate-700 dark:text-slate-300">
                 Email Address
               </Text>
               <View className="relative justify-center">
@@ -94,8 +94,8 @@ export default function LoginForm() {
             </View>
 
             <View className="group relative">
-              <View className="mb-1.5 flex-row items-center justify-between">
-                <Text className="ml-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="ml-1 text-[13px] font-bold text-slate-700 dark:text-slate-300">
                   Password
                 </Text>
                 <Link href={"/forgot-password"} asChild>
@@ -193,16 +193,16 @@ export default function LoginForm() {
         <Pressable
           disabled={isSubmitting}
           onPress={handleSubmit(onSubmit)}
-          className="group mt-2 flex-row w-full items-center justify-center gap-3 rounded-3xl bg-blue-600 py-5 shadow-[0_28px_70px_rgba(59,130,246,0.32)] active:scale-[0.98] transition-transform dark:bg-blue-400 dark:shadow-[0_24px_60px_rgba(37,99,235,0.24)]"
+          className="group mt-4 flex-row w-full items-center justify-center gap-2 rounded-[16px] bg-blue-600 py-4 shadow-[0_10px_30px_rgba(37,99,235,0.25)] active:opacity-80 transition-opacity dark:bg-blue-500 dark:shadow-none"
         >
           {isSubmitting ? (
             <ActivityIndicator color="white" />
           ) : (
-            <ArrowRight size={20} color="white" className="dark:text-slate-950" />
+            <Text className="font-bold text-white text-[15px]">
+              {step === 'LOGIN' ? 'Sign In' : 'Verify & Sign In'}
+            </Text>
           )}
-          <Text className="font-black text-white dark:text-slate-950 text-base">
-            {step === 'LOGIN' ? 'Sign In' : 'Verify & Sign In'}
-          </Text>
+          {!isSubmitting && <ArrowRight size={18} color="white" />}
         </Pressable>
 
         {hasBiometrics && storedCredentials && step === 'LOGIN' && (

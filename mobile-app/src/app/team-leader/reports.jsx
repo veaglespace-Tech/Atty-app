@@ -125,6 +125,8 @@ export default function TeamLeaderReportsPage(props) {
             <MetricCard label="Present" value={selectedMember.presentDays} icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
             <MetricCard label="Half Day" value={selectedMember.halfDays} icon={<Timer size={16} className="text-amber-500" />} />
             <MetricCard label="Absent" value={selectedMember.absentDays} icon={<XCircle size={16} className="text-rose-500" />} />
+            <MetricCard label="Overtime" value={selectedMember.overtimeDays || 0} icon={<Timer size={16} className="text-purple-500" />} />
+            <MetricCard label="Defaulter" value={selectedMember.defaulterDays || 0} icon={<XCircle size={16} className="text-red-500" />} />
             <MetricCard label="Worked Hrs" value={formatHoursValue(selectedMember.workedHours)} icon={<FileBarChart size={16} className="text-blue-500" />} />
           </View>
 
@@ -261,20 +263,28 @@ export default function TeamLeaderReportsPage(props) {
                   <Text className="text-[10px] font-black uppercase tracking-widest text-blue-500">View Logs</Text>
                 </View>
                 
-                <View className="flex-row justify-between">
-                  <View className="items-center">
+                <View className="flex-row flex-wrap gap-y-3 pt-2">
+                  <View className="w-1/3 items-center">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Pre</Text>
                     <Text className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{report.presentDays}</Text>
                   </View>
-                  <View className="items-center">
-                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Abs</Text>
-                    <Text className="text-sm font-bold text-rose-600 dark:text-rose-400">{report.absentDays}</Text>
-                  </View>
-                  <View className="items-center">
+                  <View className="w-1/3 items-center">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Half</Text>
                     <Text className="text-sm font-bold text-amber-600 dark:text-amber-400">{report.halfDays}</Text>
                   </View>
-                  <View className="items-center">
+                  <View className="w-1/3 items-center">
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Abs</Text>
+                    <Text className="text-sm font-bold text-rose-600 dark:text-rose-400">{report.absentDays}</Text>
+                  </View>
+                  <View className="w-1/3 items-center">
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Over</Text>
+                    <Text className="text-sm font-bold text-purple-600 dark:text-purple-400">{report.overtimeDays || 0}</Text>
+                  </View>
+                  <View className="w-1/3 items-center">
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Def</Text>
+                    <Text className="text-sm font-bold text-red-600 dark:text-red-400">{report.defaulterDays || 0}</Text>
+                  </View>
+                  <View className="w-1/3 items-center">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Hrs</Text>
                     <Text className="text-sm font-bold text-blue-600 dark:text-blue-400">{formatHoursValue(report.workedHours)}</Text>
                   </View>

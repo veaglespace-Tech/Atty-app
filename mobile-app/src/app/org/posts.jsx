@@ -76,32 +76,48 @@ export default function OrgPostsPage() {
   };
 
   const handlePost = async () => {
-    if (!form.content.trim() || !form.title.trim()) {
-      Alert.alert("Error", "Title and content are required.");
+    const titleTrim = form.title.trim();
+    const contentTrim = form.content.trim();
+
+    if (!titleTrim && !contentTrim) {
+      Alert.alert("Required", "Title or content is required to publish a post.");
       return;
     }
-    const payload = { ...form };
-    if (payload.type === "POLL") {
-      const validOptions = payload.metadata.options.filter(o => o.trim());
+
+    const finalTitle = titleTrim || contentTrim.slice(0, 50) || "Notification";
+    const finalContent = contentTrim || titleTrim;
+
+    const payload = {
+      title: finalTitle,
+      content: finalContent,
+      type: form.type || "NOTIFICATION",
+    };
+
+    if (form.type === "POLL") {
+      const validOptions = (form.metadata?.options || []).filter(o => o.trim());
       if (validOptions.length < 2) {
         Alert.alert("Error", "Poll requires at least 2 options.");
         return;
       }
-      payload.metadata.options = validOptions;
-    } else {
-      payload.metadata = undefined;
+      payload.metadata = { options: validOptions };
+    }
+
+    if (Array.isArray(form.attachments) && form.attachments.length > 0) {
+      payload.attachments = form.attachments;
     }
 
     try {
       if (editingId) {
         await updatePost({ id: editingId, ...payload }).unwrap();
+        Alert.alert("Success", "Post updated successfully.");
       } else {
         await createPost(payload).unwrap();
+        Alert.alert("Success", "Post published successfully.");
       }
       resetForm();
     } catch (err) {
       console.error("Failed to post:", err);
-      Alert.alert("Error", "Failed to save post.");
+      Alert.alert("Error", err?.data?.message || err?.message || "Failed to save post.");
     }
   };
 
@@ -307,10 +323,10 @@ export default function OrgPostsPage() {
             </View>
             <Pressable 
               onPress={handlePost}
-              disabled={isCreating || isUpdating || !form.content.trim() || !form.title.trim()}
-              className={`px-5 py-2.5 rounded-full flex-row items-center gap-2 active:scale-[0.96] transition-transform ${(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? 'bg-blue-600 shadow-sm shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
-              {(isCreating || isUpdating) ? <ActivityIndicator size="small" color="#fff" /> : <Send size={14} color={(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? "white" : "#94a3b8"} />}
-              <Text className={`font-bold ${(form.content.trim() && form.title.trim() && !isCreating && !isUpdating) ? 'text-white' : 'text-slate-400'}`}>{editingId ? 'Save' : 'Post'}</Text>
+              disabled={isCreating || isUpdating || (!form.content.trim() && !form.title.trim())}
+              className={`px-5 py-2.5 rounded-full flex-row items-center gap-2 active:scale-[0.96] transition-transform ${((form.content.trim() || form.title.trim()) && !isCreating && !isUpdating) ? 'bg-blue-600 shadow-sm shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
+              {(isCreating || isUpdating) ? <ActivityIndicator size="small" color="#fff" /> : <Send size={14} color={((form.content.trim() || form.title.trim()) && !isCreating && !isUpdating) ? "white" : "#94a3b8"} />}
+              <Text className={`font-bold ${((form.content.trim() || form.title.trim()) && !isCreating && !isUpdating) ? 'text-white' : 'text-slate-400'}`}>{editingId ? 'Save' : 'Post'}</Text>
             </Pressable>
           </View>
         </View>

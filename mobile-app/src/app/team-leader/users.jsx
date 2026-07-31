@@ -6,6 +6,7 @@ import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderUsersQuery } from "@/services/api/teamLeaderApi";
 import { useCreateOrgUserMutation } from "@/services/api/orgApi";
 import { getDefaultPermissionsForRole } from "@/utils/roles";
+import OrgUserTableRow from "@/components/org/users/OrgUserTableRow";
 
 export default function TeamLeaderUsersPage(props) {
   const { colorScheme } = useColorScheme();
@@ -126,27 +127,8 @@ export default function TeamLeaderUsersPage(props) {
             <Text className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">
               {filteredUsers.length} Members Found
             </Text>
-            {filteredUsers.map((user) => (
-              <View key={user.id} className="bg-white dark:bg-slate-900/80 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 shadow-sm shadow-slate-200/50 dark:shadow-none flex-row items-center gap-4">
-                <View className="h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-900/20 items-center justify-center border border-blue-100 dark:border-blue-800/30">
-                  <UserCircle2 size={24} className="text-blue-400 dark:text-blue-500" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>{user.name}</Text>
-                  <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">{user.email}</Text>
-                  {user.mobile ? (
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">{user.mobileCountryCode} {user.mobile}</Text>
-                  ) : null}
-                </View>
-                <View className="items-end gap-2">
-                  <View className={`px-2 py-1 rounded-full border ${user.active ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800/50'}`}>
-                    <Text className={`text-[10px] font-black uppercase tracking-[0.1em] ${user.active ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-                      {user.active ? "ACTIVE" : "BLOCKED"}
-                    </Text>
-                  </View>
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-blue-500">{user.role.replace("_", " ")}</Text>
-                </View>
-              </View>
+            {filteredUsers.map((user, idx) => (
+              <OrgUserTableRow key={user.id} user={user} index={idx} />
             ))}
           </View>
         )}

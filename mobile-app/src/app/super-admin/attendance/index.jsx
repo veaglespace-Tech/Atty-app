@@ -291,14 +291,17 @@ export default function AttendancePage() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="p-5">
                 {/* Table Header */}
-                <View className="flex-row items-center pb-3 border-b border-slate-100 dark:border-slate-800/50 min-w-[800px]">
+                <View className="flex-row items-center pb-3 border-b border-slate-100 dark:border-slate-800/50 min-w-[1000px]">
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-48 pr-2">Member</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-48 pr-2">Organization</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32">Role</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Present</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Half Day</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Absent</Text>
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-right">Worked Hours</Text>                </View>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Overtime</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Defaulter</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-right">Worked Hours</Text>
+                </View>
 
                 {/* Table Rows */}
                 {currentReports.map((report, index) => {
@@ -307,7 +310,7 @@ export default function AttendancePage() {
                   <Pressable 
                     key={targetId !== 'unknown' ? targetId : index} 
                     onPress={() => router.push(`/super-admin/attendance/member/${targetId}?memberName=${encodeURIComponent(report.member || "")}&orgName=${encodeURIComponent(report.orgName || "")}&orgCode=${encodeURIComponent(report.orgCode || "")}`)}
-                    className="flex-row items-center py-4 border-b border-slate-50 dark:border-slate-800/30 min-w-[800px] active:bg-slate-50 dark:active:bg-slate-800/50"
+                    className="flex-row items-center py-4 border-b border-slate-50 dark:border-slate-800/30 min-w-[1000px] active:bg-slate-50 dark:active:bg-slate-800/50"
                   >
                     <View className="w-48 pr-2">
                       <Text className="text-xs font-bold text-slate-900 dark:text-white mb-0.5" numberOfLines={1}>{report.member}</Text>
@@ -321,6 +324,8 @@ export default function AttendancePage() {
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.presentDays}</Text>
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.halfDays}</Text>
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.absentDays}</Text>
+                    <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.overtimeDays || 0}</Text>
+                    <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.defaulterDays || 0}</Text>
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-32 text-right">{report.workedHours?.toFixed(2) || "0.00"} hrs</Text>
                   </Pressable>
                   );

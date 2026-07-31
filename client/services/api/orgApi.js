@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments", "OrgDepartments"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -266,6 +266,20 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    downloadOrgDepartmentsExcel: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/departments/excel${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadOrgDepartmentsPdf: builder.mutation({
+      query: (params = "") => ({
+        url: `/org/departments/pdf${params ? `?${params}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
     getOrgInstruments: builder.query({
       query: () => "/org/instruments",
       providesTags: ["OrgInstruments"],
@@ -307,6 +321,48 @@ export const orgApi = createApi({
         body: { assetId },
       }),
       invalidatesTags: ["OrgUsers"],
+    }),
+    getOrgDepartments: builder.query({
+      query: () => "/org/departments",
+      providesTags: ["OrgDepartments"],
+    }),
+    createOrgDepartment: builder.mutation({
+      query: (payload) => ({
+        url: "/org/departments",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgDepartments"],
+    }),
+    patchOrgDepartment: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: `/org/departments/${id}`,
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgDepartments", "OrgUsers"],
+    }),
+    deleteOrgDepartment: builder.mutation({
+      query: (id) => ({
+        url: `/org/departments/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgDepartments", "OrgUsers"],
+    }),
+    assignOrgDepartment: builder.mutation({
+      query: (payload) => ({
+        url: "/org/departments/assign",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgDepartments", "OrgUsers"],
+    }),
+    unassignOrgDepartment: builder.mutation({
+      query: ({ departmentId, userId }) => ({
+        url: `/org/departments/assign/${departmentId}/${userId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgDepartments", "OrgUsers"],
     }),
   }),
 });
@@ -361,4 +417,12 @@ export const {
   useDeleteOrgInstrumentMutation,
   useUnassignOrgInstrumentMutation,
   useUpdateOrgInstrumentAssignmentMutation,
+  useGetOrgDepartmentsQuery,
+  useCreateOrgDepartmentMutation,
+  usePatchOrgDepartmentMutation,
+  useDeleteOrgDepartmentMutation,
+  useAssignOrgDepartmentMutation,
+  useUnassignOrgDepartmentMutation,
+  useDownloadOrgDepartmentsExcelMutation,
+  useDownloadOrgDepartmentsPdfMutation,
 } = orgApi;

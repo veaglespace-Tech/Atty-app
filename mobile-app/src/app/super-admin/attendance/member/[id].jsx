@@ -86,7 +86,7 @@ export default function MemberAttendancePage() {
         {/* Logs Table */}
         <View className="bg-white dark:bg-[#151E2F] rounded-[24px] border border-slate-200 dark:border-[#1E293B] shadow-sm overflow-hidden mb-6">
           <View className="px-5 py-4 border-b border-slate-100 dark:border-[#1E293B] flex-row justify-between items-center">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Daily Attendance Logs ({logs.length} Entries)</Text>
+            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">Daily Attendance ({logs.length} Entries)</Text>
             <Pressable onPress={() => refetch()} className="flex-row items-center border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5 active:bg-slate-50 dark:active:bg-slate-800">
               <RefreshCw size={12} className="text-slate-600 dark:text-slate-400 mr-2" />
               <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Refresh Logs</Text>

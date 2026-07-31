@@ -4,6 +4,7 @@ import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 import { useColorScheme } from "nativewind";
+import { useGetOrgNotificationsQuery, useGetOrgRegistrationRequestsQuery } from "@/services/api/orgApi";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { logout } from "@/store/slices/authSlice";
@@ -12,6 +13,53 @@ import { API_BASE_URL } from "@/services/api/baseApi";
 import AnimatedLogo from '../AnimatedLogo.jsx';
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer 
+
+const HeaderBadges = ({ user, isDark }) => {
+  const role = user?.currentRole || user?.role;
+  const rawRoot = DASHBOARD_ROOT_BY_ROLE[role] || "org";
+  const cleanRoot = `/${rawRoot.replace(/^\//, '')}`;
+  
+  const canSeeRequests = user ? (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS) || hasPermission(user, PERMISSIONS.USERS.CREATE)) : false;
+  
+  const { data: notificationsData } = useGetOrgNotificationsQuery(undefined, { skip: !user });
+  const { data: regData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !canSeeRequests });
+
+  if (!user) return null;
+
+  const unreadCount = notificationsData?.notifications?.filter(n => !n.isRead)?.length || 0;
+  const pendingRequestsCount = regData?.data?.filter(r => r.status === 'PENDING')?.length || 0;
+
+  const reqPath = role === ROLES.TEAM_LEADER ? `/team-leader/requests` : `/org/registration-requests`;
+
+  return (
+    <View className="flex-row items-center mr-3" style={{ gap: 12 }}>
+      {canSeeRequests && (
+        <Pressable 
+          onPress={() => router.push(reqPath)}
+          className="relative items-center justify-center h-10 w-10 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm active:scale-95 transition-transform"
+        >
+          <ClipboardCheck size={20} color={isDark ? "#ffffff" : "#0f172a"} />
+          {pendingRequestsCount > 0 && (
+            <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white dark:border-slate-900">
+              <Text className="text-white text-[9px] font-bold">{pendingRequestsCount > 99 ? '99+' : pendingRequestsCount}</Text>
+            </View>
+          )}
+        </Pressable>
+      )}
+      <Pressable 
+        onPress={() => router.push(`${cleanRoot}/notifications`)}
+        className="relative items-center justify-center h-10 w-10 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm active:scale-95 transition-transform"
+      >
+        <Bell size={20} color={isDark ? "#ffffff" : "#0f172a"} />
+        {unreadCount > 0 && (
+          <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white dark:border-slate-900">
+            <Text className="text-white text-[9px] font-bold">{unreadCount > 99 ? '99+' : unreadCount}</Text>
+          </View>
+        )}
+      </Pressable>
+    </View>
+  );
+};
 
 export const getFullImageUrl = (url) => {
   if (!url) return null;
@@ -46,7 +94,6 @@ const getTabsForRole = (user) => {
       { title: "Roles", icon: <Shield {...commonIconProps} />, href: "roles" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-      { title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" },
       { title: "Analytics", icon: <FileBarChart {...commonIconProps} />, href: "analytics" },
       { title: "Backup", icon: <Database {...commonIconProps} />, href: "backup" }
     ];
@@ -56,8 +103,9 @@ const getTabsForRole = (user) => {
     return [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
-      { title: "Attendance Logs", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
+      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
       { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
+      { title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" },
       { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
       { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" },
       { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
@@ -65,7 +113,6 @@ const getTabsForRole = (user) => {
       { title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" },
       { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-      { title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" },
       { title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" },
       { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
     ];
@@ -77,12 +124,13 @@ const getTabsForRole = (user) => {
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
     ];
     if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL) || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_TEAM)) {
-      tabs.push({ title: "Attendance Logs", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+      tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
     }
     if (hasPermission(user, PERMISSIONS.USERS.VIEW) || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
     }
     if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) || hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN)) {
+      tabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
     if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
@@ -101,7 +149,7 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-    tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
+    // tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
     tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
     return tabs;
   }
@@ -112,9 +160,10 @@ const getTabsForRole = (user) => {
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" }
     ];
     if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_TEAM) || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
-      tabs.push({ title: "Attendance Logs", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+      tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
     }
-    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
+    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) || hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN)) {
+      tabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
     if (hasPermission(user, PERMISSIONS.USERS.VIEW)) {
@@ -133,7 +182,7 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-    tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
+    // tabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
     tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
     return tabs;
   }
@@ -146,20 +195,21 @@ const getTabsForRole = (user) => {
   if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_OWN) || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
     memberTabs.push({ title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
   }
-  if (hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
+  if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) || hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN)) {
+    memberTabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
     memberTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
   }
   if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
     memberTabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
   }
-  if (hasPermission(user, PERMISSIONS.POSTS.CREATE) || hasPermission(user, PERMISSIONS.POSTS.VIEW)) {
-    memberTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
-  }
+  // if (hasPermission(user, PERMISSIONS.POSTS.CREATE) || hasPermission(user, PERMISSIONS.POSTS.VIEW)) {
+  //   memberTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
+  // }
   if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
     memberTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
   memberTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-  memberTabs.push({ title: "तिची सुरक्षा", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
+  memberTabs.push({ title: "Her Security", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
   memberTabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
   
   return memberTabs;
@@ -257,24 +307,33 @@ export default function MobileDashboardShell({ children }) {
             )}
           </View>
 
-          {/* Right Side: Profile Info */}
-          <Pressable
-            onPress={() => router.push('/org/settings')}
-            className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform z-10 shadow-sm overflow-hidden"
-          >
-            {headerProfileUrl && !avatarError ? (
-              <Image 
-                source={{ uri: headerProfileUrl }} 
-                style={{ width: '100%', height: '100%' }} 
-                resizeMode="cover" 
-                onError={() => setAvatarError(true)}
-              />
-            ) : (
-              <Text className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
-                {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
-              </Text>
-            )}
-          </Pressable>
+          {/* Right Side: Profile Info & Badges */}
+          <View className="flex-row items-center z-10">
+            <HeaderBadges user={user} isDark={isDark} />
+            
+            <Pressable
+              onPress={() => {
+                const activeRole = user?.currentRole || user?.role;
+                const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
+                const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/org";
+                router.push(`${basePath}/settings`);
+              }}
+              className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform shadow-sm overflow-hidden"
+            >
+              {headerProfileUrl && !avatarError ? (
+                <Image 
+                  source={{ uri: headerProfileUrl }} 
+                  style={{ width: '100%', height: '100%' }} 
+                  resizeMode="cover" 
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <Text className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
+                  {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
+                </Text>
+              )}
+            </Pressable>
+          </View>
         </View>
       )}
 

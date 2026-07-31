@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Image } from 'react-native';
+import { View, Text, ScrollView, Image, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
@@ -21,7 +21,7 @@ export default function Home() {
   }, [hydrated, token, user, redirectPath, router]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <SafeAreaView className="flex-1 bg-white dark:bg-[#0B1120]">
       <StatusBar style="auto" />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
         <View className="flex-1 items-center justify-center px-6 py-16">
@@ -64,16 +64,17 @@ export default function Home() {
             Manage attendance, teams, and daily check-ins in one place with a system that feels clear, fast, and easy to use.
           </Text>
 
-          {/* Action Buttons using our new UI Component */}
-          <View className="w-full max-w-sm gap-4">
+          {/* Action Buttons */}
+          <View className="w-full max-w-sm mt-4">
             <Link href="/login" asChild>
-              <Button
-                variant="primary"
-                size="lg"
-                rightIcon={<ArrowRight size={22} color="white" />}
-                className="w-full">
-                Sign In
-              </Button>
+              <Pressable
+                className="group flex-row w-full items-center justify-center gap-2 rounded-[16px] bg-blue-600 py-4 shadow-[0_10px_30px_rgba(37,99,235,0.25)] active:opacity-80 transition-opacity dark:bg-blue-500 dark:shadow-none"
+              >
+                <Text className="font-bold text-white text-[15px]">
+                  Sign In
+                </Text>
+                <ArrowRight size={18} color="white" />
+              </Pressable>
             </Link>
           </View>
           

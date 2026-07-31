@@ -64,7 +64,7 @@ export default function AttendanceFaceCaptureModal({
               width={PREVIEW_SIZE}
               height={PREVIEW_SIZE}
               unoptimized
-              className="h-[320px] w-full object-contain sm:h-[420px]"
+              className="h-[320px] w-full object-cover sm:h-[420px]"
             />
           ) : (
             <div className="relative h-[320px] sm:h-[420px]">
@@ -73,7 +73,7 @@ export default function AttendanceFaceCaptureModal({
                 autoPlay
                 playsInline
                 muted
-                className="h-full w-full object-contain"
+                className="h-full w-full object-cover"
               />
 
               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent px-5 pb-5 pt-16">

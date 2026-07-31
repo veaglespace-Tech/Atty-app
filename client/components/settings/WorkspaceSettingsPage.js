@@ -9,6 +9,7 @@ import {
   Check,
   Clock,
   Copy,
+  FileText,
   ImageUp,
   Globe,
   Link2,
@@ -31,7 +32,7 @@ import { z } from "zod";
 import ThemeToggle from "@/components/ThemeToggle";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import UserAvatar from "@/components/UserAvatar";
-import { useForgotPasswordMutation, useUpdateMeMutation } from "@/services/api/authApi";
+import { useForgotPasswordMutation, useUpdateMeMutation, useGetMeQuery } from "@/services/api/authApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { addNotification } from "@/store/slices/notificationSlice";
 import {
@@ -49,6 +50,7 @@ import {
   useUpdateOrgAttendanceSettingsMutation,
   useUpdateOrgLogoMutation,
   useUpdateOrgDetailsMutation,
+  useGetOrgDepartmentsQuery,
 } from "@/services/api/orgApi";
 import {
   PERSON_NAME_REGEX,
@@ -96,7 +98,10 @@ const getSettingsSchema = (isAdmin) => z.object({
   permanentAddress: z.string().trim().optional(),
   bloodGroup: z.string().trim().optional(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
-  existingMember: z.enum(["SENIOR", "JUNIOR", "senior", "junior"]).optional().or(z.literal("")),
+  dob: z.string().trim().optional(),
+  existingMember: z.enum(["SENIOR", "SEMI_SENIOR", "JUNIOR", "senior", "semi_senior", "junior"]).optional().or(z.literal("")),
+  departmentId: z.any().optional(),
+  physicalFormNo: z.string().trim().optional(),
 });
 
 const labelClassName = "brand-kicker mb-1.5 ml-1 block";
@@ -127,7 +132,10 @@ const getFormDefaults = (user) => ({
   permanentAddress: user?.permanentAddress || "",
   bloodGroup: user?.bloodGroup || "",
   gender: user?.gender || "",
+  dob: user?.dob || "",
   existingMember: user?.existingMember?.toUpperCase() || "",
+  departmentId: user?.departmentId ? String(user.departmentId) : "",
+  physicalFormNo: user?.physicalFormNo || "",
 });
 
 function DetailCard({ icon: Icon, label, value }) {
@@ -859,15 +867,31 @@ export default function WorkspaceSettingsPage() {
   const { user } = useSelector((state) => state.auth);
   const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
   const [forgotPassword, { isLoading: sendingResetLink }] = useForgotPasswordMutation();
+  const { data: meData } = useGetMeQuery();
+  const organizationId = getUserOrganizationId(user);
+  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !organizationId });
+  const departmentsList = deptData?.items || [];
+
+  useEffect(() => {
+    if (meData?.user) {
+      dispatch(setCurrentUser(meData.user));
+    }
+  }, [meData, dispatch]);
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImageError, setProfileImageError] = useState("");
   const profileImageInputRef = useRef(null);
+
+  const [documentDataUrl, setDocumentDataUrl] = useState("");
+  const [documentName, setDocumentName] = useState("");
+  const [removeDocument, setRemoveDocument] = useState(false);
+  const [documentError, setDocumentError] = useState("");
+  const documentInputRef = useRef(null);
+
   const currentRole = user?.currentRole;
   const effectiveRole = currentRole || user?.role || ROLES.MEMBER;
   const roleLabel = formatRoleLabel(effectiveRole);
   const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN;
-  const organizationId = getUserOrganizationId(user);
   const permissionsCount = resolveUserPermissions(user).length;
   const workspaceCode = user?.organizationCode || user?.organization?.organizationCode || null;
   const referralCode = user?.organization?.referralCode || null;
@@ -883,6 +907,49 @@ export default function WorkspaceSettingsPage() {
   const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
   const canSkipEmergencyContact = hasPermission(user, PERMISSIONS.USERS.CREATE) || isSuperAdmin;
 
+  const onDocumentSelected = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setDocumentError("Document file size must be 10 MB or smaller.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDocumentDataUrl(reader.result);
+      setDocumentName(file.name);
+      setRemoveDocument(false);
+      setDocumentError("");
+    };
+    reader.onerror = () => {
+      setDocumentError("Failed to read the selected document.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const toggleDocumentRemoval = () => {
+    setDocumentError("");
+
+    if (removeDocument) {
+      setRemoveDocument(false);
+      return;
+    }
+
+    if (documentDataUrl) {
+      setDocumentDataUrl("");
+      setDocumentName("");
+      return;
+    }
+
+    if (user?.documentUrl) {
+      setRemoveDocument(true);
+    }
+  };
+
   const {
     control,
     register,
@@ -897,8 +964,10 @@ export default function WorkspaceSettingsPage() {
   });
 
   useEffect(() => {
-    reset(getFormDefaults(user));
-  }, [user, reset]);
+    if (user) {
+      reset(getFormDefaults(user));
+    }
+  }, [user, reset, departmentsList]);
 
   const formValues = useWatch({ control });
   const previewName = formValues.name || user?.name || "Workspace User";
@@ -911,7 +980,10 @@ export default function WorkspaceSettingsPage() {
   const previewProfileImageUrl =
     profileImageDataUrl || (removeProfileImage ? "" : currentProfileImageUrl);
   const hasPendingProfileImageChange = Boolean(profileImageDataUrl) || removeProfileImage;
-  const canSubmit = isDirty || hasPendingProfileImageChange;
+  const hasPendingDocumentChange = Boolean(documentDataUrl) || removeDocument;
+  const isDepartmentChanged = String(formValues.departmentId || "") !== String(user?.departmentId || "");
+  const isDobChanged = String(formValues.dob || "") !== String(user?.dob || "");
+  const canSubmit = isDirty || hasPendingProfileImageChange || hasPendingDocumentChange || isDepartmentChanged || isDobChanged;
 
   const completionState = useMemo(() => {
     if (!user) return { percentage: 0, missing: [] };
@@ -926,6 +998,7 @@ export default function WorkspaceSettingsPage() {
       { key: "currentAddress", label: "Current Address" },
       { key: "permanentAddress", label: "Permanent Address" },
       { key: "bloodGroup", label: "Blood Group" },
+      { key: "dob", label: "Date of Birth" },
       { key: "profileImageUrl", label: "Profile Image" },
     ];
     
@@ -970,6 +1043,10 @@ export default function WorkspaceSettingsPage() {
     setProfileImageDataUrl("");
     setRemoveProfileImage(false);
     setProfileImageError("");
+    setDocumentDataUrl("");
+    setDocumentName("");
+    setRemoveDocument(false);
+    setDocumentError("");
   };
 
   const compressImage = (file) =>
@@ -1053,6 +1130,7 @@ export default function WorkspaceSettingsPage() {
 
   const onSubmit = async (values) => {
     setProfileImageError("");
+    setDocumentError("");
 
     const nextMobile = values.mobile.trim();
     const nextMobileCountryCode = values.mobileCountryCode.trim();
@@ -1071,12 +1149,22 @@ export default function WorkspaceSettingsPage() {
     payload.permanentAddress = values.permanentAddress;
     payload.bloodGroup = values.bloodGroup;
     payload.gender = values.gender;
+    payload.dob = values.dob;
     payload.existingMember = values.existingMember;
+    payload.departmentId = values.departmentId ? Number(values.departmentId) : null;
+    payload.physicalFormNo = values.physicalFormNo ? values.physicalFormNo.trim() : "";
 
     if (profileImageDataUrl) {
       payload.profileImageDataUrl = profileImageDataUrl;
     } else if (removeProfileImage) {
       payload.removeProfileImage = true;
+    }
+
+    if (documentDataUrl) {
+      payload.documentDataUrl = documentDataUrl;
+      payload.documentName = documentName;
+    } else if (removeDocument) {
+      payload.removeDocument = true;
     }
 
     try {
@@ -1086,6 +1174,10 @@ export default function WorkspaceSettingsPage() {
       setProfileImageDataUrl("");
       setRemoveProfileImage(false);
       setProfileImageError("");
+      setDocumentDataUrl("");
+      setDocumentName("");
+      setRemoveDocument(false);
+      setDocumentError("");
       dispatch(
         addNotification({
           type: "success",
@@ -1252,14 +1344,62 @@ export default function WorkspaceSettingsPage() {
               </div>
             </div>
 
+            {/* Document Upload Card */}
+            <div className="light-glow-card-static rounded-[1.75rem] p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Document Uploader (Aadhar, PAN, etc.)</h3>
+              <p className="brand-copy-sm mt-1 mb-6">Upload your identity or reference document (PDF, PNG, JPG, WEBP). Max file size: 10 MB.</p>
+              
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <input ref={documentInputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={onDocumentSelected} />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={() => documentInputRef.current?.click()} className="brand-btn brand-btn-secondary brand-btn-md">
+                      <FileText size={16} /> {documentDataUrl || user?.documentUrl ? "Replace Document" : "Upload Document"}
+                    </button>
+                    {(removeDocument || documentDataUrl || user?.documentUrl) ? (
+                      <button type="button" onClick={toggleDocumentRemoval} className="brand-btn brand-btn-secondary brand-btn-md">
+                        <Trash2 size={16} /> {removeDocument ? "Keep Current Document" : documentDataUrl ? "Clear Selection" : "Remove Document"}
+                      </button>
+                    ) : null}
+                    {user?.documentUrl && !removeDocument && !documentDataUrl ? (
+                      <a href={user.documentUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                        <Link2 size={14} /> View Uploaded Document ({user.documentName || "File"})
+                      </a>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {removeDocument ? "Your document will be removed when you save." : documentDataUrl ? `Selected file: ${documentName}. Click Save Changes to upload.` : user?.documentUrl ? `Current document: ${user.documentName || "Uploaded File"}` : "No document uploaded yet."}
+                  </p>
+                  {documentError && <p className="mt-2 text-xs font-semibold text-rose-500">{documentError}</p>}
+                </div>
+              </div>
+            </div>
+
             {/* Basic Details Card */}
             <div className="light-glow-card-static rounded-[1.75rem] p-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Basic Details</h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Basic Details</h3>
+                {canSubmit && (
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="brand-btn brand-btn-primary brand-btn-sm flex items-center gap-1.5"
+                  >
+                    {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                    <span>Save Changes</span>
+                  </button>
+                )}
+              </div>
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <label htmlFor="settings-name" className={labelClassName}>Full Name</label>
                   <input id="settings-name" type="text" placeholder="Your full name" aria-invalid={errors.name ? "true" : "false"} className={cn(inputClassName, errors.name ? errorInputClassName : "")} {...register("name")} />
                   {errors.name && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-physicalFormNo" className={labelClassName}>Physical Form No.</label>
+                  <input id="settings-physicalFormNo" type="text" placeholder="Enter Physical Form No." aria-invalid={errors.physicalFormNo ? "true" : "false"} className={cn(inputClassName, errors.physicalFormNo ? errorInputClassName : "")} {...register("physicalFormNo")} />
+                  {errors.physicalFormNo && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.physicalFormNo.message}</p>}
                 </div>
                 <div>
                   <label htmlFor="settings-bloodGroup" className={labelClassName}>Blood Group</label>
@@ -1281,13 +1421,31 @@ export default function WorkspaceSettingsPage() {
                   {errors.gender && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.gender.message}</p>}
                 </div>
                 <div>
+                  <label htmlFor="settings-dob" className={labelClassName}>Date of Birth</label>
+                  <input id="settings-dob" type="date" aria-invalid={errors.dob ? "true" : "false"} className={cn(inputClassName, errors.dob ? errorInputClassName : "")} {...register("dob")} />
+                  {errors.dob && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.dob.message}</p>}
+                </div>
+                <div>
                   <label htmlFor="settings-existingMember" className={labelClassName}>Member Type</label>
                   <select id="settings-existingMember" aria-invalid={errors.existingMember ? "true" : "false"} className={cn(inputClassName, errors.existingMember ? errorInputClassName : "")} {...register("existingMember")}>
                     <option value="">Select Member Type</option>
                     <option value="SENIOR">Senior</option>
+                    <option value="SEMI_SENIOR">Semi-Senior</option>
                     <option value="JUNIOR">Junior</option>
                   </select>
                   {errors.existingMember && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.existingMember.message}</p>}
+                </div>
+                <div>
+                  <label htmlFor="settings-departmentId" className={labelClassName}>Department</label>
+                  <select id="settings-departmentId" aria-invalid={errors.departmentId ? "true" : "false"} className={cn(inputClassName, errors.departmentId ? errorInputClassName : "")} {...register("departmentId")}>
+                    <option value="">Select Department</option>
+                    {departmentsList.map((d) => (
+                      <option key={d.id} value={String(d.id)}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.departmentId && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.departmentId.message}</p>}
                 </div>
               </div>
             </div>

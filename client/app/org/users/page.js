@@ -35,8 +35,8 @@ import {
   validateManagedUserForm,
 } from "@/utils/formValidation";
 
-const STATUS_OPTIONS = ["APPROVED", "PENDING"];
-const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
+const STATUS_OPTIONS = ["APPROVED", "PENDING", "BLOCKED"];
+const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED", "BLOCKED"];
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
 
@@ -69,6 +69,7 @@ export default function OrgUsersPage() {
     email: "",
     mobileCountryCode: "+91",
     mobile: "",
+    dob: "",
     role: ROLES.MEMBER,
     status: "APPROVED",
     password: "",
@@ -192,6 +193,7 @@ export default function OrgUsersPage() {
       email: "",
       mobileCountryCode: "+91",
       mobile: "",
+      dob: "",
       role: ROLES.MEMBER,
       status: "APPROVED",
       password: "",
@@ -229,6 +231,7 @@ export default function OrgUsersPage() {
         email: nextEmail,
         mobileCountryCode: form.mobileCountryCode,
         mobile: nextMobile,
+        dob: form.dob,
         role: form.role,
         status: form.status,
         permissions: form.permissions,
@@ -439,6 +442,17 @@ export default function OrgUsersPage() {
             ))}
           </select>
 
+          <div>
+            <label className="ml-1 block text-[11px] font-black uppercase tracking-widest leading-none text-slate-500 mb-1.5 dark:text-slate-400">Date of Birth</label>
+            <input
+              type="date"
+              name="dob"
+              value={form.dob}
+              onChange={onInputChange}
+              className={fieldClassName}
+            />
+          </div>
+
           <PasswordInput
             icon={null}
             name="password"
@@ -555,6 +569,7 @@ export default function OrgUsersPage() {
               >
                 <option value="ALL">All Member Types</option>
                 <option value="SENIOR">Senior</option>
+                <option value="SEMI_SENIOR">Semi-Senior</option>
                 <option value="JUNIOR">Junior</option>
               </select>
               <select

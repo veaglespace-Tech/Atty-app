@@ -78,6 +78,7 @@ const joinSchema = z
       .regex(/[!@#$%^&*(),.?\":{}|<>]/, "Password must contain at least one special character"),
     confirmPassword: z.string(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }),
+    dob: z.string().trim().min(1, "Date of birth is required"),
     bloodGroup: z.string().optional(),
     city: z
       .string()
@@ -333,6 +334,14 @@ export default function JoinPage() {
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
             </select>
+          </Field>
+
+          <Field label="Date of Birth" error={errors.dob?.message}>
+            <input
+              type="date"
+              {...register("dob")}
+              className={`${fieldClassName} ${errors.dob ? errorFieldClassName : normalFieldClassName}`}
+            />
           </Field>
 
           <Field label="Blood Group" error={errors.bloodGroup?.message}>

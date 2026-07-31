@@ -121,6 +121,8 @@ const STATUS_OPTIONS = [
   { value: "PRESENT", label: "Present" },
   { value: "ABSENT", label: "Absent" },
   { value: "HALF_DAY", label: "Half Day" },
+  { value: "OVERTIME", label: "Overtime" },
+  { value: "DEFAULTER", label: "Defaulter" },
 ];
 
 const todayKey = getTodayDateKey;
@@ -790,11 +792,13 @@ export default function OrgAttendancePage() {
         />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Records" value={summaryMap.get("Records") || 0} />
         <MetricCard label="Present" value={summaryMap.get("Present") || 0} />
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
+        <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
+        <MetricCard label="Defaulter" value={summaryMap.get("Defaulter") || 0} />
       </div>
 
       {canSetWorkspaceLocation || canManageTeamAttendance ? (
@@ -971,7 +975,6 @@ export default function OrgAttendancePage() {
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -996,7 +999,6 @@ export default function OrgAttendancePage() {
                         {record.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">{formatGeoStatus(record)}</td>
                     </tr>
                   ))}
                 </tbody>

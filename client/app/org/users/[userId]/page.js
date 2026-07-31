@@ -104,6 +104,20 @@ const toListLabel = (items = []) => {
   return values.length ? values.join(", ") : "-";
 };
 
+const getDirectDownloadUrl = (url) => {
+  if (!url || typeof url !== "string") return "#";
+  const trimmed = url.trim();
+  if (trimmed.includes("ik.imagekit.io") || trimmed.includes("imagekit.io")) {
+    if (trimmed.includes("ik-attachment")) return trimmed;
+    return `${trimmed}${trimmed.includes("?") ? "&" : "?"}ik-attachment=true`;
+  }
+  if (trimmed.includes("/uploads/")) {
+    if (trimmed.includes("download=true")) return trimmed;
+    return `${trimmed}${trimmed.includes("?") ? "&" : "?"}download=true`;
+  }
+  return trimmed;
+};
+
 export default function OrgUserDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -125,9 +139,11 @@ export default function OrgUserDetailPage() {
     active: true,
     permissions: [],
     gender: "",
+    dob: "",
     existingMember: "",
     referenceBy: "",
     bloodGroup: "",
+    physicalFormNo: "",
     emergencyContact: "",
     currentAddress: "",
     permanentAddress: "",
@@ -232,9 +248,11 @@ export default function OrgUserDetailPage() {
         ? user.permissions
         : getDefaultPermissionsForRole(normalizeRole(user.role)),
       gender: user.gender || "",
+      dob: user.dob || "",
       existingMember: user.existingMember?.toUpperCase() || "",
       referenceBy: user.referenceBy || "",
       bloodGroup: user.bloodGroup || "",
+      physicalFormNo: user.physicalFormNo || "",
       emergencyContact: user.emergencyContact || "",
       currentAddress: user.currentAddress || "",
       permanentAddress: user.permanentAddress || "",
@@ -269,9 +287,11 @@ export default function OrgUserDetailPage() {
         role: form.role,
         permissions: form.permissions,
         gender: form.gender,
+        dob: form.dob,
         existingMember: form.existingMember,
         referenceBy: form.referenceBy,
         bloodGroup: form.bloodGroup,
+        physicalFormNo: form.physicalFormNo,
         emergencyContact: form.emergencyContact,
         currentAddress: form.currentAddress,
         permanentAddress: form.permanentAddress,
@@ -520,7 +540,27 @@ export default function OrgUserDetailPage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Physical Form No." value={toDisplayText(user.physicalFormNo)} />
+          {user.documentUrl ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
+              <p className="text-xs font-semibold text-slate-500">Uploaded Document</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-bold text-slate-800">{user.documentName || "User Document"}</span>
+                <a
+                  href={getDirectDownloadUrl(user.documentUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-700 underline shrink-0"
+                >
+                  <Download className="h-3.5 w-3.5" /> Download
+                </a>
+              </div>
+            </div>
+          ) : (
+            <DetailTile label="Uploaded Document" value="No Document" />
+          )}
           <DetailTile label="Gender" value={toDisplayText(user.gender)} />
+          <DetailTile label="Date of Birth" value={toDisplayText(user.dob)} />
           <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
           <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
@@ -650,6 +690,17 @@ export default function OrgUserDetailPage() {
             </div>
 
             <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Date of Birth</label>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(event) => setForm((prev) => ({ ...prev, dob: event.target.value }))}
+                disabled={!canEditUser}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
+            </div>
+
+            <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-wide text-slate-500">Member Type</label>
               <select
                 value={form.existingMember}
@@ -659,6 +710,7 @@ export default function OrgUserDetailPage() {
               >
                 <option value="">Select Member Type</option>
                 <option value="SENIOR">Senior</option>
+                <option value="SEMI_SENIOR">Semi-Senior</option>
                 <option value="JUNIOR">Junior</option>
               </select>
             </div>
@@ -681,6 +733,17 @@ export default function OrgUserDetailPage() {
                 <option value="O+">O+</option>
                 <option value="O-">O-</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Physical Form No.</label>
+              <input
+                value={form.physicalFormNo}
+                onChange={(event) => setForm((prev) => ({ ...prev, physicalFormNo: event.target.value }))}
+                disabled={!canEditUser}
+                placeholder="E.g., FORM-101"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 disabled:bg-slate-100"
+              />
             </div>
 
             <div className="space-y-2">

@@ -103,6 +103,7 @@ export default function SuperAdminUserDetailStandalonePage() {
     permanentAddress: "",
     bloodGroup: "",
     gender: "",
+    dob: "",
     existingMember: "",
     referenceBy: "",
     role: "MEMBER",
@@ -157,6 +158,7 @@ export default function SuperAdminUserDetailStandalonePage() {
       permanentAddress: user.permanentAddress || "",
       bloodGroup: user.bloodGroup || "",
       gender: user.gender || "",
+      dob: user.dob || "",
       existingMember: user.existingMember?.toUpperCase() || "",
       referenceBy: user.referenceBy || "",
       role: user.role || "MEMBER",
@@ -201,6 +203,7 @@ export default function SuperAdminUserDetailStandalonePage() {
         permanentAddress: normalizeTextInput(form.permanentAddress),
         bloodGroup: normalizeTextInput(form.bloodGroup),
         gender: form.gender,
+        dob: form.dob,
         existingMember: form.existingMember,
         referenceBy: form.referenceBy,
         permissions: form.permissions,
@@ -375,7 +378,27 @@ export default function SuperAdminUserDetailStandalonePage() {
             <DetailTile label="Emergency Contact" value={toDisplayText(user.emergencyContact)} />
           )}
           <DetailTile label="Blood Group" value={toDisplayText(user.bloodGroup)} />
+          <DetailTile label="Physical Form No." value={toDisplayText(user.physicalFormNo)} />
+          {user.documentUrl ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-center">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Uploaded Document</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-bold text-slate-800 dark:text-slate-200">{user.documentName || "User Document"}</span>
+                <a
+                  href={user.documentUrl.includes("ik-attachment") ? user.documentUrl : `${user.documentUrl}${user.documentUrl.includes("?") ? "&" : "?"}ik-attachment=true`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline shrink-0"
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+          ) : (
+            <DetailTile label="Uploaded Document" value="No Document" />
+          )}
           <DetailTile label="Gender" value={toDisplayText(user.gender)} />
+          <DetailTile label="Date of Birth" value={toDisplayText(user.dob)} />
           <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
           <DetailTile label="Reference By" value={toDisplayText(user.referenceBy)} />
           <DetailTile label="Current Address" value={toDisplayText(user.currentAddress)} />
@@ -502,6 +525,16 @@ export default function SuperAdminUserDetailStandalonePage() {
             </div>
 
             <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Date of Birth</label>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(event) => setForm((prev) => ({ ...prev, dob: event.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Member Type</label>
               <select
                 value={form.existingMember}
@@ -510,6 +543,7 @@ export default function SuperAdminUserDetailStandalonePage() {
               >
                 <option value="">Select Member Type</option>
                 <option value="SENIOR">Senior</option>
+                <option value="SEMI_SENIOR">Semi-Senior</option>
                 <option value="JUNIOR">Junior</option>
               </select>
             </div>

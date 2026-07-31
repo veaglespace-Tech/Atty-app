@@ -11,14 +11,17 @@ import {
   UserCheck,
   XCircle,
   Home,
+  CalendarClock,
 } from "lucide-react";
 import {
   useGetMyAttendanceQuery,
   usePunchInMutation,
   usePunchOutMutation,
   useReachedHomeMutation,
+  useRequestRegularizationMutation,
 } from "@/services/api/attendanceApi";
 import dynamic from "next/dynamic";
+import RegularizationModal from "@/components/attendance/RegularizationModal";
 
 const AttendanceFaceCaptureModal = dynamic(
   () => import("@/components/attendance/AttendanceFaceCaptureModal"),
@@ -93,6 +96,21 @@ export default function MyAttendancePanel({
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isRegularizeModalOpen, setIsRegularizeModalOpen] = useState(false);
+  const [requestRegularizationMutation, { isLoading: isSubmittingRegularization }] = useRequestRegularizationMutation();
+
+  const submitRegularization = async (payload) => {
+    try {
+      setError("");
+      setMessage("");
+      await requestRegularizationMutation(payload).unwrap();
+      setMessage("Regularization request submitted successfully");
+      setIsRegularizeModalOpen(false);
+      await Promise.all([refetch(), runExternalRefresh()]);
+    } catch (err) {
+      setError(err?.data?.message || err?.error || "Failed to submit regularization request");
+    }
+  };
 
   const {
     data,
@@ -243,14 +261,26 @@ export default function MyAttendancePanel({
             Punch Out
           </button>
 
+          {currentRole !== "ORG_ADMIN" && (
+            <button
+              type="button"
+              onClick={() => submitPunch("home")}
+              disabled={loading || !canReachedHome || actionLoading !== ""}
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+            >
+              {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <Home size={16} />}
+              Reached Home
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => submitPunch("home")}
-            disabled={loading || !canReachedHome || actionLoading !== ""}
-            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+            onClick={() => setIsRegularizeModalOpen(true)}
+            disabled={loading || isSubmittingRegularization}
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2"
           >
-            {actionLoading === "home" ? <Loader2 size={16} className="animate-spin" /> : <Home size={16} />}
-            Reached Home
+            <CalendarClock size={16} />
+            Request Regularization
           </button>
         </div>
 
@@ -283,7 +313,9 @@ export default function MyAttendancePanel({
           <Snapshot label="Today Status" value={todayStatusValue} />
           <Snapshot label="Punch In" value={formatDateTime(todayRecord?.punchInAt)} />
           <Snapshot label="Punch Out" value={formatDateTime(todayRecord?.punchOutAt)} />
-          <Snapshot label="Reached Home" value={formatDateTime(todayRecord?.reachedHomeAt)} />
+          {currentRole !== "ORG_ADMIN" && (
+            <Snapshot label="Reached Home" value={formatDateTime(todayRecord?.reachedHomeAt)} />
+          )}
         </div>
       </div>
 
@@ -367,10 +399,11 @@ export default function MyAttendancePanel({
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
+                    {currentRole !== "ORG_ADMIN" && (
+                      <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Reached Home</th>
+                    )}
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
@@ -381,12 +414,11 @@ export default function MyAttendancePanel({
                       <td className="px-3 py-2 text-slate-700">{record.status}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
+                      {currentRole !== "ORG_ADMIN" && (
+                        <td className="px-3 py-2 text-slate-700">{formatDateTime(record.reachedHomeAt)}</td>
+                      )}
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">
-                        {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
-                      </td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks
                           punchInSelfieUrl={record.punchInSelfieUrl}
@@ -408,6 +440,13 @@ export default function MyAttendancePanel({
         isSubmitting={actionLoading !== ""}
         onClose={() => setPendingPunchType("")}
         onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)}
+      />
+
+      <RegularizationModal
+        open={isRegularizeModalOpen}
+        onClose={() => setIsRegularizeModalOpen(false)}
+        onSubmit={submitRegularization}
+        isSubmitting={isSubmittingRegularization}
       />
     </section>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import * as faceapi from "@vladmandic/face-api";
+import { Platform } from "react-native";
 
 const PREVIEW_SIZE = 640;
 
@@ -35,15 +35,13 @@ export function useAttendanceCamera({ open, onClose }) {
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
   useEffect(() => {
-    const loadModels = async () => {
-      try {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        setModelsLoaded(true);
-      } catch (err) {
-        console.error("Failed to load face detection models", err);
-      }
-    };
-    loadModels();
+    if (Platform.OS === "web" && typeof window !== "undefined" && window.faceapi) {
+      window.faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+        .then(() => setModelsLoaded(true))
+        .catch(err => console.error("Failed to load face detection models", err));
+    } else {
+      setModelsLoaded(true);
+    }
   }, []);
 
   const stopStream = () => {
@@ -55,7 +53,7 @@ export function useAttendanceCamera({ open, onClose }) {
 
   const startCamera = async () => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setCameraError("Camera access is not supported in this browser.");
+      setCameraError("Camera access is not supported in this environment.");
       return;
     }
 
@@ -99,7 +97,7 @@ export function useAttendanceCamera({ open, onClose }) {
     const openCamera = async () => {
       if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
         if (!cancelled) {
-          setCameraError("Camera access is not supported in this browser.");
+          setCameraError("Camera access is not supported in this environment.");
         }
         return;
       }
@@ -154,28 +152,25 @@ export function useAttendanceCamera({ open, onClose }) {
       return;
     }
 
-    if (!modelsLoaded) {
-      setCameraError("Face detection models are still loading. Please wait...");
-      return;
-    }
-
-    try {
-      setIsCapturing(true);
-      const detections = await faceapi.detectAllFaces(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 })
-      );
-      
-      if (detections.length === 0) {
-        setCameraError("No face detected. Please ensure your face is clearly visible.");
+    if (Platform.OS === "web" && typeof window !== "undefined" && window.faceapi) {
+      try {
+        setIsCapturing(true);
+        const detections = await window.faceapi.detectAllFaces(
+          videoRef.current,
+          new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 })
+        );
+        
+        if (detections.length === 0) {
+          setCameraError("No face detected. Please ensure your face is clearly visible.");
+          setIsCapturing(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Face detection error:", err);
+        setCameraError("Face detection failed. Please try again.");
         setIsCapturing(false);
         return;
       }
-    } catch (err) {
-      console.error("Face detection error:", err);
-      setCameraError("Face detection failed. Please try again.");
-      setIsCapturing(false);
-      return;
     }
 
     const video = videoRef.current;
@@ -186,9 +181,12 @@ export function useAttendanceCamera({ open, onClose }) {
       return;
     }
 
+    const sourceSize = Math.min(sourceWidth, sourceHeight);
+    const offsetX = Math.max(0, Math.floor((sourceWidth - sourceSize) / 2));
+    const offsetY = Math.max(0, Math.floor((sourceHeight - sourceSize) / 2));
     const canvas = document.createElement("canvas");
-    canvas.width = sourceWidth;
-    canvas.height = sourceHeight;
+    canvas.width = PREVIEW_SIZE;
+    canvas.height = PREVIEW_SIZE;
     const context = canvas.getContext("2d");
 
     if (!context) {
@@ -196,7 +194,17 @@ export function useAttendanceCamera({ open, onClose }) {
       return;
     }
 
-    context.drawImage(video, 0, 0, sourceWidth, sourceHeight);
+    context.drawImage(
+      video,
+      offsetX,
+      offsetY,
+      sourceSize,
+      sourceSize,
+      0,
+      0,
+      PREVIEW_SIZE,
+      PREVIEW_SIZE
+    );
 
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.82));
     setCameraError("");

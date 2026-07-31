@@ -86,16 +86,22 @@ export default function TeamLeaderPostsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.title.trim() || !form.content.trim()) {
-      Alert.alert("Error", "Title and content are required.");
+    const titleTrim = form.title.trim();
+    const contentTrim = form.content.trim();
+
+    if (!titleTrim && !contentTrim) {
+      Alert.alert("Required", "Title or content is required to publish a post.");
       return;
     }
 
+    const finalTitle = titleTrim || contentTrim.slice(0, 50) || "Notification";
+    const finalContent = contentTrim || titleTrim;
+
     try {
       const payload = { 
-        title: form.title, 
-        content: form.content, 
-        type: form.type 
+        title: finalTitle, 
+        content: finalContent, 
+        type: form.type || "NOTIFICATION"
       };
 
       if (selectedTeamId) {
@@ -122,12 +128,14 @@ export default function TeamLeaderPostsPage() {
 
       if (editingId) {
         await updatePost({ id: editingId, ...payload }).unwrap();
+        Alert.alert("Success", "Post updated successfully.");
       } else {
         await createPost(payload).unwrap();
+        Alert.alert("Success", "Post published successfully.");
       }
       resetForm();
     } catch (error) {
-      Alert.alert("Error", error?.data?.message || "Failed to save post.");
+      Alert.alert("Error", error?.data?.message || error?.message || "Failed to save post.");
     }
   };
 

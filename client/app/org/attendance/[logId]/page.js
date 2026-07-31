@@ -123,11 +123,6 @@ export default function OrgAttendanceLogDetailPage() {
               <p className="mt-1 text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">{record.status}</p>
             </div>
 
-            {/* Geo Validation & Worked Hours */}
-            <div className="dashboard-detail-tile">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Geo Valid</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{formatGeoStatus(record)}</p>
-            </div>
             <div className="dashboard-detail-tile">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
               <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{formatWorkedHours(record)}</p>

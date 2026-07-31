@@ -318,10 +318,12 @@ export default function TeamLeaderReportsPage() {
         </div>
 
         {/* Metrics Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <MetricCard label="Present Days" value={selectedMemberReport.presentDays} />
           <MetricCard label="Half Days" value={selectedMemberReport.halfDays} />
           <MetricCard label="Absent Days" value={selectedMemberReport.absentDays} />
+          <MetricCard label="Overtime Days" value={selectedMemberReport.overtimeDays || 0} />
+          <MetricCard label="Defaulter Days" value={selectedMemberReport.defaulterDays || 0} />
           <MetricCard label="Total Worked Hrs" value={selectedMemberReport.workedHours} />
         </div>
 
@@ -373,7 +375,6 @@ export default function TeamLeaderReportsPage() {
                       <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Punch In</th>
                       <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Punch Out</th>
                       <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Worked Hrs</th>
-                      <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Geo Valid</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -388,7 +389,6 @@ export default function TeamLeaderReportsPage() {
                         <td className="px-3 py-3 text-center text-slate-700">{log.punchInAt ? new Date(log.punchInAt).toLocaleTimeString() : "-"}</td>
                         <td className="px-3 py-3 text-center text-slate-700">{log.punchOutAt ? new Date(log.punchOutAt).toLocaleTimeString() : "-"}</td>
                         <td className="px-3 py-3 text-center text-slate-700">{formatWorkedHours(log)} hrs</td>
-                        <td className="px-3 py-3 text-center text-slate-700">{formatGeoStatus(log)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -601,10 +601,12 @@ export default function TeamLeaderReportsPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Members" value={visibleSummaryMap.get("Members") || 0} />
         <MetricCard label="Present" value={visibleSummaryMap.get("Present Days") || 0} />
+        <MetricCard label="Half Day" value={visibleSummaryMap.get("Half Days") || 0} />
         <MetricCard label="Absent" value={visibleSummaryMap.get("Absent Days") || 0} />
+        <MetricCard label="Overtime" value={visibleSummaryMap.get("Overtime Days") || 0} />
         <MetricCard
           label="Worked Hrs"
           value={formatHoursValue(visibleSummaryMap.get("Worked Hrs") || 0)}
@@ -646,10 +648,12 @@ export default function TeamLeaderReportsPage() {
                     </span>
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-3 grid-cols-2">
                     <ReportMetric label="Present" value={item.presentDays} />
                     <ReportMetric label="Half Day" value={item.halfDays} />
                     <ReportMetric label="Absent" value={item.absentDays} />
+                    <ReportMetric label="Overtime" value={item.overtimeDays || 0} />
+                    <ReportMetric label="Defaulter" value={item.defaulterDays || 0} />
                     <ReportMetric label="Worked Hrs" value={formatHoursValue(item.workedHours)} />
                   </div>
 
@@ -686,6 +690,12 @@ export default function TeamLeaderReportsPage() {
                       Absent
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Overtime
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Defaulter
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                       Worked Hrs
                     </th>
                   </tr>
@@ -702,6 +712,8 @@ export default function TeamLeaderReportsPage() {
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.absentDays}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{item.overtimeDays || 0}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{item.defaulterDays || 0}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{formatHoursValue(item.workedHours)}</td>
                     </tr>
                   ))}

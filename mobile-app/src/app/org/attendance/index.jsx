@@ -222,12 +222,14 @@ export default function OrgAttendancePage() {
  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
  };
 
- const getStatusColor = (status) => {
- if (status === "PRESENT") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
- if (status === "ABSENT") return "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-400 border-rose-200 dark:border-rose-800";
- if (status === "HALF_DAY") return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-400 border-amber-200 dark:border-amber-800";
- return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-400 border-slate-200 dark:border-slate-800";
- };
+  const getStatusColor = (status) => {
+    if (status === "PRESENT") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
+    if (status === "ABSENT") return "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-400 border-rose-200 dark:border-rose-800";
+    if (status === "HALF_DAY") return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-400 border-amber-200 dark:border-amber-800";
+    if (status === "OVERTIME") return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+    if (status === "DEFAULTER") return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400 border-red-200 dark:border-red-800";
+    return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-400 border-slate-200 dark:border-slate-800";
+  };
 
  const handleUseCurrentLocation = async () => {
  try {
@@ -331,7 +333,9 @@ export default function OrgAttendancePage() {
  { label: "All Statuses", value: "ALL" },
  { label: "Present", value: "PRESENT" },
  { label: "Absent", value: "ABSENT" },
- { label: "Half Day", value: "HALF_DAY" }
+ { label: "Half Day", value: "HALF_DAY" },
+ { label: "Overtime", value: "OVERTIME" },
+ { label: "Defaulter", value: "DEFAULTER" }
  ]}
  />
  </View>
@@ -542,7 +546,7 @@ export default function OrgAttendancePage() {
  {/* LOGS */}
  <View className="mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-8">
  <View className="px-5 pt-5 pb-3">
- <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Attendance Logs</Text>
+ <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Attendance</Text>
  </View>
  
  <View className="px-5 pb-4">

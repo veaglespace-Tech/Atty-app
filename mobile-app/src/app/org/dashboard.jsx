@@ -4,7 +4,7 @@ import { useGetOrgDashboardQuery } from "@/services/api/orgApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { formatRoleLabel } from "@/utils/roles";
 import { Link } from "expo-router";
-import { Copy, Share2, Users, FileText, Component, ShieldAlert, CheckCircle, Activity, Bell } from "lucide-react-native";
+import { Copy, Share2, Users, FileText, Component, ShieldAlert, CheckCircle, Activity, Bell, UserCheck, UserX } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 
@@ -12,6 +12,8 @@ const getIconForLabel = (label) => {
   const lbl = label?.toLowerCase() || '';
   if (lbl.includes("user") || lbl.includes("member")) return { icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" };
   if (lbl.includes("team")) return { icon: Component, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10" };
+  if (lbl.includes("present")) return { icon: UserCheck, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" };
+  if (lbl.includes("absent")) return { icon: UserX, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10" };
   if (lbl.includes("active")) return { icon: Activity, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" };
   if (lbl.includes("block")) return { icon: ShieldAlert, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10" };
   if (lbl.includes("approve")) return { icon: CheckCircle, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10" };
@@ -30,7 +32,7 @@ export default function OrgDashboard() {
         <ShieldAlert size={64} className="text-amber-500 mb-4" />
         <Text className="text-2xl font-black text-slate-900 dark:text-white mb-2 text-center">Access Restricted</Text>
         <Text className="text-base text-slate-500 dark:text-slate-400 text-center mb-6">
-          Your organization's access is currently restricted. Please contact your administrator.
+          {"Your organization's access is currently restricted. Please contact your administrator."}
         </Text>
         <Pressable onPress={refetch} className="bg-blue-600 px-6 py-3 rounded-xl active:opacity-80">
           <Text className="text-white font-bold text-center">Refresh</Text>
@@ -39,10 +41,29 @@ export default function OrgDashboard() {
     );
   }
 
-  const summary = (data?.summary || []).filter(item => {
+  const rawSummary = (data?.summary || []).filter(item => {
     const lbl = item.label.toLowerCase();
     return !lbl.includes('subscri') && !lbl.includes('paym') && !lbl.includes('active user');
   });
+  let summary = [...rawSummary];
+  const hasAbsent = summary.some(item => item.label?.toLowerCase().includes('absent'));
+  if (!hasAbsent && summary.length > 0) {
+    let totalUsersCount = 0;
+    let presentTodayCount = 0;
+    rawSummary.forEach(item => {
+      const lbl = item.label?.toLowerCase() || '';
+      if (lbl.includes('user') || lbl.includes('member')) {
+        totalUsersCount = parseInt(String(item.value).split('/')[0], 10) || 0;
+      } else if (lbl.includes('present')) {
+        presentTodayCount = parseInt(String(item.value), 10) || 0;
+      }
+    });
+    const absentCount = Math.max(0, totalUsersCount - presentTodayCount);
+    summary.push({
+      label: "Absent Today",
+      value: absentCount
+    });
+  }
   const records = data?.items || [];
   const referralCode = user?.organization?.referralCode || "";
 
@@ -65,6 +86,7 @@ export default function OrgDashboard() {
             <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#2563eb" />
           }
         >
+        <View className="max-w-2xl w-full mx-auto">
           
           {/* DASHBOARD WELCOME CARD */}
           <View className="mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm">
@@ -114,7 +136,7 @@ export default function OrgDashboard() {
           {!isAdmin && (
             <View className="mb-6">
               <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
-                <MyAttendanceCore isEmbedded={true} showActions={false} />
+                <MyAttendanceCore isEmbedded={true} showActions={true} />
               </Animated.View>
             </View>
           )}
@@ -128,33 +150,34 @@ export default function OrgDashboard() {
               ) : (
                 <View>
                   {/* STATS OVERVIEW */}
-                  <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
+                  <View className="flex-row flex-wrap mx-[-6px] mb-2">
                     {summary.map((item, index) => {
                       const { icon: Icon, color, bg } = getIconForLabel(item.label);
                       return (
-                        <Animated.View
-                          entering={FadeInDown.duration(400).delay(index * 100).springify()}
-                          key={index}
-                          className="w-[48%]">
-                          <View className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between min-h-[110px]">
-                            <View className="flex-row items-start justify-between mb-4">
+                        <View key={index} style={{ width: '50%', paddingHorizontal: 6, paddingBottom: 12 }}>
+                          <Animated.View
+                            entering={FadeInDown.duration(400).delay(index * 100).springify()}
+                            className="w-full">
+                          <View className="bg-white dark:bg-[#1E293B] p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between min-h-[96px]">
+                            <View className="flex-row items-start justify-between mb-3">
                               <Text
-                                className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-3"
+                                className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex-1 mr-2"
                                 numberOfLines={2}>
                                 {item.label}
                               </Text>
-                              <View className={`h-8 w-8 rounded-full items-center justify-center shrink-0 ${bg}`}>
-                                <Icon size={14} className={color} />
+                              <View className={`h-7 w-7 rounded-full items-center justify-center shrink-0 ${bg}`}>
+                                <Icon size={12} className={color} />
                               </View>
                             </View>
                             <Text
-                              className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
+                              className="text-2xl font-black text-slate-900 dark:text-white tracking-tight"
                               numberOfLines={1}
                               adjustsFontSizeToFit>
                               {item.value}
                             </Text>
                           </View>
-                        </Animated.View>
+                          </Animated.View>
+                        </View>
                       );
                     })}
                   </View>
@@ -225,6 +248,7 @@ export default function OrgDashboard() {
             )}
             </>
           )}
+          </View>
       </ScrollView>
     
   );

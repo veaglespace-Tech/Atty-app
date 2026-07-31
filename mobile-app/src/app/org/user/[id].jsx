@@ -245,6 +245,10 @@ export default function OrgUserDetailPage() {
                 <DetailTile label="Role" value={formatRoleLabel(user.role)} />
                 <DetailTile label="Mobile" value={`${user.mobileCountryCode || ""} ${user.mobile || "-"}`} />
                 <DetailTile label="Status" value={toDisplayText(user.approvalStatus)} />
+                <DetailTile label="DOB" value={toDateLabel(user.dob, "-")} />
+                <DetailTile label="Form No" value={toDisplayText(user.physicalFormNo)} />
+                <DetailTile label="Department" value={toDisplayText(user.department?.name)} />
+                <DetailTile label="Member Type" value={toDisplayText(user.existingMember)} />
               </>
             )}
           </View>
@@ -268,6 +272,11 @@ export default function OrgUserDetailPage() {
                   <TextInput value={form.mobile} onChangeText={(v) => setForm((p) => ({ ...p, mobile: v.replace(/[^\d]/g, "") }))} keyboardType="phone-pad"
                     className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
                 </View>
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Physical Form No</Text>
+                <TextInput value={form.physicalFormNo} onChangeText={(v) => setForm((p) => ({ ...p, physicalFormNo: v }))}
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
               </View>
               <View className="gap-1.5">
                 <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Role</Text>
@@ -330,7 +339,7 @@ export default function OrgUserDetailPage() {
         {/* Attendance Logs */}
         <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Attendance Logs</Text>
+            <Text className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Attendance</Text>
             <View className="flex-row gap-2">
               <Pressable
                 onPress={async () => {

@@ -88,12 +88,8 @@ export default function AttendanceDetailModal({ selectedRecord, onClose }) {
               </div>
             </div>
 
-            {/* Geo Validation & Worked Hours */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="dashboard-detail-tile">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Geo Valid</p>
-                <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatGeoStatus(selectedRecord)}</p>
-              </div>
+            {/* Worked Hours */}
+            <div className="grid grid-cols-1 gap-3">
               <div className="dashboard-detail-tile">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
                 <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatWorkedHours(selectedRecord)}</p>

@@ -3,5 +3,6 @@
 import HerSecurityContent from "@/components/HerSecurityContent";
 
 export default function HerSecurityPage() {
-  return <HerSecurityContent />;
+  // TEMPORARILY DISABLED: To show Her Security, change return null; to return <HerSecurityContent />;
+  return null;
 }

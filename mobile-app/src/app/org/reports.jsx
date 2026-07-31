@@ -71,10 +71,12 @@ export default function OrgReportsPage() {
             <MetricCard label="Present Days" value={selectedMember.presentDays} />
             <MetricCard label="Half Days" value={selectedMember.halfDays} />
             <MetricCard label="Absent Days" value={selectedMember.absentDays} />
+            <MetricCard label="Overtime Days" value={selectedMember.overtimeDays || 0} />
+            <MetricCard label="Defaulter Days" value={selectedMember.defaulterDays || 0} />
             <MetricCard label="Worked Hrs" value={formatHoursValue(selectedMember.workedHours)} />
           </View>
 
-          <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-4 ml-1">Daily Attendance Logs</Text>
+          <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-4 ml-1">Daily Attendance</Text>
           
           {attendanceLoading ? (
              <View className="py-12 items-center justify-center">
@@ -255,19 +257,27 @@ function ReportRecordCard({ item, index = 0, onPress }) {
           </View>
         </View>
         <View className="flex-row flex-wrap border-t border-slate-100 dark:border-slate-800 pt-3 gap-y-3">
-          <View className="w-1/2">
+          <View className="w-1/3">
             <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Present</Text>
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.presentDays}</Text>
           </View>
-          <View className="w-1/2">
-            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Absent</Text>
-            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.absentDays}</Text>
-          </View>
-          <View className="w-1/2">
+          <View className="w-1/3">
             <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Half Day</Text>
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.halfDays}</Text>
           </View>
-          <View className="w-1/2">
+          <View className="w-1/3">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Absent</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.absentDays}</Text>
+          </View>
+          <View className="w-1/3">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Overtime</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.overtimeDays || 0}</Text>
+          </View>
+          <View className="w-1/3">
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Defaulter</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.defaulterDays || 0}</Text>
+          </View>
+          <View className="w-1/3">
             <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Worked Hrs</Text>
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatHoursValue(item.workedHours)}</Text>
           </View>
