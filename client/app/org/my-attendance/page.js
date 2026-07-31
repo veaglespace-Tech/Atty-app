@@ -388,7 +388,6 @@ export default function MyAttendancePage() {
                       </>
                     )}
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
@@ -407,9 +406,6 @@ export default function MyAttendancePage() {
                         </>
                       )}
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">
-                        {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
-                      </td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks
                           punchInSelfieUrl={record.punchInSelfieUrl}

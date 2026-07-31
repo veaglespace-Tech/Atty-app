@@ -35,8 +35,8 @@ import {
   validateManagedUserForm,
 } from "@/utils/formValidation";
 
-const STATUS_OPTIONS = ["APPROVED", "PENDING"];
-const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED"];
+const STATUS_OPTIONS = ["APPROVED", "PENDING", "BLOCKED"];
+const DIRECTORY_STATUS_FILTERS = ["ALL", "APPROVED", "PENDING", "REJECTED", "BLOCKED"];
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
 
@@ -569,6 +569,7 @@ export default function OrgUsersPage() {
               >
                 <option value="ALL">All Member Types</option>
                 <option value="SENIOR">Senior</option>
+                <option value="SEMI_SENIOR">Semi-Senior</option>
                 <option value="JUNIOR">Junior</option>
               </select>
               <select

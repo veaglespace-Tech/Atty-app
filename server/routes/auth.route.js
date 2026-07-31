@@ -119,7 +119,7 @@ const updateMeSchema = z
     bloodGroup: z.string().trim().optional(),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
     dob: z.string().trim().optional(),
-    existingMember: z.enum(["SENIOR", "JUNIOR"]).optional().or(z.literal("")),
+    existingMember: z.enum(["SENIOR", "JUNIOR", "SEMI_SENIOR", "SEMI-SENIOR", "semi-senior", "Semi Senior"]).optional().or(z.literal("")),
     departmentId: z.union([z.number(), z.string(), z.null()]).optional(),
     physicalFormNo: z.string().trim().optional(),
     documentName: z.string().trim().optional(),

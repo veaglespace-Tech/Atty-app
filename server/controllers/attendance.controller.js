@@ -650,6 +650,22 @@ exports.requestRegularization = asyncHandler(async (req, res) => {
     throw new Error("Date and reason are required");
   }
 
+  const today = todayKey();
+  const requestDate = new Date(date);
+  const todayDate = new Date(today);
+  const diffTime = todayDate.getTime() - requestDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+
+  if (date >= today) {
+    res.status(400);
+    throw new Error("Regularization request cannot be submitted for current or future dates.");
+  }
+
+  if (diffDays > 29) {
+    res.status(400);
+    throw new Error("Regularization request can only be submitted for past dates up to 29 days back.");
+  }
+
   // Check if pending request exists
   const existingRequest = await prisma.attendanceRegularization.findFirst({
     where: {

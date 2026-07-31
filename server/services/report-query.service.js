@@ -152,6 +152,8 @@ const buildAttendanceReport = async ({
       presentDays: 0,
       halfDays: 0,
       absentDays: 0,
+      overtimeDays: 0,
+      defaulterDays: 0,
       workedMinutes: 0,
     });
   }
@@ -166,6 +168,8 @@ const buildAttendanceReport = async ({
       presentDays: 0,
       halfDays: 0,
       absentDays: 0,
+      overtimeDays: 0,
+      defaulterDays: 0,
       workedMinutes: 0,
     };
 
@@ -176,6 +180,10 @@ const buildAttendanceReport = async ({
     if (status === "PRESENT") current.presentDays += count;
     else if (status === "HALF_DAY") current.halfDays += count;
     else if (status === "ABSENT") current.absentDays += count;
+    else if (status === "OVERTIME") {
+      current.overtimeDays += count;
+      current.presentDays += count;
+    } else if (status === "DEFAULTER") current.defaulterDays += count;
 
     current.workedMinutes += workedMinutes;
     reportMap.set(userId, current);
@@ -183,7 +191,7 @@ const buildAttendanceReport = async ({
 
   // --- 6. For members with fewer recorded days than totalDays, fill the rest as absent ---
   for (const entry of reportMap.values()) {
-    const recordedDays = entry.presentDays + entry.halfDays + entry.absentDays;
+    const recordedDays = entry.presentDays + entry.halfDays + entry.absentDays + entry.defaulterDays;
     if (recordedDays < totalDays) {
       entry.absentDays += (totalDays - recordedDays);
     }

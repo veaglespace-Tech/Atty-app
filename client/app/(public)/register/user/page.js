@@ -75,7 +75,7 @@ const userSchema = z
     confirmPassword: z.string().min(1, "Confirm password is required"),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Gender is required" }).refine(val => val !== "", { message: "Gender is required" }),
     dob: z.string().trim().min(1, "Date of birth is required"),
-    existingMember: z.enum(["SENIOR", "JUNIOR"], { required_error: "Existing Member Type is required" }),
+    existingMember: z.enum(["SENIOR", "SEMI_SENIOR", "JUNIOR"], { required_error: "Existing Member Type is required" }),
     referenceBy: z.string().trim().max(100, "Reference name is too long").optional().or(z.literal("")),
     bloodGroup: z.string().trim().min(1, "Blood Group is required"),
     city: z
@@ -355,6 +355,7 @@ function RegisterFormContent() {
             >
               <option value="">Select Member Type</option>
               <option value="SENIOR">Senior</option>
+              <option value="SEMI_SENIOR">Semi-Senior</option>
               <option value="JUNIOR">Junior</option>
             </select>
           </Field>

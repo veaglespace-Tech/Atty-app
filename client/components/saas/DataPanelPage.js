@@ -915,12 +915,8 @@ function RecordDetailsModal({ record, onClose }) {
                   </div>
                 </div>
 
-                {/* Geo Validation & Worked Hours */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Geo Valid</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatGeoStatus(record)}</p>
-                  </div>
+                {/* Worked Hours */}
+                <div className="grid grid-cols-1 gap-3">
                   <div className="rounded-[1.2rem] border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
                     <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Worked Hours</p>
                     <p className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{formatWorkedHours(record)} hrs</p>

@@ -710,6 +710,7 @@ export default function OrgUserDetailPage() {
               >
                 <option value="">Select Member Type</option>
                 <option value="SENIOR">Senior</option>
+                <option value="SEMI_SENIOR">Semi-Senior</option>
                 <option value="JUNIOR">Junior</option>
               </select>
             </div>

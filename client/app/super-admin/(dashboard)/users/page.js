@@ -30,6 +30,7 @@ export default function SuperAdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [memberTypeFilter, setMemberTypeFilter] = useState("ALL");
   const [genderFilter, setGenderFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [downloading, setDownloading] = useState(false);
 
   const { data, isLoading, isFetching, refetch } = useGetAllSuperAdminUsersQuery();
@@ -50,6 +51,10 @@ export default function SuperAdminUsersPage() {
         const userGender = String(user.gender || "").toUpperCase();
         if (userGender !== genderFilter.toUpperCase()) return false;
       }
+      if (statusFilter !== "ALL") {
+        const userStatus = String(user.approvalStatus || user.status || "").toUpperCase();
+        if (userStatus !== statusFilter.toUpperCase()) return false;
+      }
       if (!query) return true;
       return [
         user.name,
@@ -63,7 +68,7 @@ export default function SuperAdminUsersPage() {
         .join(" ")
         .includes(query);
     });
-  }, [users, searchTerm, memberTypeFilter, genderFilter]);
+  }, [users, searchTerm, memberTypeFilter, genderFilter, statusFilter]);
 
   const {
     page,
@@ -191,6 +196,7 @@ export default function SuperAdminUsersPage() {
             >
               <option value="ALL">All Member Types</option>
               <option value="SENIOR">Senior</option>
+              <option value="SEMI_SENIOR">Semi-Senior</option>
               <option value="JUNIOR">Junior</option>
             </select>
           </div>
@@ -207,6 +213,22 @@ export default function SuperAdminUsersPage() {
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div className="relative">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              Status Filter
+            </p>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="dashboard-select-control w-full"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PENDING">Pending</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="BLOCKED">Blocked</option>
             </select>
           </div>
         </div>

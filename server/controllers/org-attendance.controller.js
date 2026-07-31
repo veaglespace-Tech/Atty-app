@@ -519,7 +519,7 @@ exports.getOrgRegularizationRequests = asyncHandler(async (req, res) => {
     where: { orgId },
     include: {
       user: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, role: true },
       },
       reviewer: {
         select: { id: true, name: true },

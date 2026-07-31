@@ -626,19 +626,32 @@ function AttendanceRequestsTab({ pendingItems, loading, refetch }) {
               >
                 <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-400 to-rose-400 opacity-60 transition-opacity group-hover:opacity-100" />
 
-                <div className="mb-4 mt-1 pr-6">
-                  <p className="text-base font-bold text-slate-900 dark:text-white">
-                    {item.user?.name || "Unknown"}
-                  </p>
+                <div className="mb-4 mt-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-base font-bold text-slate-900 dark:text-white">
+                      {item.user?.name || "Unknown"}
+                    </p>
+                    {item.user?.role && (
+                      <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:border-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                        {item.user.role.replace("_", " ")}
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     {item.user?.email}
                   </p>
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500">Request Date:</p>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">{item.date}</p>
+                  <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/60">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Issue Date</p>
+                      <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{item.date}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Requested Time</p>
+                      <p className="font-bold text-xs text-slate-800 dark:text-slate-200">{formatDate(item.createdAt)}</p>
+                    </div>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500">Technical Issue / Reason:</p>

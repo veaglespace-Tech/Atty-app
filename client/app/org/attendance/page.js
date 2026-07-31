@@ -121,6 +121,8 @@ const STATUS_OPTIONS = [
   { value: "PRESENT", label: "Present" },
   { value: "ABSENT", label: "Absent" },
   { value: "HALF_DAY", label: "Half Day" },
+  { value: "OVERTIME", label: "Overtime" },
+  { value: "DEFAULTER", label: "Defaulter" },
 ];
 
 const todayKey = getTodayDateKey;
@@ -790,11 +792,13 @@ export default function OrgAttendancePage() {
         />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Records" value={summaryMap.get("Records") || 0} />
         <MetricCard label="Present" value={summaryMap.get("Present") || 0} />
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
+        <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
+        <MetricCard label="Defaulter" value={summaryMap.get("Defaulter") || 0} />
       </div>
 
       {canSetWorkspaceLocation || canManageTeamAttendance ? (
@@ -966,13 +970,11 @@ export default function OrgAttendancePage() {
                   <tr>
                     <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Date</th>
                     <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Member</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">DOB</th>
                     <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Role</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Status</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch In</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-center text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -984,7 +986,6 @@ export default function OrgAttendancePage() {
                     >
                       <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-medium">{record.date}</td>
                       <td className="px-3 py-3 text-slate-900 font-bold">{record.member}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-medium">{record.user?.dob || record.dob || "-"}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-semibold">{formatRoleLabel(record.role)}</td>
                       <td className="px-3 py-3 text-center">
                         <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
@@ -998,7 +999,6 @@ export default function OrgAttendancePage() {
                         {record.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">{formatGeoStatus(record)}</td>
                     </tr>
                   ))}
                 </tbody>

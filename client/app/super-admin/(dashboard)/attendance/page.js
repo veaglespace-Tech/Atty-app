@@ -445,10 +445,12 @@ export default function SuperAdminAttendanceReportsPage() {
         </div>
 
         {/* User metrics */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <MetricCard label="Total Logs" value={userLoading ? "-" : getUserMetricValue("Total Logs")} />
           <MetricCard label="Present Days" value={userLoading ? "-" : getUserMetricValue("Present Days")} />
           <MetricCard label="Half Days" value={userLoading ? "-" : getUserMetricValue("Half Days")} />
+          <MetricCard label="Overtime Days" value={userLoading ? "-" : getUserMetricValue("Overtime Days")} />
+          <MetricCard label="Defaulter Days" value={userLoading ? "-" : getUserMetricValue("Defaulter Days")} />
           <MetricCard label="Worked Hours" value={userLoading ? "-" : `${getUserMetricValue("Worked Hrs")} hrs`} />
         </div>
 
@@ -517,7 +519,6 @@ export default function SuperAdminAttendanceReportsPage() {
                       <th className="whitespace-nowrap px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Punch In</th>
                       <th className="whitespace-nowrap px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Punch Out</th>
                       <th className="whitespace-nowrap px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Worked Hours</th>
-                      <th className="whitespace-nowrap px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Geo Valid</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -532,7 +533,6 @@ export default function SuperAdminAttendanceReportsPage() {
                         <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{log.punchInAt ? new Date(log.punchInAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}</td>
                         <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{log.punchOutAt ? new Date(log.punchOutAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}</td>
                         <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{formatWorkedHours(log)} hrs</td>
-                        <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{formatGeoStatus(log)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -815,11 +815,13 @@ export default function SuperAdminAttendanceReportsPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Platform Members" value={loading ? "-" : getMetricValue("Members")} />
         <MetricCard label="Present Days" value={loading ? "-" : getMetricValue("Present Days")} />
+        <MetricCard label="Half Days" value={loading ? "-" : getMetricValue("Half Days")} />
         <MetricCard label="Absent Days" value={loading ? "-" : getMetricValue("Absent Days")} />
-        <MetricCard label="Total Worked Hours" value={loading ? "-" : `${getMetricValue("Worked Hrs")} hrs`} />
+        <MetricCard label="Overtime Days" value={loading ? "-" : getMetricValue("Overtime Days")} />
+        <MetricCard label="Worked Hours" value={loading ? "-" : `${getMetricValue("Worked Hrs")} hrs`} />
       </div>
 
       {/* Main Reports List */}

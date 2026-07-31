@@ -99,7 +99,7 @@ const getSettingsSchema = (isAdmin) => z.object({
   bloodGroup: z.string().trim().optional(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
   dob: z.string().trim().optional(),
-  existingMember: z.enum(["SENIOR", "JUNIOR", "senior", "junior"]).optional().or(z.literal("")),
+  existingMember: z.enum(["SENIOR", "SEMI_SENIOR", "JUNIOR", "senior", "semi_senior", "junior"]).optional().or(z.literal("")),
   departmentId: z.any().optional(),
   physicalFormNo: z.string().trim().optional(),
 });
@@ -1430,6 +1430,7 @@ export default function WorkspaceSettingsPage() {
                   <select id="settings-existingMember" aria-invalid={errors.existingMember ? "true" : "false"} className={cn(inputClassName, errors.existingMember ? errorInputClassName : "")} {...register("existingMember")}>
                     <option value="">Select Member Type</option>
                     <option value="SENIOR">Senior</option>
+                    <option value="SEMI_SENIOR">Semi-Senior</option>
                     <option value="JUNIOR">Junior</option>
                   </select>
                   {errors.existingMember && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.existingMember.message}</p>}

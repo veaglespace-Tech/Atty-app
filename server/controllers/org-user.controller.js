@@ -1497,7 +1497,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
     if (i === 0) col.width = 8;
-    else if (i === 16) col.width = 18; // Profile Photo (0-indexed 16)
+    else if (i === 16) col.width = 20; // Profile Photo (0-indexed 16)
     else if (i === 4) col.width = 20; // Physical Form No.
     else if (i === 5) col.width = 35; // Uploaded Document
     else if (i === 14 || i === 15) col.width = 35; // Addresses
@@ -1617,28 +1617,28 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           extension: ext,
         });
 
-        const imageWidth = 50;
-        const imageHeight = 50;
-        const cellWidthPixels = 18 * 7.5;
-        const cellHeightPixels = 60 * 1.33;
-        const offsetX = (cellWidthPixels - imageWidth) / 2;
-        const offsetY = (cellHeightPixels - imageHeight) / 2;
+        const imageWidth = 46;
+        const imageHeight = 46;
+        const colWidthPixels = Math.floor(20 * 7 + 12); // 152 px for col width 20
+        const rowHeightPixels = Math.floor(60 * 1.333333); // 80 px for row height 60
+        const offsetX = Math.max(0, (colWidthPixels - imageWidth) / 2);
+        const offsetY = Math.max(0, (rowHeightPixels - imageHeight) / 2);
 
         worksheet.addImage(imageId, {
           tl: { 
             nativeCol: 16, // Profile Photo column (0-indexed 16)
             nativeColOff: Math.round(offsetX * 9525), 
-            nativeRow: currentRowIndex - 1, 
+            nativeRow: row.number - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
           },
           ext: { width: imageWidth, height: imageHeight },
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 17).value = "Error loading image";
+        worksheet.getCell(row.number, 17).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(row.number, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
 
     currentRowIndex++;

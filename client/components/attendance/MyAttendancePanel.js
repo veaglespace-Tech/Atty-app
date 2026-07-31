@@ -11,14 +11,17 @@ import {
   UserCheck,
   XCircle,
   Home,
+  CalendarClock,
 } from "lucide-react";
 import {
   useGetMyAttendanceQuery,
   usePunchInMutation,
   usePunchOutMutation,
   useReachedHomeMutation,
+  useRequestRegularizationMutation,
 } from "@/services/api/attendanceApi";
 import dynamic from "next/dynamic";
+import RegularizationModal from "@/components/attendance/RegularizationModal";
 
 const AttendanceFaceCaptureModal = dynamic(
   () => import("@/components/attendance/AttendanceFaceCaptureModal"),
@@ -93,6 +96,21 @@ export default function MyAttendancePanel({
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isRegularizeModalOpen, setIsRegularizeModalOpen] = useState(false);
+  const [requestRegularizationMutation, { isLoading: isSubmittingRegularization }] = useRequestRegularizationMutation();
+
+  const submitRegularization = async (payload) => {
+    try {
+      setError("");
+      setMessage("");
+      await requestRegularizationMutation(payload).unwrap();
+      setMessage("Regularization request submitted successfully");
+      setIsRegularizeModalOpen(false);
+      await Promise.all([refetch(), runExternalRefresh()]);
+    } catch (err) {
+      setError(err?.data?.message || err?.error || "Failed to submit regularization request");
+    }
+  };
 
   const {
     data,
@@ -254,6 +272,16 @@ export default function MyAttendancePanel({
               Reached Home
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsRegularizeModalOpen(true)}
+            disabled={loading || isSubmittingRegularization}
+            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto flex items-center justify-center gap-2"
+          >
+            <CalendarClock size={16} />
+            Request Regularization
+          </button>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -376,7 +404,6 @@ export default function MyAttendancePanel({
                     )}
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
@@ -392,9 +419,6 @@ export default function MyAttendancePanel({
                       )}
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">
-                        {record.punchInValid === false || record.punchOutValid === false ? "No" : "Yes"}
-                      </td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks
                           punchInSelfieUrl={record.punchInSelfieUrl}
@@ -416,6 +440,13 @@ export default function MyAttendancePanel({
         isSubmitting={actionLoading !== ""}
         onClose={() => setPendingPunchType("")}
         onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)}
+      />
+
+      <RegularizationModal
+        open={isRegularizeModalOpen}
+        onClose={() => setIsRegularizeModalOpen(false)}
+        onSubmit={submitRegularization}
+        isSubmitting={isSubmittingRegularization}
       />
     </section>
   );

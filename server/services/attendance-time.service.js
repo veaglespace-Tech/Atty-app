@@ -207,7 +207,7 @@ const calculateAttendanceStatus = ({
   const presentThreshold = Math.floor(shiftDurationMinutes * 0.70);
   const halfDayThreshold = Math.floor(shiftDurationMinutes * 0.45);
 
-  if (safeWorkedMinutes > shiftDurationMinutes) return "DEFAULTER";
+  if (safeWorkedMinutes > shiftDurationMinutes) return "OVERTIME";
   if (safeWorkedMinutes >= presentThreshold) return "PRESENT";
   if (safeWorkedMinutes >= halfDayThreshold) return "HALF_DAY";
   return "DEFAULTER";

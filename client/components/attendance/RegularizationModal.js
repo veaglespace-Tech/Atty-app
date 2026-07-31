@@ -7,11 +7,21 @@ export default function RegularizationModal({ open, onClose, onSubmit, isSubmitt
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
 
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const maxDate = yesterday.toISOString().split("T")[0];
+
+  const minDateObj = new Date(today);
+  minDateObj.setDate(minDateObj.getDate() - 29);
+  const minDate = minDateObj.toISOString().split("T")[0];
+
   if (!open) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!date || !reason.trim()) return;
+    if (date > maxDate || date < minDate) return;
     onSubmit({ date, reason });
   };
 
@@ -34,19 +44,20 @@ export default function RegularizationModal({ open, onClose, onSubmit, isSubmitt
           <div className="mb-4 flex gap-3 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-900/30 dark:text-blue-200">
             <AlertCircle size={18} className="shrink-0" />
             <p>
-              Use this form if you faced a technical issue and could not punch in/out. 
-              Your request will be sent to the admin for approval.
+              Use this form to request regularization for past dates (up to 29 days ago). Current day and future dates cannot be regularized.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Date of Issue <span className="text-red-500">*</span>
+                Date of Issue <span className="text-red-500">* (Past 1-29 days only)</span>
               </label>
               <input
                 type="date"
                 required
+                min={minDate}
+                max={maxDate}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="brand-input"

@@ -615,11 +615,13 @@ export default function TeamLeaderAttendancePage() {
         </form>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Records" value={summaryMap.get("Records") || 0} />
         <MetricCard label="Present" value={summaryMap.get("Present") || 0} />
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
+        <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
+        <MetricCard label="Defaulter" value={summaryMap.get("Defaulter") || 0} />
       </div>
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
@@ -698,6 +700,8 @@ export default function TeamLeaderAttendancePage() {
                 <option value="PRESENT">Present</option>
                 <option value="HALF_DAY">Half Day</option>
                 <option value="ABSENT">Absent</option>
+                <option value="OVERTIME">Overtime</option>
+                <option value="DEFAULTER">Defaulter</option>
               </select>
             </label>
 
@@ -808,7 +812,6 @@ export default function TeamLeaderAttendancePage() {
                     <TeamAttendanceDetail label="Punch Out" value={formatDateTime(record.punchOutAt)} />
                     <TeamAttendanceDetail label="Location" value={formatLocation(record)} />
                     <TeamAttendanceDetail label="Worked Hrs" value={formatWorkedHours(record)} />
-                    <TeamAttendanceDetail label="Geo Valid" value={formatGeoStatus(record)} />
                     <TeamAttendanceDetail
                       label="Selfie Proof"
                       value={
@@ -835,7 +838,6 @@ export default function TeamLeaderAttendancePage() {
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Punch Out</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Location</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Worked Hrs</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Valid</th>
                     <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Selfie Proof</th>
                   </tr>
                 </thead>
@@ -850,7 +852,6 @@ export default function TeamLeaderAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatLocation(record)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatWorkedHours(record)}</td>
-                      <td className="px-3 py-2 text-slate-700">{formatGeoStatus(record)}</td>
                       <td className="px-3 py-2 text-slate-700">
                         <AttendanceSelfieProofLinks
                           punchInSelfieUrl={record.punchInSelfieUrl}

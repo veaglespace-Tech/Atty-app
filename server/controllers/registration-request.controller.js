@@ -151,9 +151,9 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
   }
 
   const normalizedExistingMember = String(existingMember || "").trim().toLowerCase();
-  if (!normalizedExistingMember || !["senior", "junior"].includes(normalizedExistingMember)) {
+  if (!normalizedExistingMember || !["senior", "junior", "semi_senior", "semi-senior", "semi senior"].includes(normalizedExistingMember)) {
     res.status(400);
-    throw new Error("Existing member status (Senior/Junior) is required");
+    throw new Error("Existing member status (Senior/Semi-Senior/Junior) is required");
   }
 
   const normalizedReferenceBy = String(referenceBy || "").trim() || null;
