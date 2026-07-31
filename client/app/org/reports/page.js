@@ -687,6 +687,9 @@ export default function OrgReportsPage() {
                       Role
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Department
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                       Present
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
@@ -715,6 +718,7 @@ export default function OrgReportsPage() {
                     >
                       <td className="px-3 py-2 font-semibold text-slate-900">{item.member}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.role}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{item.department || "Unassigned"}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.absentDays}</td>

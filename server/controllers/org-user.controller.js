@@ -1564,7 +1564,6 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     };
   });
 
-  let currentRowIndex = 5;
   for (const rowData of userRows) {
     const row = worksheet.addRow([
       rowData.index,
@@ -1640,8 +1639,6 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     } else {
       worksheet.getCell(row.number, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
-
-    currentRowIndex++;
   }
 
   const buffer = await workbook.xlsx.writeBuffer();

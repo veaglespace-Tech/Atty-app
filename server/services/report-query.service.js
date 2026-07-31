@@ -19,13 +19,19 @@ const toReportSummary = (items = []) => {
   const totals = items.reduce(
     (acc, item) => {
       acc.presentDays += Number(item.presentDays || 0);
+      acc.halfDays += Number(item.halfDays || 0);
       acc.absentDays += Number(item.absentDays || 0);
+      acc.overtimeDays += Number(item.overtimeDays || 0);
+      acc.defaulterDays += Number(item.defaulterDays || 0);
       acc.workedMinutes += Number(item.workedMinutes || 0);
       return acc;
     },
     {
       presentDays: 0,
+      halfDays: 0,
       absentDays: 0,
+      overtimeDays: 0,
+      defaulterDays: 0,
       workedMinutes: 0,
     }
   );
@@ -33,7 +39,10 @@ const toReportSummary = (items = []) => {
   return [
     toSummaryItem("Members", items.length),
     toSummaryItem("Present Days", totals.presentDays),
+    toSummaryItem("Half Days", totals.halfDays),
     toSummaryItem("Absent Days", totals.absentDays),
+    toSummaryItem("Overtime Days", totals.overtimeDays),
+    toSummaryItem("Defaulter Days", totals.defaulterDays),
     toSummaryItem("Worked Hrs", minutesToHoursValue(totals.workedMinutes)),
   ];
 };
@@ -62,6 +71,9 @@ const buildAttendanceReport = async ({
       name: true,
       role: true,
       orgId: true,
+      department: {
+        select: { name: true },
+      },
       gender: true,
       dob: true,
       existingMember: true,
@@ -140,6 +152,7 @@ const buildAttendanceReport = async ({
       id: userId,
       member: user?.name || "Unknown",
       role: mapUserForManagement(user, orgId).role,
+      department: user?.department?.name || "Unassigned",
       gender: user?.gender || "-",
       dob: user?.dob || "-",
       existingMember: user?.existingMember || "-",
