@@ -146,7 +146,7 @@ export default function AttendanceFaceCaptureModal({
             </View>
           ) : (
             <>
-              <View className="mb-5 h-[320px] w-full overflow-hidden rounded-[1.8rem] border border-slate-200 bg-slate-950 shadow-xl dark:border-slate-800">
+              <View className="mb-5 aspect-[3/4] w-full overflow-hidden rounded-[1.8rem] border border-slate-200 bg-slate-950 shadow-xl dark:border-slate-800">
                 {capturedImage ? (
                   <Image
                     source={{ uri: capturedImage }}
@@ -168,6 +168,7 @@ export default function AttendanceFaceCaptureModal({
                         ref={cameraRef}
                         style={{ flex: 1, width: '100%', height: '100%' }}
                         facing="front"
+                        ratio="4:3"
                       />
                     )}
                     <View className="absolute inset-x-0 bottom-0 px-5 pb-5 pt-16 flex items-center justify-center pointer-events-none bg-black/10">
