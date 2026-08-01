@@ -960,14 +960,11 @@ export default function WorkspaceSettingsPage() {
   } = useForm({
     resolver: zodResolver(getSettingsSchema(canSkipEmergencyContact)),
     mode: "onChange",
-    defaultValues: getFormDefaults(user),
-  });
-
-  useEffect(() => {
-    if (user) {
-      reset(getFormDefaults(user));
+    values: getFormDefaults(user),
+    resetOptions: {
+      keepDirtyValues: true,
     }
-  }, [user, reset, departmentsList]);
+  });
 
   const formValues = useWatch({ control });
   const previewName = formValues.name || user?.name || "Workspace User";

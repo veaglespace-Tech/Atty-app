@@ -3,7 +3,7 @@ import { logout } from "@/store/slices/authSlice";
 import { normalizeRole, ROLES, hasPermission, PERMISSIONS } from "@/utils/roles";
 import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
-const DEFAULT_LOCAL_API_URL = "http://localhost:5000/api";
+const DEFAULT_LOCAL_API_URL = "http://localhost:5002/api";
 const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
 
 const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");
@@ -37,7 +37,7 @@ const resolveApiBaseUrl = () => {
   if (typeof window !== "undefined") {
     if (isLocalHost(window.location.hostname)) {
       if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-        return `http://${window.location.hostname}:5000/api`;
+        return `http://${window.location.hostname}:5002/api`;
       }
       return localApiUrl;
     }
