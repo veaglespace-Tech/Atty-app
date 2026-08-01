@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { buildBaseQuery } from "./baseApi";
+import { memberApi } from "./memberApi";
 import { getTodayDateKey } from "@/utils/date";
 
 const todayKey = getTodayDateKey;
@@ -40,12 +41,32 @@ const patchMyAttendanceCache = ({ dispatch, getState, recipe }) => {
   return patchResults;
 };
 
+const patchMemberAttendanceCache = ({ dispatch, getState, recipe }) => {
+  const reducerState = getState()?.[memberApi.reducerPath];
+  const queryEntries = Object.values(reducerState?.queries || {});
+  const seenArgs = new Set();
+  const patchResults = [];
+
+  for (const entry of queryEntries) {
+    if (entry?.endpointName !== "getMemberAttendance") continue;
+
+    const arg = entry.originalArgs;
+    const key = typeof arg === "undefined" ? "__undefined__" : JSON.stringify(arg);
+    if (seenArgs.has(key)) continue;
+
+    seenArgs.add(key);
+    patchResults.push(dispatch(memberApi.util.updateQueryData("getMemberAttendance", arg, recipe)));
+  }
+
+  return patchResults;
+};
+
 const applyPunchInOptimistic = (draft) => {
   if (!draft || !Array.isArray(draft.items)) return;
 
   const currentDay = todayKey();
   const nowIso = new Date().toISOString();
-  const todayRecordIndex = draft.items.findIndex((item) => String(item?.date) === currentDay);
+  const todayRecordIndex = draft.items.findIndex((item) => String(item?.date).startsWith(currentDay));
 
   if (todayRecordIndex >= 0) {
     const record = draft.items[todayRecordIndex];
@@ -86,7 +107,7 @@ const applyPunchOutOptimistic = (draft) => {
 
   const currentDay = todayKey();
   const nowIso = new Date().toISOString();
-  const todayRecordIndex = draft.items.findIndex((item) => String(item?.date) === currentDay);
+  const todayRecordIndex = draft.items.findIndex((item) => String(item?.date).startsWith(currentDay));
 
   if (todayRecordIndex >= 0) {
     const record = draft.items[todayRecordIndex];
@@ -136,14 +157,14 @@ export const attendanceApi = createApi({
         body: payload,
       }),
       async onQueryStarted(arg, { dispatch, getState, queryFulfilled }) {
-        const patchResults = patchMyAttendanceCache({
-          dispatch,
-          getState,
-          recipe: applyPunchInOptimistic,
-        });
+        const patchResults = [
+          ...patchMyAttendanceCache({ dispatch, getState, recipe: applyPunchInOptimistic }),
+          ...patchMemberAttendanceCache({ dispatch, getState, recipe: applyPunchInOptimistic })
+        ];
 
         try {
           await queryFulfilled;
+          dispatch(memberApi.util.invalidateTags(["MemberAttendance", "MemberDashboard"]));
         } catch (_) {
           patchResults.forEach((patch) => patch.undo());
         }
@@ -161,14 +182,14 @@ export const attendanceApi = createApi({
         body: payload,
       }),
       async onQueryStarted(arg, { dispatch, getState, queryFulfilled }) {
-        const patchResults = patchMyAttendanceCache({
-          dispatch,
-          getState,
-          recipe: applyPunchOutOptimistic,
-        });
+        const patchResults = [
+          ...patchMyAttendanceCache({ dispatch, getState, recipe: applyPunchOutOptimistic }),
+          ...patchMemberAttendanceCache({ dispatch, getState, recipe: applyPunchOutOptimistic })
+        ];
 
         try {
           await queryFulfilled;
+          dispatch(memberApi.util.invalidateTags(["MemberAttendance", "MemberDashboard"]));
         } catch (_) {
           patchResults.forEach((patch) => patch.undo());
         }
@@ -192,6 +213,12 @@ export const attendanceApi = createApi({
         method: "POST",
         body: payload,
       }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(memberApi.util.invalidateTags(["MemberAttendance", "MemberDashboard"]));
+        } catch (_) {}
+      },
       invalidatesTags: [
         { type: "Attendance", id: "LIST" },
         { type: "Attendance", id: "SELF" },

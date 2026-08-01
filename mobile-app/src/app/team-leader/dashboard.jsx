@@ -24,7 +24,7 @@ export default function TeamLeaderDashboard() {
   const { user } = useAuthSession();
   
   const { data, isLoading, error, refetch } = useGetTeamLeaderDashboardQuery();
-  let summary = [...(data?.summary || [])];
+  let summary = [...(data?.summary || [])].filter(item => !item.label?.toLowerCase().includes('permission'));
   const hasAbsent = summary.some(item => item.label?.toLowerCase().includes('absent'));
   if (!hasAbsent && summary.length > 0) {
     let totalMembers = 0;
@@ -125,7 +125,7 @@ export default function TeamLeaderDashboard() {
       {/* MY ATTENDANCE ACTIONS & STATS */}
       <View className="mb-6">
         <Animated.View entering={FadeInDown.duration(400).delay(150).springify()}>
-          <MyAttendanceCore isEmbedded={true} showActions={true} />
+          <MyAttendanceCore isEmbedded={true} showActions={false} />
         </Animated.View>
       </View>
 

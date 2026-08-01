@@ -136,7 +136,7 @@ export default function OrgDashboard() {
           {!isAdmin && (
             <View className="mb-6">
               <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
-                <MyAttendanceCore isEmbedded={true} showActions={true} />
+                <MyAttendanceCore isEmbedded={true} showActions={false} />
               </Animated.View>
             </View>
           )}

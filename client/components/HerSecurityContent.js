@@ -1,3 +1,5 @@
+export default function HerSecurityContent() { return null; }
+/*
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -784,3 +786,5 @@ export default function HerSecurityContent() {
     </div>
   );
 }
+
+*/

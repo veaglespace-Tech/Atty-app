@@ -5,6 +5,7 @@ import {  ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, U
 import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderReportsQuery, useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation, useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 import { useSelector } from "react-redux";
+import { getDateKey, getTodayDateKey } from "@/utils/date";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const PERIOD_OPTIONS = [
@@ -13,13 +14,6 @@ const PERIOD_OPTIONS = [
   { value: "monthly", label: "Monthly" },
   { value: "custom", label: "Custom" },
 ];
-
-const todayKey = () => new Date().toISOString().split('T')[0];
-const daysAgoKey = (days) => {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().split('T')[0];
-};
 
 const formatHoursValue = (val) => {
   if (val == null) return "0";
@@ -32,7 +26,11 @@ export default function TeamLeaderReportsPage(props) {
   const authUser = useSelector((state) => state.auth.user);
   
   const [period, setPeriod] = useState("monthly");
-  const [customRange, setCustomRange] = useState({ from: daysAgoKey(30), to: todayKey() });
+  const [customRange, setCustomRange] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return { from: getDateKey(d), to: getTodayDateKey() };
+  });
   
   const [showPeriodModal, setShowPeriodModal] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -45,10 +43,27 @@ export default function TeamLeaderReportsPage(props) {
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams({ period });
-    if (period === "custom") {
-      if (customRange.from) params.set("from", customRange.from);
-      if (customRange.to) params.set("to", customRange.to);
+    
+    const today = new Date();
+    let fromDateStr = getTodayDateKey();
+    let toDateStr = getTodayDateKey();
+
+    if (period === "weekly") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 6);
+      fromDateStr = getDateKey(fromDate);
+    } else if (period === "monthly") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 29);
+      fromDateStr = getDateKey(fromDate);
+    } else if (period === "custom") {
+      fromDateStr = customRange.from;
+      toDateStr = customRange.to;
     }
+    
+    if (fromDateStr) params.set("from", fromDateStr);
+    if (toDateStr) params.set("to", toDateStr);
+
     if (selectedTeamId) {
       params.set("teamId", selectedTeamId);
     }
@@ -59,7 +74,7 @@ export default function TeamLeaderReportsPage(props) {
     skip: period === "custom" && (!customRange.from || !customRange.to),
   });
 
-  const { data: memberAttendanceData, isLoading: isLoadingMemberAttendance } = useGetTeamLeaderAttendanceQuery("limit=2000", {
+  const { data: memberAttendanceData, isLoading: isLoadingMemberAttendance } = useGetTeamLeaderAttendanceQuery(`${queryString}&limit=2000`, {
     skip: !selectedMember,
   });
 
@@ -94,7 +109,7 @@ export default function TeamLeaderReportsPage(props) {
 
     try {
       const blob = await mutation(queryString).unwrap();
-      const filename = `team_report_${period}_${todayKey()}.${ext}`;
+      const filename = `team_report_${period}_${getTodayDateKey()}.${ext}`;
       await downloadAndShareBlob(blob, filename);
     } catch (err) {
       Alert.alert("Error", err?.data?.message || `Failed to download ${format.toUpperCase()}`);

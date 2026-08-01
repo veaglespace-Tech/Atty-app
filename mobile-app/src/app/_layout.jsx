@@ -2,7 +2,7 @@ import '../global.css';
 import '@/lib/lucide-interop';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme, StyleSheet, LogBox, Platform } from 'react-native';
+import { useColorScheme, StyleSheet, LogBox, Platform, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot } from 'expo-router';
 import { useEffect } from 'react';
@@ -21,6 +21,15 @@ LogBox.ignoreLogs([
 ]);
 
 import { StoreProvider } from '@/components/StoreProvider';
+
+if (Text.defaultProps == null) {
+  Text.defaultProps = {};
+  Text.defaultProps.maxFontSizeMultiplier = 1.2;
+}
+if (TextInput.defaultProps == null) {
+  TextInput.defaultProps = {};
+  TextInput.defaultProps.maxFontSizeMultiplier = 1.2;
+}
 
 SplashScreen.preventAutoHideAsync();
 

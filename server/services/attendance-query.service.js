@@ -35,8 +35,12 @@ const mapAttendanceRecord = (record = {}) => {
     status: record.status || "PRESENT",
     punchInAt: record.punchInAt,
     punchOutAt: record.punchOutAt,
-    workedMinutes: Number(record.totalMinutesWorked || 0),
-    workedHours: minutesToHoursValue(record.totalMinutesWorked || 0),
+    workedMinutes: !record.punchOutAt && record.punchInAt 
+      ? Math.max(Number(record.totalMinutesWorked || 0), Math.floor((new Date() - new Date(record.punchInAt)) / 60000))
+      : Number(record.totalMinutesWorked || 0),
+    workedHours: !record.punchOutAt && record.punchInAt 
+      ? minutesToHoursValue(Math.max(Number(record.totalMinutesWorked || 0), Math.floor((new Date() - new Date(record.punchInAt)) / 60000)))
+      : minutesToHoursValue(record.totalMinutesWorked || 0),
     lateMinutes: resolveAttendanceLateMinutes(record),
     punchInValid: record.isPunchInValid !== false,
     punchOutValid: record.isPunchOutValid !== false,

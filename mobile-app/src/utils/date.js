@@ -18,20 +18,31 @@ export const getDateKey = (value = new Date(), timeZone = APP_TIME_ZONE) => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
 
-  const partMap = parts.reduce((accumulator, part) => {
-    accumulator[part.type] = part.value;
-    return accumulator;
-  }, {});
+    const partMap = parts.reduce((accumulator, part) => {
+      accumulator[part.type] = part.value;
+      return accumulator;
+    }, {});
 
-  if (!partMap.year || !partMap.month || !partMap.day) return "";
-  return `${partMap.year}-${partMap.month}-${partMap.day}`;
+    if (partMap.year && partMap.month && partMap.day) {
+      return `${partMap.year}-${partMap.month}-${partMap.day}`;
+    }
+  } catch (error) {
+    // Ignore and fallback if Intl or timeZone is not supported
+  }
+
+  // Fallback for Hermes/environments without full Intl support
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export const getTodayDateKey = () => getDateKey(new Date());

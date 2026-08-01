@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform } from "react-native";
+import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform, SafeAreaView } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert } from "lucide-react-native";
 import { useDispatch } from "react-redux";
@@ -12,7 +12,7 @@ import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission
 import { API_BASE_URL } from "@/services/api/baseApi";
 import AnimatedLogo from '../AnimatedLogo.jsx';
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Slightly wider drawer 
+const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.75, 350);
 
 const HeaderBadges = ({ user, isDark }) => {
   const role = user?.currentRole || user?.role;
@@ -209,7 +209,7 @@ const getTabsForRole = (user) => {
     memberTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
   memberTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
-  memberTabs.push({ title: "Her Security", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
+  // memberTabs.push({ title: "Her Security", icon: <ShieldAlert size={18} color="#e11d48" />, href: "her-security" });
   memberTabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
   
   return memberTabs;
@@ -271,7 +271,7 @@ export default function MobileDashboardShell({ children }) {
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+    <SafeAreaView style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
       
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (
@@ -324,7 +324,7 @@ export default function MobileDashboardShell({ children }) {
                 <Image 
                   source={{ uri: headerProfileUrl }} 
                   style={{ width: '100%', height: '100%' }} 
-                  resizeMode="cover" 
+                  resizeMode="contain" 
                   onError={() => setAvatarError(true)}
                 />
               ) : (
@@ -432,6 +432,6 @@ export default function MobileDashboardShell({ children }) {
           </Animated.View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -144,7 +144,8 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
   const loading = dashboardLoading || dashboardFetching || attendanceLoading || attendanceFetching;
   const summaryMap = useMemo(() => toSummaryMap(summary), [summary]);
 
-  const todayRecord = useMemo(() => records.find((record) => String(record.date) === todayKey()) || null, [records]);
+  const serverTodayKey = attendanceData?.meta?.today || todayKey();
+  const todayRecord = useMemo(() => records.find((record) => String(record.date).startsWith(serverTodayKey)) || null, [records, serverTodayKey]);
   const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "No Record";
 
   const {
@@ -160,7 +161,10 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
 
   const fetchAttendance = async () => {
     try {
-      await Promise.all([refetchDashboard(), refetchAttendance()]);
+      const promises = [];
+      try { promises.push(refetchDashboard()); } catch (e) { if (e?.message !== "Cannot refetch a query that has not been started yet.") throw e; }
+      try { promises.push(refetchAttendance()); } catch (e) { if (e?.message !== "Cannot refetch a query that has not been started yet.") throw e; }
+      await Promise.all(promises);
     } catch (err) {
       Alert.alert("Error", err?.data?.message || err?.message || "Unable to fetch attendance data");
     }
@@ -201,6 +205,9 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
       setPendingPunchType("");
       await fetchAttendance();
     } catch (err) {
+      if (err?.status === 409 || err?.originalStatus === 409) {
+        await fetchAttendance();
+      }
       Alert.alert("Error", err?.data?.message || err?.message || "Attendance action failed");
     } finally {
       setActionLoading("");

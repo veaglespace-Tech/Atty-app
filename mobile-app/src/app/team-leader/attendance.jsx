@@ -8,6 +8,8 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
+import { getDateKey, getTodayDateKey } from "@/utils/date";
+
 const MetricCard = ({ label, value, bgClass, textClass }) => (
   <View className={`flex-1 rounded-[24px] p-4 border border-slate-100 dark:border-slate-800 ${bgClass}`}>
     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">{label}</Text>
@@ -20,7 +22,25 @@ export default function TeamLeaderAttendancePage() {
   const [period, setPeriod] = useState("monthly");
   const [showMyAttendance, setShowMyAttendance] = useState(false);
   
-  const { data, isLoading, isFetching, refetch } = useGetTeamLeaderAttendanceQuery(`period=${period}&limit=50`);
+  const queryString = useMemo(() => {
+    const today = new Date();
+    let fromDateStr = getTodayDateKey();
+    let toDateStr = getTodayDateKey();
+
+    if (period === "weekly") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 6);
+      fromDateStr = getDateKey(fromDate);
+    } else if (period === "monthly") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 29);
+      fromDateStr = getDateKey(fromDate);
+    }
+    
+    return `period=${period}&from=${fromDateStr}&to=${toDateStr}&limit=50`;
+  }, [period]);
+
+  const { data, isLoading, isFetching, refetch } = useGetTeamLeaderAttendanceQuery(queryString);
   const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderReportsPdfMutation();
   const [downloadExcel, { isLoading: downloadingExcel }] = useDownloadTeamLeaderReportsExcelMutation();
 
@@ -59,7 +79,7 @@ export default function TeamLeaderAttendancePage() {
             <Pressable
               onPress={async () => {
                 try {
-                  const blob = await downloadPdf(`period=${period}`).unwrap();
+                  const blob = await downloadPdf(queryString).unwrap();
                   await downloadAndShareBlob(blob, `team-attendance-${period}.pdf`);
                 } catch (e) {
                   Alert.alert("Error", "Failed to download PDF report");
@@ -73,7 +93,7 @@ export default function TeamLeaderAttendancePage() {
             <Pressable
               onPress={async () => {
                 try {
-                  const blob = await downloadExcel(`period=${period}`).unwrap();
+                  const blob = await downloadExcel(queryString).unwrap();
                   await downloadAndShareBlob(blob, `team-attendance-${period}.xlsx`);
                 } catch (e) {
                   Alert.alert("Error", "Failed to download Excel report");

@@ -125,7 +125,11 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
   const regularizedCount = Number(statusCountMap.REGULARIZED || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
-  const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
+  let liveMinutes = 0;
+  if (todayRecord && todayRecord.punchInAt && !todayRecord.punchOutAt) {
+    liveMinutes = Math.max(0, Math.floor((new Date() - new Date(todayRecord.punchInAt)) / 60000));
+  }
+  const workedHours = minutesToHoursValue((monthlyAggregate?._sum?.totalMinutesWorked || 0) + liveMinutes);
   const items = recentRecords.map((record) => {
     const item = mapAttendanceRecord(record);
 
@@ -191,6 +195,7 @@ exports.getMemberAttendance = asyncHandler(async (req, res) => {
     meta: {
       total,
       limit,
+      today: todayKey(),
     },
   });
 });

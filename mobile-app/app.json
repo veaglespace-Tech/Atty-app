@@ -11,7 +11,8 @@
       "icon": "./assets/images/atty-icon.png",
       "bundleIdentifier": "com.veaglespace.atty",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "ATTY uses the camera to capture attendance selfies for face recognition verification and profile photo updates."
       }
     },
     "android": {

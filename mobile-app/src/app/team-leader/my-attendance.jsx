@@ -54,7 +54,7 @@ export default function OrgMyAttendancePage() {
 
   const loading = attendanceLoading || attendanceFetching;
 
-  const todayRecord = useMemo(() => records.find((record) => String(record.date) === getTodayDateKey()) || null, [records]);
+  const todayRecord = useMemo(() => records.find((record) => String(record.date).startsWith(getTodayDateKey())) || null, [records]);
   const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "No Record";
 
   const fetchAttendance = async () => {

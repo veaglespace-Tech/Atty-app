@@ -30,7 +30,7 @@ export default function OrgReportsPage() {
   
   const [selectedMember, setSelectedMember] = useState(null);
   
-  const { data: attendanceData, isLoading: attendanceLoading } = useGetOrgAttendanceQuery("limit=2000", {
+  const { data: attendanceData, isLoading: attendanceLoading } = useGetOrgAttendanceQuery(`${queryString}&limit=2000`, {
     skip: !selectedMember,
   });
 
