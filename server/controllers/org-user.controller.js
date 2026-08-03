@@ -20,6 +20,7 @@ const {
   toSummaryItem,
   truncateText,
   normalizeStatus,
+  extractImageUrl,
 } = require("../services/common.service");
 const { getDirectDownloadUrl } = require("../utils/download-url");
 const {
@@ -1044,12 +1045,17 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
 
   const items = paginatedPosts.map((post) => {
     const serialized = _serializePollForNotification(post, userId);
+    const imageUrl = extractImageUrl(serialized);
+    const metaObj = serialized.metadata || {};
+    const attachments = metaObj.attachments || (metaObj.attachment ? [metaObj.attachment] : []);
     return {
       id: String(post.id),
       title: post.title,
       message: post.content,
       type: post.type,
       metadata: serialized.metadata,
+      imageUrl,
+      attachments,
       poll: serialized.poll || undefined,
       createdAt: post.createdAt,
       authorName: post.author?.name || "Admin",
@@ -1106,6 +1112,9 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
 
   const userId = Number(req.user.id);
   const serialized = _serializePollForNotification(post, userId);
+  const imageUrl = extractImageUrl(serialized);
+  const metaObj = serialized.metadata || {};
+  const attachments = metaObj.attachments || (metaObj.attachment ? [metaObj.attachment] : []);
 
   res.status(200).json({
     success: true,
@@ -1115,6 +1124,8 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
       message: post.content,
       type: post.type,
       metadata: serialized.metadata,
+      imageUrl,
+      attachments,
       poll: serialized.poll || undefined,
       createdAt: post.createdAt,
       authorName: post.author?.name || "Admin",
