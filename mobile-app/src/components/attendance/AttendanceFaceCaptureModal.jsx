@@ -146,12 +146,12 @@ export default function AttendanceFaceCaptureModal({
             </View>
           ) : (
             <>
-              <View className="mb-5 aspect-[3/4] w-full overflow-hidden rounded-[1.8rem] border border-slate-200 bg-slate-950 shadow-xl dark:border-slate-800">
+              <View className="mb-5 aspect-[3/4] w-full max-h-[55vh] overflow-hidden rounded-[1.8rem] border border-slate-200 bg-slate-950 shadow-xl dark:border-slate-800">
                 {capturedImage ? (
                   <Image
                     source={{ uri: capturedImage }}
-                    className="h-full w-full"
-                    resizeMode="cover"
+                    className="h-full w-full bg-black"
+                    resizeMode="contain"
                   />
                 ) : (
                   <View className="flex-1 relative">
@@ -161,7 +161,7 @@ export default function AttendanceFaceCaptureModal({
                         autoPlay
                         playsInline
                         muted
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
                     ) : (
                       <CameraView

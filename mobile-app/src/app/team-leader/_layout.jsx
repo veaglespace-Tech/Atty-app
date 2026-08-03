@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Users, CalendarCheck2, Settings } from 'lucide-react-native';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { hasPermission, PERMISSIONS } from "@/utils/roles";
@@ -11,6 +12,7 @@ export default function TeamLeaderLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { user } = useAuthSession();
+  const insets = useSafeAreaInsets();
 
   return (
     <MobileDashboardShell>
@@ -35,8 +37,8 @@ export default function TeamLeaderLayout() {
             boxShadow: '0px -10px 20px rgba(0,0,0,0.3)',
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
-            height: 65,
-            paddingBottom: 8,
+            height: 65 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
+            paddingBottom: 8 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
             paddingTop: 8,
             maxWidth: 768,
             alignSelf: 'center',

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, CalendarCheck2, Users, Settings } from 'lucide-react-native';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { hasPermission, PERMISSIONS, ROLES } from "@/utils/roles";
@@ -11,6 +12,7 @@ export default function OrgLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { user } = useAuthSession();
+  const insets = useSafeAreaInsets();
   
   const role = user?.currentRole || user?.role;
   const isAdmin = role === ROLES.ORG_ADMIN;
@@ -38,8 +40,8 @@ export default function OrgLayout() {
             boxShadow: '0px -10px 20px rgba(0,0,0,0.3)',
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
-            height: 65,
-            paddingBottom: 8,
+            height: 65 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
+            paddingBottom: 8 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
             paddingTop: 8,
           },
           tabBarLabelStyle: {

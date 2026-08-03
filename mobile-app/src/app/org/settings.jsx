@@ -484,10 +484,10 @@ export default function SettingsScreen() {
 
               <View>
                 <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Blood Group</Text>
-                <View className="flex-row flex-wrap gap-2">
+                <View className="flex-row flex-wrap justify-between gap-y-3">
                   {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(bg => (
                     <Pressable key={bg} onPress={() => setFormData(p => ({ ...p, bloodGroup: bg }))}
-                      className={`flex-1 min-w-[22%] py-3 rounded-2xl items-center justify-center border active:scale-95 transition-transform ${formData.bloodGroup === bg ? "bg-rose-500 border-rose-500 shadow-sm" : "bg-slate-50 dark:bg-[#0f172a] border-slate-200 dark:border-slate-800/80"}`}>
+                      className={`w-[23%] py-3 rounded-2xl items-center justify-center border active:scale-95 transition-transform ${formData.bloodGroup === bg ? "bg-rose-500 border-rose-500 shadow-sm" : "bg-slate-50 dark:bg-[#0f172a] border-slate-200 dark:border-slate-800/80"}`}>
                       <Text className={`text-[14px] font-black ${formData.bloodGroup === bg ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{bg}</Text>
                     </Pressable>
                   ))}

@@ -181,12 +181,24 @@ export function useAttendanceCamera({ open, onClose }) {
       return;
     }
 
-    const sourceSize = Math.min(sourceWidth, sourceHeight);
-    const offsetX = Math.max(0, Math.floor((sourceWidth - sourceSize) / 2));
-    const offsetY = Math.max(0, Math.floor((sourceHeight - sourceSize) / 2));
+    // Preserve actual aspect ratio up to max dimension 720
+    const MAX_DIM = 720;
+    let targetWidth = sourceWidth;
+    let targetHeight = sourceHeight;
+    
+    if (sourceWidth > MAX_DIM || sourceHeight > MAX_DIM) {
+      if (sourceWidth > sourceHeight) {
+        targetWidth = MAX_DIM;
+        targetHeight = Math.round((sourceHeight / sourceWidth) * MAX_DIM);
+      } else {
+        targetHeight = MAX_DIM;
+        targetWidth = Math.round((sourceWidth / sourceHeight) * MAX_DIM);
+      }
+    }
+
     const canvas = document.createElement("canvas");
-    canvas.width = PREVIEW_SIZE;
-    canvas.height = PREVIEW_SIZE;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const context = canvas.getContext("2d");
 
     if (!context) {
@@ -196,14 +208,14 @@ export function useAttendanceCamera({ open, onClose }) {
 
     context.drawImage(
       video,
-      offsetX,
-      offsetY,
-      sourceSize,
-      sourceSize,
       0,
       0,
-      PREVIEW_SIZE,
-      PREVIEW_SIZE
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      targetWidth,
+      targetHeight
     );
 
     setCapturedImage(canvas.toDataURL("image/jpeg", 0.82));

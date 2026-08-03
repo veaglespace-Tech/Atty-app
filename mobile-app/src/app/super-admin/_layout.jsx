@@ -2,11 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Building2, Users, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MobileDashboardShell from "@/components/dashboard/MobileDashboardShell";
 
 export default function SuperAdminLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const insets = useSafeAreaInsets();
 
   return (
     <MobileDashboardShell>
@@ -31,8 +34,8 @@ export default function SuperAdminLayout() {
             boxShadow: '0px -10px 20px rgba(0,0,0,0.1)',
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
-            height: 70,
-            paddingBottom: 12,
+            height: 70 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
+            paddingBottom: 12 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
             paddingTop: 12,
           },
           tabBarLabelStyle: {

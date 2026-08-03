@@ -38,6 +38,31 @@
           "imageWidth": 76
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ATTY needs your location to verify your presence at the designated work area when marking attendance."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ATTY uses the camera to capture attendance selfies for face recognition verification.",
+          "microphonePermission": "Allow ATTY to access your microphone for video capture."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ATTY accesses your photo library to let you upload or update your profile picture."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "ATTY uses Face ID / Touch ID for quick and secure login to your account."
+        }
+      ],
       "expo-sharing",
       "@react-native-community/datetimepicker",
       "expo-secure-store",

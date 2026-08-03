@@ -362,7 +362,7 @@ export default function UserRegisterPage() {
               <Text className="ml-1 mb-2 text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">
                 Blood Group
               </Text>
-              <View className="flex-row flex-wrap gap-2">
+              <View className="flex-row flex-wrap justify-between gap-y-3">
                 {BLOOD_GROUPS.map((bg) =>
                 <Pressable
                   key={bg}

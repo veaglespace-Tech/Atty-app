@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform, SafeAreaView } from "react-native";
+import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert } from "lucide-react-native";
 import { useDispatch } from "react-redux";
@@ -215,6 +215,8 @@ const getTabsForRole = (user) => {
   return memberTabs;
 };
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 export default function MobileDashboardShell({ children }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -271,7 +273,7 @@ export default function MobileDashboardShell({ children }) {
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
       
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (

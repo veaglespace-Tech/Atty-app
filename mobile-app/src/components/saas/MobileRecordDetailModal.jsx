@@ -162,21 +162,23 @@ export default function MobileRecordDetailModal({ record, onClose, visible }) {
                     {record.punchInSelfieUrl && (
                       <View className="flex-1 items-center gap-2">
                         <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Punch In</Text>
-                        <Image
-                          source={{ uri: record.punchInSelfieUrl }}
-                          style={{ width: 100, height: 100, borderRadius: 16 }}
-                          resizeMode="cover"
-                        />
+                          <Image
+                            source={{ uri: record.punchInSelfieUrl }}
+                            style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }}
+                            resizeMode="cover"
+                            className="bg-black/5 dark:bg-black/20"
+                          />
                       </View>
                     )}
                     {record.punchOutSelfieUrl && (
                       <View className="flex-1 items-center gap-2">
                         <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Punch Out</Text>
-                        <Image
-                          source={{ uri: record.punchOutSelfieUrl }}
-                          style={{ width: 100, height: 100, borderRadius: 16 }}
-                          resizeMode="cover"
-                        />
+                          <Image
+                            source={{ uri: record.punchOutSelfieUrl }}
+                            style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }}
+                            resizeMode="cover"
+                            className="bg-black/5 dark:bg-black/20"
+                          />
                       </View>
                     )}
                   </View>
