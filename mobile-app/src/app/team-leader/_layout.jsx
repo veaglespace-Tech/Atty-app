@@ -81,7 +81,6 @@ export default function TeamLeaderLayout() {
           }}
         />
         <Tabs.Screen name="expenses" options={{ href: null }} />
-        <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
         <Tabs.Screen name="my-attendance" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="notifications/[id]" options={{ href: null }} />

@@ -165,7 +165,7 @@ export default function MobileRecordDetailModal({ record, onClose, visible }) {
                           <Image
                             source={{ uri: record.punchInSelfieUrl }}
                             style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }}
-                            resizeMode="cover"
+                            resizeMode="contain"
                             className="bg-black/5 dark:bg-black/20"
                           />
                       </View>
@@ -176,7 +176,7 @@ export default function MobileRecordDetailModal({ record, onClose, visible }) {
                           <Image
                             source={{ uri: record.punchOutSelfieUrl }}
                             style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }}
-                            resizeMode="cover"
+                            resizeMode="contain"
                             className="bg-black/5 dark:bg-black/20"
                           />
                       </View>
