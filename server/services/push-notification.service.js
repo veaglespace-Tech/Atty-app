@@ -1,6 +1,7 @@
 const { Expo } = require("expo-server-sdk");
 const prisma = require("../lib/prisma");
-const { truncateText } = require("./common.service");
+const { truncateText, extractImageUrl } = require("./common.service");
+
 exports.notifyNewPost = async (post, authorId, orgId, teamId = null) => {
   try {
     console.log(`[DEBUG PUSH NOTIF] notifyNewPost called for post: ${post.id}, authorId: ${authorId}, orgId: ${orgId}, teamId: ${teamId}`);
@@ -26,23 +27,39 @@ exports.notifyNewPost = async (post, authorId, orgId, teamId = null) => {
       return `New ${formattedType}: ${p.title}`;
     };
     const notificationTitle = getNotificationTitle(post);
+    const imageUrl = extractImageUrl(post);
+
     for (let user of usersWithTokens) {
       if (!Expo.isExpoPushToken(user.expoPushToken)) {
         console.log(`[DEBUG PUSH NOTIF] Invalid push token: ${user.expoPushToken}`);
         continue;
       }
       
-      messages.push({
+      const msg = {
         to: user.expoPushToken,
         sound: "default",
         channelId: "default", 
         priority: "high",
         title: notificationTitle,
         body: truncateText(post.content, 100),
-        data: { postId: post.id },
-      });
+        data: {
+          postId: post.id,
+          title: post.title,
+          content: post.content,
+          type: post.type,
+          ...(imageUrl ? { imageUrl, image: imageUrl } : {}),
+        },
+      };
+
+      if (imageUrl) {
+        msg.image = imageUrl;
+        msg.mutableContent = true;
+        msg.attachments = [{ url: imageUrl }];
+      }
+
+      messages.push(msg);
     }
-    console.log(`[DEBUG PUSH NOTIF] Prepared ${messages.length} valid messages for sending`);
+    console.log(`[DEBUG PUSH NOTIF] Prepared ${messages.length} valid messages for sending (imageUrl: ${imageUrl || "none"})`);
     if (!messages.length) return;
     const chunks = expo.chunkPushNotifications(messages);
     console.log(`[DEBUG PUSH NOTIF] Created ${chunks.length} chunks of notifications`);

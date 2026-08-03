@@ -212,84 +212,98 @@ export default function OrgPostsFeedPage({
                       {post.message || post.content}
                     </div>
 
-                    {post.metadata?.attachment && (
-                      <div className="mt-4 relative z-20">
-                        {post.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (post.metadata.attachment.resourceType === "image" && post.metadata.attachment.format !== "pdf" && !post.metadata.attachment.url?.match(/\.pdf/i)) ? (
-                          <div 
-                            className="relative group/image h-48 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
-                            onContextMenu={(e) => post.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
-                          >
-                            <img 
-                              src={post.metadata.attachment.url} 
-                              alt={post.metadata.attachment.name || "Attachment"} 
-                              className={`h-full w-full object-cover transition-transform duration-500 group-hover/image:scale-105 ${post.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
-                            />
-                            {post.metadata.attachment.allowDownload !== false && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover/image:opacity-100">
-                                <a
-                                  href={post.metadata.attachment.url}
-                                  download={post.metadata.attachment.name || "attachment.jpg"}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-xl transition-transform hover:scale-105 active:scale-95"
-                                  onClick={(e) => handleFileDownload(e, post.metadata.attachment.url, post.metadata.attachment.name || "attachment.jpg")}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                                  Download Image
-                                </a>
+                    {(() => {
+                      const allAttachments = post.attachments?.length > 0 
+                        ? post.attachments 
+                        : (post.metadata?.attachments || (post.metadata?.attachment ? [post.metadata.attachment] : []));
+
+                      if (!allAttachments.length) return null;
+
+                      return (
+                        <div className="mt-4 relative z-20 space-y-3">
+                          {allAttachments.map((att, idx) => {
+                            const isImage = att.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || 
+                              (att.resourceType === "image" && att.format !== "pdf" && !att.url?.match(/\.pdf/i));
+
+                            return isImage ? (
+                              <div 
+                                key={idx}
+                                className="relative group/image h-48 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                                onContextMenu={(e) => att.allowDownload === false ? e.preventDefault() : null}
+                              >
+                                <img 
+                                  src={att.url} 
+                                  alt={att.name || "Attachment"} 
+                                  className={`h-full w-full object-cover transition-transform duration-500 group-hover/image:scale-105 ${att.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+                                />
+                                {att.allowDownload !== false && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover/image:opacity-100">
+                                    <a
+                                      href={att.url}
+                                      download={att.name || "attachment.jpg"}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-xl transition-transform hover:scale-105 active:scale-95"
+                                      onClick={(e) => handleFileDownload(e, att.url, att.name || "attachment.jpg")}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                      Download Image
+                                    </a>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        ) : (
-                          post.metadata.attachment.allowDownload !== false ? (
-                            <div className="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
-                                  <Paperclip size={18} className="text-blue-500 dark:text-blue-400" />
+                            ) : (
+                              att.allowDownload !== false ? (
+                                <div key={idx} className="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                                      <Paperclip size={18} className="text-blue-500 dark:text-blue-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="truncate text-xs font-bold text-slate-700 dark:text-slate-300">{att.name || "Attached File"}</p>
+                                      <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mt-0.5">Document / File</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                    <a 
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-slate-800 px-3 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                      Preview
+                                    </a>
+                                    <a 
+                                      href={att.url}
+                                      download={att.name || "attachment"}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                                      onClick={(e) => handleFileDownload(e, att.url, att.name || "attachment")}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                      Download
+                                    </a>
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="truncate text-xs font-bold text-slate-700 dark:text-slate-300">{post.metadata.attachment.name || "Attached File"}</p>
-                                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mt-0.5">Document / File</p>
+                              ) : (
+                                <div key={idx} className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 opacity-80">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <Paperclip size={18} className="text-slate-400" />
+                                  </div>
+                                  <div className="flex-1 overflow-hidden">
+                                    <p className="truncate text-xs font-bold text-slate-500">{att.name || "Attached File"}</p>
+                                    <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                                <a 
-                                  href={post.metadata.attachment.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-slate-800 px-3 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                  Preview
-                                </a>
-                                <a 
-                                  href={post.metadata.attachment.url}
-                                  download={post.metadata.attachment.name || "attachment"}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
-                                  onClick={(e) => handleFileDownload(e, post.metadata.attachment.url, post.metadata.attachment.name || "attachment")}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                                  Download
-                                </a>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 opacity-80">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
-                                <Paperclip size={18} className="text-slate-400" />
-                              </div>
-                              <div className="flex-1 overflow-hidden">
-                                <p className="truncate text-xs font-bold text-slate-500">{post.metadata.attachment.name || "Attached File"}</p>
-                                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )}
+                              )
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
 
                     {post.type === "POLL" && post.metadata?.options ? (
                       <div className="relative z-20 mt-4 rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">

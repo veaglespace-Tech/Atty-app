@@ -3,6 +3,7 @@ const { buildUserAttendancePayload } = require("../services/attendance-query.ser
 const archiver = require("archiver");
 const prisma = require("../lib/prisma");
 const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/image-upload.service");
+const { notifyNewPost } = require("../services/push-notification.service");
 const {
   parseBoolean,
   parseId,
@@ -3043,6 +3044,10 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
     },
     include: { author: { select: { name: true } }, organization: { select: { id: true, name: true } } },
   });
+
+  if (orgIdValue) {
+    notifyNewPost(post, req.user.id, orgIdValue);
+  }
 
   res.status(201).json({ success: true, message: "Post created successfully", item: post });
 });
