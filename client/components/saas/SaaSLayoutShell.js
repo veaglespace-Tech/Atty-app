@@ -337,12 +337,12 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
             </div>
 
             {user?.organization?.logoUrl && (
-              <div className="flex-1 flex justify-center items-center">
-                <div className="flex shrink-0 h-10 sm:h-11 lg:h-[92px] w-auto items-center justify-center transition-all duration-300">
+              <div className="flex-1 flex justify-center items-center px-2">
+                <div className="flex shrink-0 h-10 sm:h-11 lg:h-[92px] w-full max-w-[140px] sm:max-w-[180px] lg:max-w-none items-center justify-center transition-all duration-300">
                   <img
                     src={user.organization.logoUrl}
                     alt="Organization Logo"
-                    className="h-full w-auto max-w-none object-contain transition-transform duration-300 hover:scale-[1.02]"
+                    className="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.02]"
                   />
                 </div>
               </div>
