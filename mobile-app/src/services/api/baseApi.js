@@ -6,9 +6,9 @@ import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
 import { router } from "expo-router";
 
-const DEFAULT_LOCAL_WEB_API_URL = "http://127.0.0.1:5001/api";
-const DEFAULT_ANDROID_EMULATOR_API_URL = "http://10.138.67.21:5001/api";
-const DEFAULT_IOS_SIMULATOR_API_URL = "http://10.138.67.21:5001/api";
+const DEFAULT_LOCAL_WEB_API_URL = "http://127.0.0.1:5000/api";
+const DEFAULT_ANDROID_EMULATOR_API_URL = "http://10.0.2.2:5000/api";
+const DEFAULT_IOS_SIMULATOR_API_URL = "http://127.0.0.1:5000/api";
 const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
 
 const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");
@@ -28,30 +28,20 @@ const isLocalHost = (hostname) => {
   );
 };
 
-const resolveLocalApiBaseUrl = () => {
-  if (Platform.OS === "android") {
-    return DEFAULT_ANDROID_EMULATOR_API_URL;
-  }
-  if (Platform.OS === "ios") {
-    return DEFAULT_IOS_SIMULATOR_API_URL;
-  }
-  return DEFAULT_LOCAL_WEB_API_URL;
-};
-
 const resolveApiBaseUrl = () => {
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") {
-      return `http://${host}:5001/api`;
-    }
-  }
-
   const explicitApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL);
   if (explicitApiUrl) {
     if (Platform.OS !== "web" && (explicitApiUrl.includes("localhost") || explicitApiUrl.includes("127.0.0.1"))) {
       return DEFAULT_PRODUCTION_API_URL;
     }
     return explicitApiUrl;
+  }
+
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return `http://${host}:5000/api`;
+    }
   }
 
   const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)
