@@ -288,21 +288,21 @@ export default function MobileDashboardShell({ children }) {
           </View>
 
           {/* Center: Org Logo or Brand */}
-          <View className="absolute left-0 right-0 items-center justify-center pointer-events-none" style={{ top: 0, bottom: 0, zIndex: 1 }}>
+          <View className="flex-1 items-center justify-center px-2 pointer-events-none">
             {headerOrgLogoUrl && !logoError ? (
               <Image 
                 source={{ uri: headerOrgLogoUrl }} 
-                style={{ height: 32, width: 120 }} 
+                style={{ height: 32, width: '100%', maxWidth: 120 }} 
                 resizeMode="contain" 
                 onError={() => setLogoError(true)}
               />
             ) : (
-              <View className="flex-row items-center justify-center">
+              <View className="flex-row items-center justify-center overflow-hidden">
                 <AnimatedLogo style={{ width: 28, height: 28, marginRight: 8 }} />
-                <Text className="text-xl font-black text-slate-900 dark:text-white leading-tight tracking-tight mr-1">
+                <Text className="text-xl font-black text-slate-900 dark:text-white leading-tight tracking-tight mr-1" numberOfLines={1}>
                   Veagle
                 </Text>
-                <Text className="text-xl font-black text-blue-500 leading-tight tracking-tight">
+                <Text className="text-xl font-black text-blue-500 leading-tight tracking-tight" numberOfLines={1}>
                   Atty
                 </Text>
               </View>
