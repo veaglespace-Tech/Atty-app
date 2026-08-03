@@ -79,11 +79,14 @@ const requestBestPosition = (options, maxWaitTime = 7000) =>
         }
       },
       (error) => {
-        // If permission denied (code 1) or we have no position, reject immediately
-        if (error.code === 1 || !bestPosition) {
+        // Only reject immediately if permission is explicitly denied
+        if (error.code === 1) {
             cleanup();
             reject(error);
         }
+        // For error.code 2 (Unavailable) or 3 (Timeout), we do NOT reject immediately.
+        // We let watchPosition keep trying until our 7-second timeout fires, 
+        // because the GPS might just be warming up.
       },
       options
     );
