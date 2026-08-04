@@ -215,15 +215,16 @@ const getTabsForRole = (user) => {
   return memberTabs;
 };
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MobileDashboardShell({ children }) {
+  const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const dispatch = useDispatch();
   const { user } = useAuthSession();
   const pathname = usePathname();
-  const isSettingsPage = pathname === "/org/settings";
+  const isSettingsPage = Boolean(pathname?.endsWith("/settings"));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -273,7 +274,7 @@ export default function MobileDashboardShell({ children }) {
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
       
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (
@@ -347,6 +348,7 @@ export default function MobileDashboardShell({ children }) {
         visible={isDrawerOpen}
         transparent
         animationType="none"
+        statusBarTranslucent={true}
         onRequestClose={closeDrawer}
       >
         <View className="flex-1 flex-row">
@@ -363,10 +365,15 @@ export default function MobileDashboardShell({ children }) {
 
           {/* Sliding Drawer */}
           <Animated.View
-            style={{ transform: [{ translateX: slideAnim }], width: DRAWER_WIDTH }}
+            style={{ 
+              transform: [{ translateX: slideAnim }], 
+              width: DRAWER_WIDTH,
+              paddingTop: Platform.OS === 'ios' ? insets.top : Math.max(insets.top, 12),
+              paddingBottom: Math.max(insets.bottom, 12)
+            }}
             className="h-full flex-col bg-white dark:bg-[#020617]"
           >
-            <View className="flex-1 pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
+            <View className="flex-1 pt-2 pb-4 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
                 <View className="flex-row items-center gap-3 flex-1">
                   <AnimatedLogo 

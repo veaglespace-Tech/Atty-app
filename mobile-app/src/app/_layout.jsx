@@ -52,13 +52,15 @@ export default function RootLayout() {
   }, [colorScheme]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StoreProvider>
-        <View style={styles.container}>
-          <Slot />
-        </View>
-      </StoreProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StoreProvider>
+          <View style={styles.container}>
+            <Slot />
+          </View>
+        </StoreProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 
 }
