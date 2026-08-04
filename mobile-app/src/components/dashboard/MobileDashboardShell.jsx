@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform } from "react-native";
+import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert } from "lucide-react-native";
 import { useDispatch } from "react-redux";
@@ -220,7 +220,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 export default function MobileDashboardShell({ children }) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const rnColorScheme = useRNColorScheme();
+  const isDark = colorScheme === 'dark' || rnColorScheme === 'dark';
   const dispatch = useDispatch();
   const { user } = useAuthSession();
   const pathname = usePathname();
@@ -373,8 +374,8 @@ export default function MobileDashboardShell({ children }) {
             style={{ 
               transform: [{ translateX: slideAnim }], 
               width: DRAWER_WIDTH,
-              paddingTop: Platform.OS === 'ios' ? insets.top : Math.max(insets.top, 12),
-              paddingBottom: Math.max(insets.bottom, 12),
+              paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 20) : Math.max(insets.top, 12),
+              paddingBottom: Math.max(insets.bottom, 16),
               backgroundColor: isDark ? '#020617' : '#ffffff',
               zIndex: 10,
               shadowColor: '#000',
@@ -383,7 +384,7 @@ export default function MobileDashboardShell({ children }) {
               shadowRadius: 10,
               elevation: 16,
             }}
-            className="h-full flex-col"
+            className="h-full flex-col bg-white dark:bg-[#020617]"
           >
             <View className="flex-1 pt-2 pb-4 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
@@ -392,7 +393,10 @@ export default function MobileDashboardShell({ children }) {
                     style={{ width: 34, height: 34 }}
                   />
                   <View className="flex-row items-center flex-1">
-                    <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mr-1.5">
+                    <Text 
+                      className="text-2xl font-black tracking-tight mr-1.5"
+                      style={{ color: isDark ? '#ffffff' : '#0f172a' }}
+                    >
                       Veagle
                     </Text>
                     <Text 
@@ -411,12 +415,16 @@ export default function MobileDashboardShell({ children }) {
               </View>
 
               <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-                <Text className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-2 mb-3">
+                <Text 
+                  className="text-xs font-black uppercase tracking-widest px-2 mb-3"
+                  style={{ color: isDark ? '#64748b' : '#94a3b8' }}
+                >
                   Navigation
                 </Text>
                 
                 <View className="gap-y-1">
-                  {getTabsForRole(user).map((tab) => (                    <Pressable
+                  {getTabsForRole(user).map((tab) => (
+                    <Pressable
                       key={tab.title}
                       onPress={() => {
                         closeDrawer();
@@ -424,14 +432,25 @@ export default function MobileDashboardShell({ children }) {
                           const activeRole = user?.currentRole || user?.role;
                           const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
                           const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
-                          router.push(`${basePath}/${tab.href}`);                        }, 200);
+                          router.push(`${basePath}/${tab.href}`);
+                        }, 200);
                       }}
                       className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50/80 dark:active:bg-slate-800/80 active:scale-95 transition-all">
                       <View className="flex-row items-center gap-4">
-                        <View className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 items-center justify-center">
+                        <View 
+                          className="w-10 h-10 rounded-xl items-center justify-center"
+                          style={{
+                            backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
+                            borderWidth: 1,
+                            borderColor: isDark ? '#1e293b' : '#e2e8f0'
+                          }}
+                        >
                           {tab.icon}
                         </View>
-                        <Text className="text-[15px] font-bold text-slate-700 dark:text-slate-200">
+                        <Text 
+                          className="text-[15px] font-bold"
+                          style={{ color: isDark ? '#f8fafc' : '#0f172a' }}
+                        >
                           {tab.title}
                         </Text>
                       </View>
