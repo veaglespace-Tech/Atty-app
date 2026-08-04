@@ -327,7 +327,7 @@ export default function MobileDashboardShell({ children }) {
                 <Image 
                   source={{ uri: headerProfileUrl }} 
                   style={{ width: '100%', height: '100%' }} 
-                  resizeMode="contain" 
+                  resizeMode="cover" 
                   onError={() => setAvatarError(true)}
                 />
               ) : (
@@ -351,15 +351,20 @@ export default function MobileDashboardShell({ children }) {
         statusBarTranslucent={true}
         onRequestClose={closeDrawer}
       >
-        <View className="flex-1 flex-row">
+        <View className="flex-1 flex-row relative">
           {/* Backdrop */}
           <TouchableWithoutFeedback onPress={closeDrawer}>
             <Animated.View 
               style={{ 
                 opacity: fadeAnim, 
-                backgroundColor: 'rgba(15, 23, 42, 0.65)'
+                backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 1,
               }}
-              className="absolute inset-0"
             />
           </TouchableWithoutFeedback>
 
@@ -369,9 +374,16 @@ export default function MobileDashboardShell({ children }) {
               transform: [{ translateX: slideAnim }], 
               width: DRAWER_WIDTH,
               paddingTop: Platform.OS === 'ios' ? insets.top : Math.max(insets.top, 12),
-              paddingBottom: Math.max(insets.bottom, 12)
+              paddingBottom: Math.max(insets.bottom, 12),
+              backgroundColor: isDark ? '#020617' : '#ffffff',
+              zIndex: 10,
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 0 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+              elevation: 16,
             }}
-            className="h-full flex-col bg-white dark:bg-[#020617]"
+            className="h-full flex-col"
           >
             <View className="flex-1 pt-2 pb-4 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
