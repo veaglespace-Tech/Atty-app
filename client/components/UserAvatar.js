@@ -29,7 +29,7 @@ export default function UserAvatar({
           fill
           sizes={sizes}
           unoptimized
-          className={cn("object-contain", imageClassName)}
+          className={cn("object-cover", imageClassName)}
         />
       ) : (
         <span aria-hidden="true">{userInitial}</span>
