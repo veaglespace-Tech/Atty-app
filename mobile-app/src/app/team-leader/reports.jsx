@@ -38,7 +38,7 @@ export default function TeamLeaderReportsPage(props) {
 
   const [selectedTeamId, setSelectedTeamId] = useState("");
 
-  const { data: teamsData } = useGetTeamLeaderTeamsQuery("limit=50");
+  const { data: teamsData } = useGetTeamLeaderTeamsQuery(50);
   const teams = useMemo(() => teamsData?.items || [], [teamsData]);
 
   const queryString = useMemo(() => {

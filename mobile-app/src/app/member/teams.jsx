@@ -106,7 +106,7 @@ function TeamDetailsModal({ team, visible, onClose }) {
 export default function MyTeamsPage(props) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { data: teamsData, isLoading } = useGetTeamLeaderTeamsQuery("limit=50");
+  const { data: teamsData, isLoading } = useGetTeamLeaderTeamsQuery(50);
   const [selectedTeam, setSelectedTeam] = useState(null);
 
   const teams = Array.isArray(teamsData?.items) ? teamsData.items : [];
