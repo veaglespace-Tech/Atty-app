@@ -79,9 +79,9 @@ const createBaseQuery = (url, timeoutMs = 15000) => fetchBaseQuery({
   },
 });
 
-// Use a short 4-second timeout for local IP query so fallback to live server happens super fast!
+// Use a reasonable 12-second timeout for local query, and 15s for fallback query
 const isLocalServer = API_BASE_URL !== LIVE_SERVER_URL;
-const rawBaseQuery = createBaseQuery(API_BASE_URL, isLocalServer ? 4000 : 15000);
+const rawBaseQuery = createBaseQuery(API_BASE_URL, isLocalServer ? 12000 : 15000);
 const fallbackBaseQuery = createBaseQuery(LIVE_SERVER_URL, 15000);
 
 const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
@@ -126,9 +126,10 @@ const handleUnauthorizedSession = (api, args) => {
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
 
-  // DYNAMIC FALLBACK: If local server fails to connect, retry with the live server automatically!
-  if (result?.error?.status === "FETCH_ERROR" && API_BASE_URL !== LIVE_SERVER_URL) {
-    console.warn("[API] Local server unreachable. Falling back to live server...");
+  // DYNAMIC FALLBACK: If local server fails to connect or times out, retry with the live server automatically!
+  const isNetworkOrTimeout = result?.error?.status === "FETCH_ERROR" || result?.error?.status === "TIMEOUT_ERROR";
+  if (isNetworkOrTimeout && API_BASE_URL !== LIVE_SERVER_URL) {
+    console.warn("[API] Local server unreachable or timed out. Falling back to live server...");
     result = await fallbackBaseQuery(args, api, extraOptions);
   }
 
@@ -143,6 +144,8 @@ export const buildBaseQuery = () => async (args, api, extraOptions) => {
     let customMessage = "";
     if (result.error.status === "FETCH_ERROR") {
       customMessage = "Network error. Please check your internet connection.";
+    } else if (result.error.status === "TIMEOUT_ERROR") {
+      customMessage = "Request timed out. Please check your network connection.";
     } else if (result.error.status === "PARSING_ERROR" || String(result.error.error).includes("SyntaxError")) {
       if (statusCode === 413) {
         customMessage = "The uploaded file or request is too large.";
