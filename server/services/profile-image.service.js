@@ -7,7 +7,7 @@ const {
 const PROFILE_IMAGE_FOLDER = String(
   process.env.IMAGEKIT_PROFILE_IMAGE_FOLDER || "veagle-attendee/profile-images"
 ).trim();
-const MAX_PROFILE_IMAGE_BYTES = Number(process.env.PROFILE_IMAGE_MAX_BYTES || 10 * 1024 * 1024);
+const MAX_PROFILE_IMAGE_BYTES = Number(process.env.PROFILE_IMAGE_MAX_BYTES || 2 * 1024 * 1024);
 
 const createProfileImageError = (message, statusCode = 400) =>
   createImageUploadError(message, statusCode);
@@ -27,7 +27,7 @@ const uploadProfileImage = async ({ userId, dataUrl }) => {
     invalidMessage: "Upload a valid JPG, PNG, WEBP, or GIF image.",
     unsupportedMessage: "Only JPG, PNG, WEBP, or GIF profile images are supported.",
     emptyMessage: "Selected profile image is empty.",
-    tooLargeMessage: "Profile image must be 10 MB or smaller.",
+    tooLargeMessage: "Profile image must be 2 MB or smaller.",
     uploadFailureMessage: "Failed to upload profile image. Please try again.",
     errorFactory: createProfileImageError,
     transformation: [
