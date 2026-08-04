@@ -450,7 +450,6 @@ export default function SuperAdminAttendanceReportsPage() {
           <MetricCard label="Present Days" value={userLoading ? "-" : getUserMetricValue("Present Days")} />
           <MetricCard label="Half Days" value={userLoading ? "-" : getUserMetricValue("Half Days")} />
           <MetricCard label="Overtime Days" value={userLoading ? "-" : getUserMetricValue("Overtime Days")} />
-          <MetricCard label="Defaulter Days" value={userLoading ? "-" : getUserMetricValue("Defaulter Days")} />
           <MetricCard label="Worked Hours" value={userLoading ? "-" : `${getUserMetricValue("Worked Hrs")} hrs`} />
         </div>
 

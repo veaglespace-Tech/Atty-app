@@ -152,7 +152,6 @@ const buildAttendanceSummary = (records = []) => {
       else if (record.status === "HALF_DAY") acc.halfDay += 1;
       else if (record.status === "ABSENT") acc.absent += 1;
       else if (record.status === "OVERTIME") acc.overtime += 1;
-      else if (record.status === "DEFAULTER") acc.defaulter += 1;
       return acc;
     },
     {
@@ -160,7 +159,6 @@ const buildAttendanceSummary = (records = []) => {
       halfDay: 0,
       absent: 0,
       overtime: 0,
-      defaulter: 0,
     }
   );
 
@@ -170,7 +168,6 @@ const buildAttendanceSummary = (records = []) => {
     toSummaryItem("Half Day", totals.halfDay),
     toSummaryItem("Absent", totals.absent),
     toSummaryItem("Overtime", totals.overtime),
-    toSummaryItem("Defaulter", totals.defaulter),
   ];
 };
 

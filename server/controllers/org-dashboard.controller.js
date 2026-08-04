@@ -169,7 +169,6 @@ const buildAttendanceExcelBuffer = ({
     { key: "halfDays", label: "Half Days", width: 90 },
     { key: "absentDays", label: "Absent Days", width: 90 },
     { key: "overtimeDays", label: "Overtime Days", width: 100 },
-    { key: "defaulterDays", label: "Defaulter Days", width: 100 },
     { key: "workedHours", label: "Worked Hrs", width: 100 },
   ]
 
@@ -462,7 +461,6 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
       { key: "halfDays", label: "Half Days", width: 45, align: "center" },
       { key: "absentDays", label: "Absent Days", width: 55, align: "center" },
       { key: "overtimeDays", label: "Overtime Days", width: 60, align: "center" },
-      { key: "defaulterDays", label: "Defaulter Days", width: 60, align: "center" },
       { key: "workedHours", label: "Worked Hrs", width: 60, align: "center" },
     ],
     rows: reportData.items,

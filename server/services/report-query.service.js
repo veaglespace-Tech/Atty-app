@@ -22,7 +22,6 @@ const toReportSummary = (items = []) => {
       acc.halfDays += Number(item.halfDays || 0);
       acc.absentDays += Number(item.absentDays || 0);
       acc.overtimeDays += Number(item.overtimeDays || 0);
-      acc.defaulterDays += Number(item.defaulterDays || 0);
       acc.workedMinutes += Number(item.workedMinutes || 0);
       return acc;
     },
@@ -31,7 +30,6 @@ const toReportSummary = (items = []) => {
       halfDays: 0,
       absentDays: 0,
       overtimeDays: 0,
-      defaulterDays: 0,
       workedMinutes: 0,
     }
   );
@@ -42,7 +40,6 @@ const toReportSummary = (items = []) => {
     toSummaryItem("Half Days", totals.halfDays),
     toSummaryItem("Absent Days", totals.absentDays),
     toSummaryItem("Overtime Days", totals.overtimeDays),
-    toSummaryItem("Defaulter Days", totals.defaulterDays),
     toSummaryItem("Worked Hrs", minutesToHoursValue(totals.workedMinutes)),
   ];
 };
@@ -166,7 +163,6 @@ const buildAttendanceReport = async ({
       halfDays: 0,
       absentDays: 0,
       overtimeDays: 0,
-      defaulterDays: 0,
       workedMinutes: 0,
     });
   }
@@ -182,7 +178,6 @@ const buildAttendanceReport = async ({
       halfDays: 0,
       absentDays: 0,
       overtimeDays: 0,
-      defaulterDays: 0,
       workedMinutes: 0,
     };
 
@@ -196,7 +191,7 @@ const buildAttendanceReport = async ({
     else if (status === "OVERTIME") {
       current.overtimeDays += count;
       current.presentDays += count;
-    } else if (status === "DEFAULTER") current.defaulterDays += count;
+    }
 
     current.workedMinutes += workedMinutes;
     reportMap.set(userId, current);
@@ -204,7 +199,7 @@ const buildAttendanceReport = async ({
 
   // --- 6. For members with fewer recorded days than totalDays, fill the rest as absent ---
   for (const entry of reportMap.values()) {
-    const recordedDays = entry.presentDays + entry.halfDays + entry.absentDays + entry.defaulterDays;
+    const recordedDays = entry.presentDays + entry.halfDays + entry.absentDays;
     if (recordedDays < totalDays) {
       entry.absentDays += (totalDays - recordedDays);
     }

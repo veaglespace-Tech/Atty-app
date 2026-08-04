@@ -370,9 +370,8 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
       { key: "status", label: "Status", width: 55, align: "center" },
       { key: "punchIn", label: "Punch In", width: 50, align: "center" },
       { key: "punchOut", label: "Punch Out", width: 50, align: "center" },
-      { key: "overtime", label: "Overtime", width: 50, align: "center" },
-      { key: "defaulter", label: "Defaulter", width: 50, align: "center" },
-      { key: "workedHoursLabel", label: "Worked Hrs", width: 50, align: "center" },
+      { key: "overtime", label: "Overtime", width: 60, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 60, align: "center" },
     ],
     rows: payload.items.map((item, index) => {
       const statusUpper = String(item.status || "").toUpperCase();
@@ -387,7 +386,6 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
-        defaulter: statusUpper === "DEFAULTER" ? "YES" : "NO",
         workedHoursLabel: item.workedHours.toFixed(2),
       };
     }),
@@ -440,7 +438,6 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
       { key: "punchIn", label: "Punch In", width: 80 },
       { key: "punchOut", label: "Punch Out", width: 80 },
       { key: "overtime", label: "Overtime", width: 80 },
-      { key: "defaulter", label: "Defaulter", width: 80 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 80 },
     ],
     rows: payload.items.map((item, index) => {
@@ -456,7 +453,6 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
-        defaulter: statusUpper === "DEFAULTER" ? "YES" : "NO",
         workedHoursLabel: item.workedHours.toFixed(2),
       };
     }),

@@ -48,8 +48,8 @@ const runAttendanceAutoCloseJob = async () => {
       const startTime = organization?.attendanceStartTime || config.startTime;
       const endTime = organization?.attendanceEndTime || config.endTime;
       const endMinutes = parseStartTimeMinutes(endTime);
-      // Run the auto-close job at 11:30 PM (23:30) to ensure it's at the end of the day
-      const AUTO_CLOSE_TRIGGER_MINUTES = 23 * 60 + 30;
+      // Run the auto-close job at 11:59 PM (23:59) to ensure it's at the end of the day
+      const AUTO_CLOSE_TRIGGER_MINUTES = 23 * 60 + 59;
 
       if (nowMinutes < AUTO_CLOSE_TRIGGER_MINUTES) {
         continue;
@@ -98,7 +98,7 @@ const runAttendanceAutoCloseJob = async () => {
         const autoCloseEndMinutes = 23 * 60 + 59;
         const totalMinutesWorked =
           punchInMinutes === null ? 0 : Math.max(autoCloseEndMinutes - punchInMinutes, 0);
-        const status = "DEFAULTER";
+        const status = "ABSENT";
         const shiftEndAt = buildDateTimeForDateKey({
           dateKey: today,
           time: "23:59",
