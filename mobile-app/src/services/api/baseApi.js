@@ -59,8 +59,9 @@ console.log("[API] Resolved Base URL (Cache Bust):", API_BASE_URL);
 
 const LIVE_SERVER_URL = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD) || "https://atty.veaglespace.com/api";
 
-const createBaseQuery = (url) => fetchBaseQuery({
+const createBaseQuery = (url, timeoutMs = 15000) => fetchBaseQuery({
   baseUrl: url,
+  timeout: timeoutMs,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     headers.set("cache-control", "no-cache, no-store, max-age=0");
@@ -78,8 +79,10 @@ const createBaseQuery = (url) => fetchBaseQuery({
   },
 });
 
-const rawBaseQuery = createBaseQuery(API_BASE_URL);
-const fallbackBaseQuery = createBaseQuery(LIVE_SERVER_URL);
+// Use a short 4-second timeout for local IP query so fallback to live server happens super fast!
+const isLocalServer = API_BASE_URL !== LIVE_SERVER_URL;
+const rawBaseQuery = createBaseQuery(API_BASE_URL, isLocalServer ? 4000 : 15000);
+const fallbackBaseQuery = createBaseQuery(LIVE_SERVER_URL, 15000);
 
 const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
 
