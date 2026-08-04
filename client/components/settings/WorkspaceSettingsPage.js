@@ -538,7 +538,7 @@ function OrgLogoSettings() {
       img.onload = () => {
         const canvas = document.createElement("canvas");
         let { width, height } = img;
-        const MAX_DIM = 1920;
+        const MAX_DIM = 512;
         
         if (width > height && width > MAX_DIM) {
           height *= MAX_DIM / width;
@@ -566,11 +566,6 @@ function OrgLogoSettings() {
 
     if (!ACCEPTED_PROFILE_IMAGE_TYPES.has(file.type)) {
       setLogoError("Upload a JPG, PNG, WEBP, or GIF image.");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setLogoError("Organization logo must be 10 MB or smaller.");
       return;
     }
 
@@ -1057,21 +1052,27 @@ export default function WorkspaceSettingsPage() {
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        let { width, height } = img;
-        const MAX_DIM = 1920;
+        const { width, height } = img;
+        const TARGET_SIZE = 512;
         
-        if (width > height && width > MAX_DIM) {
-          height *= MAX_DIM / width;
-          width = MAX_DIM;
-        } else if (height > MAX_DIM) {
-          width *= MAX_DIM / height;
-          height = MAX_DIM;
-        }
+        const minDim = Math.min(width, height);
+        const sourceX = (width - minDim) / 2;
+        const sourceY = (height - minDim) / 2;
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = TARGET_SIZE;
+        canvas.height = TARGET_SIZE;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(
+          img,
+          sourceX,
+          sourceY,
+          minDim,
+          minDim,
+          0,
+          0,
+          TARGET_SIZE,
+          TARGET_SIZE
+        );
         
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         resolve(dataUrl);
@@ -1090,13 +1091,18 @@ export default function WorkspaceSettingsPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
       setProfileImageError("Profile image must be 10 MB or smaller.");
       return;
     }
 
     try {
       const nextDataUrl = await compressImage(file);
+      
+      if (nextDataUrl.length > MAX_PROFILE_IMAGE_BYTES) {
+        setProfileImageError("Image is too large even after compression. Please choose a smaller image under 10 MB.");
+        return;
+      }
 
       setProfileImageDataUrl(nextDataUrl);
       setRemoveProfileImage(false);
