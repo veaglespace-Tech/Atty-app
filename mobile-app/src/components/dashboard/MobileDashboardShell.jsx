@@ -358,9 +358,15 @@ export default function MobileDashboardShell({ children }) {
               shadowRadius: 10,
               elevation: 16,
             }}
-            className="h-full flex-col bg-white dark:bg-[#020617]"
+            className="h-full flex-col"
           >
-            <View className="flex-1 pt-2 pb-4 border-r border-slate-200 dark:border-slate-800">
+            <View 
+              className="flex-1 pt-2 pb-4 border-r"
+              style={{
+                backgroundColor: isDark ? '#020617' : '#ffffff',
+                borderRightColor: isDark ? '#1e293b' : '#e2e8f0'
+              }}
+            >
               <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
                 <View className="flex-row items-center gap-3 flex-1">
                   <AnimatedLogo 
@@ -383,7 +389,9 @@ export default function MobileDashboardShell({ children }) {
                 </View>
                 <Pressable 
                   onPress={closeDrawer}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 ml-2 flex-shrink-0">
+                  style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }}
+                  className="h-10 w-10 items-center justify-center rounded-full ml-2 flex-shrink-0"
+                >
                   <X size={20} color={isDark ? "#94a3b8" : "#64748b"} />
                 </Pressable>
               </View>
@@ -434,12 +442,20 @@ export default function MobileDashboardShell({ children }) {
                 </View>
               </ScrollView>
 
-              <View className="px-6 pt-6 mt-4 border-t border-slate-100 dark:border-slate-800">
+              <View 
+                className="px-6 pt-6 mt-4 border-t"
+                style={{ borderTopColor: isDark ? '#1e293b' : '#f1f5f9' }}
+              >
                 <Pressable
                   onPress={onLogout}
-                  className="flex-row items-center justify-center gap-2 py-3.5 bg-rose-50 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20 active:opacity-70">
+                  style={{
+                    backgroundColor: isDark ? 'rgba(244, 63, 94, 0.1)' : '#fff1f2',
+                    borderColor: isDark ? 'rgba(244, 63, 94, 0.2)' : '#ffe4e6'
+                  }}
+                  className="flex-row items-center justify-center gap-2 py-3.5 rounded-2xl border active:opacity-70"
+                >
                   <LogOut size={18} color={isDark ? "#fb7185" : "#e11d48"} />
-                  <Text className="font-bold text-rose-600 dark:text-rose-400">Sign Out</Text>
+                  <Text className="font-bold" style={{ color: isDark ? '#fb7185' : '#e11d48' }}>Sign Out</Text>
                 </Pressable>
               </View>
             </View>
