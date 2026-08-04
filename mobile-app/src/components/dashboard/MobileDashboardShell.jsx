@@ -221,7 +221,8 @@ export default function MobileDashboardShell({ children }) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const rnColorScheme = useRNColorScheme();
-  const isDark = colorScheme === 'dark' || rnColorScheme === 'dark';
+  const isWebDark = Platform.OS === 'web' && typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const isDark = colorScheme === 'dark' || rnColorScheme === 'dark' || isWebDark;
   const dispatch = useDispatch();
   const { user } = useAuthSession();
   const pathname = usePathname();
