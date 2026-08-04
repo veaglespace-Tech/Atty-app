@@ -1052,29 +1052,23 @@ export default function WorkspaceSettingsPage() {
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const { width, height } = img;
-        const TARGET_SIZE = 512;
+        let { width, height } = img;
+        const MAX_DIM = 1024;
         
-        const minDim = Math.min(width, height);
-        const sourceX = (width - minDim) / 2;
-        const sourceY = (height - minDim) / 2;
+        if (width > height && width > MAX_DIM) {
+          height *= MAX_DIM / width;
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width *= MAX_DIM / height;
+          height = MAX_DIM;
+        }
 
-        canvas.width = TARGET_SIZE;
-        canvas.height = TARGET_SIZE;
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-          img,
-          sourceX,
-          sourceY,
-          minDim,
-          minDim,
-          0,
-          0,
-          TARGET_SIZE,
-          TARGET_SIZE
-        );
+        ctx.drawImage(img, 0, 0, width, height);
         
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error("Failed to read the selected image."));
@@ -1091,7 +1085,7 @@ export default function WorkspaceSettingsPage() {
       return;
     }
 
-    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+    if (file.size > 10 * 1024 * 1024) {
       setProfileImageError("Profile image must be 10 MB or smaller.");
       return;
     }
@@ -1099,8 +1093,8 @@ export default function WorkspaceSettingsPage() {
     try {
       const nextDataUrl = await compressImage(file);
       
-      if (nextDataUrl.length > MAX_PROFILE_IMAGE_BYTES) {
-        setProfileImageError("Image is too large even after compression. Please choose a smaller image under 10 MB.");
+      if (nextDataUrl.length > 10 * 1024 * 1024) {
+        setProfileImageError("Image is too large even after compression. Please choose a smaller image.");
         return;
       }
 
