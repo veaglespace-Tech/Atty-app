@@ -205,7 +205,7 @@ function TimeSettings() {
 export default function OrgWorkspacePage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition-colors">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />

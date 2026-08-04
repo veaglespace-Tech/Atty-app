@@ -316,7 +316,7 @@ export default function OrgReportsPage() {
           <MetricCard label="Half Days" value={selectedMemberReport.halfDays} />
           <MetricCard label="Absent Days" value={selectedMemberReport.absentDays} />
           <MetricCard label="Overtime Days" value={selectedMemberReport.overtimeDays || 0} />
-          <MetricCard label="Defaulter Days" value={selectedMemberReport.defaulterDays || 0} />
+          <MetricCard label="Overtime Days" value={selectedMemberReport.overtimeDays || 0} />
           <MetricCard label="Total Worked Hrs" value={selectedMemberReport.workedHours} />
         </div>
 
@@ -659,7 +659,7 @@ export default function OrgReportsPage() {
                     <ReportMetric label="Half Day" value={item.halfDays} />
                     <ReportMetric label="Absent" value={item.absentDays} />
                     <ReportMetric label="Overtime" value={item.overtimeDays || 0} />
-                    <ReportMetric label="Defaulter" value={item.defaulterDays || 0} />
+                    <ReportMetric label="Overtime" value={item.overtimeDays || 0} />
                     <ReportMetric label="Worked Hrs" value={formatHoursValue(item.workedHours)} />
                   </div>
 
@@ -702,7 +702,7 @@ export default function OrgReportsPage() {
                       Overtime
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                      Defaulter
+                      Overtime
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                       Worked Hrs
@@ -723,7 +723,7 @@ export default function OrgReportsPage() {
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.absentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.overtimeDays || 0}</td>
-                      <td className="px-3 py-2 text-center text-slate-700">{item.defaulterDays || 0}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{item.overtimeDays || 0}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{formatHoursValue(item.workedHours)}</td>
                     </tr>
                   ))}

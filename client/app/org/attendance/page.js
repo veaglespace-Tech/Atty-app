@@ -122,7 +122,7 @@ const STATUS_OPTIONS = [
   { value: "ABSENT", label: "Absent" },
   { value: "HALF_DAY", label: "Half Day" },
   { value: "OVERTIME", label: "Overtime" },
-  { value: "DEFAULTER", label: "Defaulter" },
+  { value: "OVERTIME", label: "Overtime" },
 ];
 
 const todayKey = getTodayDateKey;
@@ -798,7 +798,7 @@ export default function OrgAttendancePage() {
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
         <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
-        <MetricCard label="Defaulter" value={summaryMap.get("Defaulter") || 0} />
+        <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
       </div>
 
       {canSetWorkspaceLocation || canManageTeamAttendance ? (

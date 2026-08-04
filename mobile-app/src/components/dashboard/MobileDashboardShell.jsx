@@ -364,9 +364,9 @@ export default function MobileDashboardShell({ children }) {
           {/* Sliding Drawer */}
           <Animated.View
             style={{ transform: [{ translateX: slideAnim }], width: DRAWER_WIDTH }}
-            className="h-full shadow-2xl flex-col"
+            className="h-full flex-col bg-white dark:bg-[#020617]"
           >
-            <View className="flex-1 bg-white dark:bg-[#020617] pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
+            <View className="flex-1 pt-12 pb-8 border-r border-slate-200 dark:border-slate-800">
               <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
                 <View className="flex-row items-center gap-3 flex-1">
                   <AnimatedLogo 

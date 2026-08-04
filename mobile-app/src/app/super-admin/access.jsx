@@ -146,7 +146,7 @@ export default function AccessPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
-      <View className="px-5 pt-12 pb-0 bg-white dark:bg-[#0A0F1C] z-10 shadow-sm border-b border-slate-200 dark:border-slate-800">
+      <View className="px-5 pt-4 pb-0 bg-white dark:bg-[#0A0F1C] z-10 shadow-sm border-b border-slate-200 dark:border-slate-800">
         
         <View className="mb-6 flex-row items-start justify-between">
           <View className="flex-1 pr-4">

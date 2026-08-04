@@ -65,7 +65,7 @@ export default function NotificationDetailScreen() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 flex-row items-center">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 flex-row items-center">
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mr-3">
           <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
         </Pressable>

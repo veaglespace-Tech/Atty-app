@@ -9,7 +9,8 @@ import {
   useRevokeOrgInstrumentMutation,
   useGetOrgUsersQuery 
 } from "@/services/api/orgApi";
-import { Box, Plus, X, Pencil, Trash2, Calendar, Hash, User } from "lucide-react-native";
+import { Box, Plus, X, Trash2, Hash, User, Download, FileText } from "lucide-react-native";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 export default function OrgInstrumentsPage() {
   const { data, isLoading, isFetching, refetch } = useGetOrgInstrumentsQuery();
@@ -52,6 +53,23 @@ export default function OrgInstrumentsPage() {
       userId: item.assignedUserId ? String(item.assignedUserId) : ""
     });
     setModalVisible(true);
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      let csv = "Instrument Name,Type,Serial Number,Status,Assigned To\n";
+      instruments.forEach((inst) => {
+        const assignedUser = users.find(u => u.id === inst.assignedUserId);
+        const userName = assignedUser ? assignedUser.name : "Unassigned";
+        csv += `"${inst.name || ''}","${inst.type || ''}","${inst.serialNumber || ''}","${inst.status || ''}","${userName}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      await downloadAndShareBlob(blob, `instruments-report.csv`);
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Failed to download instrument report.");
+    }
   };
 
   const handleSave = async () => {
@@ -136,20 +154,34 @@ export default function OrgInstrumentsPage() {
           <View className="py-12 items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm mt-4">
             <Box size={48} className="text-slate-300 dark:text-slate-600 mb-4" />
             <Text className="text-slate-500 font-medium">No instruments found.</Text>
-            <Pressable onPress={openCreateModal} className="mt-4 px-4 py-2 bg-blue-600 rounded-full">
+            <Pressable onPress={openCreateModal} className="mt-4 px-4 py-2.5 bg-blue-600 rounded-full">
               <Text className="text-white font-bold">Add Instrument</Text>
             </Pressable>
           </View>
         }
         ListHeaderComponent={
-          <View className="mb-4 flex-row items-center justify-between">
-            <View>
+          <View className="mb-6 bg-white dark:bg-slate-900 p-5 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm">
+            <View className="flex-row items-center justify-between mb-2">
               <Text className="text-2xl font-black text-slate-900 dark:text-white">Instruments</Text>
-              <Text className="text-sm font-medium text-slate-500">Manage organizational assets</Text>
+              <Pressable 
+                onPress={openCreateModal} 
+                className="flex-row items-center gap-1.5 bg-blue-600 px-4 py-2.5 rounded-2xl active:scale-95 transition-transform"
+              >
+                <Plus size={16} color="white" />
+                <Text className="text-white font-bold text-xs">Add Instrument</Text>
+              </Pressable>
             </View>
-            <Pressable onPress={openCreateModal} className="w-10 h-10 rounded-full bg-blue-600 items-center justify-center shadow-sm">
-              <Plus size={20} color="white" />
-            </Pressable>
+            <Text className="text-xs font-medium text-slate-500 mb-4">Create instruments and assign them to your members.</Text>
+            
+            <View className="flex-row gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <Pressable 
+                onPress={handleDownloadReport}
+                className="flex-1 bg-slate-100 dark:bg-slate-800 py-3 rounded-xl flex-row items-center justify-center gap-2 active:bg-slate-200 border border-slate-200 dark:border-slate-700"
+              >
+                <Download size={16} className="text-slate-700 dark:text-slate-300" />
+                <Text className="text-slate-700 dark:text-slate-300 font-bold text-xs">Download Report</Text>
+              </Pressable>
+            </View>
           </View>
         }
         renderItem={({ item }) => (
@@ -201,14 +233,12 @@ export default function OrgInstrumentsPage() {
               )}
             </View>
             
-            <View className="absolute top-4 right-16 flex-row gap-2">
-              <Pressable 
-                onPress={(e) => { e.stopPropagation(); handleDelete(item.id); }} 
-                className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/30 items-center justify-center"
-              >
-                <Trash2 size={14} className="text-rose-500" />
-              </Pressable>
-            </View>
+            <Pressable 
+              onPress={(e) => { e.stopPropagation(); handleDelete(item.id); }} 
+              className="absolute top-4 right-16 w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/30 items-center justify-center"
+            >
+              <Trash2 size={14} className="text-rose-500" />
+            </Pressable>
           </Pressable>
         )}
       />

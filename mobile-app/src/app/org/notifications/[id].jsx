@@ -84,7 +84,7 @@ export default function NotificationDetailPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable 
             onPress={() => {

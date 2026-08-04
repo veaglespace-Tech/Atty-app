@@ -34,7 +34,7 @@ export default function BackupPage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header */}
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-1 pr-4">
             <View className="self-start bg-blue-500/10 px-3 py-1 rounded-full mb-3 border border-blue-500/20 flex-row items-center">

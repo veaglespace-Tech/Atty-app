@@ -120,7 +120,7 @@ export default function RolesPage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       {/* Header */}
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.push('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />

@@ -137,7 +137,7 @@ export default function OrganizationDetailsPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900">
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="flex-row items-center self-start px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 mb-4">
           <ChevronLeft size={16} className="text-slate-600 dark:text-slate-300 mr-1" />
           <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">Back</Text>

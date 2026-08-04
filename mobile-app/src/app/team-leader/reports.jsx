@@ -122,7 +122,7 @@ export default function TeamLeaderReportsPage(props) {
   if (selectedMember) {
     return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-        <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => setSelectedMember(null)} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
               <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
@@ -141,7 +141,7 @@ export default function TeamLeaderReportsPage(props) {
             <MetricCard label="Half Day" value={selectedMember.halfDays} icon={<Timer size={16} className="text-amber-500" />} />
             <MetricCard label="Absent" value={selectedMember.absentDays} icon={<XCircle size={16} className="text-rose-500" />} />
             <MetricCard label="Overtime" value={selectedMember.overtimeDays || 0} icon={<Timer size={16} className="text-purple-500" />} />
-            <MetricCard label="Defaulter" value={selectedMember.defaulterDays || 0} icon={<XCircle size={16} className="text-red-500" />} />
+            <MetricCard label="Overtime" value={selectedMember.overtimeDays || 0} icon={<XCircle size={16} className="text-red-500" />} />
             <MetricCard label="Worked Hrs" value={formatHoursValue(selectedMember.workedHours)} icon={<FileBarChart size={16} className="text-blue-500" />} />
           </View>
 
@@ -191,7 +191,7 @@ export default function TeamLeaderReportsPage(props) {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
@@ -297,7 +297,7 @@ export default function TeamLeaderReportsPage(props) {
                   </View>
                   <View className="w-1/3 items-center">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Def</Text>
-                    <Text className="text-sm font-bold text-red-600 dark:text-red-400">{report.defaulterDays || 0}</Text>
+                    <Text className="text-sm font-bold text-red-600 dark:text-red-400">{report.overtimeDays || 0}</Text>
                   </View>
                   <View className="w-1/3 items-center">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Hrs</Text>

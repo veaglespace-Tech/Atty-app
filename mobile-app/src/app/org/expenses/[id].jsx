@@ -39,7 +39,7 @@ export default function ExpenseDetail() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* HEADER */}
-      <View className="px-4 py-4 pt-12 flex-row items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <View className="px-4 py-4 pt-4 flex-row items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <Pressable 
           onPress={() => router.back()} 
           className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 mr-3"

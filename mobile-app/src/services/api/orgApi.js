@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments", "OrgExpenses", "OrgDepartments"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments", "OrgExpenses", "OrgDepartments", "OrgStock", "OrgClaims"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -375,6 +375,22 @@ export const orgApi = createApi({
       query: (id) => `/org/expenses/${id}`,
       providesTags: (result, error, id) => [{ type: "OrgExpenses", id }],
     }),
+    getOrgStock: builder.query({
+      query: () => "/org/stock",
+      providesTags: ["OrgStock"],
+    }),
+    addOrgStock: builder.mutation({
+      query: (payload) => ({
+        url: "/org/stock",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["OrgStock"],
+    }),
+    getOrgClaims: builder.query({
+      query: (params = "") => `/claims${params ? `?${params}` : ""}`,
+      providesTags: ["OrgClaims"],
+    }),
     addOrgDeposit: builder.mutation({
       query: (payload) => ({
         url: "/org/expenses/deposit",
@@ -474,6 +490,9 @@ export const {
   useSettleOrgClaimMutation,
   useExportOrgExpensesExcelMutation,
   useExportOrgExpensesPdfMutation,
+  useGetOrgStockQuery,
+  useAddOrgStockMutation,
+  useGetOrgClaimsQuery,
   useGetOrgDepartmentsQuery,
   useCreateOrgDepartmentMutation,
   usePatchOrgDepartmentMutation,

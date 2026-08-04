@@ -68,11 +68,10 @@ export default function OrgReportsPage() {
 
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
           <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-            <MetricCard label="Present Days" value={selectedMember.presentDays} />
-            <MetricCard label="Half Days" value={selectedMember.halfDays} />
-            <MetricCard label="Absent Days" value={selectedMember.absentDays} />
-            <MetricCard label="Overtime Days" value={selectedMember.overtimeDays || 0} />
-            <MetricCard label="Defaulter Days" value={selectedMember.defaulterDays || 0} />
+            <MetricCard label="Present" value={selectedMember.presentDays} />
+            <MetricCard label="Half Day" value={selectedMember.halfDays} />
+            <MetricCard label="Absent" value={selectedMember.absentDays} />
+            <MetricCard label="Overtime" value={selectedMember.overtimeDays || 0} />
             <MetricCard label="Worked Hrs" value={formatHoursValue(selectedMember.workedHours)} />
           </View>
 
@@ -204,8 +203,10 @@ export default function OrgReportsPage() {
         
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
           <MetricCard label="Members" value={summaryMap.get("Members") || 0} />
-          <MetricCard label="Present Days" value={summaryMap.get("Present Days") || 0} />
-          <MetricCard label="Absent Days" value={summaryMap.get("Absent Days") || 0} />
+          <MetricCard label="Present" value={summaryMap.get("Present Days") || 0} />
+          <MetricCard label="Half Day" value={summaryMap.get("Half Days") || 0} />
+          <MetricCard label="Absent" value={summaryMap.get("Absent Days") || 0} />
+          <MetricCard label="Overtime" value={summaryMap.get("Overtime Days") || 0} />
           <MetricCard label="Worked Hrs" value={formatHoursValue(summaryMap.get("Worked Hrs") || 0)} />
         </View>
 
@@ -274,8 +275,8 @@ function ReportRecordCard({ item, index = 0, onPress }) {
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.overtimeDays || 0}</Text>
           </View>
           <View className="w-1/3">
-            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Defaulter</Text>
-            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.defaulterDays || 0}</Text>
+            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Overtime</Text>
+            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.overtimeDays || 0}</Text>
           </View>
           <View className="w-1/3">
             <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Worked Hrs</Text>

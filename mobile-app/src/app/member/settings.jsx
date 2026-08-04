@@ -73,6 +73,7 @@ import LocationSettings from "@/components/org/settings/LocationSettings";
 import OrgLogoSettings from "@/components/org/settings/OrgLogoSettings";
 import OrgDetailsSettings from "@/components/org/settings/OrgDetailsSettings";
 import { getLocalPhoneNumber, formatPhoneNumberForSave } from "@/utils/phone";
+import SelectDropdown from "@/components/ui/SelectDropdown";
 
 // --- Main Settings Screen ---
 export default function SettingsScreen() {
@@ -309,7 +310,7 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
-      <View className="px-6 pt-12 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] flex-row items-center gap-3">
+      <View className="px-6 pt-4 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] flex-row items-center gap-3">
         <Pressable
           onPress={() => {
             if (router.canGoBack()) {
@@ -611,118 +612,63 @@ export default function SettingsScreen() {
                   <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">
                     Gender
                   </Text>
-                  <View className="flex-row bg-slate-100 dark:bg-[#0f172a] rounded-2xl p-1 w-full border border-slate-200 dark:border-slate-800/60">
-                    {[
-                      { label: "Male", value: "MALE" },
-                      { label: "Female", value: "FEMALE" },
-                      { label: "Other", value: "OTHER" },
-                    ].map((opt) => (
-                      <Pressable
-                        key={opt.value}
-                        onPress={() =>
-                          setFormData((p) => ({ ...p, gender: opt.value }))
-                        }
-                        className={`flex-1 items-center justify-center py-3 rounded-[12px] active:scale-[0.98] transition-transform ${formData.gender === opt.value ? "bg-white dark:bg-[#1e293b] shadow-sm border border-slate-200 dark:border-slate-700/50" : "border border-transparent"}`}
-                      >
-                        <Text
-                          className={`text-[13px] font-bold ${formData.gender === opt.value ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
-                        >
-                          {opt.label}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                  <SelectDropdown 
+                    label="Select Gender"
+                    value={formData.gender}
+                    onSelect={(val) => setFormData(p => ({ ...p, gender: val }))}
+                    options={[
+                      { label: "Select Gender...", value: "" },
+                      { label: "Male", value: "MALE" }, 
+                      { label: "Female", value: "FEMALE" }, 
+                      { label: "Other", value: "OTHER" }
+                    ]}
+                  />
                 </View>
 
                 <View>
                   <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">
                     Blood Group
                   </Text>
-                  <View className="flex-row flex-wrap justify-between gap-y-3">
-                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
-                      (bg) => (
-                        <Pressable
-                          key={bg}
-                          onPress={() =>
-                            setFormData((p) => ({ ...p, bloodGroup: bg }))
-                          }
-                          className={`w-[23%] py-3 rounded-2xl items-center justify-center border active:scale-95 transition-transform ${formData.bloodGroup === bg ? "bg-rose-500 border-rose-500 shadow-sm" : "bg-slate-50 dark:bg-[#0f172a] border-slate-200 dark:border-slate-800/80"}`}
-                        >
-                          <Text
-                            className={`text-[14px] font-black ${formData.bloodGroup === bg ? "text-white" : "text-slate-600 dark:text-slate-400"}`}
-                          >
-                            {bg}
-                          </Text>
-                        </Pressable>
-                      ),
-                    )}
-                  </View>
+                  <SelectDropdown 
+                    label="Select Blood Group"
+                    value={formData.bloodGroup}
+                    onSelect={(val) => setFormData(p => ({ ...p, bloodGroup: val }))}
+                    options={[
+                      { label: "Select Blood Group...", value: "" },
+                      ...["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(bg => ({ label: bg, value: bg }))
+                    ]}
+                  />
                 </View>
 
                 <View>
                   <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">
                     Member Type
                   </Text>
-                  <View className="flex-row bg-slate-100 dark:bg-[#0f172a] rounded-2xl p-1 w-full border border-slate-200 dark:border-slate-800/60">
-                    {[
-                      { label: "Senior", value: "SENIOR" },
-                      { label: "Junior", value: "JUNIOR" },
-                    ].map((opt) => (
-                      <Pressable
-                        key={opt.value}
-                        onPress={() =>
-                          setFormData((p) => ({
-                            ...p,
-                            existingMember: opt.value,
-                          }))
-                        }
-                        className={`flex-1 items-center justify-center py-3 rounded-[12px] active:scale-[0.98] transition-transform ${formData.existingMember === opt.value ? "bg-white dark:bg-[#1e293b] shadow-sm border border-slate-200 dark:border-slate-700/50" : "border border-transparent"}`}
-                      >
-                        <Text
-                          className={`text-[13px] font-bold ${formData.existingMember === opt.value ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
-                        >
-                          {opt.label}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                  <SelectDropdown 
+                    label="Select Member Type"
+                    value={formData.existingMember}
+                    onSelect={(val) => setFormData(p => ({ ...p, existingMember: val }))}
+                    options={[
+                      { label: "Select Type...", value: "" },
+                      { label: "Senior", value: "SENIOR" }, 
+                      { label: "Junior", value: "JUNIOR" }
+                    ]}
+                  />
                 </View>
 
                 <View>
                   <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">
                     Department
                   </Text>
-                  <View className="flex-row items-center bg-slate-100 dark:bg-[#0f172a] rounded-2xl p-1 w-full border border-slate-200 dark:border-slate-800/60 overflow-hidden">
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ paddingHorizontal: 2 }}
-                    >
-                      {departmentsList.map((dept) => (
-                        <Pressable
-                          key={dept.id}
-                          onPress={() =>
-                            setFormData((p) => ({
-                              ...p,
-                              departmentId: String(dept.id),
-                            }))
-                          }
-                          className={`px-5 py-3 mx-1 rounded-[12px] active:scale-[0.98] transition-transform ${formData.departmentId === String(dept.id) ? "bg-white dark:bg-[#1e293b] shadow-sm border border-slate-200 dark:border-slate-700/50" : "border border-transparent"}`}
-                        >
-                          <Text
-                            className={`text-[13px] font-bold ${formData.departmentId === String(dept.id) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 dark:text-slate-400"}`}
-                          >
-                            {dept.name}
-                          </Text>
-                        </Pressable>
-                      ))}
-                      {departmentsList.length === 0 && (
-                        <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 px-4 py-3">
-                          No departments available
-                        </Text>
-                      )}
-                    </ScrollView>
-                  </View>
+                  <SelectDropdown 
+                    label="Select Department"
+                    value={formData.departmentId}
+                    onSelect={(val) => setFormData(p => ({ ...p, departmentId: val }))}
+                    options={[
+                      { label: "No Department", value: "" },
+                      ...departmentsList.map(dept => ({ label: dept.name, value: String(dept.id) }))
+                    ]}
+                  />
                 </View>
 
                 <View>

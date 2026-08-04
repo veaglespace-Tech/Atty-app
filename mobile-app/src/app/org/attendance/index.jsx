@@ -227,7 +227,7 @@ export default function OrgAttendancePage() {
     if (status === "ABSENT") return "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-400 border-rose-200 dark:border-rose-800";
     if (status === "HALF_DAY") return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-400 border-amber-200 dark:border-amber-800";
     if (status === "OVERTIME") return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800";
-    if (status === "DEFAULTER") return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400 border-red-200 dark:border-red-800";
+    if (status === "OVERTIME") return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-400 border-purple-200 dark:border-purple-800";
     return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-400 border-slate-200 dark:border-slate-800";
   };
 
@@ -335,7 +335,7 @@ export default function OrgAttendancePage() {
  { label: "Absent", value: "ABSENT" },
  { label: "Half Day", value: "HALF_DAY" },
  { label: "Overtime", value: "OVERTIME" },
- { label: "Defaulter", value: "DEFAULTER" }
+ { label: "Overtime", value: "OVERTIME" }
  ]}
  />
  </View>
@@ -408,7 +408,7 @@ export default function OrgAttendancePage() {
  {/* SUMMARY CARDS */}
  <View className="mx-4 flex-row flex-wrap justify-between mb-6 gap-y-4">
  <View className="w-[48%]">
- <MetricCard label="Records" value={getSummaryValue("Total Logs")} />
+ <MetricCard label="Total Staff" value={getSummaryValue("Total Staff") || 0} />
  </View>
  <View className="w-[48%]">
  <MetricCard label="Present" value={getSummaryValue("Present")} />
@@ -418,6 +418,18 @@ export default function OrgAttendancePage() {
  </View>
  <View className="w-[48%]">
  <MetricCard label="Absent" value={getSummaryValue("Absent")} />
+ </View>
+ <View className="w-[48%]">
+ <MetricCard label="Overtime" value={getSummaryValue("Overtime") || 0} />
+ </View>
+ <View className="w-[48%]">
+ <MetricCard label="Total Logged Hrs" value={formatHoursValue(getSummaryValue("Total Logged Hrs") || 0)} />
+ </View>
+ <View className="w-[48%]">
+ <MetricCard label="Avg Check In" value={getSummaryValue("Avg Check In") || "-"} />
+ </View>
+ <View className="w-[48%]">
+ <MetricCard label="Avg Check Out" value={getSummaryValue("Avg Check Out") || "-"} />
  </View>
  </View>
 

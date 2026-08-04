@@ -833,7 +833,7 @@ enum AttendanceStatus {
   ABSENT
   HALF_DAY
   REGULARIZED
-  DEFAULTER
+  OVERTIME
 }
 
 enum SubscriptionStatus {

@@ -96,7 +96,7 @@ export default function AttendancePage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-12 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
@@ -299,7 +299,7 @@ export default function AttendancePage() {
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Half Day</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Absent</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Overtime</Text>
-                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Defaulter</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-center">Overtime</Text>
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-32 text-right">Worked Hours</Text>
                 </View>
 
@@ -325,7 +325,7 @@ export default function AttendancePage() {
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.halfDays}</Text>
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.absentDays}</Text>
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.overtimeDays || 0}</Text>
-                    <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.defaulterDays || 0}</Text>
+                    <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-24 text-center">{report.overtimeDays || 0}</Text>
                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 w-32 text-right">{report.workedHours?.toFixed(2) || "0.00"} hrs</Text>
                   </Pressable>
                   );

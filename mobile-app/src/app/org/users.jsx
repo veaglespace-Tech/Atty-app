@@ -40,6 +40,8 @@ export default function OrgUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [activeFilter, setActiveFilter] = useState("ALL");
+  const [memberTypeFilter, setMemberTypeFilter] = useState("ALL");
+  const [genderFilter, setGenderFilter] = useState("ALL");
   const [createOpen, setCreateOpen] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -105,6 +107,13 @@ export default function OrgUsersPage() {
       if (roleFilter !== "ALL" && normalizeRole(user.role) !== roleFilter) return false;
       if (activeFilter === "ACTIVE" && !user.active) return false;
       if (activeFilter === "BLOCKED" && user.active) return false;
+      
+      const userMemberType = user.existingMember === "SENIOR" ? "EXISTING" : user.existingMember === "JUNIOR" ? "NEW" : (user.existingMember || "NEW");
+      if (memberTypeFilter !== "ALL" && userMemberType !== memberTypeFilter.toUpperCase()) return false;
+      
+      const userGender = user.gender ? user.gender.toUpperCase() : "OTHER";
+      if (genderFilter !== "ALL" && userGender !== genderFilter.toUpperCase()) return false;
+      
       if (query) {
         const haystack = [user.name, user.email, user.mobile]
           .map((v) => String(v || "").toLowerCase())
@@ -113,7 +122,7 @@ export default function OrgUsersPage() {
       }
       return true;
     });
-  }, [users, activeTab, searchQuery, roleFilter, activeFilter]);
+  }, [users, activeTab, searchQuery, roleFilter, activeFilter, memberTypeFilter, genderFilter]);
 
   const onPermissionToggle = (permission) => {
     setForm((prev) => ({
@@ -319,6 +328,27 @@ export default function OrgUsersPage() {
                 { label: "All Access", value: "ALL" },
                 { label: "Active", value: "ACTIVE" },
                 { label: "Blocked", value: "BLOCKED" }
+              ]}
+            />
+            <DropdownFilter 
+              label="Filter by Member Type"
+              value={memberTypeFilter}
+              onSelect={setMemberTypeFilter}
+              options={[
+                { label: "All Types", value: "ALL" },
+                { label: "New Member", value: "NEW" },
+                { label: "Existing Member", value: "EXISTING" }
+              ]}
+            />
+            <DropdownFilter 
+              label="Filter by Gender"
+              value={genderFilter}
+              onSelect={setGenderFilter}
+              options={[
+                { label: "All Genders", value: "ALL" },
+                { label: "Male", value: "MALE" },
+                { label: "Female", value: "FEMALE" },
+                { label: "Other", value: "OTHER" }
               ]}
             />
           </View>
