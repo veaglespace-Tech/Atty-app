@@ -23,17 +23,16 @@ export default function DashboardBrandBlock() {
       className="group flex w-full items-center justify-center rounded-[1.5rem] transition-transform duration-300 hover:scale-[1.01]"
     >
       <div className="flex flex-col items-center text-center">
-        <div key="veagle" className="brand-logo-reveal relative mx-auto flex h-16 w-16 items-center justify-center md:h-20 md:w-20">
-          <div className="brand-logo-orbit page-shell-orb-tertiary absolute inset-0 rounded-full blur-xl" />
-          <div className="brand-logo-spotlight relative h-full w-full">
+        <div key="veagle" className="brand-logo-reveal relative mx-auto flex h-24 w-24 items-center justify-center md:h-32 md:w-32">
+          <div className="relative h-full w-full">
             <Image
-              src="/logo1-clean.webp"
+              src="/logo-transparent.webp"
               alt="Veagle logo mark"
               width={80}
               height={80}
               priority
               unoptimized
-              className="brand-logo-mark h-full w-full object-contain filter drop-shadow-[0_0_12px_rgba(92,209,229,0.6)] drop-shadow-[0_4px_8px_rgba(30,112,209,0.5)] animate-flip-y"
+              className="brand-logo-mark h-full w-full object-contain animate-flip-y"
             />
           </div>
         </div>
