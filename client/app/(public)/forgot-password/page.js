@@ -10,54 +10,20 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  ChevronDown,
   Loader2,
   Mail,
-  ShieldCheck,
 } from "lucide-react";
-import OrganizationLookupField from "@/components/OrganizationLookupField";
 import AuthPageShell, {
   authFieldClassName,
   authFieldErrorClassName,
   authFieldNormalClassName,
 } from "@/components/auth/AuthPageShell";
 import { useForgotPasswordMutation } from "@/services/api/authApi";
-import { getErrorMessage, normalizeEmailInput } from "@/utils/formValidation";
-import {
-  formatRoleLabel,
-  LOGIN_ROLE_OPTIONS,
-  normalizeRole,
-  ROLES,
-} from "@/utils/roles";
+import { normalizeEmailInput } from "@/utils/formValidation";
 
 const forgotPasswordSchema = z.object({
-  loginAs: z.string().min(1, "Login role is required"),
   email: z.string().trim().min(1, "Email is required").email("Invalid email address"),
-  organizationId: z.string().min(1, "Please select your organization"),
-  organizationCode: z.string().optional(),
-  organizationName: z.string().optional(),
 });
-
-const roleOptions = LOGIN_ROLE_OPTIONS.filter((roleOption) => roleOption.value !== ROLES.SUPER_ADMIN);
-
-const buildInitialOrganization = (searchParams) => {
-  const organizationId = String(searchParams.get("organizationId") || "").trim();
-  const organizationCode = String(searchParams.get("organizationCode") || "").trim();
-  const organizationName = String(searchParams.get("organizationName") || "").trim();
-
-  if (!organizationId && !organizationCode && !organizationName) {
-    return null;
-  }
-
-  return {
-    id: organizationId || organizationCode || organizationName,
-    name: organizationName || organizationCode || "Selected organization",
-    organizationCode,
-    city: "",
-    state: "",
-    country: "",
-  };
-};
 
 export default function ForgotPasswordPage() {
   return (
@@ -69,50 +35,31 @@ export default function ForgotPasswordPage() {
 
 function ForgotPasswordPageContent() {
   const searchParams = useSearchParams();
-  const requestedRole = normalizeRole(searchParams.get("loginAs") || ROLES.ORG_ADMIN);
-  const initialRole = roleOptions.some((roleOption) => roleOption.value === requestedRole)
-    ? requestedRole
-    : ROLES.ORG_ADMIN;
-  const [selectedOrganization, setSelectedOrganization] = React.useState(() =>
-    buildInitialOrganization(searchParams)
-  );
   const [requestSent, setRequestSent] = React.useState(null);
   const [forgotPassword, { error: apiError }] = useForgotPasswordMutation();
 
   const {
     register,
     handleSubmit,
-    setValue,
-    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(forgotPasswordSchema),
     mode: "all",
     defaultValues: {
-      loginAs: initialRole,
       email: String(searchParams.get("email") || "").trim(),
-      organizationId: String(searchParams.get("organizationId") || "").trim(),
-      organizationCode: String(searchParams.get("organizationCode") || "").trim(),
-      organizationName: String(searchParams.get("organizationName") || "").trim(),
     },
   });
 
   const onSubmit = async (values) => {
     try {
       const payload = {
-        loginAs: values.loginAs,
         email: normalizeEmailInput(values.email),
-        organizationId: Number(values.organizationId),
-        organizationCode: values.organizationCode?.trim().toUpperCase() || undefined,
       };
 
       const response = await forgotPassword(payload).unwrap();
       setRequestSent({
         message: response?.message || "If this account exists, a reset link has been sent.",
         email: payload.email,
-        roleLabel: formatRoleLabel(values.loginAs),
-        organizationName:
-          selectedOrganization?.name || values.organizationName || values.organizationCode || "",
       });
     } catch (error) {
       console.error("Forgot password request failed:", error);
@@ -123,7 +70,7 @@ function ForgotPasswordPageContent() {
     <AuthPageShell
       eyebrow="Account Recovery"
       title="Reset your workspace password"
-      description="Enter the role, workspace, and email linked to your account. If the account exists, we will send a secure password reset link."
+      description="Enter the email linked to your account. If the account exists, we will send a secure password reset link."
       footer={
         <div className="space-y-3">
           <Link
@@ -159,14 +106,10 @@ function ForgotPasswordPageContent() {
             </p>
             <div className="mt-5 rounded-[1.6rem] border border-white/70 bg-white/80 px-5 py-4 text-left shadow-[0_18px_40px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-slate-950/70">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300">
-                Request Details
+                Email
               </p>
               <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">
                 {requestSent.email}
-              </p>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                {requestSent.roleLabel}
-                {requestSent.organizationName ? ` - ${requestSent.organizationName}` : ""}
               </p>
             </div>
           </div>
@@ -181,79 +124,7 @@ function ForgotPasswordPageContent() {
         </div>
       ) : (
         <>
-
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
-            <div className="group relative">
-              <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Login As
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                  <ShieldCheck size={20} />
-                </span>
-                <span className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
-                  <ChevronDown size={18} />
-                </span>
-                <select
-                  className={`${authFieldClassName} appearance-none !pl-12 pr-12 ${errors.loginAs ? authFieldErrorClassName : authFieldNormalClassName}`}
-                  {...register("loginAs")}
-                >
-                  {roleOptions.map((roleOption) => (
-                    <option key={roleOption.value} value={roleOption.value}>
-                      {roleOption.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="ml-1 mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
-                Choose the same role you use on the login page.
-              </p>
-              {errors.loginAs ? (
-                <p className="ml-1 mt-1.5 text-xs font-medium text-red-500">
-                  {errors.loginAs.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="group relative">
-              <OrganizationLookupField
-                label="Organization"
-                placeholder="Search by organization name or code"
-                helperText="Select the same organization that is linked to your account."
-                error={errors.organizationId?.message}
-                selectedOrganization={selectedOrganization}
-                onSelect={(organization) => {
-                  setSelectedOrganization(organization);
-                  setValue("organizationId", String(organization.id), {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                  setValue("organizationCode", organization.organizationCode || "", {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                  setValue("organizationName", organization.name || "", {
-                    shouldDirty: true,
-                  });
-                  clearErrors("organizationId");
-                }}
-                onClear={() => {
-                  setSelectedOrganization(null);
-                  setValue("organizationId", "", { shouldValidate: true, shouldDirty: true });
-                  setValue("organizationCode", "", { shouldDirty: true });
-                  setValue("organizationName", "", { shouldDirty: true });
-                }}
-                labelClassName="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-                inputClassName={authFieldClassName}
-                normalFieldClassName={authFieldNormalClassName}
-                errorFieldClassName={authFieldErrorClassName}
-              />
-              <input type="hidden" {...register("organizationId")} />
-              <input type="hidden" {...register("organizationCode")} />
-              <input type="hidden" {...register("organizationName")} />
-            </div>
-
             <div className="group relative">
               <label className="mb-1.5 ml-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Email Address

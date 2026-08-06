@@ -194,7 +194,18 @@ const findPasswordResetUser = async ({
       currentRole: role,
     };
   } catch (_) {
-    return null;
+    const activeMemberships = listActiveOrganizationMemberships(user);
+    const primaryMembership = activeMemberships[0] || null;
+    const resolvedRole = primaryMembership?.role || user.role || "MEMBER";
+
+    return {
+      ...user,
+      orgId: primaryMembership?.organization?.id || user.orgId || null,
+      organization: primaryMembership?.organization || user.organization || null,
+      memberships: user.memberships,
+      currentMembership: primaryMembership,
+      currentRole: resolvedRole,
+    };
   }
 };
 

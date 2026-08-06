@@ -38,23 +38,12 @@ const loginSchema = z.object({
   loginAs: z.string().trim().optional(),
 });
 
-const forgotPasswordSchema = z
-  .object({
-    email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
-    organizationCode: z.string().trim().optional(),
-    organizationId: numericIdSchema.optional(),
-    loginAs: z.string().trim().min(1, "Role is required"),
-  })
-  .superRefine((value, ctx) => {
-    const normalizedRole = String(value.loginAs || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
-    if (normalizedRole !== "SUPER_ADMIN" && !value.organizationCode && !value.organizationId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Organization selection is required for this role",
-        path: ["organizationId"],
-      });
-    }
-  });
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
+  organizationCode: z.string().trim().optional(),
+  organizationId: numericIdSchema.optional(),
+  loginAs: z.string().trim().optional(),
+});
 
 const resetPasswordTokenSchema = z.object({
   token: z.string().trim().min(1, "Reset token is required"),
