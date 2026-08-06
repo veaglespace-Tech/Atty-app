@@ -86,13 +86,13 @@ const getSettingsSchema = (isAdmin) => z.object({
     .trim()
     .min(1, "Mobile number is required")
     .refine(
-      (value) => !value || toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
-      "Enter a valid mobile number"
-    )
-    .refine(
-      (value) => !value || toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
-      "Mobile number is too long"
+      (value) => !value || toDigitsOnly(value).length === 10,
+      "Mobile number must be exactly 10 digits"
     ),
+  emergencyCountryCode: z
+    .string()
+    .trim()
+    .optional(),
   emergencyContact: isAdmin
     ? z
         .string()
@@ -103,12 +103,8 @@ const getSettingsSchema = (isAdmin) => z.object({
           "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
         )
         .refine(
-          (value) => !value || toDigitsOnly(value).length >= 10,
-          "Emergency contact must be at least 10 digits"
-        )
-        .refine(
-          (value) => !value || toDigitsOnly(value).length <= 15,
-          "Emergency contact cannot exceed 15 digits"
+          (value) => !value || toDigitsOnly(value).length === 10,
+          "Emergency contact must be exactly 10 digits"
         )
     : z
         .string()
@@ -119,12 +115,8 @@ const getSettingsSchema = (isAdmin) => z.object({
           "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
         )
         .refine(
-          (value) => !value || toDigitsOnly(value).length >= 10,
-          "Emergency contact must be at least 10 digits"
-        )
-        .refine(
-          (value) => !value || toDigitsOnly(value).length <= 15,
-          "Emergency contact cannot exceed 15 digits"
+          (value) => !value || toDigitsOnly(value).length === 10,
+          "Emergency contact must be exactly 10 digits"
         ),
   currentAddress: z.string().trim().min(1, "Full address is required"),
   permanentAddress: z.string().trim().optional(),
@@ -154,21 +146,35 @@ const formatValue = (value, fallback = "-") => {
   return String(value);
 };
 
-const getFormDefaults = (user) => ({
-  name: user?.name || "",
-  email: user?.email || "",
-  mobileCountryCode: user?.mobileCountryCode || "+91",
-  mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode) || "",
-  emergencyContact: user?.emergencyContact || "",
-  currentAddress: user?.currentAddress || "",
-  permanentAddress: user?.permanentAddress || "",
-  bloodGroup: user?.bloodGroup || "",
-  gender: user?.gender || "",
-  dob: user?.dob || "",
-  existingMember: user?.existingMember?.toUpperCase() || "",
-  departmentId: user?.departmentId ? String(user.departmentId) : "",
-  physicalFormNo: user?.physicalFormNo || "",
-});
+const getFormDefaults = (user) => {
+  let defaultEmergencyCountryCode = "+91";
+  let defaultEmergencyContact = user?.emergencyContact || "";
+
+  if (defaultEmergencyContact.startsWith("+")) {
+    const match = defaultEmergencyContact.match(/^(\+\d{1,3})(\d+)$/);
+    if (match) {
+      defaultEmergencyCountryCode = match[1];
+      defaultEmergencyContact = match[2];
+    }
+  }
+
+  return {
+    name: user?.name || "",
+    email: user?.email || "",
+    mobileCountryCode: user?.mobileCountryCode || "+91",
+    mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode) || "",
+    emergencyCountryCode: defaultEmergencyCountryCode,
+    emergencyContact: defaultEmergencyContact,
+    currentAddress: user?.currentAddress || "",
+    permanentAddress: user?.permanentAddress || "",
+    bloodGroup: user?.bloodGroup || "",
+    gender: user?.gender || "",
+    dob: user?.dob || "",
+    existingMember: user?.existingMember?.toUpperCase() || "",
+    departmentId: user?.departmentId ? String(user.departmentId) : "",
+    physicalFormNo: user?.physicalFormNo || "",
+  };
+};
 
 function DetailCard({ icon: Icon, label, value }) {
   return (
@@ -1175,7 +1181,9 @@ export default function WorkspaceSettingsPage() {
       payload.mobileCountryCode = nextMobileCountryCode || user?.mobileCountryCode || "";
     }
 
-    payload.emergencyContact = values.emergencyContact;
+    payload.emergencyContact = values.emergencyContact
+      ? `${values.emergencyCountryCode || "+91"}${toDigitsOnly(values.emergencyContact)}`
+      : "";
     payload.currentAddress = values.currentAddress;
     payload.permanentAddress = values.permanentAddress;
     payload.bloodGroup = values.bloodGroup;
@@ -1507,23 +1515,19 @@ export default function WorkspaceSettingsPage() {
                 </div>
                 {!canSkipEmergencyContact && (
                   <div className="md:col-span-2">
-                    <label htmlFor="settings-emergencyContact" className={labelClassName}>
-                      Emergency Contact
-                    </label>
-                    <input
-                      id="settings-emergencyContact"
-                      type="tel"
-                      inputMode="tel"
-                      placeholder="E.g., +91 9876543210 or 9876543210"
-                      aria-invalid={errors.emergencyContact ? "true" : "false"}
-                      className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")}
-                      {...register("emergencyContact")}
+                    <CountryPhoneField
+                      label="Emergency Contact"
+                      countryCode={formValues.emergencyCountryCode || ""}
+                      phone={formValues.emergencyContact || ""}
+                      onCountryCodeChange={(e) => setValue("emergencyCountryCode", e.target.value, { shouldValidate: true, shouldDirty: true })}
+                      onPhoneChange={(e) => setValue("emergencyContact", e.target.value.replace(/[^\d]/g, ""), { shouldValidate: true, shouldDirty: true })}
+                      countryCodeError={errors.emergencyCountryCode?.message}
+                      phoneError={errors.emergencyContact?.message}
+                      helpText=""
+                      labelClassName={labelClassName}
                     />
-                    {errors.emergencyContact && (
-                      <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
-                        {errors.emergencyContact.message}
-                      </p>
-                    )}
+                    <input type="hidden" {...register("emergencyCountryCode")} />
+                    <input type="hidden" {...register("emergencyContact")} />
                   </div>
                 )}
               </div>
