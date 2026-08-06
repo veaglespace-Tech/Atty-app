@@ -880,11 +880,13 @@ function OrgDetailsSettings() {
         {isDirty && (
           <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button type="button" onClick={() => reset()} disabled={isUpdating} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+              <button type="button" onClick={() => reset()} disabled={isUpdating} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
                 Cancel
               </button>
-              <button type="submit" disabled={isUpdating} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-6">
-                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
+              <button type="submit" disabled={isUpdating} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
+                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+                <span className="hidden sm:inline">Save Changes</span>
+                <span className="sm:hidden">Save</span>
               </button>
             </div>
           </div>
@@ -1649,11 +1651,13 @@ export default function WorkspaceSettingsPage() {
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Please save your profile updates.</p>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button type="button" onClick={resetForm} disabled={isSaving} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+              <button type="button" onClick={resetForm} disabled={isSaving} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
                 Cancel
               </button>
-              <button type="submit" disabled={isSaving} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-6">
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
+              <button type="submit" disabled={isSaving} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+                <span className="hidden sm:inline">Save Changes</span>
+                <span className="sm:hidden">Save</span>
               </button>
             </div>
           </div>
