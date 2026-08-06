@@ -351,7 +351,6 @@ model Subscription {
   paymentOrderId          String?
   paymentReferenceId      String?
   paymentSignature        String?
-  hasERP                  Boolean                     @default(false)
   activeForOrganization   Organization?               @relation("OrganizationActiveSubscription")
   payments                Payment[]
   createdBy               User                        @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], map: "Subscription_createdById_fkey")
@@ -400,7 +399,6 @@ model SubscriptionRenewalIntent {
   paymentOrderId        String?             @unique(map: "SubscriptionRenewalIntent_paymentOrderId_key")
   paymentReferenceId    String?             @unique(map: "SubscriptionRenewalIntent_paymentReferenceId_key")
   paymentSignature      String?
-  hasERP                Boolean             @default(false)
   appliedSubscription   Subscription?       @relation("RenewalIntentAppliedSubscription", fields: [appliedSubscriptionId], references: [id], map: "SubscriptionRenewalIntent_appliedSubscriptionId_fkey")
   currentSubscription   Subscription?       @relation("RenewalIntentCurrentSubscription", fields: [currentSubscriptionId], references: [id], map: "SubscriptionRenewalIntent_currentSubscriptionId_fkey")
   organization          Organization        @relation(fields: [orgId], references: [id], map: "SubscriptionRenewalIntent_orgId_fkey")
@@ -441,7 +439,6 @@ model RegistrationRequest {
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   expiresAt         DateTime
-  bloodGroup        String?
   organization      Organization              @relation(fields: [orgId], references: [id])
 
   @@unique([orgId, email], map: "RegistrationRequest_orgId_email_key")

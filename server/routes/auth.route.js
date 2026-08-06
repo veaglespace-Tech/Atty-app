@@ -13,6 +13,8 @@ const {
   resetPassword,
   checkEmail,
   verifySuperAdminOtp,
+  saveLead,
+  updatePushToken,
 } = require("../controllers/auth.controller");
 const {
   validateReferralCode,
