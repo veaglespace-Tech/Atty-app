@@ -106,7 +106,7 @@ export default function Navbar() {
     <>
       <nav className="fixed top-0 left-0 right-0 z-[70] border-b border-slate-100 bg-white/80 shadow-[0_16px_48px_rgba(30,112,209,0.10)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-black/20">
         <div className="site-container">
-          <div className="flex h-24 items-center justify-between gap-2.5 sm:h-28 sm:gap-3 min-[1180px]:gap-6 py-2">
+          <div className="flex h-20 items-center justify-between gap-2.5 sm:h-24 sm:gap-3 min-[1180px]:gap-6 py-1">
             <Link href="/" className="group flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none lg:gap-3">
               <div key={pathname} className="brand-logo-reveal relative flex h-16 w-16 shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-20 md:w-20 2xl:h-24 2xl:w-24">
                 <div className="relative h-full w-full">

@@ -869,7 +869,7 @@ export default function WorkspaceSettingsPage() {
   const [forgotPassword, { isLoading: sendingResetLink }] = useForgotPasswordMutation();
   const { data: meData } = useGetMeQuery();
   const organizationId = getUserOrganizationId(user);
-  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !organizationId });
+  const { data: deptData, isSuccess: isDeptSuccess } = useGetOrgDepartmentsQuery(undefined, { skip: !organizationId });
   const departmentsList = deptData?.items || [];
 
   useEffect(() => {
@@ -965,6 +965,12 @@ export default function WorkspaceSettingsPage() {
       keepDirtyValues: true,
     }
   });
+
+  useEffect(() => {
+    if (isDeptSuccess && user?.departmentId) {
+      setValue("departmentId", String(user.departmentId));
+    }
+  }, [isDeptSuccess, user?.departmentId, setValue]);
 
   const formValues = useWatch({ control });
   const previewName = formValues.name || user?.name || "Workspace User";
