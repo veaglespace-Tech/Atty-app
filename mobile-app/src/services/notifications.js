@@ -1,47 +1,35 @@
 import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from './api/baseApi';
 import { store } from '@/store';
 
-let Notifications = null;
-try {
-  // Safe require for Expo Go SDK 53+ compatibility
-  Notifications = require('expo-notifications');
-  if (Notifications?.setNotificationHandler) {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        priority: Notifications.AndroidNotificationPriority?.HIGH ?? 4,
-      }),
-    });
-  }
-} catch (error) {
-  console.warn('[Notifications] Notification module not available:', error?.message);
-}
+// Configure foreground notification presentation
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority?.HIGH ?? 4,
+  }),
+});
 
 export async function registerForPushNotificationsAsync() {
-  if (!Notifications) {
-    return null;
-  }
-
-  // Push notification tokens (remote push) are not supported on Web without custom VAPID/service workers
+  // Remote push notifications are not supported on Web without custom service workers
   if (Platform.OS === 'web') {
     return null;
   }
 
-  // Check if running inside Expo Go (Expo Go SDK 51+ does not support remote push notifications)
+  // Remote push in Expo Go SDK 51+ is disabled; requires development build or standalone
   const isExpoGo =
     Constants.appOwnership === 'expo' ||
     Constants.executionEnvironment === 'storeClient';
 
   if (isExpoGo) {
     console.info(
-      '[Notifications] Remote push notifications require a development build (npx expo run:android or EAS build) in Expo SDK 53+.'
+      '[Notifications] Remote push notifications require a development build (npx expo run:android / eas build) in Expo SDK 51+.'
     );
-    return null;
   }
 
   if (!Device.isDevice) {
@@ -52,8 +40,8 @@ export async function registerForPushNotificationsAsync() {
   let token = null;
 
   try {
-    // Configure Android notification channel
-    if (Platform.OS === 'android' && Notifications.setNotificationChannelAsync) {
+    // Configure default Android notification channel (Required for Android 8+)
+    if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Default',
         importance: Notifications.AndroidImportance?.MAX ?? 4,
@@ -79,16 +67,11 @@ export async function registerForPushNotificationsAsync() {
       return null;
     }
 
-    // Get the Expo Push Token using project ID from app config
+    // Resolve project ID from Expo config
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId ??
-      "ea281884-8a26-4d8e-abed-5a4386ff21cf";
-
-    if (!projectId) {
-      console.warn('[Notifications] Project ID not found in app configuration.');
-      return null;
-    }
+      "d782f29a-35b0-49b7-9d97-eedd9d486a98";
 
     const pushTokenData = await Notifications.getExpoPushTokenAsync({
       projectId,
@@ -109,7 +92,11 @@ export async function sendPushTokenToServer(pushToken) {
     const token = store.getState()?.auth?.token;
     if (!token) return;
 
-    const res = await fetch(`${API_BASE_URL}/auth/push-token`, {
+    // Standardize URL path whether base URL has /api suffix or not
+    const base = API_BASE_URL.replace(/\/+$/, '');
+    const endpoint = base.endsWith('/api') ? `${base}/auth/push-token` : `${base}/api/auth/push-token`;
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,9 +117,6 @@ export async function sendPushTokenToServer(pushToken) {
 }
 
 export function addNotificationResponseListener(callback) {
-  if (!Notifications || !Notifications.addNotificationResponseReceivedListener) {
-    return { remove: () => {} };
-  }
   try {
     return Notifications.addNotificationResponseReceivedListener(callback);
   } catch (error) {
@@ -142,9 +126,6 @@ export function addNotificationResponseListener(callback) {
 }
 
 export function addNotificationReceivedListener(callback) {
-  if (!Notifications || !Notifications.addNotificationReceivedListener) {
-    return { remove: () => {} };
-  }
   try {
     return Notifications.addNotificationReceivedListener(callback);
   } catch (error) {
@@ -154,9 +135,6 @@ export function addNotificationReceivedListener(callback) {
 }
 
 export async function showLocalNotification({ title, body, data = {} }) {
-  if (!Notifications || !Notifications.scheduleNotificationAsync) {
-    return;
-  }
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -171,5 +149,3 @@ export async function showLocalNotification({ title, body, data = {} }) {
     console.warn('[Notifications] Error scheduling local notification:', error.message);
   }
 }
-
-
