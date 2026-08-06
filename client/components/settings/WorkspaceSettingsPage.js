@@ -93,7 +93,39 @@ const getSettingsSchema = (isAdmin) => z.object({
       (value) => !value || toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
       "Mobile number is too long"
     ),
-  emergencyContact: isAdmin ? z.string().trim().optional() : z.string().trim().min(1, "Emergency mobile is required"),
+  emergencyContact: isAdmin
+    ? z
+        .string()
+        .trim()
+        .optional()
+        .refine(
+          (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+          "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
+        )
+        .refine(
+          (value) => !value || toDigitsOnly(value).length >= 10,
+          "Emergency contact must be at least 10 digits"
+        )
+        .refine(
+          (value) => !value || toDigitsOnly(value).length <= 15,
+          "Emergency contact cannot exceed 15 digits"
+        )
+    : z
+        .string()
+        .trim()
+        .min(1, "Emergency contact is required")
+        .refine(
+          (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+          "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
+        )
+        .refine(
+          (value) => !value || toDigitsOnly(value).length >= 10,
+          "Emergency contact must be at least 10 digits"
+        )
+        .refine(
+          (value) => !value || toDigitsOnly(value).length <= 15,
+          "Emergency contact cannot exceed 15 digits"
+        ),
   currentAddress: z.string().trim().min(1, "Full address is required"),
   permanentAddress: z.string().trim().optional(),
   bloodGroup: z.string().trim().optional(),
@@ -1473,9 +1505,23 @@ export default function WorkspaceSettingsPage() {
                 </div>
                 {!canSkipEmergencyContact && (
                   <div className="md:col-span-2">
-                    <label htmlFor="settings-emergencyContact" className={labelClassName}>Emergency Contact</label>
-                    <input id="settings-emergencyContact" type="text" placeholder="E.g., +91 9876543210" aria-invalid={errors.emergencyContact ? "true" : "false"} className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")} {...register("emergencyContact")} />
-                    {errors.emergencyContact && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.emergencyContact.message}</p>}
+                    <label htmlFor="settings-emergencyContact" className={labelClassName}>
+                      Emergency Contact
+                    </label>
+                    <input
+                      id="settings-emergencyContact"
+                      type="tel"
+                      inputMode="tel"
+                      placeholder="E.g., +91 9876543210 or 9876543210"
+                      aria-invalid={errors.emergencyContact ? "true" : "false"}
+                      className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")}
+                      {...register("emergencyContact")}
+                    />
+                    {errors.emergencyContact && (
+                      <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">
+                        {errors.emergencyContact.message}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

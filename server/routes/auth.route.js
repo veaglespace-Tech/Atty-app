@@ -88,7 +88,18 @@ const registerSchema = z
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.string().trim().min(4, "Mobile number is too short").optional(),
     mobileCountryCode: z.string().trim().optional(),
-    emergencyContact: z.string().trim().min(4, "Emergency contact is too short").optional(),
+    emergencyContact: z
+      .string()
+      .trim()
+      .refine(
+        (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+        "Emergency contact contains invalid characters"
+      )
+      .refine(
+        (value) => !value || (value.replace(/\D/g, "").length >= 10 && value.replace(/\D/g, "").length <= 15),
+        "Emergency contact must be between 10 and 15 digits"
+      )
+      .optional(),
     currentAddress: z.string().trim().min(5, "Current address is too short").max(191).optional(),
     permanentAddress: z.string().trim().min(5, "Permanent address is too short").max(191).optional(),
     countryCode: z.string().trim().optional(),
@@ -113,7 +124,19 @@ const updateMeSchema = z
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.union([z.string().trim().min(4, "Mobile number is too short"), z.literal("")]).optional(),
     mobileCountryCode: z.union([z.string().trim().min(1, "Country code is required"), z.literal("")]).optional(),
-    emergencyContact: z.string().trim().optional(),
+    emergencyContact: z
+      .string()
+      .trim()
+      .refine(
+        (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+        "Emergency contact contains invalid characters"
+      )
+      .refine(
+        (value) => !value || (value.replace(/\D/g, "").length >= 10 && value.replace(/\D/g, "").length <= 15),
+        "Emergency contact must be between 10 and 15 digits"
+      )
+      .optional()
+      .or(z.literal("")),
     currentAddress: z.string().trim().optional(),
     permanentAddress: z.string().trim().optional(),
     bloodGroup: z.string().trim().optional(),
