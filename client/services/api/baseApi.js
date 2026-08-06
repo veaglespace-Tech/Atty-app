@@ -3,7 +3,7 @@ import { logout } from "@/store/slices/authSlice";
 import { normalizeRole, ROLES, hasPermission, PERMISSIONS } from "@/utils/roles";
 import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
-const DEFAULT_LOCAL_API_URL = "http://localhost:5000/api";
+const DEFAULT_LOCAL_API_URL = "http://localhost:5002/api";
 const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
 
 const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");

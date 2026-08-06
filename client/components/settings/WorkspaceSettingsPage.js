@@ -1148,8 +1148,12 @@ export default function WorkspaceSettingsPage() {
         
         const dataUrl = canvas.toDataURL("image/jpeg", isProfile ? 0.85 : 0.75);
         resolve(dataUrl);
+        URL.revokeObjectURL(img.src);
       };
-      img.onerror = () => reject(new Error("Failed to read the selected image."));
+      img.onerror = () => {
+        reject(new Error("Failed to read the selected image."));
+        URL.revokeObjectURL(img.src);
+      };
     });
 
   const onProfileImageSelected = async (event) => {
@@ -1262,14 +1266,12 @@ export default function WorkspaceSettingsPage() {
       );
     } catch (error) {
       setProfileImageError("");
-      if (!error?.status) {
-        dispatch(
-          addNotification({
-            type: "error",
-            message: error?.message || "Failed to update profile.",
-          })
-        );
-      }
+      dispatch(
+        addNotification({
+          type: "error",
+          message: error?.data?.message || error?.message || "Failed to update profile.",
+        })
+      );
     }
   };
 
@@ -1679,30 +1681,7 @@ export default function WorkspaceSettingsPage() {
           </div>
         )}
 
-        {/* Sticky Save Bar */}
-        {(activeTab === "personal" || activeTab === "contact") && (
-          <div
-            className={cn(
-              "fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[0_18px_40px_rgba(30,112,209,0.15)] border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-6 transition-all duration-500",
-              canSubmit ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
-            )}
-          >
-            <div className="hidden sm:block min-w-[200px]">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">Unsaved Changes</p>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Please save your profile updates.</p>
-            </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button type="button" onClick={resetForm} disabled={isSaving} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
-                Cancel
-              </button>
-              <button type="submit" disabled={isSaving} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
-                <span className="hidden sm:inline">Save Changes</span>
-                <span className="sm:hidden">Save</span>
-              </button>
-            </div>
-          </div>
-        )}
+
       </form>
 
       {/* Organization Settings */}
