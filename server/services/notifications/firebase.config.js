@@ -54,7 +54,7 @@ function initializeFirebase() {
 
   const serviceAccount = loadServiceAccount();
   if (!serviceAccount) {
-    console.log("[FIREBASE CONFIG] No Firebase service account JSON found. Firebase direct push is disabled.");
+    console.log("[FIREBASE CONFIG] Using Expo Push Notification service (Direct Firebase Admin fallback is disabled).");
     isConfigured = false;
     return null;
   }
