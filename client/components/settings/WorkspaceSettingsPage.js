@@ -966,12 +966,6 @@ export default function WorkspaceSettingsPage() {
     }
   });
 
-  useEffect(() => {
-    if (isDeptSuccess && user?.departmentId) {
-      setValue("departmentId", String(user.departmentId));
-    }
-  }, [isDeptSuccess, user?.departmentId, setValue]);
-
   const formValues = useWatch({ control });
   const previewName = formValues.name || user?.name || "Workspace User";
   const previewEmail = formValues.email || user?.email || "-";
@@ -1440,7 +1434,7 @@ export default function WorkspaceSettingsPage() {
                 </div>
                 <div>
                   <label htmlFor="settings-departmentId" className={labelClassName}>Department</label>
-                  <select id="settings-departmentId" aria-invalid={errors.departmentId ? "true" : "false"} className={cn(inputClassName, errors.departmentId ? errorInputClassName : "")} {...register("departmentId")}>
+                  <select key={`dept-${isDeptSuccess}`} id="settings-departmentId" aria-invalid={errors.departmentId ? "true" : "false"} className={cn(inputClassName, errors.departmentId ? errorInputClassName : "")} {...register("departmentId")}>
                     <option value="">Select Department</option>
                     {departmentsList.map((d) => (
                       <option key={d.id} value={String(d.id)}>
