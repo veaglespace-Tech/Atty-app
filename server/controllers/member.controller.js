@@ -338,22 +338,24 @@ exports.downloadMemberAttendanceExcel = asyncHandler(async (req, res) => {
 exports.getMemberInstruments = asyncHandler(async (req, res) => {
   const userId = Number(req.user.id);
 
-  const instruments = await prisma.instrument.findMany({
-    where: { assignedUserId: userId },
-    orderBy: { createdAt: "desc" },
+  const userInstruments = await prisma.userInstrument.findMany({
+    where: { userId },
     include: {
-      assignedUser: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
+      instrument: true,
     },
+    orderBy: { assignedAt: "desc" },
   });
+
+  const items = userInstruments.map(ui => ({
+    id: ui.instrument.id,
+    name: ui.instrument.name,
+    description: ui.instrument.description,
+    assetId: ui.assetId,
+    assignedAt: ui.assignedAt,
+  }));
 
   res.status(200).json({
     success: true,
-    items: instruments,
+    items,
   });
 });

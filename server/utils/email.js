@@ -172,7 +172,7 @@ const seedUsageRows = async (tx, usageDate, mailboxes) => {
   }
 };
 
-const reserveMailbox = async () => {
+const reserveMailbox = async (excludeEmails = []) => {
   const mailboxes = getConfiguredMailboxes();
   if (mailboxes.length === 0) {
     return null;
@@ -202,6 +202,7 @@ const reserveMailbox = async () => {
 
     // Use EMAIL_1 until its daily limit is reached, then EMAIL_2, and so on.
     const selectedMailbox = mailboxes.find((mailbox) => {
+      if (excludeEmails.includes(mailbox.email)) return false;
       const usage = usageByEmail.get(mailbox.email);
       return Number(usage?.sentCount || 0) < dailyLimit;
     });
@@ -226,48 +227,14 @@ const reserveMailbox = async () => {
   });
 };
 
+const sendEmailWithFallback = require("./email-fallback");
+
 const sendEmail = async (options) => {
-  try {
-    const selectedMailbox = await reserveMailbox();
-    const fallbackMailbox = getConfiguredMailboxes()[0] || null;
-    const mailbox = selectedMailbox || fallbackMailbox;
-
-    if (!mailbox) {
-      throw new Error(
-        "Email delivery is not configured. Add EMAIL_1..EMAIL_20 and EMAIL_1_PASSWORD..EMAIL_20_PASSWORD for Hostinger mailboxes, or keep the legacy EMAIL_USER/EMAIL_PASS fallback."
-      );
-    }
-
-    const transportOptions = buildTransportOptions({
-      email: mailbox.email,
-      pass: mailbox.pass,
-    });
-
-    if (!transportOptions) {
-      throw new Error(
-        "Email delivery is not configured. Add SMTP_HOST=imap.hostinger.com and the Hostinger mailbox credentials, or configure EMAIL_SERVICE/EMAIL_USER/EMAIL_PASS."
-      );
-    }
-
-    const transporter = nodemailer.createTransport(transportOptions);
-
-    const mailOptions = {
-      from: options.from || `"${options.fromName || "Veagle Attendee"}" <${mailbox.email}>`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
-      html:
-        options.html ||
-        (options.intro || options.sections ? buildEmailTemplate(options) : undefined),
-      replyTo: options.replyTo || undefined,
-      attachments: Array.isArray(options.attachments) ? options.attachments : undefined,
-    };
-
-    return transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error("Nodemailer error:", error);
-    throw error;
-  }
+  return sendEmailWithFallback(options, {
+    reserveMailbox,
+    getConfiguredMailboxes,
+    buildTransportOptions
+  });
 };
 
 module.exports = sendEmail;

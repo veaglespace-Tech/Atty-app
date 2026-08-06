@@ -122,7 +122,6 @@ const STATUS_OPTIONS = [
   { value: "ABSENT", label: "Absent" },
   { value: "HALF_DAY", label: "Half Day" },
   { value: "OVERTIME", label: "Overtime" },
-  { value: "OVERTIME", label: "Overtime" },
 ];
 
 const todayKey = getTodayDateKey;
@@ -797,7 +796,6 @@ export default function OrgAttendancePage() {
         <MetricCard label="Present" value={summaryMap.get("Present") || 0} />
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
-        <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
         <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
       </div>
 

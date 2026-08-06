@@ -621,7 +621,6 @@ export default function TeamLeaderAttendancePage() {
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
         <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
-        <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
       </div>
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
@@ -700,7 +699,6 @@ export default function TeamLeaderAttendancePage() {
                 <option value="PRESENT">Present</option>
                 <option value="HALF_DAY">Half Day</option>
                 <option value="ABSENT">Absent</option>
-                <option value="OVERTIME">Overtime</option>
                 <option value="OVERTIME">Overtime</option>
               </select>
             </label>

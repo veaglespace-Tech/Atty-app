@@ -1,5 +1,4 @@
 const asyncHandler = require("express-async-handler");
-
 const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
@@ -11,6 +10,7 @@ const {
   truncateText,
 } = require("../services/common.service");
 const { uploadFileDataUrl, deleteCloudinaryFile } = require("../services/image-upload.service");
+const { notifyNewPost } = require("../services/push-notification.service");
 
 const POST_TYPES = new Set([
   "NOTIFICATION",
@@ -261,8 +261,7 @@ exports.createPost = asyncHandler(async (req, res) => {
     include: POST_INCLUDE,
   });
 
-  // BACKGROUND TASK: Send Push Notifications
-  const { notifyNewPost } = require("../services/push-notification.service");
+  // Send Push Notifications
   notifyNewPost(post, req.user.id, orgId, resolvedTeamId);
 
   res.status(201).json({

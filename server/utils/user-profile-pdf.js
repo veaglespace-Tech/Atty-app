@@ -185,7 +185,7 @@ const buildUserHallTicketPdf = async ({
     });
 
     const topCardY = headerY + 108;
-    const topCardHeight = 206;
+    const topCardHeight = 242;
     doc.save();
     doc.roundedRect(startX, topCardY, pageWidth, topCardHeight, 12).fillAndStroke(COLORS.cardBg, COLORS.cardBorder);
     doc.restore();
@@ -271,6 +271,40 @@ const buildUserHallTicketPdf = async ({
       width: detailsWidth * 0.42,
       label: "Mobile",
       value: toPhoneLabel(user.mobileCountryCode, user.mobile),
+    });
+
+    drawLabelValue({
+      doc,
+      x: detailsX,
+      y: topCardY + 182,
+      width: detailsWidth * 0.55,
+      label: "Gender / DOB",
+      value: `${normalizeText(user.gender)}${user.dob ? ` (${user.dob})` : ""}`,
+    });
+    drawLabelValue({
+      doc,
+      x: detailsX + detailsWidth * 0.58,
+      y: topCardY + 182,
+      width: detailsWidth * 0.42,
+      label: "Blood Group",
+      value: normalizeText(user.bloodGroup),
+    });
+
+    drawLabelValue({
+      doc,
+      x: detailsX,
+      y: topCardY + 218,
+      width: detailsWidth * 0.55,
+      label: "Member Type",
+      value: normalizeText(user.existingMember),
+    });
+    drawLabelValue({
+      doc,
+      x: detailsX + detailsWidth * 0.58,
+      y: topCardY + 218,
+      width: detailsWidth * 0.42,
+      label: "Department",
+      value: normalizeText(user.department?.name || user.departmentName || (user.departmentId ? "Allocated" : "Unassigned")),
     });
 
     const lowerCardY = topCardY + topCardHeight + 14;

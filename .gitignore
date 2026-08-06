@@ -30,6 +30,8 @@ expo-env.d.ts
 # Local config files
 client/config/local.js
 server/config/local.js
+*service-account*.json
+*firebase*.json
 
 # Logs
 *.log

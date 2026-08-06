@@ -27,13 +27,13 @@ export default function DashboardBrandBlock() {
           <div className="brand-logo-orbit page-shell-orb-tertiary absolute inset-0 rounded-full blur-xl" />
           <div className="brand-logo-spotlight relative h-full w-full">
             <Image
-              src="/logo1-clean.webp"
+              src="/logo-transparent.webp"
               alt="Veagle logo mark"
               width={80}
               height={80}
               priority
               unoptimized
-              className="brand-logo-mark h-full w-full object-contain filter drop-shadow-[0_0_12px_rgba(92,209,229,0.6)] drop-shadow-[0_4px_8px_rgba(30,112,209,0.5)] animate-flip-y"
+              className="brand-logo-mark h-full w-full object-contain animate-flip-y"
             />
           </div>
         </div>

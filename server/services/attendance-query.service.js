@@ -31,6 +31,17 @@ const mapAttendanceRecord = (record = {}) => {
     date: record.date,
     memberId: record.userId,
     member: user.name || "Unknown",
+    department: user.department?.name || "Unassigned",
+    departmentStatus: user.department ? "Allocated" : "Unallocated",
+    gender: user.gender || "-",
+    dob: user.dob || "-",
+    existingMember: user.existingMember || "-",
+    referenceBy: user.referenceBy || "-",
+    bloodGroup: user.bloodGroup || "-",
+    emergencyContact: user.emergencyContact || "-",
+    currentAddress: user.currentAddress || "-",
+    permanentAddress: user.permanentAddress || "-",
+    joinedAt: user.memberships?.[0]?.joinedAt ? new Date(user.memberships[0].joinedAt).toLocaleDateString("en-IN") : user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
     role: resolveUserRole(user, record.orgId) || "MEMBER",
     status: record.status || "PRESENT",
     punchInAt: record.punchInAt,
@@ -144,12 +155,14 @@ const buildAttendanceSummary = (records = []) => {
       if (record.status === "PRESENT" || record.status === "REGULARIZED") acc.present += 1;
       else if (record.status === "HALF_DAY") acc.halfDay += 1;
       else if (record.status === "ABSENT") acc.absent += 1;
+      else if (record.status === "OVERTIME") acc.overtime += 1;
       return acc;
     },
     {
       present: 0,
       halfDay: 0,
       absent: 0,
+      overtime: 0,
     }
   );
 
@@ -158,6 +171,7 @@ const buildAttendanceSummary = (records = []) => {
     toSummaryItem("Present", totals.present),
     toSummaryItem("Half Day", totals.halfDay),
     toSummaryItem("Absent", totals.absent),
+    toSummaryItem("Overtime", totals.overtime),
   ];
 };
 
@@ -265,8 +279,10 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
       name: user.name,
       email: user.email,
       role: user.role,
-      orgName: user.organization?.name || "-",
-      orgCode: user.organization?.organizationCode || "-",
+      gender: user.gender || "-",
+      existingMember: user.existingMember || "-",
+      orgName: user.organization?.name || "Unknown Org",
+      orgCode: user.organization?.organizationCode || "ORG",
     },
     summary: [
       { label: "Total Logs", value: totalRecords },

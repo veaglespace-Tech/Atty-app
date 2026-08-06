@@ -30,7 +30,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
       orderBy.createdAt = 'desc';
     }
 
-    const transactions = await prisma.expense_transaction.findMany({
+    const transactions = await prisma.expenseTransaction.findMany({
       where,
       orderBy,
     });
@@ -47,7 +47,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
   }
 };
 
-  exports.addDeposit = async (req, res, next) => {
+exports.addDeposit = async (req, res, next) => {
   try {
     const { amount, description } = req.body;
     const orgId = req.user.organizationId || req.user.orgId;
@@ -58,7 +58,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
 
     const transaction = await prisma.$transaction(async (tx) => {
       // 1. Create Transaction
-      const newTransaction = await tx.expense_transaction.create({
+      const newTransaction = await tx.expenseTransaction.create({
         data: {
           orgId: parseInt(orgId),
           type: "DEPOSIT",
@@ -87,21 +87,21 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
   }
 };
 
-  exports.addWithdrawal = async (req, res, next) => {
+exports.addWithdrawal = async (req, res, next) => {
   try {
     const { withdrawalType, totalAmount } = req.body;
-    let { items } = req.body;
     const orgId = req.user.organizationId || req.user.orgId;
+    let items = req.body.items;
 
-    if (!withdrawalType || !items || !totalAmount) {
-      return res.status(400).json({ success: false, message: "Please provide withdrawalType, items, and totalAmount" });
+    if (!withdrawalType || !totalAmount) {
+      return res.status(400).json({ success: false, message: "Please provide withdrawalType and totalAmount" });
     }
 
     if (typeof items === "string") {
       try {
         items = JSON.parse(items);
-      } catch (err) {
-        return res.status(400).json({ success: false, message: "Invalid items format" });
+      } catch (e) {
+        items = [];
       }
     }
 
@@ -114,7 +114,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
       const uploadResult = await uploadImageDataUrl({
         dataUrl,
         folder: "veagle-attendee/expense-receipts",
-        publicId: `org-${orgId}-withdrawal-receipt-${Date.now()}`,
+        publicId: `org-${orgId}-withdrawal-${Date.now()}`,
         maxBytes: 5 * 1024 * 1024,
         missingConfigMessage: "Image uploads are not configured on the server.",
         invalidMessage: "Upload a valid JPG, PNG, WEBP, or GIF image.",
@@ -128,8 +128,17 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
     }
 
     const transaction = await prisma.$transaction(async (tx) => {
+      const org = await tx.organization.findUnique({
+        where: { id: parseInt(orgId) },
+        select: { fundBalance: true },
+      });
+
+      if (org.fundBalance < parseFloat(totalAmount)) {
+        throw new Error("Insufficient fund balance");
+      }
+
       // 1. Create Transaction
-      const newTransaction = await tx.expense_transaction.create({
+      const newTransaction = await tx.expenseTransaction.create({
         data: {
           orgId: parseInt(orgId),
           type: "WITHDRAWAL",
@@ -157,6 +166,9 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
       data: transaction,
     });
   } catch (error) {
+    if (error.message === "Insufficient fund balance") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     next(error);
   }
 };
@@ -170,7 +182,7 @@ exports.settleClaim = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Please provide claimNo and amountPaid" });
     }
 
-    const claim = await prisma.expense_claim.findUnique({
+    const claim = await prisma.expenseClaim.findUnique({
       where: { claimNo },
     });
 
@@ -191,7 +203,7 @@ exports.settleClaim = async (req, res, next) => {
       const uploadResult = await uploadImageDataUrl({
         dataUrl,
         folder: "veagle-attendee/expense-receipts",
-        publicId: `org-${orgId}-settlement-receipt-${Date.now()}`,
+        publicId: `org-${orgId}-settlement-${Date.now()}`,
         maxBytes: 5 * 1024 * 1024,
         missingConfigMessage: "Image uploads are not configured on the server.",
         invalidMessage: "Upload a valid JPG, PNG, WEBP, or GIF image.",
@@ -205,8 +217,17 @@ exports.settleClaim = async (req, res, next) => {
     }
 
     const transaction = await prisma.$transaction(async (tx) => {
+      const org = await tx.organization.findUnique({
+        where: { id: parseInt(orgId) },
+        select: { fundBalance: true },
+      });
+
+      if (org.fundBalance < parseFloat(amountPaid)) {
+        throw new Error("Insufficient fund balance to settle this claim");
+      }
+
       // 1. Create Transaction
-      const newTransaction = await tx.expense_transaction.create({
+      const newTransaction = await tx.expenseTransaction.create({
         data: {
           orgId: parseInt(orgId),
           type: "CLAIM_SETTLEMENT",
@@ -219,7 +240,7 @@ exports.settleClaim = async (req, res, next) => {
       });
 
       // 2. Link transaction to claim & approve
-      const updatedClaim = await tx.expense_claim.update({
+      const updatedClaim = await tx.expenseClaim.update({
         where: { id: claim.id },
         data: { 
           status: "APPROVED",
@@ -243,6 +264,9 @@ exports.settleClaim = async (req, res, next) => {
       data: transaction,
     });
   } catch (error) {
+    if (error.message === "Insufficient fund balance to settle this claim") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     next(error);
   }
 };
@@ -262,43 +286,74 @@ exports.exportTransactionsExcel = async (req, res, next) => {
       ];
     }
 
-    const transactions = await prisma.expense_transaction.findMany({
+    const transactions = await prisma.expenseTransaction.findMany({
       where,
       orderBy: { createdAt: "desc" },
     });
 
     const org = await prisma.organization.findUnique({
       where: { id: parseInt(orgId) },
-      select: { fundBalance: true }
+      select: { fundBalance: true, name: true }
     });
 
     const totalAmount = transactions.reduce((sum, t) => sum + (t.type === 'DEPOSIT' ? t.amount : -t.amount), 0);
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Transactions");
+    const worksheet = workbook.addWorksheet("Statement");
 
-    worksheet.columns = [
-      { header: "Date", key: "date", width: 20 },
-      { header: "Type", key: "type", width: 20 },
-      { header: "Title", key: "title", width: 30 },
-      { header: "Amount", key: "amount", width: 15 },
-    ];
+    // Title & Meta
+    worksheet.mergeCells('A1', 'D1');
+    worksheet.getCell('A1').value = `${org?.name || 'Organization'} - Funds & Expenses Statement`;
+    worksheet.getCell('A1').font = { size: 16, bold: true };
+    worksheet.getCell('A1').alignment = { vertical: 'middle', horizontal: 'center' };
 
-    transactions.forEach(t => {
-      worksheet.addRow({
-        date: new Date(t.createdAt).toLocaleDateString(),
-        type: t.type,
-        title: t.title,
-        amount: (t.type === "DEPOSIT" ? "+" : "-") + t.amount
-      });
+    worksheet.mergeCells('A2', 'D2');
+    worksheet.getCell('A2').value = `Generated on: ${new Date().toLocaleDateString()}`;
+    worksheet.getCell('A2').alignment = { vertical: 'middle', horizontal: 'center' };
+    
+    worksheet.addRow([]);
+
+    // Summary
+    worksheet.addRow(['Current Fund Balance:', org?.fundBalance || 0]);
+    worksheet.getCell(`A${worksheet.rowCount}`).font = { bold: true };
+    worksheet.getCell(`B${worksheet.rowCount}`).numFmt = '"Rs "#,##0.00';
+    
+    worksheet.addRow(['Total Transactions (Filtered):', totalAmount]);
+    worksheet.getCell(`A${worksheet.rowCount}`).font = { bold: true };
+    worksheet.getCell(`B${worksheet.rowCount}`).numFmt = '"Rs "#,##0.00;[Red]\-"Rs "#,##0.00';
+
+    worksheet.addRow([]);
+
+    // Headers
+    const headerRow = worksheet.addRow(["Date", "Type", "Title", "Amount"]);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4F81BD' } // A nice blue header
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
-    worksheet.addRow({});
-    worksheet.addRow({ title: "Total Filtered Transactions", amount: totalAmount });
-    worksheet.addRow({ title: "Total Organization Balance", amount: org?.fundBalance || 0 });
+    // Define columns width
+    worksheet.getColumn(1).width = 15;
+    worksheet.getColumn(2).width = 25;
+    worksheet.getColumn(3).width = 45;
+    worksheet.getColumn(4).width = 20;
+
+    transactions.forEach(t => {
+      const row = worksheet.addRow([
+        new Date(t.createdAt).toLocaleDateString(),
+        t.type,
+        t.title,
+        (t.type === "DEPOSIT" ? t.amount : -t.amount)
+      ]);
+      row.getCell(4).numFmt = '"Rs "#,##0.00;[Red]\-"Rs "#,##0.00';
+    });
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", 'attachment; filename="transactions.xlsx"');
+    res.setHeader("Content-Disposition", 'attachment; filename="Funds_Expenses_Statement.xlsx"');
 
     await workbook.xlsx.write(res);
     res.end();
@@ -322,37 +377,86 @@ exports.exportTransactionsPdf = async (req, res, next) => {
       ];
     }
 
-    const transactions = await prisma.expense_transaction.findMany({
+    const transactions = await prisma.expenseTransaction.findMany({
       where,
       orderBy: { createdAt: "desc" },
     });
 
     const org = await prisma.organization.findUnique({
       where: { id: parseInt(orgId) },
-      select: { fundBalance: true }
+      select: { fundBalance: true, name: true }
     });
 
     const totalAmount = transactions.reduce((sum, t) => sum + (t.type === 'DEPOSIT' ? t.amount : -t.amount), 0);
 
-    const doc = new PDFDocument({ margin: 30 });
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'attachment; filename="transactions.pdf"');
+    res.setHeader("Content-Disposition", 'attachment; filename="Funds_Expenses_Statement.pdf"');
     doc.pipe(res);
 
-    doc.fontSize(20).text("Expense Transactions Report", { align: "center" });
-    doc.moveDown();
+    // Header section
+    doc.fontSize(22).font('Helvetica-Bold').text(org?.name || "Organization", { align: "center" });
+    doc.fontSize(16).font('Helvetica').text("Funds & Expenses Statement", { align: "center" });
+    doc.fontSize(10).fillColor('gray').text(`Generated on: ${new Date().toLocaleDateString()}`, { align: "center" });
+    doc.moveDown(2);
 
+    // Summary section
+    doc.fillColor('black');
+    doc.fontSize(12).font('Helvetica-Bold');
+    doc.text(`Current Fund Balance: Rs ${org?.fundBalance || 0}`);
+    doc.text(`Total Transactions (Filtered): Rs ${totalAmount}`);
+    doc.moveDown(2);
+
+    // Table Header
+    const tableTop = doc.y;
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text("Date", 50, tableTop);
+    doc.text("Type", 130, tableTop);
+    doc.text("Title", 280, tableTop);
+    doc.text("Amount", 450, tableTop, { width: 90, align: "right" });
+    doc.moveDown(0.5);
+    
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor('#000000').stroke();
+    doc.moveDown(0.5);
+
+    // Table Rows
+    doc.font('Helvetica').fontSize(10);
     transactions.forEach(t => {
-      doc.fontSize(12).text(`Date: ${new Date(t.createdAt).toLocaleDateString()}`);
-      doc.text(`Type: ${t.type}`);
-      doc.text(`Title: ${t.title}`);
-      doc.text(`Amount: ${t.type === "DEPOSIT" ? "+" : "-"}Rs ${t.amount}`);
-      doc.moveDown();
+      const startY = doc.y;
+      
+      // Page break check
+      if (startY > 750) {
+        doc.addPage();
+        doc.font('Helvetica-Bold').fontSize(11);
+        doc.text("Date", 50, doc.y);
+        doc.text("Type", 130, doc.y);
+        doc.text("Title", 280, doc.y);
+        doc.text("Amount", 450, doc.y, { width: 90, align: "right" });
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor('#000000').stroke();
+        doc.moveDown(0.5);
+        doc.font('Helvetica').fontSize(10);
+      }
+      
+      const currentY = doc.y;
+      const amountStr = (t.type === "DEPOSIT" ? "+" : "-") + " Rs " + t.amount;
+      
+      doc.text(new Date(t.createdAt).toLocaleDateString(), 50, currentY, { lineBreak: false });
+      doc.text(t.type, 130, currentY, { lineBreak: false });
+      doc.text(t.title.substring(0, 35) + (t.title.length > 35 ? '...' : ''), 280, currentY, { lineBreak: false });
+      
+      // We use lineBreak: false for the first few columns, 
+      // but for the last one we don't, so it automatically moves the cursor down.
+      if (t.type === "DEPOSIT") doc.fillColor('green');
+      else doc.fillColor('red');
+      
+      doc.text(amountStr, 450, currentY, { width: 90, align: "right" });
+      
+      doc.fillColor('black');
+      doc.moveDown(0.5);
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).strokeColor('#e5e7eb').stroke();
+      doc.moveDown(0.5);
     });
-
-    doc.moveDown();
-    doc.fontSize(14).text(`Total Filtered Transactions: Rs ${totalAmount}`);
-    doc.text(`Total Organization Balance: Rs ${org?.fundBalance || 0}`);
 
     doc.end();
   } catch (error) {
@@ -365,7 +469,7 @@ exports.getTransactionById = async (req, res, next) => {
     const orgId = req.user.organizationId || req.user.orgId;
     const { id } = req.params;
 
-    const transaction = await prisma.expense_transaction.findFirst({
+    const transaction = await prisma.expenseTransaction.findFirst({
       where: {
         id: parseInt(id),
         orgId: parseInt(orgId),
@@ -379,7 +483,7 @@ exports.getTransactionById = async (req, res, next) => {
     // Attempt to fetch related claim if it's a claim settlement
     let claimDetails = null;
     if (transaction.type === "CLAIM_SETTLEMENT") {
-      claimDetails = await prisma.expense_claim.findFirst({
+      claimDetails = await prisma.expenseClaim.findFirst({
         where: { transactionId: transaction.id },
         include: {
           user: {

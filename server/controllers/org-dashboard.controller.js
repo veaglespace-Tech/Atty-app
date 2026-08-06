@@ -161,11 +161,14 @@ const buildAttendanceExcelBuffer = ({
 }) => {
   const columns = [
     { key: "id", label: "ID", width: 50 },
-    { key: "member", label: "Member", width: 120 },
+    { key: "member", label: "Member Name", width: 120 },
     { key: "role", label: "Role", width: 100 },
+    { key: "department", label: "Department", width: 110 },
+    { key: "existingMember", label: "Member Type", width: 100 },
     { key: "presentDays", label: "Present Days", width: 90 },
     { key: "halfDays", label: "Half Days", width: 90 },
     { key: "absentDays", label: "Absent Days", width: 90 },
+    { key: "overtimeDays", label: "Overtime Days", width: 100 },
     { key: "workedHours", label: "Worked Hrs", width: 100 },
   ]
 
@@ -449,13 +452,16 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
     ],
     summaryCards: reportData.summary,
     columns: [
-      { key: "id", label: "ID", width: 50 },
-      { key: "member", label: "Member", width: 120 },
-      { key: "role", label: "Role", width: 100 },
-      { key: "presentDays", label: "Present", width: 70, align: "center" },
-      { key: "halfDays", label: "Half Day", width: 70, align: "center" },
-      { key: "absentDays", label: "Absent", width: 70, align: "center" },
-      { key: "workedHours", label: "Worked Hrs", width: 80, align: "center" },
+      { key: "id", label: "ID", width: 35 },
+      { key: "member", label: "Member Name", width: 95 },
+      { key: "role", label: "Role", width: 65 },
+      { key: "department", label: "Department", width: 75 },
+      { key: "existingMember", label: "Type", width: 60 },
+      { key: "presentDays", label: "Present Days", width: 55, align: "center" },
+      { key: "halfDays", label: "Half Days", width: 45, align: "center" },
+      { key: "absentDays", label: "Absent Days", width: 55, align: "center" },
+      { key: "overtimeDays", label: "Overtime Days", width: 60, align: "center" },
+      { key: "workedHours", label: "Worked Hrs", width: 60, align: "center" },
     ],
     rows: reportData.items,
   })

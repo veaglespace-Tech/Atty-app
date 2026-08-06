@@ -112,10 +112,13 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
     mobileCountryCode,
     emergencyContact,
     gender,
+    dob,
     bloodGroup,
     city,
     currentAddress,
     permanentAddress,
+    referenceBy,
+    existingMember,
   } = req.body;
 
   const organization = await prisma.organization.findUnique({
@@ -142,10 +145,18 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
   }
 
   const normalizedGender = String(gender || "").trim().toUpperCase();
-  if (normalizedGender && !GENDER_VALUES.has(normalizedGender)) {
+  if (!normalizedGender || !GENDER_VALUES.has(normalizedGender)) {
     res.status(400);
-    throw new Error("Invalid gender value");
+    throw new Error("Valid gender is required");
   }
+
+  const normalizedExistingMember = String(existingMember || "").trim().toLowerCase();
+  if (!normalizedExistingMember || !["senior", "junior", "semi_senior", "semi-senior", "semi senior"].includes(normalizedExistingMember)) {
+    res.status(400);
+    throw new Error("Existing member status (Senior/Semi-Senior/Junior) is required");
+  }
+
+  const normalizedReferenceBy = String(referenceBy || "").trim() || null;
 
   const normalizedCity = String(city || "").trim();
   if (!normalizedCity) {
@@ -211,7 +222,10 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
           currentAddress: normalizedCurrentAddress,
           permanentAddress: normalizedPermanentAddress,
           password: hashedPassword,
-          gender: normalizedGender || null,
+          gender: normalizedGender,
+          dob: String(dob || "").trim() || null,
+          referenceBy: normalizedReferenceBy,
+          existingMember: normalizedExistingMember,
           bloodGroup: bloodGroup || null,
           city: normalizedCity,
           status: "PENDING",
@@ -232,7 +246,10 @@ exports.submitJoinRequest = asyncHandler(async (req, res) => {
           currentAddress: normalizedCurrentAddress,
           permanentAddress: normalizedPermanentAddress,
           password: hashedPassword,
-          gender: normalizedGender || null,
+          gender: normalizedGender,
+          dob: String(dob || "").trim() || null,
+          referenceBy: normalizedReferenceBy,
+          existingMember: normalizedExistingMember,
           bloodGroup: bloodGroup || null,
           city: normalizedCity,
           expiresAt,
@@ -322,6 +339,10 @@ exports.acceptRegistrationRequest = asyncHandler(async (req, res) => {
         currentAddress: request.currentAddress,
         permanentAddress: request.permanentAddress,
         password: request.password,
+        gender: request.gender,
+        dob: request.dob,
+        referenceBy: request.referenceBy,
+        existingMember: request.existingMember,
         bloodGroup: request.bloodGroup,
         role: "MEMBER",
         status: "APPROVED",
@@ -402,6 +423,9 @@ exports.rejectRegistrationRequest = asyncHandler(async (req, res) => {
         mobile: request.mobile,
         mobileCountryCode: request.mobileCountryCode,
         password: request.password,
+        gender: request.gender,
+        referenceBy: request.referenceBy,
+        existingMember: request.existingMember,
         role: "MEMBER",
         status: "REJECTED",
         archiveReason: `Registration request rejected: ${note || "No reason provided"}`,

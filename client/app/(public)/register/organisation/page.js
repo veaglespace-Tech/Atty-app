@@ -32,6 +32,7 @@ import {
   REGISTRATION_DRAFT_KEYS,
   setRegistrationDraft,
 } from "@/utils/registerDraft";
+import { API_BASE_URL } from "@/services/api/baseApi";
 
 const organisationSchema = z.object({
   name: z
@@ -181,7 +182,7 @@ function OrganisationFormContent() {
     setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, orgDraft);
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/auth/save-lead`, {
+      await fetch(`${API_BASE_URL}/auth/save-lead`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ org: orgDraft, admin: {} }),

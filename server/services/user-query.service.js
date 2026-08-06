@@ -67,6 +67,15 @@ const mapUserForManagement = (user, orgId = null) => {
     emergencyContact: user.emergencyContact || null,
     currentAddress: user.currentAddress || null,
     permanentAddress: user.permanentAddress || null,
+    gender: user.gender || null,
+    dob: user.dob || null,
+    existingMember: user.existingMember || null,
+    referenceBy: user.referenceBy || null,
+    bloodGroup: user.bloodGroup || null,
+    physicalFormNo: user.physicalFormNo || null,
+    documentUrl: user.documentUrl || null,
+    documentName: user.documentName || null,
+    documentPublicId: user.documentPublicId || null,
     profileImageUrl: user.profileImageUrl || null,
     role: normalizeRole(displayRole),
     permissions: resolvedPermissions,
@@ -75,7 +84,11 @@ const mapUserForManagement = (user, orgId = null) => {
     joinedAt: user.createdAt,
     createdAt: user.createdAt,
     memberships: Array.isArray(user.memberships) ? user.memberships : [],
+    instruments: Array.isArray(user.userInstruments) ? user.userInstruments.map(ui => ({ ...ui.instrument, assetId: ui.assetId, assignedAt: ui.assignedAt })) : [],
+    departmentId: user.departmentId || null,
+    department: user.department ? { id: user.department.id, name: user.department.name } : null,
   };
+
 };
 
 const buildUserSummary = (users = []) => {

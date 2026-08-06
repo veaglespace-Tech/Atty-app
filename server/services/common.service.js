@@ -220,6 +220,46 @@ const formatReportLocation = (meta, lat, lng) => {
   return "-";
 };
 
+const extractImageUrl = (post) => {
+  if (!post) return null;
+  const meta = typeof post.metadata === "string"
+    ? (function () {
+        try {
+          return JSON.parse(post.metadata);
+        } catch (e) {
+          return null;
+        }
+      })()
+    : post.metadata;
+  if (!meta) return null;
+
+  if (Array.isArray(meta.attachments) && meta.attachments.length > 0) {
+    const imgAtt = meta.attachments.find((att) => {
+      if (!att || !att.url) return false;
+      const resType = String(att.resourceType || "").toLowerCase();
+      const fmt = String(att.format || "").toLowerCase();
+      const isImgFmt = ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(fmt);
+      const isImgUrl = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(att.url);
+      return resType === "image" || isImgFmt || isImgUrl;
+    }) || meta.attachments[0];
+
+    if (imgAtt && imgAtt.url) return imgAtt.url;
+  }
+
+  if (meta.attachment && meta.attachment.url) {
+    return meta.attachment.url;
+  }
+
+  if (meta.imageUrl && typeof meta.imageUrl === "string") {
+    return meta.imageUrl;
+  }
+
+  if (meta.image && typeof meta.image === "string") {
+    return meta.image;
+  }
+
+  return null;
+};
 module.exports = {
   clamp,
   parsePositiveInt,
@@ -238,6 +278,7 @@ module.exports = {
   toSummaryItem,
   uniqueNumberList,
   truncateText,
+  extractImageUrl,
   formatDate,
   minutesToHoursValue,
   formatHoursValue,
@@ -245,3 +286,4 @@ module.exports = {
   toPdfTime,
   formatReportLocation,
 };
+

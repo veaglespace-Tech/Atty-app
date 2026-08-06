@@ -40,6 +40,12 @@ const runAttendanceAutoCloseJob = async () => {
       const startTime = organization?.attendanceStartTime || config.startTime;
       const endTime = organization?.attendanceEndTime || config.endTime;
       const endMinutes = parseStartTimeMinutes(endTime);
+      // Run the auto-close job at 11:59 PM (23:59) to ensure it's at the end of the day
+      const AUTO_CLOSE_TRIGGER_MINUTES = 23 * 60 + 59;
+
+      if (nowMinutes < AUTO_CLOSE_TRIGGER_MINUTES) {
+        continue;
+      }
 
       const openRecords = await prisma.attendance.findMany({
         where: {
@@ -83,7 +89,7 @@ const runAttendanceAutoCloseJob = async () => {
         // Missing punch out -> Mark ABSENT, with totalMinutesWorked = 0
         const shiftEndAt = buildDateTimeForDateKey({
           dateKey: today,
-          time: endTime,
+          time: "23:59",
           timeZone: config.timeZone,
         });
 

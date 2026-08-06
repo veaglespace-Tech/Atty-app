@@ -15,6 +15,7 @@ const { createOrganizationMembership } = require("../services/organization-membe
 const { truncateText } = require("../services/common.service");
 const { syncOrganizationSubscriptionState } = require("../services/subscription.service");
 const { deleteProfileImage, uploadProfileImage } = require("../services/profile-image.service");
+const { uploadFileDataUrl, deleteFile } = require("../services/image-upload.service");
 const sendEmail = require("../utils/email");
 const { buildEmailTemplate } = require("../utils/email-template");
 const {
@@ -193,7 +194,18 @@ const findPasswordResetUser = async ({
       currentRole: role,
     };
   } catch (_) {
-    return null;
+    const activeMemberships = listActiveOrganizationMemberships(user);
+    const primaryMembership = activeMemberships[0] || null;
+    const resolvedRole = primaryMembership?.role || user.role || "MEMBER";
+
+    return {
+      ...user,
+      orgId: primaryMembership?.organization?.id || user.orgId || null,
+      organization: primaryMembership?.organization || user.organization || null,
+      memberships: user.memberships,
+      currentMembership: primaryMembership,
+      currentRole: resolvedRole,
+    };
   }
 };
 
@@ -532,6 +544,7 @@ const authUserInclude = {
       },
     },
   },
+  department: true,
 };
 
 const authUserWriteInclude = {
@@ -540,6 +553,7 @@ const authUserWriteInclude = {
       plan: true,
     },
   },
+  department: true,
 };
 
 const mergeSessionUserState = ({ previousUser, nextUser, organization = null }) => {
@@ -843,7 +857,15 @@ const serializeSessionUser = (user, organization = null) => {
     currentAddress: normalized.currentAddress || null,
     permanentAddress: normalized.permanentAddress || null,
     bloodGroup: normalized.bloodGroup || null,
+    gender: normalized.gender || null,
+    dob: normalized.dob || null,
+    existingMember: normalized.existingMember || null,
+    physicalFormNo: normalized.physicalFormNo || null,
+    documentUrl: normalized.documentUrl || null,
+    documentName: normalized.documentName || null,
     profileImageUrl: normalized.profileImageUrl || null,
+    departmentId: normalized.departmentId || null,
+    department: normalized.department ? { id: normalized.department.id, name: normalized.department.name } : null,
     memberships: normalized.memberships.map((membership) => ({
       orgId: membership.orgId,
       role: membership.role,
@@ -876,6 +898,7 @@ const serializeSessionUser = (user, organization = null) => {
         country: org.country || null,
         subscriptionStatus: org.subscriptionStatus || null,
         logoUrl: org.logoUrl || null,
+        hasERP: org.hasERP || false,
         plan: org.plan
           ? {
             id: org.plan.id,
@@ -1276,6 +1299,58 @@ exports.login = asyncHandler(async (req, res) => {
     }
   }
 
+  if (currentRole === "SUPER_ADMIN") {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.verificationSession.create({
+      data: {
+        purpose: "SUPER_ADMIN_LOGIN",
+        email: normalizedEmail,
+        phoneE164: user.mobile || "",
+        nationalNumber: "", // Required by schema
+        status: "EMAIL_PENDING",
+        emailOtpHash: otpHash,
+        emailOtpExpiresAt: expiresAt,
+        contactOtpExpiresAt: expiresAt, // Required by schema
+        expiresAt: expiresAt,
+      }
+    });
+
+    try {
+      const emailHtml = buildEmailTemplate({
+        title: "Super Admin Login Verification",
+        intro: [
+          "You are attempting to log in as a Super Admin.",
+          "Please use the verification code below to complete your login."
+        ],
+        sections: [
+          {
+            rows: [
+              { label: "Verification Code", value: otp }
+            ]
+          }
+        ],
+        notice: "This code will expire in 10 minutes. If you did not request this login, please change your password immediately.",
+      });
+      await sendEmail({
+        email: normalizedEmail,
+        subject: "Super Admin Login Verification",
+        html: emailHtml,
+      });
+    } catch (e) {
+      console.error("Failed to send 2FA OTP email:", e);
+    }
+
+    return res.status(200).json({
+      success: true,
+      requires2FA: true,
+      message: "An OTP has been sent to your registered email address.",
+      email: normalizedEmail,
+    });
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
     data: {
@@ -1309,7 +1384,7 @@ exports.login = asyncHandler(async (req, res) => {
       email: user.email,
       permissions: resolvedPermissions,
       role: currentRole,
-      orgId: org?.id || null
+      orgId: org?.id || null,
     },
     process.env.JWT_KEY,
     {
@@ -1326,12 +1401,134 @@ exports.login = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "Login successful",
+    message: "Logged in successfully",
     user: serializeSessionUser(sessionUser, org),
     token,
     redirectPath,
   });
 });
+
+exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
+  const { email, password, otp, rememberMe } = req.body || {};
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail || !password || !otp) {
+    res.status(400);
+    throw new Error("Email, password, and OTP are required");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: authUserInclude,
+  });
+
+  if (!user) {
+    res.status(401);
+    throw new Error("Invalid credentials");
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    res.status(401);
+    throw new Error("Invalid credentials");
+  }
+
+  let authContext;
+  try {
+    authContext = resolveAuthMembership({
+      user,
+      loginAs: "SUPER_ADMIN",
+    });
+  } catch (error) {
+    res.status(error.statusCode || 401);
+    throw new Error(error.message || "Unauthorized role");
+  }
+
+  const currentRole = authContext.role;
+  if (currentRole !== "SUPER_ADMIN") {
+    res.status(403);
+    throw new Error("Access denied. Super Admin role required.");
+  }
+
+  // Verify OTP
+  const session = await prisma.verificationSession.findFirst({
+    where: {
+      email: normalizedEmail,
+      purpose: "SUPER_ADMIN_LOGIN",
+      status: "EMAIL_PENDING",
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!session) {
+    res.status(400);
+    throw new Error("OTP session expired or invalid. Please login again.");
+  }
+
+  const isOtpValid = await bcrypt.compare(String(otp), session.emailOtpHash);
+  if (!isOtpValid) {
+    // Increment attempts
+    await prisma.verificationSession.update({
+      where: { id: session.id },
+      data: { emailOtpAttempts: session.emailOtpAttempts + 1 }
+    });
+    res.status(400);
+    throw new Error("Invalid OTP");
+  }
+
+  // Mark session consumed
+  await prisma.verificationSession.update({
+    where: { id: session.id },
+    data: {
+      status: "VERIFIED",
+      emailVerifiedAt: new Date(),
+      consumedAt: new Date(),
+    }
+  });
+
+  // Proceed with login completion
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+    include: authUserWriteInclude,
+  });
+
+  const hydratedUser = mergeSessionUserState({
+    previousUser: user,
+    nextUser: updatedUser,
+    organization: null,
+  });
+
+  const sessionUser = {
+    ...hydratedUser,
+    orgId: null,
+    organization: null,
+  };
+
+  const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
+  const token = jwt.sign(
+    {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: currentRole,
+      orgId: null,
+    },
+    process.env.JWT_KEY,
+    { expiresIn: tokenTTL }
+  );
+
+  res.cookie("token", token, getSessionCookieOptions(rememberMe));
+
+  res.status(200).json({
+    success: true,
+    message: "Super Admin logged in successfully",
+    user: serializeSessionUser(sessionUser, null),
+    token,
+  });
+});
+
 
 exports.searchOrganizations = asyncHandler(async (req, res) => {
   const query = String(req.query.query || "").trim();
@@ -1475,6 +1672,10 @@ exports.updateMe = asyncHandler(async (req, res) => {
   const hasCurrentAddress = Object.prototype.hasOwnProperty.call(requestBody, "currentAddress");
   const hasPermanentAddress = Object.prototype.hasOwnProperty.call(requestBody, "permanentAddress");
   const hasBloodGroup = Object.prototype.hasOwnProperty.call(requestBody, "bloodGroup");
+  const hasGender = Object.prototype.hasOwnProperty.call(requestBody, "gender");
+  const hasDob = Object.prototype.hasOwnProperty.call(requestBody, "dob");
+  const hasExistingMember = Object.prototype.hasOwnProperty.call(requestBody, "existingMember");
+  const hasDepartmentId = Object.prototype.hasOwnProperty.call(requestBody, "departmentId");
 
   if (hasEmergencyContact) {
     payload.emergencyContact = requestBody.emergencyContact;
@@ -1487,6 +1688,18 @@ exports.updateMe = asyncHandler(async (req, res) => {
   }
   if (hasBloodGroup) {
     payload.bloodGroup = requestBody.bloodGroup;
+  }
+  if (hasGender) {
+    payload.gender = requestBody.gender;
+  }
+  if (hasDob) {
+    payload.dob = requestBody.dob ? String(requestBody.dob).trim() : null;
+  }
+  if (hasExistingMember) {
+    payload.existingMember = requestBody.existingMember;
+  }
+  if (hasDepartmentId) {
+    payload.departmentId = requestBody.departmentId ? Number(requestBody.departmentId) : null;
   }
 
   if (hasName) {
@@ -1557,6 +1770,38 @@ exports.updateMe = asyncHandler(async (req, res) => {
     }
   }
 
+  if (Object.prototype.hasOwnProperty.call(requestBody, "physicalFormNo")) {
+    payload.physicalFormNo = requestBody.physicalFormNo ? String(requestBody.physicalFormNo).trim() : null;
+  }
+
+  const hasDocumentDataUrl = Object.prototype.hasOwnProperty.call(requestBody, "documentDataUrl");
+  const hasRemoveDocument = Object.prototype.hasOwnProperty.call(requestBody, "removeDocument");
+  const shouldUploadDocument = hasDocumentDataUrl && String(requestBody.documentDataUrl || "").trim().length > 0;
+  const shouldRemoveDocument = hasRemoveDocument && requestBody.removeDocument === true;
+
+  if (shouldUploadDocument) {
+    try {
+      const uploadedDoc = await uploadFileDataUrl({
+        dataUrl: requestBody.documentDataUrl,
+        folder: "veagle-attendee/user-documents",
+        publicId: `user-doc-${userId}-${Date.now()}`,
+        maxBytes: 10 * 1024 * 1024,
+        invalidMessage: "Upload a valid PDF, JPEG, PNG, or WEBP document.",
+        tooLargeMessage: "Document file must be 10 MB or smaller.",
+      });
+      payload.documentUrl = uploadedDoc.url;
+      payload.documentPublicId = uploadedDoc.publicId;
+      payload.documentName = requestBody.documentName ? String(requestBody.documentName).trim() : "Document";
+    } catch (error) {
+      res.status(error.statusCode || 400);
+      throw new Error(error.message || "Failed to upload document.");
+    }
+  } else if (shouldRemoveDocument) {
+    payload.documentUrl = null;
+    payload.documentPublicId = null;
+    payload.documentName = null;
+  }
+
   const shouldUploadProfileImage =
     hasProfileImageDataUrl && String(requestBody.profileImageDataUrl || "").trim().length > 0;
   const shouldRemoveProfileImage =
@@ -1610,6 +1855,10 @@ exports.updateMe = asyncHandler(async (req, res) => {
 
     if (shouldRemoveProfileImage && existingUser.profileImagePublicId) {
       await deleteProfileImage(existingUser.profileImagePublicId);
+    }
+
+    if (shouldRemoveDocument && existingUser.documentPublicId) {
+      await deleteFile(existingUser.documentPublicId);
     }
 
     res.status(200).json({

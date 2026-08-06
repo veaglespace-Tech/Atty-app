@@ -215,7 +215,7 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
 
 
   const subtitleLines = [
-    `User: ${payload.user.name} (${payload.user.email})`,
+    `User: ${payload.user.name} (${payload.user.email}) | Gender: ${payload.user.gender} | Type: ${payload.user.existingMember}`,
     `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
     `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
   ];
@@ -285,7 +285,7 @@ exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
   });
 
   const subtitleLines = [
-    `User: ${payload.user.name} (${payload.user.email})`,
+    `User: ${payload.user.name} (${payload.user.email}) | Gender: ${payload.user.gender} | Type: ${payload.user.existingMember}`,
     `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
     `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
     `Generated At: ${new Date().toLocaleString("en-IN")}`,
@@ -366,26 +366,33 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
     subtitleLines,
     summaryCards,
     columns: [
-      { key: "entryNo", label: "No.", width: 40, align: "left" },
-      { key: "user", label: "Member", width: 100 },
-      { key: "date", label: "Date", width: 80 },
-      { key: "status", label: "Status", width: 70, align: "center" },
-      { key: "punchIn", label: "Punch In", width: 70, align: "center" },
-      { key: "punchOut", label: "Punch Out", width: 70, align: "center" },
-      { key: "reachedHome", label: "R. Home", width: 70, align: "center" },
-      { key: "reachedHomeLocation", label: "R. Home Loc", width: 90 },
-      { key: "workedHoursLabel", label: "Worked Hrs", width: 70, align: "center" },
+      { key: "entryNo", label: "No.", width: 25, align: "left" },
+      { key: "user", label: "Member", width: 75 },
+      { key: "role", label: "Role", width: 50 },
+      { key: "department", label: "Department", width: 60 },
+      { key: "existingMember", label: "Type", width: 45 },
+      { key: "date", label: "Date", width: 50 },
+      { key: "status", label: "Status", width: 50, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 45, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 45, align: "center" },
+      { key: "reachedHome", label: "R. Home", width: 45, align: "center" },
+      { key: "overtime", label: "Overtime", width: 50, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 50, align: "center" },
     ],
     rows: payload.items.map((item, index) => {
+      const statusUpper = String(item.status || "").toUpperCase();
       return {
         entryNo: String(index + 1).padStart(3, "0"),
         user: item.member || "-",
+        role: item.role || "MEMBER",
+        department: item.department || "Unassigned",
+        existingMember: item.existingMember || "-",
         date: item.date,
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
-        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
+        overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
         workedHoursLabel: item.workedHours.toFixed(2),
       };
     }),
@@ -430,25 +437,34 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
     columns: [
       { key: "entryNo", label: "No.", width: 40 },
       { key: "user", label: "Member", width: 120 },
-      { key: "date", label: "Date", width: 90 },
+      { key: "role", label: "Role", width: 90 },
+      { key: "department", label: "Department", width: 100 },
+      { key: "existingMember", label: "Member Type", width: 90 },
+      { key: "date", label: "Date", width: 85 },
       { key: "status", label: "Status", width: 80 },
-      { key: "punchIn", label: "Punch In", width: 110 },
-      { key: "punchOut", label: "Punch Out", width: 110 },
-      { key: "reachedHome", label: "Reached Home", width: 110 },
+      { key: "punchIn", label: "Punch In", width: 100 },
+      { key: "punchOut", label: "Punch Out", width: 100 },
+      { key: "reachedHome", label: "Reached Home", width: 100 },
+      { key: "overtime", label: "Overtime", width: 80 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 90 },
       { key: "punchInLocation", label: "Punch In Location", width: 200 },
       { key: "punchOutLocation", label: "Punch Out Location", width: 200 },
       { key: "reachedHomeLocation", label: "Reached Home Location", width: 200 },
     ],
     rows: payload.items.map((item, index) => {
+      const statusUpper = String(item.status || "").toUpperCase();
       return {
         entryNo: String(index + 1),
         user: item.member || "-",
+        role: item.role || "MEMBER",
+        department: item.department || "Unassigned",
+        existingMember: item.existingMember || "-",
         date: item.date,
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
         reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
+        overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
         workedHoursLabel: item.workedHours.toFixed(2),
         punchInLocation: item.punchInLocationMeta?.displayText || item.punchInLocationMeta?.areaLabel || "-",
         punchOutLocation: item.punchOutLocationMeta?.displayText || item.punchOutLocationMeta?.areaLabel || "-",
@@ -495,7 +511,7 @@ exports.getOrgRegularizationRequests = asyncHandler(async (req, res) => {
     where: { orgId },
     include: {
       user: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, role: true },
       },
       reviewer: {
         select: { id: true, name: true },

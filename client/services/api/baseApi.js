@@ -37,7 +37,13 @@ const resolveApiBaseUrl = () => {
   if (typeof window !== "undefined") {
     if (isLocalHost(window.location.hostname)) {
       if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-        return `http://${window.location.hostname}:5001/api`;
+        try {
+          const parsed = new URL(localApiUrl);
+          const port = parsed.port || "5000";
+          return `http://${window.location.hostname}:${port}/api`;
+        } catch (_) {
+          return `http://${window.location.hostname}:5000/api`;
+        }
       }
       return localApiUrl;
     }

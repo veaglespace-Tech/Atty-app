@@ -62,6 +62,10 @@ model ArchiveUser {
   lastLoginAt       DateTime?
   archiveReason     String      @default("")
   metadata          Json?
+  gender            String?
+  dob               String?
+  referenceBy       String?
+  existingMember    String?
   createdById       Int?
   archivedById      Int?
   archivedAt        DateTime    @default(now())
@@ -77,43 +81,43 @@ model ArchiveUser {
 }
 
 model Attendance {
-  id                      Int              @id @default(autoincrement())
-  orgId                   Int
-  userId                  Int
-  teamId                  Int?
-  markedById              Int?
-  date                    String
-  punchInAt               DateTime?
-  punchOutAt              DateTime?
-  punchInLatitude         Float?
-  punchInLongitude        Float?
-  punchOutLatitude        Float?
-  punchOutLongitude       Float?
-  punchInDistanceMeters   Float?
-  punchOutDistanceMeters  Float?
-  isPunchInValid          Boolean          @default(false)
-  isPunchOutValid         Boolean          @default(false)
-  totalMinutesWorked      Int              @default(0)
-  lateMinutes             Int              @default(0)
-  status                  AttendanceStatus @default(PRESENT)
-  notes                   String           @default("")
-  punchInLocationMeta     Json?
-  punchOutLocationMeta    Json?
-  punchInSelfieUrl        String?
-  punchInSelfiePublicId   String?
-  punchOutSelfieUrl       String?
-  punchOutSelfiePublicId  String?
-  createdAt               DateTime         @default(now())
-  updatedAt               DateTime         @updatedAt
-  deletedAt               DateTime?
-  reachedHomeAt           DateTime?
-  reachedHomeLatitude     Float?
+  id                     Int              @id @default(autoincrement())
+  orgId                  Int
+  userId                 Int
+  teamId                 Int?
+  markedById             Int?
+  date                   String
+  punchInAt              DateTime?
+  punchOutAt             DateTime?
+  punchInLatitude        Float?
+  punchInLongitude       Float?
+  punchOutLatitude       Float?
+  punchOutLongitude      Float?
+  punchInDistanceMeters  Float?
+  punchOutDistanceMeters Float?
+  isPunchInValid         Boolean          @default(false)
+  isPunchOutValid        Boolean          @default(false)
+  totalMinutesWorked     Int              @default(0)
+  lateMinutes            Int              @default(0)
+  status                 AttendanceStatus @default(PRESENT)
+  notes                  String           @default("")
+  punchInLocationMeta    Json?
+  punchOutLocationMeta   Json?
+  punchInSelfieUrl       String?
+  punchInSelfiePublicId  String?
+  punchOutSelfieUrl      String?
+  punchOutSelfiePublicId String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  deletedAt              DateTime?
+  reachedHomeAt          DateTime?
+  reachedHomeLatitude    Float?
+  reachedHomeLongitude   Float?
   reachedHomeLocationMeta Json?
-  reachedHomeLongitude    Float?
-  markedBy                User?            @relation("AttendanceMarkedBy", fields: [markedById], references: [id], map: "Attendance_markedById_fkey")
-  organization            Organization     @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
-  team                    Team?            @relation(fields: [teamId], references: [id], map: "Attendance_teamId_fkey")
-  user                    User             @relation("AttendanceUser", fields: [userId], references: [id], map: "Attendance_userId_fkey")
+  markedBy               User?            @relation("AttendanceMarkedBy", fields: [markedById], references: [id], map: "Attendance_markedById_fkey")
+  organization           Organization     @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
+  team                   Team?            @relation(fields: [teamId], references: [id], map: "Attendance_teamId_fkey")
+  user                   User             @relation("AttendanceUser", fields: [userId], references: [id], map: "Attendance_userId_fkey")
 
   @@unique([orgId, userId, date], map: "Attendance_orgId_userId_date_key")
   @@index([markedById], map: "Attendance_markedById_fkey")
@@ -193,15 +197,12 @@ model Organization {
   referredByPartnerId  Int?
   agreementPdfUrl      String?
   agreementPdfPublicId String?
-  logoPublicId         String?
   logoUrl              String?
+  logoPublicId         String?
   fundBalance          Float                       @default(0)
   hasERP               Boolean                     @default(false)
   attendances          Attendance[]
   regularizations      AttendanceRegularization[]
-  expense_claim        expense_claim[]
-  expense_transaction  expense_transaction[]
-  instrument           instrument[]
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
   activeSubscription   Subscription?               @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id], map: "Organization_subscriptionId_fkey")
@@ -210,11 +211,15 @@ model Organization {
   payments             Payment[]
   posts                Post[]
   registrationRequests RegistrationRequest[]
-  stock                stock[]
   subscriptions        Subscription[]              @relation("OrganizationSubscriptions")
   renewalIntents       SubscriptionRenewalIntent[]
   teams                Team[]
   users                User[]                      @relation("OrganizationUsers")
+  stockItems           Stock[]                     @relation("OrganizationStock")
+  expenseTransactions  ExpenseTransaction[]        @relation("OrganizationExpenseTransactions")
+  expenseClaims        ExpenseClaim[]              @relation("OrganizationExpenseClaims")
+  instruments          Instrument[]
+  departments          Department[]
 
   @@index([isActive, isBlocked, deletedAt], map: "Organization_isActive_isBlocked_deletedAt_idx")
   @@index([planId], map: "Organization_planId_idx")
@@ -340,6 +345,7 @@ model Subscription {
   activeKey               String?                     @unique(map: "Subscription_activeKey_key")
   paymentGateway          String                      @default("PAYU")
   notes                   String                      @default("")
+  hasERP                  Boolean                     @default(false)
   createdAt               DateTime                    @default(now())
   updatedAt               DateTime                    @updatedAt
   paymentOrderId          String?
@@ -388,6 +394,7 @@ model SubscriptionRenewalIntent {
   verifiedAt            DateTime?
   appliedAt             DateTime?
   metadata              Json?
+  hasERP                Boolean             @default(false)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   paymentOrderId        String?             @unique(map: "SubscriptionRenewalIntent_paymentOrderId_key")
@@ -422,6 +429,10 @@ model RegistrationRequest {
   permanentAddress  String?
   password          String
   gender            String?
+  dob               String?
+  referenceBy       String?
+  existingMember    String?
+  bloodGroup        String?
   city              String?
   status            RegistrationRequestStatus @default(PENDING)
   reviewedById      Int?
@@ -529,6 +540,11 @@ model User {
   currentAddress              String?
   permanentAddress            String?
   password                    String
+  gender                      String?
+  dob                         String?
+  referenceBy                 String?
+  existingMember              String?
+  bloodGroup                  String?
   role                        String                      @default("MEMBER")
   permissions                 Json?
   resetTokenHash              String?
@@ -538,19 +554,21 @@ model User {
   lastLoginAt                 DateTime?
   profileImageUrl             String?
   profileImagePublicId        String?
+  physicalFormNo              String?                     @map("physical_form_no")
+  documentUrl                 String?                     @map("document_url")
+  documentName                String?                     @map("document_name")
+  documentPublicId            String?                     @map("document_public_id")
   createdAt                   DateTime                    @default(now())
   updatedAt                   DateTime                    @updatedAt
   deletedAt                   DateTime?
   expoPushToken               String?
   referredByPartnerId         Int?
-  bloodGroup                  String?
   markedAttendances           Attendance[]                @relation("AttendanceMarkedBy")
   attendances                 Attendance[]                @relation("AttendanceUser")
   regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
   regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
   assignedCoupons             Coupon[]                    @relation("CouponAssignedTo")
   createdCoupons              Coupon[]                    @relation("CouponCreatedBy")
-  expense_claim               expense_claim[]
   primaryAdminForOrganization Organization?               @relation("OrganizationPrimaryAdmin")
   memberships                 OrganizationMember[]
   payments                    Payment[]
@@ -564,10 +582,14 @@ model User {
   createdUsers                User[]                      @relation("UserCreatedBy")
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   referredByPartner           ReferralPartner?            @relation("ReferredUsers", fields: [referredByPartnerId], references: [id])
-  assignedInstruments         instrument[]                @relation("InstrumentAssignedUser")
+  expenseClaims               ExpenseClaim[]              @relation("UserExpenseClaims")
+  userInstruments             UserInstrument[]
+  departmentId                Int?
+  department                  Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   notificationReads           UserNotificationRead[]
 
   @@index([createdById], map: "User_createdById_idx")
+  @@index([departmentId])
   @@index([orgId, deletedAt], map: "User_orgId_deletedAt_idx")
   @@index([orgId, role], map: "User_orgId_role_idx")
   @@index([orgId, status], map: "User_orgId_status_idx")
@@ -743,84 +765,10 @@ model AttendanceRegularization {
   @@map("attendance_regularization")
 }
 
-model expense_claim {
-  id                  Int                  @id @default(autoincrement())
-  orgId               Int
-  userId              Int
-  claimNo             String?              @unique
-  expenseType         String
-  description         String?              @db.Text
-  amount              Float
-  receiptUrl          String?
-  receiptPublicId     String?
-  status              expense_claim_status @default(PENDING)
-  transactionId       Int?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime
-  organization        Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  expense_transaction expense_transaction? @relation(fields: [transactionId], references: [id])
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([orgId, status])
-  @@index([transactionId], map: "expense_claim_transactionId_fkey")
-  @@index([userId])
-}
-
-model expense_transaction {
-  id              Int                      @id @default(autoincrement())
-  orgId           Int
-  type            expense_transaction_type
-  amount          Float
-  title           String
-  description     String?                  @db.Text
-  items           Json?
-  receiptUrl      String?
-  receiptPublicId String?
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime
-  expense_claim   expense_claim[]
-  organization    Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  @@index([orgId, type])
-}
-
-model instrument {
-  id              Int               @id @default(autoincrement())
-  orgId           Int
-  name            String
-  type            String            @default("IT")
-  serialNumber    String?
-  status          String            @default("ACTIVE")
-  description     String?           @db.Text
-  assignedUserId  Int?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime
-  organization    Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  assignedUser    User?             @relation("InstrumentAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
-
-  @@index([orgId])
-  @@index([assignedUserId])
-}
-
-model stock {
-  id           Int          @id @default(autoincrement())
-  orgId        Int
-  name         String
-  type         String
-  quantity     Int          @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  @@index([orgId])
-}
-
-
 enum DiscountType {
   PERCENTAGE
   FLAT_AMOUNT
 }
-
 enum UserStatus {
   APPROVED
   PENDING
@@ -911,4 +859,125 @@ enum expense_claim_status {
   PENDING
   APPROVED
   REJECTED
+}
+
+
+model Stock {
+  id        Int          @id @default(autoincrement())
+  orgId     Int
+  name      String
+  type      String
+  quantity  Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  organization Organization @relation("OrganizationStock", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("stock")
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  CLAIM_SETTLEMENT
+}
+
+model ExpenseTransaction {
+  id        Int             @id @default(autoincrement())
+  orgId     Int
+  type      TransactionType
+  amount          Float
+  title           String
+  description     String?         @db.Text
+  items           Json?
+  receiptUrl      String?
+  receiptPublicId String?
+  createdAt       DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  organization Organization   @relation("OrganizationExpenseTransactions", fields: [orgId], references: [id], onDelete: Cascade)
+  claims       ExpenseClaim[] @relation("ClaimTransaction")
+
+  @@index([orgId, type])
+  @@map("expense_transaction")
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ExpenseClaim {
+  id              Int          @id @default(autoincrement())
+  orgId           Int
+  userId          Int
+  claimNo         String?      @unique
+  expenseType     String
+  description     String?      @db.Text
+  amount          Float
+  receiptUrl      String?
+  receiptPublicId String?
+  status          ClaimStatus  @default(PENDING)
+  transactionId   Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization  Organization        @relation("OrganizationExpenseClaims", fields: [orgId], references: [id], onDelete: Cascade)
+  user          User                @relation("UserExpenseClaims", fields: [userId], references: [id], onDelete: Cascade)
+  transaction   ExpenseTransaction? @relation("ClaimTransaction", fields: [transactionId], references: [id])
+
+  @@index([orgId, status])
+  @@index([userId])
+  @@map("expense_claim")
+}
+
+model Instrument {
+  id          Int      @id @default(autoincrement())
+  orgId       Int
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  users        UserInstrument[]
+
+  @@index([orgId])
+  @@map("instrument")
+}
+
+model UserInstrument {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  instrumentId Int
+  assetId      String?
+  assignedAt   DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, instrumentId])
+  @@unique([instrumentId, assetId])
+  @@index([userId])
+  @@index([instrumentId])
+  @@map("user_instrument")
+
+}
+
+model Department {
+  id          Int      @id @default(autoincrement())
+  orgId       Int
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  users        User[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@map("department")
 }

@@ -9,7 +9,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "db:sync-missing": "node scripts/sync-missing-schema.js",
-    "seed:plans": "node setup_plans.js",
+    "seed:plans": "node scripts/setup_plans.js",
     "cleanup:paid-monthly-plans": "node scripts/remove-paid-monthly-plans.js",
     "create:super-admin": "node scripts/create-super-admin.js"
   },
@@ -34,6 +34,7 @@
     "express": "^4.22.1",
     "express-async-handler": "^1.2.0",
     "express-rate-limit": "^8.1.0",
+    "firebase-admin": "^13.10.0",
     "geolib": "^3.3.4",
     "helmet": "^8.1.0",
     "imagekit": "^6.0.0",

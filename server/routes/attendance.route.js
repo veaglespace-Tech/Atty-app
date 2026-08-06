@@ -11,7 +11,7 @@ const {
   markReachedHome,
 } = require("../controllers/attendance.controller");
 const { verifyToken } = require("../middlewares/token.middleware");
-const { allowRoles } = require("../middlewares/rbac.middleware");
+const { requireMembership } = require("../middlewares/rbac.middleware");
 const { checkActiveSubscription } = require("../middlewares/subscription.middleware");
 const { validateBody } = require("../middlewares/validation.middleware");
 const { enforceAbac } = require("../middlewares/abac.middleware");
@@ -81,7 +81,7 @@ const reachedHomeLocationSchema = z
   });
 
 router.use(verifyToken);
-router.use(allowRoles("ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER", "LIFE_MEMBER"));
+router.use(requireMembership());
 router.use(checkActiveSubscription);
 
 router.post("/punch-in", validateBody(attendanceLocationSchema), punchIn);

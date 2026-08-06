@@ -14,6 +14,15 @@ const userManagementSelect = {
   emergencyContact: true,
   currentAddress: true,
   permanentAddress: true,
+  gender: true,
+  dob: true,
+  existingMember: true,
+  referenceBy: true,
+  bloodGroup: true,
+  physicalFormNo: true,
+  documentUrl: true,
+  documentName: true,
+  documentPublicId: true,
   permissions: true,
   profileImageUrl: true,
   status: true,
@@ -21,6 +30,26 @@ const userManagementSelect = {
   createdAt: true,
   memberships: {
     select: membershipSelect,
+  },
+  departmentId: true,
+  department: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+    },
+  },
+  userInstruments: {
+    select: {
+      assetId: true,
+      assignedAt: true,
+      instrument: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   },
 };
 
@@ -62,6 +91,22 @@ const userProfileSelect = {
 const attendanceUserSelect = {
   id: true,
   name: true,
+  gender: true,
+  dob: true,
+  existingMember: true,
+  referenceBy: true,
+  bloodGroup: true,
+  emergencyContact: true,
+  currentAddress: true,
+  permanentAddress: true,
+  createdAt: true,
+  departmentId: true,
+  department: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
   memberships: {
     select: membershipSelect,
   },
@@ -190,6 +235,7 @@ const organizationSubscriptionSelect = {
 const reportUserSelect = {
   id: true,
   name: true,
+  dob: true,
   memberships: {
     select: membershipSelect,
   },
@@ -201,6 +247,7 @@ const reportPdfUserSelect = {
   email: true,
   mobile: true,
   mobileCountryCode: true,
+  dob: true,
 };
 
 module.exports = {
