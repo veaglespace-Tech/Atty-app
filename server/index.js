@@ -39,12 +39,12 @@ app.options("*", cors(corsOptions));
 app.use("/api", apiRateLimiter);
 app.use(
   express.json({
-    limit: process.env.JSON_BODY_LIMIT || "10mb",
+    limit: process.env.JSON_BODY_LIMIT || "50mb",
   }),
 );
 app.use(
   express.urlencoded({ 
-    limit: process.env.JSON_BODY_LIMIT || "10mb", 
+    limit: process.env.JSON_BODY_LIMIT || "50mb", 
     extended: true 
   })
 );
