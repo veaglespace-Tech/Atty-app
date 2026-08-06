@@ -947,28 +947,40 @@ export default function WorkspaceSettingsPage() {
   const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
   const canSkipEmergencyContact = hasPermission(user, PERMISSIONS.USERS.CREATE) || isSuperAdmin;
 
-  const onDocumentSelected = (event) => {
+  const onDocumentSelected = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
 
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setDocumentError("Document file size must be 10 MB or smaller.");
+      setDocumentError("Document file size is too large. Please select a file under 10MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setDocumentDataUrl(reader.result);
-      setDocumentName(file.name);
-      setRemoveDocument(false);
-      setDocumentError("");
-    };
-    reader.onerror = () => {
-      setDocumentError("Failed to read the selected document.");
-    };
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("image/")) {
+      try {
+        const nextDataUrl = await compressImage(file, false);
+        setDocumentDataUrl(nextDataUrl);
+        setDocumentName(file.name);
+        setRemoveDocument(false);
+        setDocumentError("");
+      } catch (error) {
+        setDocumentError(error.message || "Failed to process the document image.");
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setDocumentDataUrl(reader.result);
+        setDocumentName(file.name);
+        setRemoveDocument(false);
+        setDocumentError("");
+      };
+      reader.onerror = () => {
+        setDocumentError("Failed to read the selected document.");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const toggleDocumentRemoval = () => {
@@ -1086,35 +1098,55 @@ export default function WorkspaceSettingsPage() {
     setDocumentError("");
   };
 
-  const compressImage = (file) =>
+  const compressImage = (file, isProfile = true) =>
     new Promise((resolve, reject) => {
       const img = new Image();
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const { width, height } = img;
-        const TARGET_SIZE = 512;
-        
-        const minDim = Math.min(width, height);
-        const sourceX = (width - minDim) / 2;
-        const sourceY = (height - minDim) / 2;
-
-        canvas.width = TARGET_SIZE;
-        canvas.height = TARGET_SIZE;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-          img,
-          sourceX,
-          sourceY,
-          minDim,
-          minDim,
-          0,
-          0,
-          TARGET_SIZE,
-          TARGET_SIZE
-        );
+
+        if (isProfile) {
+          const TARGET_SIZE = 512;
+          const minDim = Math.min(width, height);
+          const sourceX = (width - minDim) / 2;
+          const sourceY = (height - minDim) / 2;
+
+          canvas.width = TARGET_SIZE;
+          canvas.height = TARGET_SIZE;
+          ctx.drawImage(
+            img,
+            sourceX,
+            sourceY,
+            minDim,
+            minDim,
+            0,
+            0,
+            TARGET_SIZE,
+            TARGET_SIZE
+          );
+        } else {
+          const MAX_DIM = 1200;
+          let newWidth = width;
+          let newHeight = height;
+
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              newWidth = MAX_DIM;
+              newHeight = (height * MAX_DIM) / width;
+            } else {
+              newHeight = MAX_DIM;
+              newWidth = (width * MAX_DIM) / height;
+            }
+          }
+
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        }
         
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/jpeg", isProfile ? 0.85 : 0.75);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error("Failed to read the selected image."));
@@ -1127,12 +1159,17 @@ export default function WorkspaceSettingsPage() {
     if (!file) return;
 
     if (!ACCEPTED_PROFILE_IMAGE_TYPES.has(file.type)) {
-      setProfileImageError("Upload a JPG, PNG, WEBP, or GIF image.");
+      setProfileImageError("Invalid format. Please upload a JPG, PNG, WEBP, or GIF image.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setProfileImageError("Profile photo is too large. Please select an image under 10MB.");
       return;
     }
 
     try {
-      const nextDataUrl = await compressImage(file);
+      const nextDataUrl = await compressImage(file, true);
       
       if (nextDataUrl.length > 5 * 1024 * 1024) {
         setProfileImageError("Image is too large even after compression. Please choose a smaller image.");
