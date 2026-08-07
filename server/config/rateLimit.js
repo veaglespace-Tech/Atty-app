@@ -20,6 +20,12 @@ const loginRateLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req, res) => {
+    if (req.body && req.body.email) {
+      return req.body.email.toLowerCase();
+    }
+    return ipKeyGenerator(req, res);
+  },
   message: {
     message: "Too many login attempts, please try again after 15 minutes.",
   },
