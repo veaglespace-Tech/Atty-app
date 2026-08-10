@@ -1632,8 +1632,13 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       ? getDirectDownloadUrl(user.documentUrl)
       : "-";
 
+    const safeNameUrl = String(user.name || "user").trim().replace(/[^a-zA-Z0-9]+/g, "-");
     const profilePhotoDownloadLink = user.profileImageUrl
-      ? getDirectDownloadUrl(user.profileImageUrl, { forceJpg: true })
+      ? getDirectDownloadUrl(user.profileImageUrl, { 
+          forceJpg: true, 
+          serverBaseUrl, 
+          filename: `${safeNameUrl}-profile.jpg` 
+        })
       : "-";
 
     return {

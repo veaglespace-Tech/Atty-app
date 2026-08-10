@@ -3928,6 +3928,10 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
 
   const orgName = organization.name || "Organization";
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.get("host") || "localhost:5000";
+  const serverBaseUrl = `${protocol}://${host}`;
 
   const headers = [
     "Sr. No.", "Name", "Department", "Instrument", "Physical Form No.", "Uploaded Document", "Gender", "Date of Birth", "Member Type", "Blood Group", "Reference By", "Email", "Contact No.", "Emergency Contact",
@@ -4008,7 +4012,13 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       .join(", ");
 
     const documentDownloadLink = user.documentUrl ? getDirectDownloadUrl(user.documentUrl) : "-";
-    const profilePhotoDownloadLink = user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl, { forceJpg: true }) : "-";
+    
+    const safeNameUrl = String(user.name || "user").trim().replace(/[^a-zA-Z0-9]+/g, "-");
+    const profilePhotoDownloadLink = user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl, { 
+      forceJpg: true, 
+      serverBaseUrl, 
+      filename: `${safeNameUrl}-profile.jpg` 
+    }) : "-";
 
     return {
       index: index + 1,
@@ -4196,6 +4206,10 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
     "Role", "Status", "Active", "Joined At",
   ];
 
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.get("host") || "localhost:5000";
+  const serverBaseUrl = `${protocol}://${host}`;
+
   const workbook = new ExcelJS.Workbook();
 
   // Helper for parallel map with concurrency limit
@@ -4227,6 +4241,13 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       .filter(Boolean)
       .join(", ");
 
+    const safeNameUrl = String(user.name || "user").trim().replace(/[^a-zA-Z0-9]+/g, "-");
+    const profilePhotoDownloadLink = user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl, { 
+      forceJpg: true, 
+      serverBaseUrl, 
+      filename: `${safeNameUrl}-profile.jpg` 
+    }) : "-";
+
     return {
       ...user,
       instrument: instNames || "-",
@@ -4235,7 +4256,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       documentName: user.documentName || "Document",
       index: index + 1,
       imageBuffer,
-      profilePhotoDownloadLink: user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl, { forceJpg: true }) : "-",
+      profilePhotoDownloadLink,
     };
   });
 
