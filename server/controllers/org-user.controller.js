@@ -1633,7 +1633,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       : "-";
 
     const profilePhotoDownloadLink = user.profileImageUrl
-      ? getDirectDownloadUrl(user.profileImageUrl)
+      ? getDirectDownloadUrl(user.profileImageUrl, { forceJpg: true })
       : "-";
 
     return {

@@ -4008,7 +4008,7 @@ exports.exportSuperAdminOrganizationUsersExcel = asyncHandler(async (req, res) =
       .join(", ");
 
     const documentDownloadLink = user.documentUrl ? getDirectDownloadUrl(user.documentUrl) : "-";
-    const profilePhotoDownloadLink = user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl) : "-";
+    const profilePhotoDownloadLink = user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl, { forceJpg: true }) : "-";
 
     return {
       index: index + 1,
@@ -4235,7 +4235,7 @@ exports.exportAllSuperAdminUsersExcel = asyncHandler(async (req, res) => {
       documentName: user.documentName || "Document",
       index: index + 1,
       imageBuffer,
-      profilePhotoDownloadLink: user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl) : "-",
+      profilePhotoDownloadLink: user.profileImageUrl ? getDirectDownloadUrl(user.profileImageUrl, { forceJpg: true }) : "-",
     };
   });
 

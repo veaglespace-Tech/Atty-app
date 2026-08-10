@@ -1,7 +1,18 @@
-const getDirectDownloadUrl = (url) => {
+const getDirectDownloadUrl = (url, options = {}) => {
   if (!url || typeof url !== "string") return "-";
-  const trimmed = url.trim();
+  let trimmed = url.trim();
   if (!trimmed || trimmed === "-") return "-";
+
+  // Force JPG format for ImageKit
+  if (options.forceJpg && (trimmed.includes("ik.imagekit.io") || trimmed.includes("imagekit.io"))) {
+    const sep = trimmed.includes("?") ? "&" : "?";
+    trimmed = `${trimmed}${sep}tr=f-jpg`;
+  }
+
+  // Force JPG format for Cloudinary
+  if (options.forceJpg && trimmed.includes("cloudinary.com") && trimmed.includes("/upload/")) {
+    trimmed = trimmed.replace("/upload/", "/upload/f_jpg/");
+  }
 
   if (trimmed.includes("ik.imagekit.io") || trimmed.includes("imagekit.io")) {
     if (trimmed.includes("ik-attachment")) return trimmed;
