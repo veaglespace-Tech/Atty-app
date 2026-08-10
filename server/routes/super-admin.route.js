@@ -24,6 +24,10 @@ const {
   downloadSuperAdminPaymentsExcel,
   archiveOrganizationAction,
   restoreOrganizationAction,
+  getArchivedOrganizationsAction,
+  deleteSuperAdminUserAction,
+  getSuperAdminArchivedUsersAction,
+  restoreSuperAdminUserAction,
   getSuperAdminUserById,
   patchSuperAdminUser,
   getAllSuperAdminUsers,
@@ -93,8 +97,12 @@ router.get("/users/excel", exportAllSuperAdminUsersExcel);
 router.get("/users/:userId", getSuperAdminUserById);
 router.patch("/users/:userId", patchSuperAdminUser);
 router.patch("/organizations/:organizationId/access", updateOrganizationAccess);
+router.get("/archived-organizations", getArchivedOrganizationsAction);
 router.post("/organizations/:organizationId/archive", archiveOrganizationAction);
 router.post("/organizations/:organizationId/restore", restoreOrganizationAction);
+router.delete("/users/:userId", deleteSuperAdminUserAction);
+router.get("/archived-users", getSuperAdminArchivedUsersAction);
+router.post("/archived-users/:userId/restore", restoreSuperAdminUserAction);
 router.post("/organizations/:organizationId/extend-plan", extendSuperAdminOrganizationPlan);
 router.get("/contacts", getSuperAdminContactInquiries);
 router.get("/contacts/:id", getSuperAdminContactById);

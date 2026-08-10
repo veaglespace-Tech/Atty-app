@@ -17,6 +17,8 @@ const {
   downloadOrgUsersExcel,
   downloadOrgUsersPdf,
   downloadUserDocumentFile,
+  getOrgArchivedUsers,
+  restoreOrgArchivedUser,
 } = require("../controllers/org-user.controller");
 const {
   getOrgTeams,
@@ -121,6 +123,8 @@ router.patch("/users/:userId", patchOrgUser);
 router.patch("/users/:userId/status", updateOrgUserStatus);
 router.patch("/users/:userId/active", toggleOrgUserActive);
 router.delete("/users/:userId", deleteOrgUser);
+router.get("/archived-users", getOrgArchivedUsers);
+router.post("/archived-users/:userId/restore", restoreOrgArchivedUser);
 
 router.get("/registration-requests", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), getOrgRegistrationRequests);
 router.patch("/registration-requests/:id/accept", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), acceptRegistrationRequest);

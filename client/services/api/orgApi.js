@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments", "OrgDepartments"],
+  tagTypes: ["OrgUsers", "ArchivedUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments", "OrgDepartments"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -145,11 +145,23 @@ export const orgApi = createApi({
       invalidatesTags: ["OrgUsers"],
     }),
     deleteOrgUser: builder.mutation({
-      query: (userId) => ({
+      query: ({ userId, reason }) => ({
         url: `/org/users/${userId}`,
         method: "DELETE",
+        body: { reason },
       }),
-      invalidatesTags: ["OrgUsers"],
+      invalidatesTags: ["OrgUsers", "ArchivedUsers"],
+    }),
+    getArchivedUsers: builder.query({
+      query: () => "/org/archived-users",
+      providesTags: ["ArchivedUsers"],
+    }),
+    restoreArchivedUser: builder.mutation({
+      query: (userId) => ({
+        url: `/org/archived-users/${userId}/restore`,
+        method: "POST",
+      }),
+      invalidatesTags: ["OrgUsers", "ArchivedUsers"],
     }),
     getOrgTeams: builder.query({
       query: (limit = 1200) => `/org/teams?limit=${limit}`,
@@ -386,6 +398,8 @@ export const {
   useUpdateOrgUserStatusMutation,
   useToggleOrgUserActiveMutation,
   useDeleteOrgUserMutation,
+  useGetArchivedUsersQuery,
+  useRestoreArchivedUserMutation,
   useGetOrgTeamsQuery,
   useGetOrgTeamByIdQuery,
   useGetOrgTeamMembersQuery,

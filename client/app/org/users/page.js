@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, Download, Loader2, Plus, RefreshCcw, Search, UserPlus, X, LockKeyhole } from "lucide-react";
+import Link from "next/link";
+import { Archive, CheckSquare, ChevronDown, ChevronUp, Download, Loader2, LockKeyhole, Plus, Power, RefreshCcw, Search, ShieldAlert, Square, Trash2, UserPlus, X } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PasswordInput from "@/components/PasswordInput";
@@ -14,6 +15,8 @@ import {
   useDownloadOrgUsersExcelMutation,
   useDownloadOrgUsersPdfMutation,
   useGetOrgUsersQuery,
+  usePatchOrgUserMutation,
+  useDeleteOrgUserMutation,
 } from "@/services/api/orgApi";
 import { useGetRolesQuery } from "@/services/api/roleApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
@@ -83,9 +86,9 @@ export default function OrgUsersPage() {
     refetch,
   } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
 
-  const [
-    createUserMutation,
-  ] = useCreateOrgUserMutation();
+  const [createUserMutation] = useCreateOrgUserMutation();
+  const [patchOrgUserMutation] = usePatchOrgUserMutation();
+  const [deleteOrgUserMutation] = useDeleteOrgUserMutation();
   const [downloadUsersExcelMutation] = useDownloadOrgUsersExcelMutation();
   const [downloadUsersPdfMutation] = useDownloadOrgUsersPdfMutation();
   const { data: rolesData } = useGetRolesQuery();
@@ -163,6 +166,87 @@ export default function OrgUsersPage() {
     initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS[0],
     dependencies: [searchTerm, roleFilter, statusFilter, activeFilter, memberTypeFilter, genderFilter],
   });
+
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const isAllSelected = paginatedUsers.length > 0 && paginatedUsers.every((u) => selectedUserIds.includes(u.id));
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      const pageIds = paginatedUsers.map((u) => u.id);
+      setSelectedUserIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      const pageIds = paginatedUsers.map((u) => u.id);
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const toggleSelectUser = (userId, e) => {
+    if (e) e.stopPropagation();
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleBulkBlock = async () => {
+    if (!selectedUserIds.length) return;
+    try {
+      setBulkLoading(true);
+      setError("");
+      setMessage("");
+      await Promise.all(
+        selectedUserIds.map((id) => patchOrgUserMutation({ userId: id, active: false }).unwrap())
+      );
+      setMessage(`Successfully blocked ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to block selected users"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkUnblock = async () => {
+    if (!selectedUserIds.length) return;
+    try {
+      setBulkLoading(true);
+      setError("");
+      setMessage("");
+      await Promise.all(
+        selectedUserIds.map((id) => patchOrgUserMutation({ userId: id, active: true }).unwrap())
+      );
+      setMessage(`Successfully unblocked ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to unblock selected users"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedUserIds.length) return;
+    if (!window.confirm(`Are you sure you want to delete/archive ${selectedUserIds.length} selected user(s)?`)) return;
+    try {
+      setBulkLoading(true);
+      setError("");
+      setMessage("");
+      await Promise.all(
+        selectedUserIds.map((id) => deleteOrgUserMutation({ userId: id, reason: "Bulk deleted by Admin" }).unwrap())
+      );
+      setMessage(`Successfully archived ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to delete selected users"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   useEffect(() => {
     const role = normalizeRole(form.role);
@@ -309,6 +393,31 @@ export default function OrgUsersPage() {
               Create Member
               {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const next = !bulkMode;
+                setBulkMode(next);
+                if (!next) setSelectedUserIds([]);
+              }}
+              className={`brand-btn brand-btn-md w-full sm:w-auto ${
+                bulkMode || selectedUserIds.length > 0
+                  ? "brand-btn-primary"
+                  : "brand-btn-secondary text-blue-600 dark:text-blue-400"
+              }`}
+            >
+              <CheckSquare size={15} />
+              {bulkMode || selectedUserIds.length > 0 ? "Exit Selection Mode" : "Bulk Select"}
+            </button>
+
+            <Link
+              href="/org/users/archived"
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto text-rose-600 dark:text-rose-400"
+            >
+              <Archive size={15} />
+              Archived Users
+            </Link>
 
             <button
               type="button"
@@ -584,6 +693,59 @@ export default function OrgUsersPage() {
               </select>
             </div>
 
+            {selectedUserIds.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/90 p-4 dark:border-blue-500/20 dark:bg-blue-950/60 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">
+                    {selectedUserIds.length}
+                  </span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-white">
+                    {selectedUserIds.length} user(s) selected
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBulkUnblock}
+                    disabled={bulkLoading}
+                    className="brand-btn brand-btn-primary brand-btn-sm"
+                  >
+                    {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
+                    Activate / Unblock Selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBulkBlock}
+                    disabled={bulkLoading}
+                    className="brand-btn brand-btn-danger brand-btn-sm"
+                  >
+                    {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <ShieldAlert size={14} />}
+                    Block Selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={bulkLoading}
+                    className="brand-btn brand-btn-danger brand-btn-sm"
+                  >
+                    {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    Delete Selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
+
             <p className="mobile-hide-helper text-xs font-semibold text-slate-500 dark:text-slate-400">
               {filteredUsers.length > 0
                 ? `Showing ${startIndex}-${endIndex} of ${filteredUsers.length} filtered users`
@@ -634,6 +796,17 @@ export default function OrgUsersPage() {
                   <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
                     <thead>
                       <tr>
+                        {(bulkMode || selectedUserIds.length > 0) && (
+                          <th className="w-10 px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isAllSelected}
+                              onChange={toggleSelectAll}
+                              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              title="Select all visible users"
+                            />
+                          </th>
+                        )}
                         <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Name</th>
                         <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Mobile</th>
                         <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Role</th>
@@ -646,8 +819,22 @@ export default function OrgUsersPage() {
                         <tr
                           key={user.id}
                           onClick={() => router.push(`/org/users/${user.id}`)}
-                          className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-900/60"
+                          className={`cursor-pointer transition ${
+                            selectedUserIds.includes(user.id)
+                              ? "bg-blue-50/70 dark:bg-blue-950/40"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-900/60"
+                          }`}
                         >
+                          {(bulkMode || selectedUserIds.length > 0) && (
+                            <td className="w-10 px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedUserIds.includes(user.id)}
+                                onChange={(e) => toggleSelectUser(user.id, e)}
+                                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              />
+                            </td>
+                          )}
                           <td className="px-3 py-3">
                             <p className="font-bold text-slate-900 dark:text-white">{user.name}</p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>

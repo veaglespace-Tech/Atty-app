@@ -14,7 +14,12 @@ const {
   toPdfTime,
 } = require("../services/common.service");
 const { filterVisiblePlans } = require("../services/plan.service");
-const { archiveOrganization, restoreOrganizationFromArchive } = require("../services/archive.service");
+const {
+  archiveOrganization,
+  restoreOrganizationFromArchive,
+  archiveUser,
+  restoreUserFromArchive,
+} = require("../services/archive.service");
 const {
   resolveManagedSubscriptionWindow,
   syncOrganizationSubscriptionState,
@@ -614,9 +619,12 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
     },
   });
 
-  if (!organization || organization.deletedAt) {
+  if (!organization) {
     return null;
   }
+
+  const cleanOrgCode = organization.organizationCode ? organization.organizationCode.replace(/__deleted_\d+.*$/, "") : "";
+  const cleanOrgEmail = organization.email ? organization.email.replace(/__deleted_\d+.*$/, "") : "";
 
   const [paymentAggregate, recentPayments, recentSubscriptions] = await Promise.all([
     prisma.payment.aggregate({
@@ -676,8 +684,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
   return {
     id: organization.id,
     name: organization.name,
-    code: organization.organizationCode,
-    email: organization.email || "",
+    code: cleanOrgCode,
+    email: cleanOrgEmail,
     phone: organization.phone || "",
     phoneCountryCode: organization.phoneCountryCode || "",
     address: organization.address || "",
@@ -691,7 +699,8 @@ const buildSuperAdminOrganizationDetailPayload = async (organizationId) => {
     subscriptionExpiry: organization.subscriptionExpiry || null,
     hasERP: Boolean(organization.hasERP),
     blocked: Boolean(organization.isBlocked),
-    active: Boolean(organization.isActive),
+    active: Boolean(organization.isActive && !organization.deletedAt),
+    deletedAt: organization.deletedAt || null,
     agreementPdfUrl: organization.agreementPdfUrl || null,
     createdAt: organization.createdAt,
     updatedAt: organization.updatedAt,
@@ -973,7 +982,6 @@ exports.getSuperAdminOrganizationUsers = asyncHandler(async (req, res) => {
   const users = await prisma.user.findMany({
     where: {
       orgId: organizationId,
-      deletedAt: null,
     },
     select: {
       id: true,
@@ -989,9 +997,15 @@ exports.getSuperAdminOrganizationUsers = asyncHandler(async (req, res) => {
     orderBy: { createdAt: "desc" },
   });
 
+  const cleanedUsers = users.map((u) => ({
+    ...u,
+    email: u.email ? u.email.replace(/__deleted_\d+.*$/, "") : "",
+    mobile: u.mobile ? u.mobile.replace(/__deleted_\d+.*$/, "") : "",
+  }));
+
   res.status(200).json({
     success: true,
-    items: users,
+    items: cleanedUsers,
   });
 });
 
@@ -1005,7 +1019,6 @@ exports.getSuperAdminOrganizationTeams = asyncHandler(async (req, res) => {
   const teams = await prisma.team.findMany({
     where: {
       orgId: organizationId,
-      deletedAt: null,
     },
     include: {
       leader: {
@@ -1320,6 +1333,113 @@ exports.restoreOrganizationAction = asyncHandler(async (req, res) => {
     id: restored.id,
   });
 });
+
+exports.getArchivedOrganizationsAction = asyncHandler(async (req, res) => {
+  const archivedOrgs = await prisma.archiveOrg.findMany({
+    orderBy: {
+      archivedAt: "desc",
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    items: archivedOrgs,
+  });
+});
+
+exports.deleteSuperAdminUserAction = asyncHandler(async (req, res) => {
+  const userId = parseId(req.params.userId);
+  const { reason } = req.body;
+
+  if (!userId) {
+    res.status(400);
+    throw new Error("Invalid user id");
+  }
+
+  const archived = await archiveUser({
+    userId,
+    reason: reason || "User deleted by Super Admin",
+    archivedById: Number(req.user.id),
+  });
+
+  if (!archived) {
+    res.status(500);
+    throw new Error("Failed to archive user");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User deleted and moved to archive successfully",
+    archivedId: archived.id,
+  });
+});
+
+exports.getSuperAdminArchivedUsersAction = asyncHandler(async (req, res) => {
+  const archivedUsers = await prisma.archiveUser.findMany({
+    orderBy: {
+      archivedAt: "desc",
+    },
+  });
+
+  const activeUsers = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      mobile: true,
+    },
+  });
+
+  const activeEmailMap = new Map();
+  const activeMobileMap = new Map();
+  activeUsers.forEach((u) => {
+    if (u.email) activeEmailMap.set(u.email.toLowerCase(), u.id);
+    if (u.mobile) activeMobileMap.set(u.mobile, u.id);
+  });
+
+  const enrichedItems = archivedUsers.map((item) => {
+    const cleanEmail = item.email ? item.email.toLowerCase() : "";
+    const cleanMobile = item.mobile || "";
+    const activeId = activeEmailMap.get(cleanEmail) || (cleanMobile ? activeMobileMap.get(cleanMobile) : null) || null;
+    return {
+      ...item,
+      hasActiveAccount: Boolean(activeId),
+      activeUserId: activeId,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    items: enrichedItems,
+  });
+});
+
+exports.restoreSuperAdminUserAction = asyncHandler(async (req, res) => {
+  const userId = parseId(req.params.userId);
+
+  if (!userId) {
+    res.status(400);
+    throw new Error("Invalid user id");
+  }
+
+  const restored = await restoreUserFromArchive({
+    userId,
+  });
+
+  if (!restored) {
+    res.status(500);
+    throw new Error("Failed to restore user from archive");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User restored successfully from archive",
+    id: restored.id,
+  });
+});
+
 
 exports.getSuperAdminPlans = asyncHandler(async (req, res) => {
   const [plans, subscriptionAgg, paymentAgg] = await Promise.all([

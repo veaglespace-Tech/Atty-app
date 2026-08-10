@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   Download,
   Loader2,
+  RotateCcw,
   ShieldAlert,
+  Trash2,
   UserCog,
   UserRound,
 } from "lucide-react";
@@ -17,6 +19,8 @@ import {
   useDownloadOrgUserProfilePdfMutation,
   useGetOrgUserByIdQuery,
   usePatchOrgUserMutation,
+  useDeleteOrgUserMutation,
+  useRestoreArchivedUserMutation,
   useGetOrgUserAttendanceLogsQuery,
   useDownloadOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,
@@ -129,6 +133,12 @@ export default function OrgUserDetailPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [togglingAccess, setTogglingAccess] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [restoringUser, setRestoringUser] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteOrgUserMutation] = useDeleteOrgUserMutation();
+  const [restoreArchivedUserMutation] = useRestoreArchivedUserMutation();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -348,6 +358,41 @@ export default function OrgUserDetailPage() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    try {
+      setDeletingUser(true);
+      setError("");
+      setMessage("");
+
+      await deleteOrgUserMutation({
+        userId,
+        reason: deleteReason.trim() || "Deleted by Organization Admin",
+      }).unwrap();
+
+      setShowDeleteModal(false);
+      router.push("/org/users");
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to delete user"));
+      setDeletingUser(false);
+    }
+  };
+
+  const handleRestoreUser = async () => {
+    try {
+      setRestoringUser(true);
+      setError("");
+      setMessage("");
+
+      await restoreArchivedUserMutation(userId).unwrap();
+      setMessage("User restored successfully");
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to restore user"));
+    } finally {
+      setRestoringUser(false);
+    }
+  };
+
   const downloadProfilePdf = async () => {
     try {
       setError("");
@@ -443,6 +488,23 @@ export default function OrgUserDetailPage() {
     );
   }
 
+  if (deletingUser) {
+    return (
+      <section className="space-y-4">
+        <button
+          type="button"
+          onClick={() => router.push("/org/users")}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+        >
+          <ArrowLeft size={14} /> Back to Users
+        </button>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-semibold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200 flex items-center gap-2">
+          <Loader2 size={16} className="animate-spin" /> Deleting user and redirecting...
+        </div>
+      </section>
+    );
+  }
+
   if (!user) {
     return (
       <section className="space-y-4">
@@ -459,6 +521,8 @@ export default function OrgUserDetailPage() {
       </section>
     );
   }
+
+  const isUserArchived = Boolean(user.deletedAt || (user.approvalStatus === "REJECTED" && !user.active));
 
   return (
     <section className="space-y-6">
@@ -480,7 +544,14 @@ export default function OrgUserDetailPage() {
             >
               <ArrowLeft size={14} /> Back
             </button>
-            <h2 className="mt-3 text-2xl font-black text-slate-900">{form.name}</h2>
+            <div className="mt-3 flex items-center gap-3">
+              <h2 className="text-2xl font-black text-slate-900">{form.name}</h2>
+              {isUserArchived && (
+                <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-black uppercase text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
+                  DELETED / ARCHIVED USER
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm font-medium text-slate-600">{user.email}</p>
             </div>
           </div>
@@ -500,17 +571,42 @@ export default function OrgUserDetailPage() {
               Download User Details PDF
             </button>
 
-            <button
-              type="button"
-              onClick={toggleAccess}
-              disabled={!canToggleAccess || togglingAccess}
-              className={`brand-btn brand-btn-sm w-full sm:w-auto disabled:opacity-60 ${
-                form.active ? "brand-btn-danger" : "brand-btn-soft"
-              }`}
-            >
-              {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <ShieldAlert size={15} />}
-              {form.active ? "Block User" : "Unblock User"}
-            </button>
+            {isUserArchived ? (
+              <button
+                type="button"
+                onClick={handleRestoreUser}
+                disabled={restoringUser}
+                className="brand-btn brand-btn-primary brand-btn-sm w-full sm:w-auto"
+              >
+                {restoringUser ? <Loader2 size={15} className="animate-spin" /> : <RotateCcw size={15} />}
+                Restore User
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={toggleAccess}
+                  disabled={!canToggleAccess || togglingAccess}
+                  className={`brand-btn brand-btn-sm w-full sm:w-auto disabled:opacity-60 ${
+                    form.active ? "brand-btn-danger" : "brand-btn-soft"
+                  }`}
+                >
+                  {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <ShieldAlert size={15} />}
+                  {form.active ? "Block User" : "Unblock User"}
+                </button>
+
+                {hasPermission(actorRole, PERMISSIONS.USERS.DELETE) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    disabled={deletingUser}
+                    className="brand-btn brand-btn-danger brand-btn-sm w-full sm:w-auto disabled:opacity-60"
+                  >
+                    <Trash2 size={15} /> Delete User
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -952,6 +1048,65 @@ export default function OrgUserDetailPage() {
           </div>
         )}
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                <Trash2 size={20} />
+                <h3 className="text-lg font-black">Delete User</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to delete <strong>{form.name}</strong>?
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              This user will be archived, removed from UI views, and their email constraint will be freed for potential future re-registration.
+            </p>
+
+            <div className="mt-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Reason for deletion (Optional)
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="e.g. Employee resigned, duplicate record, etc."
+                rows={3}
+                className="dashboard-field-control w-full p-3 text-sm"
+              />
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="brand-btn brand-btn-secondary brand-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                disabled={deletingUser}
+                className="brand-btn brand-btn-danger brand-btn-sm"
+              >
+                {deletingUser ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Confirm Deletion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

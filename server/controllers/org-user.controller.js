@@ -117,6 +117,7 @@ const ensureOrgTargetUser = async ({
   allowSelf = false,
   checkRoleScope = true,
   select = userManagementSelect,
+  includeDeleted = false,
 }) => {
   const orgId = ensureOrganizationId(req, res);
   const user = await prisma.user.findFirst({
@@ -127,7 +128,7 @@ const ensureOrgTargetUser = async ({
           orgId,
         },
       },
-      deletedAt: null,
+      ...(includeDeleted ? {} : { deletedAt: null }),
     },
     select,
   });
@@ -322,6 +323,7 @@ exports.getOrgUserById = asyncHandler(async (req, res) => {
     allowSelf: true,
     checkRoleScope: false,
     select: userProfileSelect,
+    includeDeleted: true,
   });
 
   const [organization, attendanceSummary] = await Promise.all([
@@ -335,14 +337,23 @@ exports.getOrgUserById = asyncHandler(async (req, res) => {
     }),
   ]);
 
+  const detail = mapOrgUserDetail({
+    user,
+    orgId,
+    organization,
+    attendanceSummary,
+  });
+
+  if (detail.email && detail.email.includes("__deleted_")) {
+    detail.email = detail.email.replace(/__deleted_\d+.*$/, "");
+  }
+  if (detail.mobile && detail.mobile.includes("__deleted_")) {
+    detail.mobile = detail.mobile.replace(/__deleted_\d+.*$/, "");
+  }
+
   res.status(200).json({
     success: true,
-    item: mapOrgUserDetail({
-      user,
-      orgId,
-      organization,
-      attendanceSummary,
-    }),
+    item: detail,
   });
 });
 
@@ -905,42 +916,114 @@ exports.deleteOrgUser = asyncHandler(async (req, res) => {
     targetUserId: req.params.userId,
   });
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: user.id },
-      data: {
-        deletedAt: new Date(),
-        isActive: false,
-      },
-    }),
-    prisma.teamMember.deleteMany({
-      where: { userId: user.id },
-    }),
-    prisma.team.updateMany({
-      where: {
-        orgId,
-        leaderId: user.id,
-      },
-      data: {
-        leaderId: null,
-      },
-    }),
-    prisma.organization.updateMany({
-      where: {
-        id: orgId,
-        orgAdminId: user.id,
-      },
-      data: {
-        orgAdminId: null,
-      },
-    }),
-  ]);
+  const reason = req.body?.reason || "User deleted by Organization Admin";
+
+  const archived = await archiveUser({
+    userId: user.id,
+    orgId,
+    reason,
+    archivedById: Number(req.user.id),
+  });
+
+  if (!archived) {
+    res.status(500);
+    throw new Error("Failed to archive user");
+  }
 
   res.status(200).json({
     success: true,
     message: "User deleted successfully",
+    archivedId: archived.id,
   });
 });
+
+exports.getOrgArchivedUsers = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertAnyPermission(
+    res,
+    req.user,
+    [
+      PERMISSIONS.USERS.CREATE,
+      PERMISSIONS.TEAM.VIEW_ALL,
+      PERMISSIONS.USERS.DELETE,
+    ],
+    orgId
+  );
+
+  const archivedUsers = await prisma.archiveUser.findMany({
+    where: {
+      orgId,
+    },
+    orderBy: {
+      archivedAt: "desc",
+    },
+  });
+
+  const activeUsers = await prisma.user.findMany({
+    where: {
+      orgId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      mobile: true,
+    },
+  });
+
+  const activeEmailMap = new Map();
+  const activeMobileMap = new Map();
+  activeUsers.forEach((u) => {
+    if (u.email) activeEmailMap.set(u.email.toLowerCase(), u.id);
+    if (u.mobile) activeMobileMap.set(u.mobile, u.id);
+  });
+
+  const enrichedItems = archivedUsers.map((item) => {
+    const cleanEmail = item.email ? item.email.toLowerCase() : "";
+    const cleanMobile = item.mobile || "";
+    const activeId = activeEmailMap.get(cleanEmail) || (cleanMobile ? activeMobileMap.get(cleanMobile) : null) || null;
+    return {
+      ...item,
+      hasActiveAccount: Boolean(activeId),
+      activeUserId: activeId,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    items: enrichedItems,
+  });
+});
+
+exports.restoreOrgArchivedUser = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertAnyPermission(
+    res,
+    req.user,
+    [
+      PERMISSIONS.USERS.CREATE,
+      PERMISSIONS.USERS.DELETE,
+    ],
+    orgId
+  );
+  const targetUserId = Number(req.params.userId);
+
+  const restored = await restoreUserFromArchive({
+    userId: targetUserId,
+  });
+
+  if (!restored) {
+    res.status(400);
+    throw new Error("Could not restore user from archive");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User restored successfully from archive",
+    item: restored,
+  });
+});
+
 
 exports.getOrgNotifications = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);

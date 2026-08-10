@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Loader2,
+  RotateCcw,
   ShieldAlert,
+  Trash2,
   UserCog,
   UserRound,
 } from "lucide-react";
@@ -14,6 +16,8 @@ import UserAvatar from "@/components/UserAvatar";
 import {
   useGetSuperAdminUserByIdQuery,
   usePatchSuperAdminUserMutation,
+  useDeleteSuperAdminUserMutation,
+  useRestoreSuperAdminUserMutation,
 } from "@/services/api/superAdminApi";
 import {
   PERMISSION_GROUPS,
@@ -95,6 +99,13 @@ export default function SuperAdminUserDetailPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [togglingAccess, setTogglingAccess] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [restoringUser, setRestoringUser] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+
+  const [deleteSuperAdminUserMutation] = useDeleteSuperAdminUserMutation();
+  const [restoreSuperAdminUserMutation] = useRestoreSuperAdminUserMutation();
   
   const [form, setForm] = useState({
     name: "",
@@ -265,6 +276,41 @@ export default function SuperAdminUserDetailPage() {
     }));
   };
 
+  const handleDeleteUser = async () => {
+    try {
+      setDeletingUser(true);
+      setError("");
+      setMessage("");
+
+      await deleteSuperAdminUserMutation({
+        userId,
+        reason: deleteReason.trim() || "User deleted by Super Admin",
+      }).unwrap();
+
+      setShowDeleteModal(false);
+      router.push(`/super-admin/organizations/${organizationId}`);
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to delete user"));
+      setDeletingUser(false);
+    }
+  };
+
+  const handleRestoreUser = async () => {
+    try {
+      setRestoringUser(true);
+      setError("");
+      setMessage("");
+
+      await restoreSuperAdminUserMutation(userId).unwrap();
+      setMessage("User restored successfully");
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to restore user"));
+    } finally {
+      setRestoringUser(false);
+    }
+  };
+
   if (!Number.isFinite(userId) || userId <= 0) {
     return (
       <section className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm font-semibold text-red-700">
@@ -336,6 +382,27 @@ export default function SuperAdminUserDetailPage() {
               {togglingAccess ? <Loader2 size={15} className="animate-spin" /> : <ShieldAlert size={15} />}
               {form.active ? "Block User" : "Unblock User"}
             </button>
+
+            {user.deletedAt || !user.active ? (
+              <button
+                type="button"
+                onClick={handleRestoreUser}
+                disabled={restoringUser}
+                className="brand-btn brand-btn-primary brand-btn-sm w-full sm:w-auto"
+              >
+                {restoringUser ? <Loader2 size={15} className="animate-spin" /> : <RotateCcw size={15} />}
+                Restore User
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                disabled={deletingUser}
+                className="brand-btn brand-btn-danger brand-btn-sm w-full sm:w-auto disabled:opacity-60"
+              >
+                <Trash2 size={15} /> Delete User
+              </button>
+            )}
           </div>
         </div>
 
@@ -575,6 +642,65 @@ export default function SuperAdminUserDetailPage() {
           </button>
         </div>
       </div>
+      {/* Delete User Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                <Trash2 size={20} />
+                <h3 className="text-lg font-black">Delete User</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to delete <strong>{form.name}</strong>?
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              The user account will be archived, email and mobile unlocked for fresh registration, and system access revoked.
+            </p>
+
+            <div className="mt-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Reason for deletion (Optional)
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="e.g. Account requested deletion, duplicate user, etc."
+                rows={3}
+                className="dashboard-field-control w-full p-3 text-sm"
+              />
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="brand-btn brand-btn-secondary brand-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                disabled={deletingUser}
+                className="brand-btn brand-btn-danger brand-btn-sm"
+              >
+                {deletingUser ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Confirm Deletion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
