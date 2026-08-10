@@ -118,7 +118,7 @@ const buildAttendanceReport = async ({
   };
 
   const groupedRows = await prisma.attendance.groupBy({
-    by: ["userId", "status"],
+    by: ["userId", "date", "status"],
     where,
     _count: {
       _all: true,
@@ -164,6 +164,7 @@ const buildAttendanceReport = async ({
       absentDays: 0,
       overtimeDays: 0,
       workedMinutes: 0,
+      daily: {},
     });
   }
 
@@ -179,6 +180,7 @@ const buildAttendanceReport = async ({
       absentDays: 0,
       overtimeDays: 0,
       workedMinutes: 0,
+      daily: {},
     };
 
     const status = String(row.status || "").toUpperCase();
@@ -191,6 +193,10 @@ const buildAttendanceReport = async ({
     else if (status === "OVERTIME") {
       current.overtimeDays += count;
       current.presentDays += count;
+    }
+
+    if (row.date) {
+      current.daily[row.date] = status;
     }
 
     current.workedMinutes += workedMinutes;

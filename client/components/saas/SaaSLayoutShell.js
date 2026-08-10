@@ -255,17 +255,17 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
   }
 
   return (
-    <div className="dashboard-theme flex h-screen overflow-hidden bg-slate-50 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+    <div className="dashboard-theme flex h-screen overflow-hidden bg-slate-50 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 print:h-auto print:overflow-visible print:bg-white">
       {mobileNavOpen ? (
         <div
           onClick={() => setMobileNavOpen(false)}
-          className="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity print:hidden"
         />
       ) : null}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[70] flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200/60 bg-white/95 px-4 py-4 shadow-[0_0_80px_-20px_rgba(0,0,0,0.15)] backdrop-blur-2xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800/60 dark:bg-slate-950/95 dark:shadow-black/50 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-[70] flex w-[88vw] max-w-[20rem] shrink-0 flex-col overflow-y-auto border-r border-slate-200/60 bg-white/95 px-4 py-4 shadow-[0_0_80px_-20px_rgba(0,0,0,0.15)] backdrop-blur-2xl transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] dark:border-slate-800/60 dark:bg-slate-950/95 dark:shadow-black/50 sm:w-80 sm:px-5 sm:py-5 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none print:hidden",
           mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
@@ -322,8 +322,8 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto visible-scrollbar">
-        <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200/50 bg-white/70 px-4 py-3.5 shadow-[0_8px_32px_rgba(59,130,246,0.06)] backdrop-blur-2xl transition-all duration-500 dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/20 sm:px-6 sm:py-4">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto visible-scrollbar print:h-auto print:overflow-visible print:block">
+        <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200/50 bg-white/70 px-4 py-3.5 shadow-[0_8px_32px_rgba(59,130,246,0.06)] backdrop-blur-2xl transition-all duration-500 dark:border-slate-800/50 dark:bg-slate-950/70 dark:shadow-black/20 sm:px-6 sm:py-4 print:hidden">
           <div className="flex min-w-0 items-center justify-between gap-3 relative z-10">
             <div className="flex min-w-0 items-center gap-4">
               <button
@@ -391,10 +391,10 @@ export default function SaaSLayoutShell({ sectionRoot, navItems, children }) {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 shrink-0 p-3 sm:p-4 md:p-6 lg:p-8">
-          <div className="mx-auto w-full max-w-[1540px]">{children}</div>
+        <main className="min-w-0 flex-1 shrink-0 p-3 sm:p-4 md:p-6 lg:p-8 print:p-0 print:m-0">
+          <div className="mx-auto w-full max-w-[1540px] print:max-w-none print:w-full">{children}</div>
         </main>
-        <div className="shrink-0">
+        <div className="shrink-0 print:hidden">
           <DashboardFooter />
         </div>
       </div>

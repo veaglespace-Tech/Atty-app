@@ -159,26 +159,51 @@ const buildAttendanceExcelBuffer = ({
   summary,
   rows,
 }) => {
-  const columns = [
-    { key: "id", label: "ID", width: 50 },
-    { key: "member", label: "Member Name", width: 120 },
-    { key: "role", label: "Role", width: 100 },
-    { key: "department", label: "Department", width: 110 },
-    { key: "existingMember", label: "Member Type", width: 100 },
-    { key: "presentDays", label: "Present Days", width: 90 },
-    { key: "halfDays", label: "Half Days", width: 90 },
-    { key: "absentDays", label: "Absent Days", width: 90 },
-    { key: "overtimeDays", label: "Overtime Days", width: 100 },
-    { key: "workedHours", label: "Worked Hrs", width: 100 },
+  const startDate = new Date(rangeFrom + "T00:00:00.000Z")
+  const endDate = new Date(rangeTo + "T00:00:00.000Z")
+  const dateColumns = []
+  const dates = []
+  let current = new Date(startDate)
+  
+  const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  
+  while (current <= endDate) {
+    const yyyy = current.getUTCFullYear()
+    const mm = String(current.getUTCMonth() + 1).padStart(2, "0")
+    const dd = String(current.getUTCDate()).padStart(2, "0")
+    const dateKey = `${yyyy}-${mm}-${dd}`
+    
+    const dayName = shortDays[current.getUTCDay()]
+    const label = `${dd} ${dayName}`
+    
+    dateColumns.push({ key: dateKey, label, width: 45 })
+    dates.push({ key: dateKey, isSunday: current.getUTCDay() === 0 })
+    
+    current.setUTCDate(current.getUTCDate() + 1)
+  }
+
+  const baseColumns = [
+    { key: "srNo", label: "Sr. No", width: 45 },
+    { key: "member", label: "Name", width: 140 },
+    { key: "id", label: "ID", width: 60 },
+    { key: "department", label: "Department", width: 90 },
+    { key: "existingMember", label: "Employee Type", width: 90 },
   ]
 
-  const totalWorkedMinutes = summary?.find((s) => s.label === "Worked Hrs")?.value || "00:00"
+  const summaryColumns = [
+    { key: "presentDays", label: "Present", width: 60 },
+    { key: "absentDays", label: "Absent", width: 60 },
+    { key: "halfDays", label: "Half Day", width: 60 },
+    { key: "overtimeDays", label: "Overtime", width: 60 },
+    { key: "workedHours", label: "Worked Hrs", width: 80 },
+    { key: "totalDays", label: "Total Days Count", width: 80 },
+  ]
+
+  const columns = [...baseColumns, ...dateColumns, ...summaryColumns]
 
   const infoLines = [
     `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
     `Period: ${String(periodLabel || "Report").toUpperCase()} | Range: ${rangeFrom} to ${rangeTo}`,
-    `Total Members: ${rows.length}`,
-    `Total Worked Hrs: ${totalWorkedMinutes}`,
   ]
 
   const sheetData = [
@@ -186,8 +211,57 @@ const buildAttendanceExcelBuffer = ({
     ...infoLines.map((line) => [line]),
     [],
     columns.map((column) => column.label),
-    ...rows.map((row) => columns.map((column) => row?.[column.key] ?? "-")),
   ]
+  
+  const totalDaysCount = dates.length;
+  const today = new Date();
+
+  rows.forEach((row, idx) => {
+    const rowData = [
+      idx + 1,
+      row.member || "-",
+      row.id || "-",
+      row.department || "-",
+      row.existingMember || "-",
+    ]
+    
+    let present = 0;
+    let absent = 0;
+    let halfDay = 0;
+    let overtime = 0;
+    
+    dates.forEach(({ key: dateKey }) => {
+      const status = row.daily?.[dateKey];
+      let displayStatus = "";
+      
+      if (status) {
+        if (status === "PRESENT") { displayStatus = "P"; present++; }
+        else if (status === "OVERTIME") { displayStatus = "O"; overtime++; present++; }
+        else if (status === "ABSENT") { displayStatus = "A"; absent++; }
+        else if (status === "HALF_DAY") { displayStatus = "Half Day"; halfDay++; }
+        else { displayStatus = status; }
+      } else {
+        const dateObj = new Date(dateKey + "T00:00:00.000Z");
+        if (dateObj > today) {
+          displayStatus = "";
+        } else {
+          displayStatus = "A";
+          absent++;
+        }
+      }
+      
+      rowData.push(displayStatus);
+    });
+    
+    rowData.push(present);
+    rowData.push(absent);
+    rowData.push(halfDay);
+    rowData.push(overtime);
+    rowData.push(row.workedHours || "00:00");
+    rowData.push(totalDaysCount);
+    
+    sheetData.push(rowData);
+  })
 
   const worksheet = xlsx.utils.aoa_to_sheet(sheetData)
   const lastColumnIndex = Math.max(columns.length - 1, 0)
@@ -195,7 +269,7 @@ const buildAttendanceExcelBuffer = ({
   const headerRowNumber = infoLines.length + 3
 
   worksheet["!cols"] = columns.map((column) => ({
-    wch: Math.max(12, Math.round(Number(column.width || 84) / 6)),
+    wch: Math.max(8, Math.round(Number(column.width || 84) / 6)),
   }))
   worksheet["!merges"] = Array.from({ length: infoLines.length + 1 }, (_, index) => ({
     s: { r: index, c: 0 },
@@ -575,3 +649,6 @@ exports.getOrgSubscription = asyncHandler(async (req, res) => {
     },
   })
 })
+
+exports.buildOrganizationReportData = buildOrganizationReportData
+exports.buildAttendanceExcelBuffer = buildAttendanceExcelBuffer

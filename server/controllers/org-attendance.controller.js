@@ -413,53 +413,25 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
     search: req.query.search,
   });
 
-  const subtitleLines = [
-    `Organization: ${payload.organization.name} (${payload.organization.organizationCode})`,
-    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
-  ];
+  const { buildOrganizationReportData, buildAttendanceExcelBuffer } = require("./org-dashboard.controller");
+  
+  const reportData = await buildOrganizationReportData({
+    orgId,
+    rangeFrom: payload.meta.from,
+    rangeTo: payload.meta.to,
+  });
 
-  const summaryCards = payload.summary.map(s => ({
-    label: s.label,
-    value: s.value,
-  }));
-
-  const excelBuffer = await buildExportWorkbookBuffer({
-    title: "ORGANIZATION ATTENDANCE LOGS",
-    subtitleLines,
-    summaryCards,
-    columns: [
-      { key: "entryNo", label: "No.", width: 40 },
-      { key: "user", label: "Member", width: 120 },
-      { key: "role", label: "Role", width: 90 },
-      { key: "department", label: "Department", width: 100 },
-      { key: "existingMember", label: "Member Type", width: 90 },
-      { key: "date", label: "Date", width: 85 },
-      { key: "status", label: "Status", width: 80 },
-      { key: "punchIn", label: "Punch In", width: 80 },
-      { key: "punchOut", label: "Punch Out", width: 80 },
-      { key: "overtime", label: "Overtime", width: 80 },
-      { key: "workedHoursLabel", label: "Worked Hrs", width: 80 },
-    ],
-    rows: payload.items.map((item, index) => {
-      const statusUpper = String(item.status || "").toUpperCase();
-      return {
-        entryNo: String(index + 1),
-        user: item.member || "-",
-        role: item.role || "MEMBER",
-        department: item.department || "Unassigned",
-        existingMember: item.existingMember || "-",
-        date: item.date,
-        status: item.status,
-        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
-        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
-        overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
-        workedHoursLabel: item.workedHours.toFixed(2),
-      };
-    }),
+  const excelBuffer = buildAttendanceExcelBuffer({
+    organization: payload.organization,
+    periodLabel: payload.meta.periodLabel,
+    rangeFrom: payload.meta.from,
+    rangeTo: payload.meta.to,
+    summary: reportData.summary,
+    rows: reportData.items,
   });
 
   const safeName = String(payload.organization.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
-  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
+  const filename = `attendance-report-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);

@@ -1554,6 +1554,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     "Current Address",
     "Permanent Address",
     "Profile Photo",
+    "Profile Photo Link",
     "Role",
     "Status",
     "Active",
@@ -1568,8 +1569,8 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   worksheet.addRow([]);
   worksheet.addRow(headers);
 
-  worksheet.mergeCells("A1:U1");
-  worksheet.mergeCells("A2:U2");
+  worksheet.mergeCells("A1:V1");
+  worksheet.mergeCells("A2:V2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -1590,13 +1591,14 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
-    if (i === 0) col.width = 8;
-    else if (i === 16) col.width = 20; // Profile Photo (0-indexed 16)
-    else if (i === 4) col.width = 20; // Physical Form No.
-    else if (i === 5) col.width = 35; // Uploaded Document
-    else if (i === 14 || i === 15) col.width = 35; // Addresses
-    else if (i === 1 || i === 11) col.width = 25; // Name, Email
-    else col.width = 15;
+    if (i === 0) col.width = 10;
+    else if (i === 16) col.width = 28; // Profile Photo (0-indexed 16)
+    else if (i === 17) col.width = 20; // Profile Photo Link
+    else if (i === 4) col.width = 25; // Physical Form No.
+    else if (i === 5) col.width = 40; // Uploaded Document
+    else if (i === 14 || i === 15) col.width = 45; // Addresses
+    else if (i === 1 || i === 11) col.width = 32; // Name, Email
+    else col.width = 20;
   });
 
   const mapConcurrent = async (array, limit, fn) => {
@@ -1630,6 +1632,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       ? getDirectDownloadUrl(user.documentUrl)
       : "-";
 
+    const profilePhotoDownloadLink = user.profileImageUrl
+      ? getDirectDownloadUrl(user.profileImageUrl)
+      : "-";
+
     return {
       index: index + 1,
       name: user.name || "-",
@@ -1654,6 +1660,7 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       status: user.status || "-",
       active: user.isActive ? "Active" : "Blocked",
       joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+      profilePhotoDownloadLink,
       imageBuffer,
     };
   });
@@ -1677,13 +1684,14 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       rowData.currentAddress,
       rowData.permanentAddress,
       "", // Profile Photo cell (Col 17 / Col Q)
+      "-", // Profile Photo Link cell (Col 18 / Col R)
       rowData.role,
       rowData.status,
       rowData.active,
       rowData.joinedAt,
     ]);
 
-    row.height = 60;
+    row.height = 80;
     row.eachCell((cell) => {
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     });
@@ -1710,10 +1718,10 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           extension: ext,
         });
 
-        const imageWidth = 46;
-        const imageHeight = 46;
-        const colWidthPixels = Math.floor(20 * 7 + 12); // 152 px for col width 20
-        const rowHeightPixels = Math.floor(60 * 1.333333); // 80 px for row height 60
+        const imageWidth = 60;
+        const imageHeight = 60;
+        const colWidthPixels = Math.floor(28 * 7 + 12); // 208 px for col width 28
+        const rowHeightPixels = Math.floor(80 * 1.333333); // 106 px for row height 80
         const offsetX = Math.max(0, (colWidthPixels - imageWidth) / 2);
         const offsetY = Math.max(0, (rowHeightPixels - imageHeight) / 2);
 
@@ -1732,6 +1740,19 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       }
     } else {
       worksheet.getCell(row.number, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+    }
+
+    const photoLinkCell = row.getCell(18);
+    if (rowData.profilePhotoDownloadLink && rowData.profilePhotoDownloadLink !== "-") {
+      photoLinkCell.value = {
+        text: "Download Photo",
+        hyperlink: rowData.profilePhotoDownloadLink,
+      };
+      photoLinkCell.font = {
+        color: { argb: "FF0563C1" },
+        underline: true,
+        bold: true,
+      };
     }
   }
 
