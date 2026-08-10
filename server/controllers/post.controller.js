@@ -325,7 +325,7 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
     OR: [{ orgId: Number(orgId) }, { orgId: null }],
     isActive: true,
     deletedAt: null,
-    ...(teamFilter || {}),
+    ...(teamFilter ? { AND: [teamFilter] } : {}),
   };
 
   if (joinedAt) {

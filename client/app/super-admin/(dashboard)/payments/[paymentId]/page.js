@@ -9,6 +9,7 @@ import {
   Loader2,
   Save,
   Trash2,
+  Printer,
 } from "lucide-react";
 import {
   useDeleteSuperAdminPaymentMutation,
@@ -251,8 +252,9 @@ export default function PaymentDetailPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="mx-auto max-w-6xl">
+      <div className="print:hidden space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => router.push("/super-admin/payments")}
@@ -270,6 +272,14 @@ export default function PaymentDetailPage() {
           >
             {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
             Delete
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="brand-btn brand-btn-sm bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            <Printer size={14} />
+            Print Receipt
           </button>
           <button
             type="button"
@@ -600,6 +610,67 @@ export default function PaymentDetailPage() {
               value={formatCalendarDate(item.organization?.subscriptionExpiry, "-")}
             />
           </div>
+        </div>
+      </div>
+      </div>
+
+      <div className="hidden print:block bg-white text-black p-10 min-h-screen">
+        <div className="flex justify-between items-start border-b pb-8 mb-8">
+          <div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">RECEIPT</h1>
+            <p className="text-slate-500 mt-2 font-medium">#{item.orderId || item.id}</p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-xl font-bold text-slate-900">VeagleSpace Tech</h2>
+            <p className="text-sm text-slate-500">veaglespace.com</p>
+          </div>
+        </div>
+
+        <div className="flex justify-between mb-12">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Billed To</p>
+            <h3 className="text-lg font-bold text-slate-900">{item.organization?.name || "Organization"}</h3>
+            <p className="text-sm text-slate-600">{item.organization?.code}</p>
+            <p className="text-sm text-slate-600">{item.user?.name}</p>
+            <p className="text-sm text-slate-600">{item.user?.email}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Payment Details</p>
+            <p className="text-sm text-slate-600"><span className="font-semibold">Date:</span> {new Date(item.createdAt).toLocaleDateString("en-IN")}</p>
+            <p className="text-sm text-slate-600"><span className="font-semibold">Method:</span> {item.gateway}</p>
+            <p className="text-sm text-slate-600"><span className="font-semibold">Status:</span> {item.status}</p>
+          </div>
+        </div>
+
+        <table className="w-full text-left mb-12">
+          <thead>
+            <tr className="border-b border-slate-200">
+              <th className="py-3 text-xs font-bold text-slate-400 uppercase tracking-widest">Description</th>
+              <th className="py-3 text-right text-xs font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-slate-100">
+              <td className="py-4">
+                <p className="font-bold text-slate-900">{item.planName || item.planCode || "Subscription Plan"}</p>
+                <p className="text-sm text-slate-500">Subscription valid till {item.subscription?.endDate ? new Date(item.subscription.endDate).toLocaleDateString("en-IN") : "-"}</p>
+              </td>
+              <td className="py-4 text-right font-bold text-slate-900">{formatMoney(item.amount, item.currency)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="flex justify-end">
+          <div className="w-1/2">
+            <div className="flex justify-between py-3 border-t-2 border-slate-900">
+              <span className="font-bold text-slate-900">Total Paid</span>
+              <span className="font-black text-xl text-slate-900">{formatMoney(item.amount, item.currency)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 text-center text-sm text-slate-500 border-t pt-8">
+          This is a computer-generated receipt and does not require a physical signature.
         </div>
       </div>
     </section>

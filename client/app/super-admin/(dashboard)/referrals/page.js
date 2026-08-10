@@ -8,10 +8,16 @@ import UserAvatar from "@/components/UserAvatar";
 import { useDispatch } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
 
+import PaginationControls from "@/components/dashboard/PaginationControls";
+
 export default function SuperAdminReferralsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", mobile: "", partnerReferralCode: "" });
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, isLoading, refetch } = useGetAllReferralPartnersQuery();
   const [createPartner, { isLoading: isCreating }] = useCreateReferralPartnerMutation();
@@ -26,6 +32,11 @@ export default function SuperAdminReferralsPage() {
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (u.partnerReferralCode && u.partnerReferralCode.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredPartners.length);
+  const totalPages = Math.ceil(filteredPartners.length / pageSize);
+  const paginatedPartners = filteredPartners.slice(startIndex, endIndex);
 
   const handleCreatePartner = async (e) => {
     e.preventDefault();
@@ -109,7 +120,7 @@ export default function SuperAdminReferralsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                {filteredPartners.map((partner) => (
+                {paginatedPartners.map((partner) => (
                   <tr key={partner.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -155,6 +166,18 @@ export default function SuperAdminReferralsPage() {
               </tbody>
             </table>
           </div>
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={filteredPartners.length}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            label="partners"
+          />
         </div>
       ) : (
         <div className="light-glow-card-static rounded-[2rem] p-12 text-center">

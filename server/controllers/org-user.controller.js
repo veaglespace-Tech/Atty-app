@@ -1036,7 +1036,7 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
   });
 
   const where = {
-    orgId,
+    OR: [{ orgId }, { orgId: null }],
     isActive: true,
     deletedAt: null,
   };
@@ -1169,7 +1169,7 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
   const post = await prisma.post.findFirst({
     where: {
       id: Number(id),
-      orgId,
+      OR: [{ orgId }, { orgId: null }],
       isActive: true,
       deletedAt: null,
     },
@@ -1224,7 +1224,7 @@ exports.markNotificationAsRead = asyncHandler(async (req, res) => {
   const post = await prisma.post.findFirst({
     where: {
       id: Number(id),
-      orgId,
+      OR: [{ orgId }, { orgId: null }],
     }
   });
 
@@ -1269,7 +1269,7 @@ exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
   try {
     const unreadPosts = await prisma.post.findMany({
       where: {
-        orgId,
+        OR: [{ orgId }, { orgId: null }],
         isActive: true,
         deletedAt: null,
         reads: { none: { userId } }

@@ -1,5 +1,5 @@
 const prisma = require("../lib/prisma");
-const { minutesToHoursValue, toSummaryItem } = require("./common.service");
+const { minutesToHoursValue, toSummaryItem, todayKey } = require("./common.service");
 const { reportUserSelect } = require("./prisma-selects.service");
 const { mapUserForManagement } = require("./user-query.service");
 
@@ -130,7 +130,7 @@ const buildAttendanceReport = async ({
 
   // --- 3. Calculate total working days in range (capped at today) ---
   const startDate = new Date(rangeFrom + "T00:00:00.000Z");
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = todayKey();
   const endStr = rangeTo > todayStr ? todayStr : rangeTo;
   const endDate = new Date(endStr + "T00:00:00.000Z");
   let totalDays = 0;

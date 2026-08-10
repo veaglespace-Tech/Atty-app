@@ -3165,9 +3165,7 @@ exports.createSuperAdminPost = asyncHandler(async (req, res) => {
     include: { author: { select: { name: true } }, organization: { select: { id: true, name: true } } },
   });
 
-  if (orgIdValue) {
-    notifyNewPost(post, req.user.id, orgIdValue);
-  }
+  notifyNewPost(post, req.user.id, orgIdValue);
 
   res.status(201).json({ success: true, message: "Post created successfully", item: post });
 });
