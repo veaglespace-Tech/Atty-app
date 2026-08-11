@@ -2669,7 +2669,10 @@ exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
   if (req.body?.referenceBy !== undefined) {
     userPayload.referenceBy = req.body.referenceBy ? truncateText(req.body.referenceBy, 120) : null;
   }
+<<<<<<< HEAD
 
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   if (req.body?.role !== undefined) {
     const role = normalizeRole(req.body.role);
     userPayload.role = role;

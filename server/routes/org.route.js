@@ -45,7 +45,29 @@ const {
   acceptRegistrationRequest,
   rejectRegistrationRequest,
 } = require("../controllers/registration-request.controller");
+<<<<<<< HEAD
 
+=======
+const {
+  getOrgInstruments,
+  createOrgInstrument,
+  patchOrgInstrument,
+  deleteOrgInstrument,
+  assignInstrumentToUsers,
+  unassignInstrumentFromUser,
+  updateInstrumentAssignment,
+} = require("../controllers/org-instrument.controller");
+const {
+  getOrgDepartments,
+  createOrgDepartment,
+  patchOrgDepartment,
+  deleteOrgDepartment,
+  assignDepartmentToUsers,
+  unassignDepartmentFromUser,
+  downloadOrgDepartmentsExcel,
+  downloadOrgDepartmentsPdf,
+} = require("../controllers/org-department.controller");
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 const {
   getOrgDashboard,
   getOrgReports,
@@ -102,14 +124,9 @@ router.get("/reports", getOrgReports);
 router.get("/reports/pdf", downloadOrgReportsPdf);
 router.get("/reports/excel", downloadOrgReportsExcel);
 
-router.get("/notifications", getOrgNotifications);
-router.post("/notifications/read-all", markAllNotificationsAsRead);
-router.get("/notifications/:id", getOrgNotificationById);
-router.post("/notifications/:id/read", markNotificationAsRead);
-
 router.get("/users", getOrgUsers);
-router.get("/users/pdf", downloadOrgUsersPdf);
 router.get("/users/excel", downloadOrgUsersExcel);
+<<<<<<< HEAD
 router.get("/users/:userId", getOrgUserById);
 router.get("/users/:userId/profile-pdf", downloadOrgUserProfilePdf);
 router.get("/users/:userId/document-download", downloadUserDocumentFile);
@@ -123,6 +140,27 @@ router.patch("/users/:userId/active", toggleOrgUserActive);
 router.delete("/users/:userId", deleteOrgUser);
 
 router.get("/registration-requests", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), getOrgRegistrationRequests);
+=======
+router.get("/users/pdf", downloadOrgUsersPdf);
+router.get("/users/document/:id", downloadUserDocumentFile);
+router.get("/users/:id", getOrgUserById);
+router.get("/users/:id/profile-pdf", downloadOrgUserProfilePdf);
+router.post("/users", requirePermission(PERMISSIONS.USERS.CREATE), createOrgUser);
+router.patch("/users/:id", requirePermission(PERMISSIONS.USERS.UPDATE), patchOrgUser);
+router.patch("/users/:id/status", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), updateOrgUserStatus);
+router.patch("/users/:id/active", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), toggleOrgUserActive);
+router.delete("/users/:id", requirePermission(PERMISSIONS.USERS.DELETE), deleteOrgUser);
+router.get("/users/:id/attendance-logs", getOrgUserAttendanceLogs);
+router.get("/users/:id/attendance-logs/pdf", downloadOrgUserAttendancePdf);
+router.get("/users/:id/attendance-logs/excel", downloadOrgUserAttendanceExcel);
+
+router.get("/notifications", getOrgNotifications);
+router.get("/notifications/:id", getOrgNotificationById);
+router.patch("/notifications/:id/read", markNotificationAsRead);
+router.patch("/notifications/mark-all-read", markAllNotificationsAsRead);
+
+router.get("/registration-requests", getOrgRegistrationRequests);
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 router.patch("/registration-requests/:id/accept", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), acceptRegistrationRequest);
 router.patch("/registration-requests/:id/reject", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), rejectRegistrationRequest);
 
@@ -143,6 +181,23 @@ router.get("/attendance/:id", getOrgAttendanceLogById);
 router.get("/regularization-requests", getOrgRegularizationRequests);
 router.patch("/regularization-requests/:id/approve", approveRegularizationRequest);
 router.patch("/regularization-requests/:id/reject", rejectRegularizationRequest);
+
+router.get("/instruments", getOrgInstruments);
+router.post("/instruments", requirePermission(PERMISSIONS.USERS.CREATE), createOrgInstrument);
+router.patch("/instruments/:id", requirePermission(PERMISSIONS.USERS.CREATE), patchOrgInstrument);
+router.delete("/instruments/:id", requirePermission(PERMISSIONS.USERS.CREATE), deleteOrgInstrument);
+router.post("/instruments/assign", requirePermission(PERMISSIONS.USERS.CREATE), assignInstrumentToUsers);
+router.patch("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), updateInstrumentAssignment);
+router.delete("/instruments/assign/:instrumentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), unassignInstrumentFromUser);
+
+router.get("/departments", getOrgDepartments);
+router.get("/departments/excel", downloadOrgDepartmentsExcel);
+router.get("/departments/pdf", downloadOrgDepartmentsPdf);
+router.post("/departments", requirePermission(PERMISSIONS.USERS.CREATE), createOrgDepartment);
+router.patch("/departments/:id", requirePermission(PERMISSIONS.USERS.CREATE), patchOrgDepartment);
+router.delete("/departments/:id", requirePermission(PERMISSIONS.USERS.CREATE), deleteOrgDepartment);
+router.post("/departments/assign", requirePermission(PERMISSIONS.USERS.CREATE), assignDepartmentToUsers);
+router.delete("/departments/assign/:departmentId/:userId", requirePermission(PERMISSIONS.USERS.CREATE), unassignDepartmentFromUser);
 
 router.get("/instruments", getOrgInstruments);
 router.post("/instruments", requirePermission(PERMISSIONS.USERS.CREATE), createOrgInstrument);

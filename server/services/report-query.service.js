@@ -67,7 +67,10 @@ const buildAttendanceReport = async ({
       id: true,
       name: true,
       role: true,
+<<<<<<< HEAD
       orgId: true,
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
       department: {
         select: { name: true },
       },

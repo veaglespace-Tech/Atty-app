@@ -47,7 +47,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
   }
 };
 
-  exports.addDeposit = async (req, res, next) => {
+exports.addDeposit = async (req, res, next) => {
   try {
     const { amount, description } = req.body;
     const orgId = req.user.organizationId || req.user.orgId;
@@ -87,21 +87,21 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
   }
 };
 
-  exports.addWithdrawal = async (req, res, next) => {
+exports.addWithdrawal = async (req, res, next) => {
   try {
     const { withdrawalType, totalAmount } = req.body;
-    let { items } = req.body;
     const orgId = req.user.organizationId || req.user.orgId;
+    let items = req.body.items;
 
-    if (!withdrawalType || !items || !totalAmount) {
-      return res.status(400).json({ success: false, message: "Please provide withdrawalType, items, and totalAmount" });
+    if (!withdrawalType || !totalAmount) {
+      return res.status(400).json({ success: false, message: "Please provide withdrawalType and totalAmount" });
     }
 
     if (typeof items === "string") {
       try {
         items = JSON.parse(items);
-      } catch (err) {
-        return res.status(400).json({ success: false, message: "Invalid items format" });
+      } catch (e) {
+        items = [];
       }
     }
 
@@ -114,7 +114,7 @@ exports.getBalanceAndTransactions = async (req, res, next) => {
       const uploadResult = await uploadImageDataUrl({
         dataUrl,
         folder: "veagle-attendee/expense-receipts",
-        publicId: `org-${orgId}-withdrawal-receipt-${Date.now()}`,
+        publicId: `org-${orgId}-withdrawal-${Date.now()}`,
         maxBytes: 5 * 1024 * 1024,
         missingConfigMessage: "Image uploads are not configured on the server.",
         invalidMessage: "Upload a valid JPG, PNG, WEBP, or GIF image.",
@@ -203,7 +203,7 @@ exports.settleClaim = async (req, res, next) => {
       const uploadResult = await uploadImageDataUrl({
         dataUrl,
         folder: "veagle-attendee/expense-receipts",
-        publicId: `org-${orgId}-settlement-receipt-${Date.now()}`,
+        publicId: `org-${orgId}-settlement-${Date.now()}`,
         maxBytes: 5 * 1024 * 1024,
         missingConfigMessage: "Image uploads are not configured on the server.",
         invalidMessage: "Upload a valid JPG, PNG, WEBP, or GIF image.",

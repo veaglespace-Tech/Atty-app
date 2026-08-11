@@ -256,7 +256,10 @@ const extractImageUrl = (post) => {
 
   return null;
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 module.exports = {
   clamp,
   parsePositiveInt,

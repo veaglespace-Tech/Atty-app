@@ -103,7 +103,11 @@ app.use("/api/roles", require("./routes/role.route"));
 app.use("/api/org/stock", require("./routes/stock.route"));
 app.use("/api/org/expenses", require("./routes/expenses.route"));
 app.use("/api/claims", require("./routes/claims.route"));
+<<<<<<< HEAD
 // app.use("/api/her-security", require("./routes/her-security.route"));
+=======
+app.use("/api/her-security", require("./routes/her-security.route"));
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "resource not found" });
 });
@@ -187,4 +191,8 @@ module.exports = {
   shutdownServer,
 };
 
+<<<<<<< HEAD
 // trigger restart 2
+=======
+// trigger restart
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1

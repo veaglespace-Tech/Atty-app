@@ -1507,12 +1507,141 @@ exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
+<<<<<<< HEAD
+    message: "Super Admin logged in successfully",
+    user: serializeSessionUser(sessionUser, null),
+=======
+    message: "Logged in successfully",
+    user: serializeSessionUser(sessionUser, org),
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
+    token,
+  });
+});
+
+<<<<<<< HEAD
+=======
+exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
+  const { email, password, otp, rememberMe } = req.body || {};
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail || !password || !otp) {
+    res.status(400);
+    throw new Error("Email, password, and OTP are required");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: authUserInclude,
+  });
+
+  if (!user) {
+    res.status(401);
+    throw new Error("Invalid credentials");
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    res.status(401);
+    throw new Error("Invalid credentials");
+  }
+
+  let authContext;
+  try {
+    authContext = resolveAuthMembership({
+      user,
+      loginAs: "SUPER_ADMIN",
+    });
+  } catch (error) {
+    res.status(error.statusCode || 401);
+    throw new Error(error.message || "Unauthorized role");
+  }
+
+  const currentRole = authContext.role;
+  if (currentRole !== "SUPER_ADMIN") {
+    res.status(403);
+    throw new Error("Access denied. Super Admin role required.");
+  }
+
+  // Verify OTP
+  const session = await prisma.verificationSession.findFirst({
+    where: {
+      email: normalizedEmail,
+      purpose: "SUPER_ADMIN_LOGIN",
+      status: "EMAIL_PENDING",
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!session) {
+    res.status(400);
+    throw new Error("OTP session expired or invalid. Please login again.");
+  }
+
+  const isOtpValid = await bcrypt.compare(String(otp), session.emailOtpHash);
+  if (!isOtpValid) {
+    // Increment attempts
+    await prisma.verificationSession.update({
+      where: { id: session.id },
+      data: { emailOtpAttempts: session.emailOtpAttempts + 1 }
+    });
+    res.status(400);
+    throw new Error("Invalid OTP");
+  }
+
+  // Mark session consumed
+  await prisma.verificationSession.update({
+    where: { id: session.id },
+    data: {
+      status: "VERIFIED",
+      emailVerifiedAt: new Date(),
+      consumedAt: new Date(),
+    }
+  });
+
+  // Proceed with login completion
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+    include: authUserWriteInclude,
+  });
+
+  const hydratedUser = mergeSessionUserState({
+    previousUser: user,
+    nextUser: updatedUser,
+    organization: null,
+  });
+
+  const sessionUser = {
+    ...hydratedUser,
+    orgId: null,
+    organization: null,
+  };
+
+  const tokenTTL = rememberMe ? 30 * 24 * 60 * 60 : SESSION_TOKEN_TTL_SECONDS;
+  const token = jwt.sign(
+    {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: currentRole,
+      orgId: null,
+    },
+    process.env.JWT_KEY,
+    { expiresIn: tokenTTL }
+  );
+
+  res.cookie("token", token, getSessionCookieOptions(rememberMe));
+
+  res.status(200).json({
+    success: true,
     message: "Super Admin logged in successfully",
     user: serializeSessionUser(sessionUser, null),
     token,
   });
 });
 
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 
 exports.searchOrganizations = asyncHandler(async (req, res) => {
   const query = String(req.query.query || "").trim();

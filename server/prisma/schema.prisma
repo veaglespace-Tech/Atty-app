@@ -103,10 +103,8 @@ model Attendance {
   notes                  String           @default("")
   punchInLocationMeta    Json?
   punchOutLocationMeta   Json?
-  reachedHomeAt          DateTime?
-  reachedHomeLatitude    Float?
-  reachedHomeLongitude   Float?
-  reachedHomeLocationMeta Json?
+<<<<<<< HEAD
+=======
   punchInSelfieUrl       String?
   punchInSelfiePublicId  String?
   punchOutSelfieUrl      String?
@@ -114,6 +112,21 @@ model Attendance {
   createdAt              DateTime         @default(now())
   updatedAt              DateTime         @updatedAt
   deletedAt              DateTime?
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
+  reachedHomeAt          DateTime?
+  reachedHomeLatitude    Float?
+  reachedHomeLongitude   Float?
+  reachedHomeLocationMeta Json?
+<<<<<<< HEAD
+  punchInSelfieUrl       String?
+  punchInSelfiePublicId  String?
+  punchOutSelfieUrl      String?
+  punchOutSelfiePublicId String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  deletedAt              DateTime?
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   markedBy               User?            @relation("AttendanceMarkedBy", fields: [markedById], references: [id], map: "Attendance_markedById_fkey")
   organization           Organization     @relation(fields: [orgId], references: [id], map: "Attendance_orgId_fkey")
   team                   Team?            @relation(fields: [teamId], references: [id], map: "Attendance_teamId_fkey")
@@ -202,6 +215,10 @@ model Organization {
   fundBalance          Float                       @default(0)
   hasERP               Boolean                     @default(false)
   attendances          Attendance[]
+<<<<<<< HEAD
+=======
+  regularizations      AttendanceRegularization[]
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   orgAdmin             User?                       @relation("OrganizationPrimaryAdmin", fields: [orgAdminId], references: [id], map: "Organization_orgAdminId_fkey")
   plan                 Plan?                       @relation(fields: [planId], references: [id], map: "Organization_planId_fkey")
   activeSubscription   Subscription?               @relation("OrganizationActiveSubscription", fields: [subscriptionId], references: [id], map: "Organization_subscriptionId_fkey")
@@ -214,7 +231,10 @@ model Organization {
   renewalIntents       SubscriptionRenewalIntent[]
   teams                Team[]
   users                User[]                      @relation("OrganizationUsers")
+<<<<<<< HEAD
   regularizations      AttendanceRegularization[]
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   stockItems           Stock[]                     @relation("OrganizationStock")
   expenseTransactions  ExpenseTransaction[]        @relation("OrganizationExpenseTransactions")
   expenseClaims        ExpenseClaim[]              @relation("OrganizationExpenseClaims")
@@ -577,6 +597,13 @@ model User {
   createdUsers                User[]                      @relation("UserCreatedBy")
   organization                Organization?               @relation("OrganizationUsers", fields: [orgId], references: [id], map: "User_orgId_fkey")
   referredByPartner           ReferralPartner?            @relation("ReferredUsers", fields: [referredByPartnerId], references: [id])
+<<<<<<< HEAD
+=======
+  expenseClaims               ExpenseClaim[]              @relation("UserExpenseClaims")
+  userInstruments             UserInstrument[]
+  departmentId                Int?
+  department                  Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   notificationReads           UserNotificationRead[]
   regularizationRequests      AttendanceRegularization[]  @relation("RegularizationRequests")
   regularizationReviews       AttendanceRegularization[]  @relation("RegularizationReviews")
@@ -728,10 +755,48 @@ model ReferralPartner {
   @@map("referral_partner")
 }
 
+<<<<<<< HEAD
+=======
+model Role {
+  code          String   @id
+  name          String
+  description   String?
+  dashboardPath String   @default("/member")
+  isSystem      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("role")
+}
+
+model AttendanceRegularization {
+  id           Int                  @id @default(autoincrement())
+  orgId        Int
+  userId       Int
+  date         String
+  reason       String               @db.Text
+  status       RegularizationStatus @default(PENDING)
+  reviewedById Int?
+  reviewedAt   DateTime?
+  reviewNote   String?              @default("")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  organization Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reviewer     User?                @relation("RegularizationReviews", fields: [reviewedById], references: [id])
+  user         User                 @relation("RegularizationRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([userId, date])
+  @@index([reviewedById], map: "attendance_regularization_reviewedById_fkey")
+  @@map("attendance_regularization")
+}
+
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 enum DiscountType {
   PERCENTAGE
   FLAT_AMOUNT
 }
+<<<<<<< HEAD
 
 model Role {
   code          String    @id
@@ -745,6 +810,8 @@ model Role {
   @@map("role")
 }
 
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 enum UserStatus {
   APPROVED
   PENDING
@@ -894,6 +961,57 @@ enum ClaimStatus {
   REJECTED
 }
 
+<<<<<<< HEAD
+=======
+
+model Stock {
+  id        Int          @id @default(autoincrement())
+  orgId     Int
+  name      String
+  type      String
+  quantity  Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  organization Organization @relation("OrganizationStock", fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("stock")
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  CLAIM_SETTLEMENT
+}
+
+model ExpenseTransaction {
+  id        Int             @id @default(autoincrement())
+  orgId     Int
+  type      TransactionType
+  amount          Float
+  title           String
+  description     String?         @db.Text
+  items           Json?
+  receiptUrl      String?
+  receiptPublicId String?
+  createdAt       DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  organization Organization   @relation("OrganizationExpenseTransactions", fields: [orgId], references: [id], onDelete: Cascade)
+  claims       ExpenseClaim[] @relation("ClaimTransaction")
+
+  @@index([orgId, type])
+  @@map("expense_transaction")
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 model ExpenseClaim {
   id              Int          @id @default(autoincrement())
   orgId           Int

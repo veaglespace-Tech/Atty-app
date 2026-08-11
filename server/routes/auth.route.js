@@ -11,8 +11,14 @@ const {
   forgotPassword,
   validateResetPasswordToken,
   resetPassword,
+<<<<<<< HEAD
   saveLead,
   verifySuperAdminOtp,
+=======
+  checkEmail,
+  verifySuperAdminOtp,
+  saveLead,
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   updatePushToken,
 } = require("../controllers/auth.controller");
 const {

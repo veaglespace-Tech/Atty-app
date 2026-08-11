@@ -316,7 +316,11 @@ const stopSosAlert = async (req, res) => {
             </tr>
             <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Phone:</td>
+<<<<<<< HEAD
               <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; word-break: break-word;">${user.phone || "N/A"}</td>
+=======
+              <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; word-break: break-word;">${user.phone || user.mobile || "N/A"}</td>
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
             </tr>
             <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Email:</td>
@@ -373,5 +377,9 @@ const stopSosAlert = async (req, res) => {
 
 module.exports = {
   sendSosAlert,
+<<<<<<< HEAD
+=======
+  sosAlert: sendSosAlert,
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   stopSosAlert,
 };

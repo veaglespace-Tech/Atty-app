@@ -46,8 +46,13 @@ const PERMISSIONS = Object.freeze({
     MANAGE: "roles:manage",
   },
   EXPENSES: {
+<<<<<<< HEAD
     MANAGE: "expenses:manage"
   }
+=======
+    MANAGE: "expenses:manage",
+  },
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 });
 
 // Helper to flatten the object into an array
@@ -102,7 +107,10 @@ const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.POSTS.VIEW,
     PERMISSIONS.POSTS.CREATE,
     PERMISSIONS.SUBSCRIPTION.VIEW,
+<<<<<<< HEAD
     PERMISSIONS.LOCATION.VIEW,
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
     PERMISSIONS.LOCATION.MANAGE,
   ]),
   MEMBER: Object.freeze([

@@ -4,5 +4,8 @@ node_modules
 
 .server-start.log
 .server-start.err.log
+<<<<<<< HEAD
 
+=======
+>>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 uploads/
