@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Loader2, Plus, RefreshCcw, Search, X } from "lucide-react";
+import { Archive, ArrowRight, Loader2, Plus, RefreshCcw, Search, X } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
 
 import PaginationControls from "@/components/dashboard/PaginationControls";
@@ -220,6 +220,14 @@ export default function SuperAdminOrganizationsPage() {
                 <span className="hidden sm:inline">Create Organization</span>
                 <span className="sm:hidden">Create</span>
               </button>
+
+              <Link
+                href="/super-admin/archived-organizations"
+                className="brand-btn brand-btn-secondary brand-btn-md text-rose-600 dark:text-rose-400"
+              >
+                <Archive size={16} />
+                <span>Archived Orgs</span>
+              </Link>
             </div>
 
             <div className="text-right mr-1">

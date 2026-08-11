@@ -10,6 +10,7 @@ import {
 } from "@/services/api/roleApi";
 import { addNotification } from "@/store/slices/notificationSlice";
 import { useDispatch } from "react-redux";
+import PaginationControls from "@/components/dashboard/PaginationControls";
 
 export default function SuperAdminRolesPage() {
   const dispatch = useDispatch();
@@ -23,6 +24,15 @@ export default function SuperAdminRolesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12); // Grid layout looks good with 12 (3 cols * 4 rows)
+
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, roles.length);
+  const totalPages = Math.ceil(roles.length / pageSize);
+  const paginatedRoles = roles.slice(startIndex, endIndex);
 
   const [form, setForm] = useState({
     code: "",
@@ -103,43 +113,58 @@ export default function SuperAdminRolesPage() {
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {roles.map((role) => (
-              <div key={role.code} className="brand-entity-card p-6 rounded-2xl border border-slate-200/60 bg-white shadow-sm dark:border-slate-700/60 dark:bg-slate-800/50">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
-                      <Shield className="h-5 w-5" />
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {paginatedRoles.map((role) => (
+                <div key={role.code} className="brand-entity-card p-6 rounded-2xl border border-slate-200/60 bg-white shadow-sm dark:border-slate-700/60 dark:bg-slate-800/50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                        <Shield className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white">{role.name}</h3>
+                        <p className="text-xs font-medium text-slate-500">{role.code}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900 dark:text-white">{role.name}</h3>
-                      <p className="text-xs font-medium text-slate-500">{role.code}</p>
+                  </div>
+                  <div className="mt-4 text-sm text-slate-600 dark:text-slate-300 min-h-[40px]">
+                    {role.description || "No description provided."}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-700">
+                    <span className="text-xs font-medium text-slate-500">Path: {role.dashboardPath}</span>
+                    <div className="flex gap-2">
+                      {!role.isSystem && (
+                        <>
+                          <button onClick={() => handleOpenModal(role)} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors">
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => handleDelete(role.code)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                      {role.isSystem && (
+                        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md dark:bg-slate-700 dark:text-slate-300">System</span>
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 text-sm text-slate-600 dark:text-slate-300 min-h-[40px]">
-                  {role.description || "No description provided."}
-                </div>
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-700">
-                  <span className="text-xs font-medium text-slate-500">Path: {role.dashboardPath}</span>
-                  <div className="flex gap-2">
-                    {!role.isSystem && (
-                      <>
-                        <button onClick={() => handleOpenModal(role)} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => handleDelete(role.code)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </>
-                    )}
-                    {role.isSystem && (
-                      <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md dark:bg-slate-700 dark:text-slate-300">System</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            <PaginationControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={roles.length}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[12, 24, 48, 96]}
+              label="roles"
+            />
           </div>
         )}
       </div>

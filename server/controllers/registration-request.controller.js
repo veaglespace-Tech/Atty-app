@@ -44,14 +44,19 @@ const resolveJoinIdentity = async (email, orgId) => {
     throw error;
   }
   
-  const userExists = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const userExists = await prisma.user.findFirst({
+    where: {
+      email: normalizedEmail,
+      deletedAt: null,
+    },
+  });
   if (userExists) {
     const error = new Error("An account with this email already exists");
     error.statusCode = 409;
     throw error;
   }
 
-  const existingRequest = await prisma.registrationRequest.findUnique({
+  let existingRequest = await prisma.registrationRequest.findUnique({
     where: {
       orgId_email: {
         orgId,
@@ -59,6 +64,23 @@ const resolveJoinIdentity = async (email, orgId) => {
       },
     },
   });
+
+  if (existingRequest) {
+    const activeUser = await prisma.user.findFirst({
+      where: {
+        email: normalizedEmail,
+        deletedAt: null,
+      },
+    });
+
+    if (!activeUser) {
+      // Old registration request belongs to a deleted/archived user, clean it up so fresh registration is allowed
+      await prisma.registrationRequest.delete({
+        where: { id: existingRequest.id },
+      }).catch(() => {});
+      existingRequest = null;
+    }
+  }
 
   return { normalizedEmail, existingRequest };
 };

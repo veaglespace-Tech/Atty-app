@@ -1147,10 +1147,6 @@ export default function WorkspaceSettingsPage() {
         }
         
         const dataUrl = canvas.toDataURL("image/jpeg", isProfile ? 0.85 : 0.75);
-<<<<<<< HEAD
-=======
-        URL.revokeObjectURL(img.src);
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
         resolve(dataUrl);
         URL.revokeObjectURL(img.src);
       };
@@ -1158,13 +1154,6 @@ export default function WorkspaceSettingsPage() {
         reject(new Error("Failed to read the selected image."));
         URL.revokeObjectURL(img.src);
       };
-<<<<<<< HEAD
-=======
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        reject(new Error("Failed to load image"));
-      };
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
     });
 
   const onProfileImageSelected = async (event) => {
@@ -1692,9 +1681,6 @@ export default function WorkspaceSettingsPage() {
           </div>
         )}
 
-<<<<<<< HEAD
-
-=======
         {/* Sticky Save Bar */}
         {(activeTab === "personal" || activeTab === "contact") && (
           <div
@@ -1719,7 +1705,6 @@ export default function WorkspaceSettingsPage() {
             </div>
           </div>
         )}
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
       </form>
 
       {/* Organization Settings */}

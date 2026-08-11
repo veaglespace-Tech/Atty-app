@@ -392,7 +392,7 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     where,
     select: attendanceRecordSelect,
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    take: 2500,
+    take: 100000,
   });
 
   let items = records.map(mapAttendanceRecord);
@@ -405,7 +405,7 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
   return {
     organization: org,
     summary,
-    items: items.slice(0, 2500),
+    items: items.slice(0, 100000),
     meta: {
       period: normalizedPeriod,
       periodLabel,

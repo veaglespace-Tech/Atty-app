@@ -1,5 +1,5 @@
 const prisma = require("../lib/prisma");
-const { minutesToHoursValue, toSummaryItem } = require("./common.service");
+const { minutesToHoursValue, toSummaryItem, todayKey } = require("./common.service");
 const { reportUserSelect } = require("./prisma-selects.service");
 const { mapUserForManagement } = require("./user-query.service");
 
@@ -121,7 +121,7 @@ const buildAttendanceReport = async ({
   };
 
   const groupedRows = await prisma.attendance.groupBy({
-    by: ["userId", "status"],
+    by: ["userId", "date", "status"],
     where,
     _count: {
       _all: true,
@@ -133,7 +133,7 @@ const buildAttendanceReport = async ({
 
   // --- 3. Calculate total working days in range (capped at today) ---
   const startDate = new Date(rangeFrom + "T00:00:00.000Z");
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = todayKey();
   const endStr = rangeTo > todayStr ? todayStr : rangeTo;
   const endDate = new Date(endStr + "T00:00:00.000Z");
   let totalDays = 0;
@@ -167,6 +167,7 @@ const buildAttendanceReport = async ({
       absentDays: 0,
       overtimeDays: 0,
       workedMinutes: 0,
+      daily: {},
     });
   }
 
@@ -182,6 +183,7 @@ const buildAttendanceReport = async ({
       absentDays: 0,
       overtimeDays: 0,
       workedMinutes: 0,
+      daily: {},
     };
 
     const status = String(row.status || "").toUpperCase();
@@ -194,6 +196,10 @@ const buildAttendanceReport = async ({
     else if (status === "OVERTIME") {
       current.overtimeDays += count;
       current.presentDays += count;
+    }
+
+    if (row.date) {
+      current.daily[row.date] = status;
     }
 
     current.workedMinutes += workedMinutes;

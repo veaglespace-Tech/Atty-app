@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Download, Loader2, RefreshCcw, Search } from "lucide-react";
+import { Archive, ArrowRight, CheckSquare, Download, Loader2, Power, RefreshCcw, Search, ShieldAlert, Trash2 } from "lucide-react";
 
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import useLocalPagination from "@/hooks/useLocalPagination";
-import { useExportAllSuperAdminUsersExcelMutation, useGetAllSuperAdminUsersQuery } from "@/services/api/superAdminApi";
+import {
+  useExportAllSuperAdminUsersExcelMutation,
+  useGetAllSuperAdminUsersQuery,
+  usePatchSuperAdminUserMutation,
+  useDeleteSuperAdminUserMutation,
+} from "@/services/api/superAdminApi";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
 import { ROLES, formatRoleLabel } from "@/utils/roles";
 
@@ -35,6 +40,8 @@ export default function SuperAdminUsersPage() {
 
   const { data, isLoading, isFetching, refetch } = useGetAllSuperAdminUsersQuery();
   const [exportAllUsersExcel] = useExportAllSuperAdminUsersExcelMutation();
+  const [patchSuperAdminUserMutation] = usePatchSuperAdminUserMutation();
+  const [deleteSuperAdminUserMutation] = useDeleteSuperAdminUserMutation();
 
   const users = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data]);
   const loading = isLoading || isFetching;
@@ -83,6 +90,89 @@ export default function SuperAdminUsersPage() {
     initialPageSize: DASHBOARD_PAGE_SIZE_OPTIONS.USERS?.[0] || 10,
     dependencies: [searchTerm, memberTypeFilter, genderFilter],
   });
+
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+  const [bulkMessage, setBulkMessage] = useState("");
+
+  const isAllSelected = paginatedItems.length > 0 && paginatedItems.every((u) => selectedUserIds.includes(u.id));
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      const pageIds = paginatedItems.map((u) => u.id);
+      setSelectedUserIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      const pageIds = paginatedItems.map((u) => u.id);
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const toggleSelectUser = (userId, e) => {
+    if (e) e.stopPropagation();
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleBulkBlock = async () => {
+    if (!selectedUserIds.length) return;
+    try {
+      setBulkLoading(true);
+      setBulkError("");
+      setBulkMessage("");
+      await Promise.all(
+        selectedUserIds.map((id) => patchSuperAdminUserMutation({ userId: id, active: false }).unwrap())
+      );
+      setBulkMessage(`Successfully blocked ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setBulkError(err?.data?.message || "Failed to block selected users");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkUnblock = async () => {
+    if (!selectedUserIds.length) return;
+    try {
+      setBulkLoading(true);
+      setBulkError("");
+      setBulkMessage("");
+      await Promise.all(
+        selectedUserIds.map((id) => patchSuperAdminUserMutation({ userId: id, active: true }).unwrap())
+      );
+      setBulkMessage(`Successfully unblocked ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setBulkError(err?.data?.message || "Failed to unblock selected users");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedUserIds.length) return;
+    if (!window.confirm(`Are you sure you want to delete/archive ${selectedUserIds.length} selected user(s)?`)) return;
+    try {
+      setBulkLoading(true);
+      setBulkError("");
+      setBulkMessage("");
+      await Promise.all(
+        selectedUserIds.map((id) => deleteSuperAdminUserMutation({ userId: id, reason: "Bulk deleted by Super Admin" }).unwrap())
+      );
+      setBulkMessage(`Successfully archived ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setBulkError(err?.data?.message || "Failed to delete selected users");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   const getStatusTone = (user) => {
     if (!user.isActive) {
@@ -149,6 +239,31 @@ export default function SuperAdminUsersPage() {
                 {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export Excel
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !bulkMode;
+                  setBulkMode(next);
+                  if (!next) setSelectedUserIds([]);
+                }}
+                className={`brand-btn brand-btn-md ${
+                  bulkMode || selectedUserIds.length > 0
+                    ? "brand-btn-primary"
+                    : "brand-btn-secondary text-blue-600 dark:text-blue-400"
+                }`}
+              >
+                <CheckSquare size={16} />
+                <span>{bulkMode || selectedUserIds.length > 0 ? "Exit Selection Mode" : "Bulk Select"}</span>
+              </button>
+
+              <Link
+                href="/super-admin/archived-users"
+                className="brand-btn brand-btn-secondary brand-btn-md text-rose-600 dark:text-rose-400"
+              >
+                <Archive size={16} />
+                <span>Archived Users</span>
+              </Link>
             </div>
 
             <div className="text-right mr-1">
@@ -242,6 +357,66 @@ export default function SuperAdminUsersPage() {
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-300">No users found.</p>
         ) : (
           <div className="mt-5 space-y-4">
+            {bulkError ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{bulkError}</p>
+            ) : null}
+            {bulkMessage ? (
+              <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{bulkMessage}</p>
+            ) : null}
+
+            {selectedUserIds.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/90 p-4 dark:border-blue-500/20 dark:bg-blue-950/60 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">
+                    {selectedUserIds.length}
+                  </span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-white">
+                    {selectedUserIds.length} user(s) selected
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBulkUnblock}
+                    disabled={bulkLoading}
+                    className="brand-btn brand-btn-primary brand-btn-sm"
+                  >
+                    {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
+                    Activate / Unblock Selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBulkBlock}
+                    disabled={bulkLoading}
+                    className="brand-btn brand-btn-danger brand-btn-sm"
+                  >
+                    {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <ShieldAlert size={14} />}
+                    Block Selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={bulkLoading}
+                    className="brand-btn brand-btn-danger brand-btn-sm"
+                  >
+                    {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    Delete Selected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
+
             <p className="mobile-hide-helper text-xs font-semibold text-slate-500 dark:text-slate-300">
               Showing {startIndex}-{endIndex} of {filteredUsers.length} users
             </p>
@@ -297,6 +472,17 @@ export default function SuperAdminUsersPage() {
               <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
                 <thead className="bg-slate-50/90 dark:bg-slate-900/85">
                   <tr>
+                    {(bulkMode || selectedUserIds.length > 0) && (
+                      <th className="w-10 px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={toggleSelectAll}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          title="Select all visible users"
+                        />
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                       User
                     </th>
@@ -318,8 +504,22 @@ export default function SuperAdminUsersPage() {
                   {paginatedItems.map((user) => (
                     <tr
                       key={user.id}
-                      className="transition hover:bg-blue-50/55 dark:hover:bg-slate-900/55"
+                      className={`transition ${
+                        selectedUserIds.includes(user.id)
+                          ? "bg-blue-50/70 dark:bg-blue-950/40"
+                          : "hover:bg-blue-50/55 dark:hover:bg-slate-900/55"
+                      }`}
                     >
+                      {(bulkMode || selectedUserIds.length > 0) && (
+                        <td className="w-10 px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(user.id)}
+                            onChange={(e) => toggleSelectUser(user.id, e)}
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-4">
                         <p className="font-semibold text-slate-900 dark:text-white">{user.name}</p>
                         <p className="text-[12px] text-slate-500">{user.email}</p>

@@ -1307,8 +1307,14 @@ exports.login = asyncHandler(async (req, res) => {
         emailOtpExpiresAt: expiresAt,
         contactOtpExpiresAt: expiresAt, // Required by schema
         expiresAt: expiresAt,
-      }
+      },
     });
+
+    console.log(`\n==============================================`);
+    console.log(`🔑 [SUPER ADMIN OTP GENERATED]`);
+    console.log(`   Email: ${normalizedEmail}`);
+    console.log(`   OTP  : ${otp}`);
+    console.log(`==============================================\n`);
 
     try {
       const emailHtml = buildEmailTemplate({
@@ -1434,41 +1440,59 @@ exports.verifySuperAdminOtp = asyncHandler(async (req, res) => {
     throw new Error("Access denied. Super Admin role required.");
   }
 
-  // Verify OTP
-  const session = await prisma.verificationSession.findFirst({
+  const cleanOtp = String(otp || "").trim().replace(/\s+/g, "");
+
+  // Fetch all recent non-expired OTP sessions for this email (last 10 minutes)
+  const sessions = await prisma.verificationSession.findMany({
     where: {
       email: normalizedEmail,
       purpose: "SUPER_ADMIN_LOGIN",
-      status: "EMAIL_PENDING",
       expiresAt: { gt: new Date() },
     },
     orderBy: { createdAt: "desc" },
+    take: 10,
   });
 
-  if (!session) {
+  console.log(`\n==============================================`);
+  console.log(`🔍 [SUPER ADMIN OTP VERIFYING]`);
+  console.log(`   Email: ${normalizedEmail}`);
+  console.log(`   Input OTP: ${cleanOtp}`);
+  console.log(`   Active Sessions Count: ${sessions.length}`);
+  console.log(`==============================================\n`);
+
+  if (!sessions.length) {
     res.status(400);
-    throw new Error("OTP session expired or invalid. Please login again.");
+    throw new Error("OTP session expired or invalid. Please request a new OTP.");
   }
 
-  const isOtpValid = await bcrypt.compare(String(otp), session.emailOtpHash);
-  if (!isOtpValid) {
-    // Increment attempts
+  let matchedSession = null;
+  for (const session of sessions) {
+    if (!session.emailOtpHash) continue;
+    const isValid = await bcrypt.compare(cleanOtp, session.emailOtpHash);
+    console.log(` -> Session #${session.id} (Status: ${session.status}): Match = ${isValid}`);
+    if (isValid) {
+      matchedSession = session;
+      break;
+    }
+  }
+
+  if (!matchedSession) {
     await prisma.verificationSession.update({
-      where: { id: session.id },
-      data: { emailOtpAttempts: session.emailOtpAttempts + 1 }
+      where: { id: sessions[0].id },
+      data: { emailOtpAttempts: sessions[0].emailOtpAttempts + 1 },
     });
     res.status(400);
-    throw new Error("Invalid OTP");
+    throw new Error("Invalid OTP. Please enter the verification code sent to your email.");
   }
 
   // Mark session consumed
   await prisma.verificationSession.update({
-    where: { id: session.id },
+    where: { id: matchedSession.id },
     data: {
       status: "VERIFIED",
       emailVerifiedAt: new Date(),
       consumedAt: new Date(),
-    }
+    },
   });
 
   // Proceed with login completion

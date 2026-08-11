@@ -36,8 +36,9 @@ exports.buildExportWorkbookBuffer = ({
     s: { r: index, c: 0 },
     e: { r: index, c: lastColumnIndex },
   }));
+  const totalRows = headerRowNumber + normalizedRows.length;
   worksheet["!autofilter"] = {
-    ref: `A${headerRowNumber}:${lastColumnLabel}${headerRowNumber}`,
+    ref: `A${headerRowNumber}:${lastColumnLabel}${totalRows}`,
   };
 
   const workbook = xlsx.utils.book_new();

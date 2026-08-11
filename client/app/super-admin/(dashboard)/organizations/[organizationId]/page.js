@@ -14,7 +14,9 @@ import {
   MapPin,
   Pencil,
   Power,
+  RotateCcw,
   Save,
+  Trash2,
   Users,
   UsersRound,
   X,
@@ -30,6 +32,8 @@ import {
   useGetSuperAdminPlansQuery,
   usePatchSuperAdminOrganizationMutation,
   useUpdateOrganizationAccessMutation,
+  useArchiveOrganizationMutation,
+  useRestoreOrganizationMutation,
 } from "@/services/api/superAdminApi";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
@@ -199,6 +203,13 @@ export default function OrganizationDetailPage() {
   const users = Array.isArray(usersData?.items) ? usersData.items : [];
   const teams = Array.isArray(teamsData?.items) ? teamsData.items : [];
 
+  const [archiveOrganizationMutation] = useArchiveOrganizationMutation();
+  const [restoreOrganizationMutation] = useRestoreOrganizationMutation();
+  const [restoring, setRestoring] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveReason, setArchiveReason] = useState("");
+
   useEffect(() => {
     setForm(getFormDefaults(item));
   }, [item]);
@@ -268,6 +279,41 @@ export default function OrganizationDetailPage() {
     }
   };
 
+  const handleArchiveOrg = async () => {
+    try {
+      setArchiving(true);
+      setError("");
+      setMessage("");
+
+      await archiveOrganizationMutation({
+        organizationId,
+        reason: archiveReason.trim() || "Organization archived by Super Admin",
+      }).unwrap();
+
+      setShowArchiveModal(false);
+      router.push("/super-admin/organizations");
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to archive organization"));
+      setArchiving(false);
+    }
+  };
+
+  const handleRestoreOrg = async () => {
+    try {
+      setRestoring(true);
+      setError("");
+      setMessage("");
+
+      await restoreOrganizationMutation(organizationId).unwrap();
+      setMessage("Organization restored successfully!");
+      await refetch();
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError, "Failed to restore organization"));
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   if (!Number.isFinite(organizationId) || organizationId <= 0) {
     return (
       <section className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm font-semibold text-red-700">
@@ -316,13 +362,36 @@ export default function OrganizationDetailPage() {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("profile")}
-          className="brand-btn brand-btn-primary brand-btn-sm"
-        >
-          <Pencil size={14} /> Profile
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className="brand-btn brand-btn-primary brand-btn-sm"
+          >
+            <Pencil size={14} /> Profile
+          </button>
+
+          {item.deletedAt || !item.active ? (
+            <button
+              type="button"
+              onClick={handleRestoreOrg}
+              disabled={restoring}
+              className="brand-btn brand-btn-primary brand-btn-sm"
+            >
+              {restoring ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+              Restore Organization
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowArchiveModal(true)}
+              disabled={archiving}
+              className="brand-btn brand-btn-danger brand-btn-sm"
+            >
+              <Trash2 size={14} /> Delete Organization
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="brand-entity-card overflow-hidden rounded-[2rem] p-6 sm:p-8">
@@ -336,6 +405,11 @@ export default function OrganizationDetailPage() {
               {item.name}
             </h1>
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              {(item.deletedAt || !item.active) && (
+                <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-black uppercase text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
+                  DELETED / ARCHIVED ORGANIZATION
+                </span>
+              )}
               <StatusBadge value={item.code || "ORG"} />
               <StatusBadge value={item.subscriptionStatus || "TRIAL"} />
               {item.hasERP && <StatusBadge value="ERP ACTIVE" />}
@@ -422,6 +496,65 @@ export default function OrganizationDetailPage() {
         organization={item}
         onExtended={async () => { await refetch(); setMessage("Plan extended successfully."); }}
       />
+
+      {showArchiveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                <Trash2 size={20} />
+                <h3 className="text-lg font-black">Archive / Delete Organization</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowArchiveModal(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to delete organization <strong>{item.name}</strong>?
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              The organization and all active user accounts will be archived, unique org codes freed, and access revoked.
+            </p>
+
+            <div className="mt-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Reason for deletion (Optional)
+              </label>
+              <textarea
+                value={archiveReason}
+                onChange={(e) => setArchiveReason(e.target.value)}
+                placeholder="e.g. Account canceled, test organization, etc."
+                rows={3}
+                className="dashboard-field-control w-full p-3 text-sm"
+              />
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowArchiveModal(false)}
+                className="brand-btn brand-btn-secondary brand-btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleArchiveOrg}
+                disabled={archiving}
+                className="brand-btn brand-btn-danger brand-btn-sm"
+              >
+                {archiving ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Confirm Deletion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === "users" ? (
         <UsersTab users={users} isLoading={isLoadingUsers} organizationId={organizationId} />

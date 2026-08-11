@@ -442,7 +442,7 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
     value: s.value,
   }));
 
-  const excelBuffer = await buildExportWorkbookBuffer({
+  const excelBuffer = buildExportWorkbookBuffer({
     title: "ORGANIZATION ATTENDANCE LOGS",
     subtitleLines,
     summaryCards,

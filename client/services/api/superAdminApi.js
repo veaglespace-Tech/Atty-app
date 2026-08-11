@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAArchivedOrgs", "SAArchivedUsers", "SAPlans", "SAPayments", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -96,6 +96,44 @@ export const superAdminApi = createApi({
         body: payload,
       }),
       invalidatesTags: ["SAOrganizations", "SADashboard"],
+    }),
+    archiveOrganization: builder.mutation({
+      query: ({ organizationId, reason }) => ({
+        url: `/super-admin/organizations/${organizationId}/archive`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: ["SAOrganizations", "SAArchivedOrgs", "SADashboard"],
+    }),
+    restoreOrganization: builder.mutation({
+      query: (organizationId) => ({
+        url: `/super-admin/organizations/${organizationId}/restore`,
+        method: "POST",
+      }),
+      invalidatesTags: ["SAOrganizations", "SAArchivedOrgs", "SADashboard"],
+    }),
+    getArchivedOrganizations: builder.query({
+      query: () => "/super-admin/archived-organizations",
+      providesTags: ["SAArchivedOrgs"],
+    }),
+    deleteSuperAdminUser: builder.mutation({
+      query: ({ userId, reason }) => ({
+        url: `/super-admin/users/${userId}`,
+        method: "DELETE",
+        body: { reason },
+      }),
+      invalidatesTags: ["SAOrganizations", "SAArchivedUsers", "SADashboard"],
+    }),
+    getSuperAdminArchivedUsers: builder.query({
+      query: () => "/super-admin/archived-users",
+      providesTags: ["SAArchivedUsers"],
+    }),
+    restoreSuperAdminUser: builder.mutation({
+      query: (userId) => ({
+        url: `/super-admin/archived-users/${userId}/restore`,
+        method: "POST",
+      }),
+      invalidatesTags: ["SAOrganizations", "SAArchivedUsers", "SADashboard"],
     }),
     getSuperAdminPlans: builder.query({
       query: () => "/super-admin/plans",
@@ -384,4 +422,10 @@ export const {
   useDownloadDatabaseBackupMutation,
   useExportSuperAdminOrganizationUsersExcelMutation,
   useExportAllSuperAdminUsersExcelMutation,
+  useArchiveOrganizationMutation,
+  useRestoreOrganizationMutation,
+  useGetArchivedOrganizationsQuery,
+  useDeleteSuperAdminUserMutation,
+  useGetSuperAdminArchivedUsersQuery,
+  useRestoreSuperAdminUserMutation,
 } = superAdminApi;
