@@ -158,7 +158,7 @@ export default function TeamLeaderTeamDetailPage() {
         </Pressable>
         <View className="flex-row items-center gap-4">
           <View className="h-14 w-14 rounded-[20px] bg-white/20 dark:bg-slate-800 items-center justify-center border border-white/30 dark:border-slate-700">
-            <Component size={28} color="#ffffff" />
+            <Users size={28} color="#ffffff" />
           </View>
           <View className="flex-1">
             <Text className="text-2xl font-black text-white" numberOfLines={1}>{team.name}</Text>
@@ -178,7 +178,7 @@ export default function TeamLeaderTeamDetailPage() {
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-xs font-black uppercase tracking-widest text-slate-500">Location Settings</Text>
             <View className="h-8 w-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 items-center justify-center border border-indigo-100 dark:border-indigo-800/50">
-              <LocateFixed size={14} className="text-indigo-500" />
+              <LocateFixed size={14} color="#6366f1" />
             </View>
           </View>
           
@@ -234,7 +234,7 @@ export default function TeamLeaderTeamDetailPage() {
             <View className="flex-row gap-2 mt-1">
               <Pressable onPress={setGeo} disabled={!canUpdateTeams || settingGeo}
                 className={`flex-1 py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${settingGeo ? "bg-slate-100 dark:bg-slate-800" : "bg-slate-100 dark:bg-slate-800"}`}>
-                {settingGeo ? <ActivityIndicator size="small" color="#2563eb" /> : <LocateFixed size={16} className="text-slate-700 dark:text-slate-300" />}
+                {settingGeo ? <ActivityIndicator size="small" color="#2563eb" /> : <LocateFixed size={16} color="#334155" />}
                 <Text className="text-slate-700 dark:text-slate-300 text-sm font-bold">Set Geo</Text>
               </Pressable>
               <Pressable onPress={saveBasics} disabled={!canUpdateTeams || savingBasics}

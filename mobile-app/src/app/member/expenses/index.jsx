@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Alert, Linking } from "react-native";
-import { Receipt, Plus, FileText, ChevronRight } from "lucide-react-native";
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Alert, Linking, TextInput } from "react-native";
+import { Receipt, Plus, FileText, ChevronRight, Search, Filter } from "lucide-react-native";
 import { useSelector } from "react-redux";
 import { API_BASE_URL } from "@/services/api/baseApi";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -13,6 +13,15 @@ export default function MemberExpenses() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const fetchClaims = useCallback(async () => {
     if (!user?.organization?.hasERP) {
@@ -21,7 +30,8 @@ export default function MemberExpenses() {
     }
     
     try {
-      const res = await fetch(`${API_BASE_URL}/claims/my-claims`, {
+      const queryParams = new URLSearchParams({ search: debouncedSearch, status: filterStatus }).toString();
+      const res = await fetch(`${API_BASE_URL}/claims/my-claims?${queryParams}`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -38,7 +48,7 @@ export default function MemberExpenses() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user, token]);
+  }, [user, token, debouncedSearch, filterStatus]);
 
   useEffect(() => {
     fetchClaims();
@@ -118,6 +128,47 @@ export default function MemberExpenses() {
             <Text className="text-2xl font-black text-slate-900 dark:text-white">My Claims</Text>
             <Text className="text-sm font-medium text-slate-500 mt-1">Submit and track your expenses</Text>
           </View>
+        </View>
+
+        {/* Filters */}
+        <View className="mb-4">
+          <View className="flex-row gap-2 mb-3">
+            <View className="flex-1 flex-row items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2">
+              <Search size={16} className="text-slate-400" />
+              <TextInput 
+                value={searchQuery} 
+                onChangeText={setSearchQuery} 
+                placeholder="Search claims..." 
+                placeholderTextColor="#94a3b8" 
+                className="flex-1 ml-2 text-sm text-slate-900 dark:text-white"
+              />
+            </View>
+            <Pressable 
+              onPress={() => setShowFilters(!showFilters)}
+              className={`px-3 py-2 rounded-xl flex-row items-center justify-center border ${showFilters ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800' : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800'}`}
+            >
+              <Filter size={16} className={showFilters ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"} />
+            </Pressable>
+          </View>
+
+          {showFilters && (
+            <View className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Filter by Status
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                {['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'SETTLED'].map(status => (
+                  <Pressable 
+                    key={status} 
+                    onPress={() => setFilterStatus(status)}
+                    className={`px-3 py-1.5 rounded-lg mr-2 border ${filterStatus === status ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
+                  >
+                    <Text className={`text-xs font-bold ${filterStatus === status ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>{status}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
 
         {/* Claims List */}

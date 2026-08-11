@@ -26,9 +26,9 @@ const AnimatedLogo = ({ className, style, resizeMode = "contain" }) => {
   });
 
   return (
-    <Animated.View style={[style, animatedStyle]} className={className}>
+    <Animated.View style={[style, animatedStyle, { alignItems: 'center', justifyContent: 'center' }]} className={className}>
       <Image
-        source={require('../../assets/images/logo1-clean.webp')}
+        source={require('../../assets/images/veagle-space-logo.webp')}
         style={{ width: '100%', height: '100%' }}
         resizeMode={resizeMode}
       />

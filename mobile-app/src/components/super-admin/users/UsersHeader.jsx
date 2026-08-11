@@ -37,4 +37,4 @@ const UsersHeader = ({ loading, downloadingExcel, usersLength, totalItems, refet
   );
 };
 
-export default React.memo(UsersHeader);
+export default UsersHeader;

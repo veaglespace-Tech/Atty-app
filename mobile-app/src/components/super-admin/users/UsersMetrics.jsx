@@ -20,4 +20,4 @@ const UsersMetrics = ({ totalUsers, activeUsersCount, superAdminsCount }) => {
   );
 };
 
-export default React.memo(UsersMetrics);
+export default UsersMetrics;

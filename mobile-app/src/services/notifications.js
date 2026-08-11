@@ -1,21 +1,28 @@
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from './api/baseApi';
 import { store } from '@/store';
-
-// Configure foreground notification presentation
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    priority: Notifications.AndroidNotificationPriority?.HIGH ?? 4,
-  }),
-});
+let Notifications = null;
+try {
+  Notifications = require('expo-notifications');
+  
+  // Configure foreground notification presentation
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      priority: Notifications.AndroidNotificationPriority?.HIGH ?? 4,
+    }),
+  });
+} catch (error) {
+  console.warn('[Notifications] expo-notifications is not available (expected in Expo Go SDK 53+).');
+}
 
 export async function registerForPushNotificationsAsync() {
+  if (!Notifications) return null;
+
   // Remote push notifications are not supported on Web without custom service workers
   if (Platform.OS === 'web') {
     return null;
@@ -117,6 +124,7 @@ export async function sendPushTokenToServer(pushToken) {
 }
 
 export function addNotificationResponseListener(callback) {
+  if (!Notifications) return { remove: () => {} };
   try {
     return Notifications.addNotificationResponseReceivedListener(callback);
   } catch (error) {
@@ -126,6 +134,7 @@ export function addNotificationResponseListener(callback) {
 }
 
 export function addNotificationReceivedListener(callback) {
+  if (!Notifications) return { remove: () => {} };
   try {
     return Notifications.addNotificationReceivedListener(callback);
   } catch (error) {
@@ -135,6 +144,7 @@ export function addNotificationReceivedListener(callback) {
 }
 
 export async function showLocalNotification({ title, body, data = {} }) {
+  if (!Notifications) return;
   try {
     await Notifications.scheduleNotificationAsync({
       content: {

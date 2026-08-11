@@ -596,7 +596,7 @@ export default function SettingsScreen() {
                     <View className="flex-1">
                       <View className="flex-row flex-wrap items-center gap-2 mb-3">
                         <Pressable onPress={pickImage} className="flex-row items-center justify-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl px-4 py-3 active:bg-blue-100 dark:active:bg-blue-500/20">
-                          <ImageUp size={16} className="text-blue-600 dark:text-blue-400" />
+                          <ImageUp size={16} color="#2563eb" />
                           <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
                             {currentProfileImageUrl && !removeProfileImage ? "Change Photo" : "Upload Photo"}
                           </Text>
@@ -604,7 +604,7 @@ export default function SettingsScreen() {
 
                         {(removeProfileImage || profileImageDataUrl || user?.profileImageUrl) && (
                           <Pressable onPress={toggleProfileImageRemoval} className="flex-row items-center justify-center gap-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl px-4 py-3 active:bg-rose-100 dark:active:bg-rose-500/20">
-                            <Trash2 size={16} className="text-rose-600 dark:text-rose-400" />
+                            <Trash2 size={16} color="#e11d48" />
                             <Text className="text-sm font-semibold text-rose-700 dark:text-rose-300">
                               {removeProfileImage ? "Keep Current" : profileImageDataUrl ? "Clear Selection" : "Remove"}
                             </Text>
@@ -628,7 +628,7 @@ export default function SettingsScreen() {
                   
                   <View className="flex-row flex-wrap gap-2 mb-3">
                     <Pressable onPress={handlePickDocument} className="flex-row items-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl px-4 py-3">
-                      <FileText size={16} className="text-blue-600 dark:text-blue-400" />
+                      <FileText size={16} color="#2563eb" />
                       <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
                         {documentDataUrl || user?.documentUrl ? "Replace Document" : "Upload Document"}
                       </Text>
@@ -636,7 +636,7 @@ export default function SettingsScreen() {
 
                     {(removeDocument || documentDataUrl || user?.documentUrl) && (
                       <Pressable onPress={toggleDocumentRemoval} className="flex-row items-center gap-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl px-4 py-3">
-                        <Trash2 size={16} className="text-rose-600 dark:text-rose-400" />
+                        <Trash2 size={16} color="#e11d48" />
                         <Text className="text-sm font-semibold text-rose-700 dark:text-rose-300">
                           {removeDocument ? "Keep Document" : documentDataUrl ? "Clear Selection" : "Remove"}
                         </Text>
@@ -645,7 +645,7 @@ export default function SettingsScreen() {
                     
                     {user?.documentUrl && !removeDocument && !documentDataUrl && (
                       <Pressable onPress={() => WebBrowser.openBrowserAsync(user.documentUrl)} className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3">
-                        <Link2 size={16} className="text-slate-600 dark:text-slate-300" />
+                        <Link2 size={16} color="#475569" />
                         <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">View Current</Text>
                       </Pressable>
                     )}
@@ -691,7 +691,7 @@ export default function SettingsScreen() {
             
             <View className="flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 mb-3">
               <View className="h-10 w-10 bg-blue-100 dark:bg-blue-500/20 rounded-full items-center justify-center">
-                <Mail size={20} className="text-blue-600 dark:text-blue-400" />
+                <Mail size={20} color="#2563eb" />
               </View>
               <View>
                 <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Email Support</Text>
@@ -701,7 +701,7 @@ export default function SettingsScreen() {
             
             <View className="flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
               <View className="h-10 w-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-full items-center justify-center">
-                <PhoneCall size={20} className="text-emerald-600 dark:text-emerald-400" />
+                <PhoneCall size={20} color="#10b981" />
               </View>
               <View>
                 <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Call Us</Text>
@@ -718,7 +718,7 @@ export default function SettingsScreen() {
               <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 mb-6">
                 <View className="flex-row items-center gap-3 mb-4">
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/20">
-                    <Link2 size={18} className="text-blue-600 dark:text-blue-400" />
+                    <Link2 size={18} color="#2563eb" />
                   </View>
                   <View className="flex-1">
                     <Text className="text-base font-black text-slate-900 dark:text-white">Referral Link</Text>
@@ -738,12 +738,12 @@ export default function SettingsScreen() {
                       >
                         {copiedReferralCode ? (
                           <>
-                            <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
+                            <CheckCircle2 size={14} color="#10b981" />
                             <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Copied</Text>
                           </>
                         ) : (
                           <>
-                            <Copy size={14} className="text-slate-500 dark:text-slate-400" />
+                            <Copy size={14} color="#64748b" />
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Code</Text>
                           </>
                         )}
@@ -763,12 +763,12 @@ export default function SettingsScreen() {
                       >
                         {copiedReferral ? (
                           <>
-                            <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400" />
+                            <CheckCircle2 size={14} color="#10b981" />
                             <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Copied</Text>
                           </>
                         ) : (
                           <>
-                            <Copy size={14} className="text-slate-500 dark:text-slate-400" />
+                            <Copy size={14} color="#64748b" />
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Copy Link</Text>
                           </>
                         )}

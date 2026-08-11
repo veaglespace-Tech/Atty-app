@@ -101,6 +101,7 @@ export default function OrgLayout() {
         <Tabs.Screen name="settings/personal" options={{ href: null }} />
         <Tabs.Screen name="settings/security" options={{ href: null }} />
         <Tabs.Screen name="settings/workspace" options={{ href: null }} />
+        <Tabs.Screen name="subscription" options={{ href: null }} />
         <Tabs.Screen name="teams/[id]" options={{ href: null }} />
         <Tabs.Screen name="teams" options={{ href: null }} />
         <Tabs.Screen name="users/[id]" options={{ href: null }} />

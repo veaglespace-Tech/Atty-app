@@ -45,6 +45,7 @@ export default function OrgInstrumentsPage() {
   const [activeTab, setActiveTab] = useState("instruments"); // 'instruments' | 'assign' | 'assigned_users'
   const [selectedInstrumentId, setSelectedInstrumentId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [listSearchQuery, setListSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState({}); // { [userId]: assetId }
 
   // Modals
@@ -87,6 +88,16 @@ export default function OrgInstrumentsPage() {
     refetchInstruments();
     refetchUsers();
   };
+
+  const filteredInstrumentsList = useMemo(() => {
+    if (!listSearchQuery.trim()) return instruments;
+    const q = listSearchQuery.toLowerCase();
+    return instruments.filter(
+      (i) =>
+        (i.name && i.name.toLowerCase().includes(q)) ||
+        (i.description && i.description.toLowerCase().includes(q))
+    );
+  }, [listSearchQuery, instruments]);
 
   // Filtered users for Assign tab
   const filteredUsers = useMemo(() => {
@@ -328,13 +339,21 @@ export default function OrgInstrumentsPage() {
               Manage organization physical assets and assignments
             </Text>
           </View>
-          <Pressable
-            onPress={() => setCreateModalOpen(true)}
-            className="flex-row items-center bg-blue-600 px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
-          >
-            <Plus size={16} color="#ffffff" style={{ marginRight: 4 }} />
-            <Text className="text-white font-bold text-xs">New</Text>
-          </Pressable>
+          <View className="flex-row gap-2">
+            <Pressable
+              onPress={handleExportCsv}
+              className="flex-row items-center bg-green-100 dark:bg-green-900/30 px-3 py-2 rounded-xl active:scale-95 transition-transform"
+            >
+              <Download size={16} color="#10b981" />
+            </Pressable>
+            <Pressable
+              onPress={() => setCreateModalOpen(true)}
+              className="flex-row items-center bg-blue-600 px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition-transform"
+            >
+              <Plus size={16} color="#ffffff" style={{ marginRight: 4 }} />
+              <Text className="text-white font-bold text-xs">New</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* TABS SELECTOR */}
@@ -415,10 +434,28 @@ export default function OrgInstrumentsPage() {
 
       {/* TAB 1: INSTRUMENTS LIST */}
       {activeTab === "instruments" && (
-        <FlatList
-          data={instruments}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        <View className="flex-1">
+          <View className="px-4 py-2">
+            <View className="flex-row items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm">
+              <Search size={16} className="text-slate-400" />
+              <TextInput 
+                value={listSearchQuery} 
+                onChangeText={setListSearchQuery} 
+                placeholder="Search instruments..." 
+                placeholderTextColor="#94a3b8" 
+                className="flex-1 ml-2 text-sm text-slate-900 dark:text-white"
+              />
+              {listSearchQuery ? (
+                <Pressable onPress={() => setListSearchQuery("")}>
+                  <X size={14} color="#94a3b8" />
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+          <FlatList
+            data={filteredInstrumentsList}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -473,6 +510,7 @@ export default function OrgInstrumentsPage() {
             </View>
           )}
         />
+        </View>
       )}
 
       {/* TAB 2: ASSIGN INSTRUMENTS */}
@@ -666,15 +704,6 @@ export default function OrgInstrumentsPage() {
                 <Text className="text-xs font-black uppercase tracking-wider text-slate-400">
                   Assigned Users Directory
                 </Text>
-                <Pressable
-                  onPress={handleExportCsv}
-                  className="flex-row items-center bg-slate-900 dark:bg-slate-100 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
-                >
-                  <Download size={14} color={Platform.OS === 'ios' ? "#ffffff" : "#0f172a"} style={{ marginRight: 4 }} />
-                  <Text className="text-white dark:text-slate-900 font-bold text-xs">
-                    Export CSV
-                  </Text>
-                </Pressable>
               </View>
 
               {/* FILTER BY INSTRUMENT */}

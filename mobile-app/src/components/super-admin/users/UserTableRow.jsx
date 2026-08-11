@@ -53,4 +53,4 @@ const UserTableRow = ({ user }) => {
   );
 };
 
-export default React.memo(UserTableRow);
+export default UserTableRow;

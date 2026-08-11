@@ -103,16 +103,17 @@ const getTabsForRole = (user) => {
     return [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
-      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
-      { title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" },
-      { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
+      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
       { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" },
-      { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
+      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
+      { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
+      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
       { title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" },
+      { title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" },
       { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
+      { title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" },
+      { title: "Funds & Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
       { title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" },
       { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
     ];

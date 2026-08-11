@@ -3,7 +3,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { View, Text, Pressable, ScrollView, RefreshControl, TextInput, Modal, ActivityIndicator, Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import { 
-  Building2, Plus, Search, Trash2, Edit2, Users, Check, X, UserCheck, UserX, FolderPlus, UserCog, UserPlus, Shield, Download, ChevronDown 
+  Building2, Plus, Search, Trash2, Edit2, Users, Check, X, UserCheck, UserX, FolderPlus, UserCog, UserPlus, Shield, Download, ChevronDown, FileText 
 } from "lucide-react-native";
 import { useSelector } from "react-redux";
 import { 
@@ -19,6 +19,7 @@ import {
   useDownloadOrgDepartmentsPdfMutation
 } from "@/services/api/orgApi";
 import { PERMISSIONS, hasPermission } from "@/utils/roles";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const getErrorMessage = (error, fallback) => error?.data?.message || error?.error || fallback;
 
@@ -56,6 +57,10 @@ export default function OrgDepartmentsPage() {
   const [deleteDept] = useDeleteOrgDepartmentMutation();
   // We alias the imports below to match the client's names if they differed, but we'll use whatever orgApi exports.
   const [patchOrgUser] = usePatchOrgUserMutation();
+  const [downloadExcelMutation] = useDownloadOrgDepartmentsExcelMutation();
+  const [downloadPdfMutation] = useDownloadOrgDepartmentsPdfMutation();
+  const [downloadingExcelId, setDownloadingExcelId] = useState(null); // 'all' or specific dept id
+  const [downloadingPdfId, setDownloadingPdfId] = useState(null);
 
   const departments = useMemo(() => deptData?.items || [], [deptData]);
   const users = useMemo(() => usersData?.items || [], [usersData]);
@@ -156,6 +161,40 @@ export default function OrgDepartmentsPage() {
   // NOTE: For brevity in batch assignments, the mobile app will rely on patchOrgUser or standard UI if the missing mutation wasn't perfectly imported.
   // We can just use the member edit modal for simplicity or implement full batch if desired. We will stick to the modal for members to ensure parity with client's individual assignment.
 
+  const handleDownloadExcel = async (deptId = null) => {
+    try {
+      setDownloadingExcelId(deptId ? String(deptId) : 'all');
+      const params = deptId ? `?departmentId=${deptId}` : "";
+      const blob = await downloadExcelMutation(params).unwrap();
+      const targetDept = deptId ? departments.find(d => String(d.id) === String(deptId)) : null;
+      const filename = targetDept ? `Department_${targetDept.name.replace(/\s+/g, '_')}_Users.xlsx` : "All_Departments_Users.xlsx";
+      
+      await downloadAndShareBlob(blob, filename);
+      Alert.alert("Success", `${targetDept ? targetDept.name : "All departments"} Excel report downloaded successfully`);
+    } catch (err) {
+      Alert.alert("Error", getErrorMessage(err, "Failed to download Excel report. Please try again."));
+    } finally {
+      setDownloadingExcelId(null);
+    }
+  };
+
+  const handleDownloadPdf = async (deptId = null) => {
+    try {
+      setDownloadingPdfId(deptId ? String(deptId) : 'all');
+      const params = deptId ? `?departmentId=${deptId}` : "";
+      const blob = await downloadPdfMutation(params).unwrap();
+      const targetDept = deptId ? departments.find(d => String(d.id) === String(deptId)) : null;
+      const filename = targetDept ? `Department_${targetDept.name.replace(/\s+/g, '_')}_Users.pdf` : "All_Departments_Users.pdf";
+      
+      await downloadAndShareBlob(blob, filename);
+      Alert.alert("Success", `${targetDept ? targetDept.name : "All departments"} PDF report downloaded successfully`);
+    } catch (err) {
+      Alert.alert("Error", getErrorMessage(err, "Failed to download PDF report. Please try again."));
+    } finally {
+      setDownloadingPdfId(null);
+    }
+  };
+
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#020617]">
       <View className="flex-1 max-w-2xl w-full mx-auto">
@@ -183,12 +222,38 @@ export default function OrgDepartmentsPage() {
                   <Search size={16} className="text-slate-400" />
                   <TextInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search departments..." placeholderTextColor="#94a3b8" className="flex-1 ml-2 text-sm text-slate-900 dark:text-white" />
                 </View>
-                {canCreateDepartments && (
-                  <Pressable onPress={openCreateModal} className="bg-blue-600 px-4 py-2 rounded-xl flex-row items-center">
-                    <Plus size={16} color="#fff" />
-                    <Text className="text-white text-sm font-bold ml-1">New</Text>
+                
+                <View className="flex-row items-center gap-2">
+                  <Pressable 
+                    onPress={() => handleDownloadPdf()} 
+                    disabled={downloadingPdfId === 'all'}
+                    className={`px-3 py-2 rounded-xl flex-row items-center justify-center ${downloadingPdfId === 'all' ? 'bg-slate-200 dark:bg-slate-800' : 'bg-rose-100 dark:bg-rose-900/30'}`}
+                  >
+                    {downloadingPdfId === 'all' ? (
+                      <ActivityIndicator size="small" color="#f43f5e" />
+                    ) : (
+                      <FileText size={16} color="#f43f5e" />
+                    )}
                   </Pressable>
-                )}
+                  <Pressable 
+                    onPress={() => handleDownloadExcel()} 
+                    disabled={downloadingExcelId === 'all'}
+                    className={`px-3 py-2 rounded-xl flex-row items-center justify-center ${downloadingExcelId === 'all' ? 'bg-slate-200 dark:bg-slate-800' : 'bg-green-100 dark:bg-green-900/30'}`}
+                  >
+                    {downloadingExcelId === 'all' ? (
+                      <ActivityIndicator size="small" color="#10b981" />
+                    ) : (
+                      <Download size={16} color="#10b981" />
+                    )}
+                  </Pressable>
+
+                  {canCreateDepartments && (
+                    <Pressable onPress={openCreateModal} className="bg-blue-600 px-4 py-2 rounded-xl flex-row items-center">
+                      <Plus size={16} color="#fff" />
+                      <Text className="text-white text-sm font-bold ml-1">New</Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
 
               {filteredDepartments.map((dept, i) => (
@@ -200,6 +265,28 @@ export default function OrgDepartmentsPage() {
                         <View><Text className="text-base font-black text-slate-900 dark:text-white">{dept.name}</Text></View>
                       </View>
                       <View className="flex-row items-center gap-2">
+                        <Pressable 
+                          onPress={() => handleDownloadPdf(dept.id)} 
+                          disabled={downloadingPdfId === String(dept.id)}
+                          className={`p-1.5 rounded-lg ${downloadingPdfId === String(dept.id) ? 'bg-slate-100 dark:bg-slate-800' : 'bg-rose-50 dark:bg-rose-900/20 active:bg-rose-100'}`}
+                        >
+                          {downloadingPdfId === String(dept.id) ? (
+                            <ActivityIndicator size="small" color="#f43f5e" />
+                          ) : (
+                            <FileText size={16} color="#f43f5e" />
+                          )}
+                        </Pressable>
+                        <Pressable 
+                          onPress={() => handleDownloadExcel(dept.id)} 
+                          disabled={downloadingExcelId === String(dept.id)}
+                          className={`p-1.5 rounded-lg ${downloadingExcelId === String(dept.id) ? 'bg-slate-100 dark:bg-slate-800' : 'bg-green-50 dark:bg-green-900/20 active:bg-green-100'}`}
+                        >
+                          {downloadingExcelId === String(dept.id) ? (
+                            <ActivityIndicator size="small" color="#10b981" />
+                          ) : (
+                            <Download size={16} color="#10b981" />
+                          )}
+                        </Pressable>
                         {canUpdateDepartments && (
                           <Pressable onPress={() => openEditModal(dept)} className="p-1"><Edit2 size={16} className="text-slate-400" /></Pressable>
                         )}

@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Linking, Alert } from "react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Linking, Alert, TextInput } from "react-native";
 import { Link } from "expo-router";
-import { Receipt, FileText, Package, ArrowDownCircle, ArrowUpCircle, CheckCircle, Plus } from "lucide-react-native";
+import { Receipt, FileText, Package, ArrowDownCircle, ArrowUpCircle, CheckCircle, Plus, Search, Filter } from "lucide-react-native";
 import { 
   useGetOrgExpensesBalanceQuery,
   useGetOrgClaimsQuery,
@@ -15,9 +15,23 @@ import AddStockModal from "@/components/org/expenses/AddStockModal";
 export default function OrgExpenses() {
   const [activeTab, setActiveTab] = useState("expenses"); // expenses, claims, stocks
   
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterType, setFilterType] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   // Queries
-  const { data: expensesData, isFetching: isFetchingExpenses, refetch: refetchExpenses } = useGetOrgExpensesBalanceQuery("");
-  const { data: claimsData, isFetching: isFetchingClaims, refetch: refetchClaims } = useGetOrgClaimsQuery("");
+  const expensesQueryArgs = `?search=${debouncedSearch}&type=${filterType}`;
+  const claimsQueryArgs = `?search=${debouncedSearch}&status=${filterStatus}`;
+  
+  const { data: expensesData, isFetching: isFetchingExpenses, refetch: refetchExpenses } = useGetOrgExpensesBalanceQuery(expensesQueryArgs);
+  const { data: claimsData, isFetching: isFetchingClaims, refetch: refetchClaims } = useGetOrgClaimsQuery(claimsQueryArgs);
   const { data: stockData, isFetching: isFetchingStock, refetch: refetchStock } = useGetOrgStockQuery();
 
   // Modals
@@ -67,7 +81,13 @@ export default function OrgExpenses() {
       {['expenses', 'claims', 'stocks'].map((tab) => (
         <Pressable
           key={tab}
-          onPress={() => setActiveTab(tab)}
+          onPress={() => {
+            setActiveTab(tab);
+            setSearchQuery("");
+            setFilterType("ALL");
+            setFilterStatus("ALL");
+            setShowFilters(false);
+          }}
           className={`flex-1 py-2.5 items-center rounded-xl transition-colors ${
             activeTab === tab ? 'bg-white dark:bg-slate-900 shadow-sm' : 'bg-transparent'
           }`}
@@ -81,6 +101,64 @@ export default function OrgExpenses() {
       ))}
     </View>
   );
+
+  const renderFilters = () => {
+    if (activeTab === 'stocks') return null;
+
+    return (
+      <View className="px-4 mb-4">
+        <View className="flex-row gap-2 mb-3">
+          <View className="flex-1 flex-row items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2">
+            <Search size={16} className="text-slate-400" />
+            <TextInput 
+              value={searchQuery} 
+              onChangeText={setSearchQuery} 
+              placeholder={`Search ${activeTab}...`} 
+              placeholderTextColor="#94a3b8" 
+              className="flex-1 ml-2 text-sm text-slate-900 dark:text-white"
+            />
+          </View>
+          <Pressable 
+            onPress={() => setShowFilters(!showFilters)}
+            className={`px-3 py-2 rounded-xl flex-row items-center justify-center border ${showFilters ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800' : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800'}`}
+          >
+            <Filter size={16} className={showFilters ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"} />
+          </Pressable>
+        </View>
+
+        {showFilters && (
+          <View className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 mb-2 shadow-sm">
+            <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+              Filter by {activeTab === 'expenses' ? 'Type' : 'Status'}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+              {activeTab === 'expenses' ? (
+                ['ALL', 'DEPOSIT', 'WITHDRAWAL'].map(type => (
+                  <Pressable 
+                    key={type} 
+                    onPress={() => setFilterType(type)}
+                    className={`px-3 py-1.5 rounded-lg mr-2 border ${filterType === type ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
+                  >
+                    <Text className={`text-xs font-bold ${filterType === type ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>{type}</Text>
+                  </Pressable>
+                ))
+              ) : (
+                ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'SETTLED'].map(status => (
+                  <Pressable 
+                    key={status} 
+                    onPress={() => setFilterStatus(status)}
+                    className={`px-3 py-1.5 rounded-lg mr-2 border ${filterStatus === status ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
+                  >
+                    <Text className={`text-xs font-bold ${filterStatus === status ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>{status}</Text>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   const renderExpensesTab = () => (
     <View className="px-4 pb-24">
@@ -315,6 +393,7 @@ export default function OrgExpenses() {
         refreshControl={<RefreshControl refreshing={isFetching} onRefresh={onRefresh} tintColor="#2563eb" />}
       >
         {renderTabs()}
+        {renderFilters()}
         
         {activeTab === 'expenses' && renderExpensesTab()}
         {activeTab === 'claims' && renderClaimsTab()}

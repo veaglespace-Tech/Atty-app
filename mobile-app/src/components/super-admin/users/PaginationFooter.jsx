@@ -54,4 +54,4 @@ const PaginationFooter = ({ startIndex, endIndex, totalItems, rowsPerPage, setIs
   );
 };
 
-export default React.memo(PaginationFooter);
+export default PaginationFooter;

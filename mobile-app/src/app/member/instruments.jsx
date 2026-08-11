@@ -1,19 +1,29 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  Pressable,
 } from "react-native";
 import { useGetMemberInstrumentsQuery } from "@/services/api/memberApi";
-import { Music, Calendar, Hash, Music4 } from "lucide-react-native";
+import { Music, Calendar, Hash, Music4, Search, X } from "lucide-react-native";
 
 export default function MemberInstrumentsPage() {
-  const { data, isLoading, isError, isFetching, refetch } =
-    useGetMemberInstrumentsQuery();
+  const { data, isLoading, isError, isFetching, refetch } = useGetMemberInstrumentsQuery();
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const instruments = useMemo(() => data?.items || [], [data]);
+  const instruments = useMemo(() => {
+    const allItems = data?.items || [];
+    if (!searchQuery.trim()) return allItems;
+    const q = searchQuery.toLowerCase();
+    return allItems.filter(i => 
+      (i.name && i.name.toLowerCase().includes(q)) || 
+      (i.assetId && i.assetId.toLowerCase().includes(q))
+    );
+  }, [data, searchQuery]);
 
   if (isLoading) {
     return (
@@ -28,7 +38,7 @@ export default function MemberInstrumentsPage() {
       <FlatList
         data={instruments}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={isFetching}
@@ -37,19 +47,36 @@ export default function MemberInstrumentsPage() {
           />
         }
         ListHeaderComponent={
-          <View className="mb-6">
-            <Text className="text-2xl font-black text-slate-900 dark:text-white">
-              My Assigned Instruments
-            </Text>
-            <Text className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              View the physical instruments and assets that have been assigned
-              to you by the organization admin.
-            </Text>
+          <View className="p-5 pb-3">
+            <View className="mb-4">
+              <Text className="text-2xl font-black text-slate-900 dark:text-white">
+                My Assigned Instruments
+              </Text>
+              <Text className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                View the physical instruments and assets that have been assigned to you by the organization admin.
+              </Text>
+            </View>
+
+            <View className="flex-row items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 shadow-sm">
+              <Search size={16} color="#94a3b8" />
+              <TextInput 
+                value={searchQuery} 
+                onChangeText={setSearchQuery} 
+                placeholder="Search your instruments..." 
+                placeholderTextColor="#94a3b8" 
+                className="flex-1 ml-2 text-sm text-slate-900 dark:text-white"
+              />
+              {searchQuery ? (
+                <Pressable onPress={() => setSearchQuery("")}>
+                  <X size={14} color="#94a3b8" />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         }
         ListEmptyComponent={
           isError ? (
-            <View className="p-4 rounded-xl bg-rose-50 border border-rose-200 mt-4">
+            <View className="p-4 rounded-xl bg-rose-50 border border-rose-200 mt-4 mx-4">
               <Text className="text-sm font-medium text-rose-600 text-center">
                 Failed to load your assigned instruments.
               </Text>

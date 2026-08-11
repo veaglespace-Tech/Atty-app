@@ -13,6 +13,8 @@ import { useSelector } from "react-redux";
 import {
   useGetOrgUsersQuery,
   useCreateOrgUserMutation,
+  useDownloadOrgUsersExcelMutation,
+  useDownloadOrgUsersPdfMutation,
 } from "@/services/api/orgApi";
 import {
   ROLES, ORG_MANAGED_ROLE_OPTIONS, PERMISSION_GROUPS,
@@ -24,6 +26,7 @@ import {
   getErrorMessage, normalizeEmailInput, normalizeTextInput,
   toDigitsOnly, validateManagedUserForm,
 } from "@/utils/formValidation";
+import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 // Extracted Components
 import DropdownFilter from "@/components/org/users/DropdownFilter";
@@ -60,6 +63,8 @@ export default function OrgUsersPage() {
 
   const { data: usersData, isLoading, isFetching, refetch } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
   const [createUserMutation] = useCreateOrgUserMutation();
+  const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadOrgUsersPdfMutation();
+  const [downloadExcel, { isLoading: downloadingExcel }] = useDownloadOrgUsersExcelMutation();
 
   const users = Array.isArray(usersData?.items) ? usersData.items : [];
   const summary = Array.isArray(usersData?.summary) ? usersData.summary : [];
@@ -220,57 +225,45 @@ export default function OrgUsersPage() {
               <RefreshCw size={18} className="text-slate-700 dark:text-slate-300" />
             </Pressable>
             <Pressable
-              onPress={async () => {
-                try {
-                  if (filteredUsers.length === 0) {
-                    Alert.alert("No Data", "There are no users to export.");
-                    return;
-                  }
-                  
-                  const header = "ID,Name,Email,Mobile,Role,Approval Status,Access Status,Joined Date,Emergency Contact,Address,Teams\n";
-                  const csvData = filteredUsers.map(u => {
-                    const id = u.id || u._id || '';
-                    const name = (u.name || '').replace(/"/g, '""');
-                    const email = (u.email || '').replace(/"/g, '""');
-                    const mobile = `${u.mobileCountryCode || ''}${u.mobile || ''}`;
-                    const role = u.role || '';
-                    const approvalStatus = u.approvalStatus || u.status || '';
-                    const accessStatus = u.active ? 'Active' : 'Blocked';
-                    const joined = u.joinedAt || u.createdAt ? new Date(u.joinedAt || u.createdAt).toLocaleDateString() : '';
-                    const emergency = u.emergencyContact || '';
-                    const address = (u.currentAddress || u.address || '').replace(/"/g, '""');
-                    const teams = (Array.isArray(u.teamNames) ? u.teamNames : []).join('; ');
-                    return `"${id}","${name}","${email}","${mobile}","${role}","${approvalStatus}","${accessStatus}","${joined}","${emergency}","${address}","${teams}"`;
-                  }).join("\n");
-                  const csvString = header + csvData;
-
-                  if (Platform.OS === 'web') {
-                    // Web-specific download logic
-                    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', 'Organization_Users.csv');
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  } else {
-                    // Mobile-specific (iOS/Android) download logic
-                    const fileUri = FileSystem.documentDirectory + "Organization_Users.csv";
-                    await FileSystem.writeAsStringAsync(fileUri, csvString, { encoding: FileSystem.EncodingType.UTF8 });
-                    
-                    if (await Sharing.isAvailableAsync()) {
-                      await Sharing.shareAsync(fileUri, { mimeType: "text/csv", dialogTitle: "Export Users" });
-                    } else {
-                      Alert.alert("Error", "Sharing is not available on this device.");
-                    }
-                  }
-                } catch (err) {
-                  Alert.alert("Export Failed", "Could not generate the export file.");
+              onPress={() => {
+                if (filteredUsers.length === 0) {
+                  Alert.alert("No Data", "There are no users to export.");
+                  return;
                 }
+                
+                Alert.alert(
+                  "Export Users",
+                  "Choose export format:",
+                  [
+                    {
+                      text: "PDF",
+                      onPress: async () => {
+                        try {
+                          const blob = await downloadPdf().unwrap();
+                          await downloadAndShareBlob(blob, 'users.pdf');
+                        } catch (err) {
+                          Alert.alert("Export Failed", "Could not generate PDF.");
+                        }
+                      }
+                    },
+                    {
+                      text: "Excel",
+                      onPress: async () => {
+                        try {
+                          const blob = await downloadExcel().unwrap();
+                          await downloadAndShareBlob(blob, 'users.xlsx');
+                        } catch (err) {
+                          Alert.alert("Export Failed", "Could not generate Excel.");
+                        }
+                      }
+                    },
+                    { text: "Cancel", style: "cancel" }
+                  ]
+                );
               }}
-              className="h-11 w-11 items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[18px] active:scale-95 transition-transform">
-              <Download size={18} className="text-slate-700 dark:text-slate-300" />
+              disabled={downloadingPdf || downloadingExcel}
+              className={`h-11 w-11 items-center justify-center border rounded-[18px] active:scale-95 transition-transform ${downloadingPdf || downloadingExcel ? 'bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+              <Download size={18} className={downloadingPdf || downloadingExcel ? "text-slate-400" : "text-slate-700 dark:text-slate-300"} />
             </Pressable>
           </View>
         </View>

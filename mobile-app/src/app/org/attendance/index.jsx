@@ -408,7 +408,7 @@ export default function OrgAttendancePage() {
  {/* SUMMARY CARDS */}
  <View className="mx-4 flex-row flex-wrap justify-between mb-6 gap-y-4">
  <View className="w-[48%]">
- <MetricCard label="Total Staff" value={getSummaryValue("Total Staff") || 0} />
+ <MetricCard label="Records" value={getSummaryValue("Records") || 0} />
  </View>
  <View className="w-[48%]">
  <MetricCard label="Present" value={getSummaryValue("Present")} />
