@@ -125,11 +125,7 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
   const regularizedCount = Number(statusCountMap.REGULARIZED || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
-  let liveMinutes = 0;
-  if (todayRecord && todayRecord.punchInAt && !todayRecord.punchOutAt) {
-    liveMinutes = Math.max(0, Math.floor((new Date() - new Date(todayRecord.punchInAt)) / 60000));
-  }
-  const workedHours = minutesToHoursValue((monthlyAggregate?._sum?.totalMinutesWorked || 0) + liveMinutes);
+  const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
   const items = recentRecords.map((record) => {
     const item = mapAttendanceRecord(record);
 
@@ -195,7 +191,6 @@ exports.getMemberAttendance = asyncHandler(async (req, res) => {
     meta: {
       total,
       limit,
-      today: todayKey(),
     },
   });
 });
@@ -338,22 +333,25 @@ exports.downloadMemberAttendanceExcel = asyncHandler(async (req, res) => {
 exports.getMemberInstruments = asyncHandler(async (req, res) => {
   const userId = Number(req.user.id);
 
-  const instruments = await prisma.instrument.findMany({
-    where: { assignedUserId: userId },
-    orderBy: { createdAt: "desc" },
+  const userInstruments = await prisma.userInstrument.findMany({
+    where: { userId },
     include: {
-      assignedUser: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
+      instrument: true,
     },
+    orderBy: { assignedAt: "desc" },
   });
+
+  const items = userInstruments.map(ui => ({
+    id: ui.instrument.id,
+    name: ui.instrument.name,
+    description: ui.instrument.description,
+    assetId: ui.assetId,
+    assignedAt: ui.assignedAt,
+  }));
 
   res.status(200).json({
     success: true,
-    items: instruments,
+    items,
   });
 });
+

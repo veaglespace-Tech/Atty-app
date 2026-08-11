@@ -6,7 +6,7 @@ const runtimeEnv = ensureEnv();
 
 const apiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1200,
+  max: runtimeEnv.apiRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -20,6 +20,12 @@ const loginRateLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req, res) => {
+    if (req.body && req.body.email) {
+      return req.body.email.toLowerCase();
+    }
+    return ipKeyGenerator(req, res);
+  },
   message: {
     message: "Too many login attempts, please try again after 15 minutes.",
   },
@@ -28,18 +34,18 @@ const loginRateLimiter = rateLimit({
 const roleRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: async (req, res) => {
-    if (!req.user) return 100;
+    if (!req.user) return 10000;
     const role = req.user.currentRole || req.user.role;
     switch (role) {
       case "SUPER_ADMIN":
       case "ORG_ADMIN":
-        return 1000;
+        return 10000;
       case "SUB_ADMIN":
       case "TEAM_LEADER":
-        return 300;
+        return 10000;
       case "MEMBER":
       default:
-        return 100;
+        return 10000;
     }
   },
   keyGenerator: (req, res) => {

@@ -87,13 +87,18 @@ const userSchema = z
     emergencyContact: z
       .string()
       .trim()
+      .min(1, "Emergency contact is required")
       .refine(
-        (value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
-        "Emergency contact number is too short"
+        (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+        "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
       )
       .refine(
-        (value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
-        "Emergency contact number is too long"
+        (value) => toDigitsOnly(value).length >= 10,
+        "Emergency contact must be at least 10 digits"
+      )
+      .refine(
+        (value) => toDigitsOnly(value).length <= 15,
+        "Emergency contact cannot exceed 15 digits"
       ),
     currentAddress: z
       .string()

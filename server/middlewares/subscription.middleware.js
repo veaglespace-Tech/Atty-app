@@ -44,16 +44,9 @@ const checkActiveSubscription = asyncHandler(async (req, res, next) => {
       now: new Date(),
     });
 
-  const finalOrg = syncedOrganization || organization;
-  const isSubscriptionValid = Boolean(activeSubscription) || (
-    finalOrg?.subscriptionStatus === "ACTIVE" &&
-    finalOrg?.subscriptionExpiry &&
-    new Date(finalOrg.subscriptionExpiry).getTime() > Date.now()
-  );
-
-  if (!isSubscriptionValid) {
-    res.status(403);
-    throw new Error("Workspace access is currently suspended. Please contact support.");
+  if (!activeSubscription) {
+    res.status(402);
+    throw new Error("Subscription expired. Please renew to continue.");
   }
 
   req.subscription = activeSubscription;

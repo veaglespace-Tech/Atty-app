@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { resolveUserRole } = require("../utils/membership");
-const { todayKey } = require("../services/common.service");
+const { todayKey, monthWindow, dateKey } = require("../services/common.service");
 
 exports.getStats = asyncHandler(async (req, res) => {
   const orgId = Number(req.user.organizationId || req.user.organization);
@@ -95,107 +95,77 @@ exports.getStats = asyncHandler(async (req, res) => {
     return;
   }
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  
-  // Calculate total days in current month
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  // Get start and end of current month
-  const startOfMonth = new Date(year, month, 1);
-  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
-  
-  // Create YYYY-MM-DD keys for querying
-  const startKey = startOfMonth.toISOString().split('T')[0];
-  const endKey = endOfMonth.toISOString().split('T')[0];
+  const { from: monthFrom, to: monthTo } = monthWindow(new Date());
 
-  const myAttendance = await prisma.attendance.count({
-    where: {
-      userId,
-      deletedAt: null,
-      date: {
-        gte: startKey,
-        lte: endKey
+  const [myAttendance, recentAttendances] = await Promise.all([
+    prisma.attendance.count({
+      where: {
+        userId,
+        deletedAt: null,
+        date: {
+          gte: monthFrom,
+          lte: monthTo,
+        },
+        status: {
+          in: ["PRESENT", "HALF_DAY"],
+        },
       },
-      status: "PRESENT" // Only count actual present days
-    },
-  });
+    }),
+    prisma.attendance.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+      },
+      orderBy: { date: "desc" },
+      take: 60,
+      select: { date: true, status: true },
+    }),
+  ]);
 
-  // Basic streak calculation: count consecutive previous days present
+  const totalDaysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+
   let streak = 0;
-  const recentLogs = await prisma.attendance.findMany({
-    where: { userId, deletedAt: null, status: "PRESENT" },
-    orderBy: { date: 'desc' },
-    take: 30
+  const attendanceDateSet = new Map();
+  recentAttendances.forEach((a) => {
+    if (a.status === "PRESENT" || a.status === "HALF_DAY") {
+      attendanceDateSet.set(a.date, true);
+    }
   });
 
-  if (recentLogs.length > 0) {
-    let currentDate = new Date();
-    // Start checking from today
-    for (let i = 0; i < 30; i++) {
-      const dateToCheck = new Date(currentDate);
-      dateToCheck.setDate(currentDate.getDate() - i);
-      const dateKey = dateToCheck.toISOString().split('T')[0];
-      
-      const log = recentLogs.find(l => l.date === dateKey);
-      if (log) {
-        streak++;
-      } else if (i > 0) {
-        // If it's not today and there's no log, streak breaks
-        // If it is today, maybe they just haven't punched in yet, so don't break immediately
-        // but for simplicity, we break on first missing past day.
-        const yesterdayDateKey = new Date(currentDate.setDate(currentDate.getDate() - 1)).toISOString().split('T')[0];
-        if(i === 0) continue; // skip missing today
-        break;
-      }
+  const checkDate = new Date();
+  const todayStr = dateKey(checkDate);
+
+  if (!attendanceDateSet.has(todayStr)) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  for (let i = 0; i < 60; i++) {
+    const dStr = dateKey(checkDate);
+    const dayOfWeek = checkDate.getDay();
+    if (attendanceDateSet.has(dStr)) {
+      streak += 1;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else if (dayOfWeek === 0) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
     }
   }
 
   res.status(200).json({
-    myAttendance: `${myAttendance}/${daysInMonth}`,
-    streak: streak,
+    myAttendance: `${myAttendance}/${totalDaysInMonth}`,
+    streak,
   });
 });
 
 exports.getActivities = asyncHandler(async (req, res) => {
   const orgId = Number(req.user.organizationId || req.user.organization);
-  const userId = Number(req.user.id);
-  const role = resolveUserRole(req.user, orgId);
-
-  let whereClause = {
-    orgId,
-    deletedAt: null,
-  };
-
-  if (role === "MEMBER" || role === "LIFE_MEMBER") {
-    whereClause.userId = userId;
-  } else if (role === "TEAM_LEADER") {
-    const accessibleTeams = await prisma.team.findMany({
-      where: {
-        orgId,
-        deletedAt: null,
-        OR: [
-          { leaderId: userId },
-          { createdById: userId },
-          { members: { some: { userId } } }
-        ],
-      },
-      select: { id: true }
-    });
-    const teamIds = accessibleTeams.map(t => t.id);
-    if (teamIds.length > 0) {
-      whereClause.OR = [
-        { teamId: { in: teamIds } },
-        { userId: userId }
-      ];
-    } else {
-      whereClause.userId = userId;
-    }
-  }
 
   const attendances = await prisma.attendance.findMany({
-    where: whereClause,
+    where: {
+      orgId,
+      deletedAt: null,
+    },
     orderBy: {
       createdAt: "desc",
     },

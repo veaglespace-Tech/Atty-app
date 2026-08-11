@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { verifyToken } = require("../middlewares/auth.middleware");
-const { sosAlert, stopSosAlert } = require("../controllers/her-security.controller");
+const { sendSosAlert, stopSosAlert } = require("../controllers/her-security.controller");
+const { verifyToken } = require("../middlewares/token.middleware");
 
-router.post("/sos-alert", verifyToken, sosAlert);
-router.post("/stop-sos-alert", verifyToken, stopSosAlert);
+router.use(verifyToken);
+
+router.post("/sos-alert", sendSosAlert);
+router.post("/stop-sos-alert", stopSosAlert);
 
 module.exports = router;

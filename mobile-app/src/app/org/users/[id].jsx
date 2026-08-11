@@ -17,6 +17,7 @@ import {
   useDownloadOrgUserProfilePdfMutation,
   useDownloadOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,
+  useGetOrgDepartmentsQuery,
 } from "@/services/api/orgApi";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 import {
@@ -72,21 +73,38 @@ export default function OrgUserDetailPage() {
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [togglingAccess, setTogglingAccess] = useState(false);
   const [period, setPeriod] = useState("monthly");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [appliedCustomFrom, setAppliedCustomFrom] = useState("");
+  const [appliedCustomTo, setAppliedCustomTo] = useState("");
+
+  const buildParams = () => {
+    let p = `period=${period}`;
+    if (period === "custom" && appliedCustomFrom && appliedCustomTo) {
+      p += `&from=${appliedCustomFrom}&to=${appliedCustomTo}`;
+    }
+    return p;
+  };
+  const currentParams = buildParams();
+
   const [form, setForm] = useState({
     name: "", mobileCountryCode: "+91", mobile: "",
-    role: "MEMBER", approvalStatus: "APPROVED", active: true, permissions: [],
+    role: "MEMBER", approvalStatus: "APPROVED", active: true, permissions: [], departmentId: "",
   });
 
   const { data: userData, isLoading, isFetching, refetch } = useGetOrgUserByIdQuery(userId, { skip: !Number.isFinite(userId) || userId <= 0 });
   const [patchUserMutation] = usePatchOrgUserMutation();
   const { data: logsData, isLoading: loadingLogs } = useGetOrgUserAttendanceLogsQuery(
-    { userId, params: `period=${period}` },
+    { userId, params: currentParams },
     { skip: !Number.isFinite(userId) || userId <= 0 }
   );
   
   const [downloadProfilePdf, { isLoading: downloadingProfilePdf }] = useDownloadOrgUserProfilePdfMutation();
   const [downloadAttendancePdf, { isLoading: downloadingAttendancePdf }] = useDownloadOrgUserAttendancePdfMutation();
   const [downloadAttendanceExcel, { isLoading: downloadingAttendanceExcel }] = useDownloadOrgUserAttendanceExcelMutation();
+
+  const { data: deptData, isSuccess: isDeptSuccess } = useGetOrgDepartmentsQuery();
+  const departmentsList = deptData?.items || [];
 
   const user = userData?.item || null;
   const attendanceSummary = user?.attendanceSummary || {};
@@ -113,6 +131,7 @@ export default function OrgUserDetailPage() {
       approvalStatus: user.approvalStatus || "APPROVED",
       active: Boolean(user.active),
       permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      departmentId: user.departmentId ? String(user.departmentId) : "",
     });
   }, [user]);
 
@@ -125,6 +144,7 @@ export default function OrgUserDetailPage() {
         userId, name: normalizeTextInput(form.name),
         mobileCountryCode: form.mobileCountryCode, mobile: toDigitsOnly(form.mobile),
         role: form.role, ...(canUpdateStatus ? { status: form.approvalStatus } : {}),
+        departmentId: form.departmentId ? Number(form.departmentId) : null,
       }).unwrap();
       setMessage("User profile updated"); await refetch();
     } catch (e) { setError(getErrorMessage(e, "Failed to update user")); } finally { setSavingProfile(false); }
@@ -233,6 +253,7 @@ export default function OrgUserDetailPage() {
           </View>
           <View className="flex-row flex-wrap gap-3">
             <DetailTile label="User ID" value={toDisplayText(user.id)} />
+            <DetailTile label="Department" value={toDisplayText(user.department?.name, "Unassigned")} />
             <DetailTile label="Organization" value={toDisplayText(user.organization?.name)} />
             <DetailTile label="Org Code" value={toDisplayText(user.organization?.organizationCode)} />
             <DetailTile label="Joined On" value={toDateLabel(user.membership?.joinedAt || user.joinedAt)} />
@@ -285,6 +306,21 @@ export default function OrgUserDetailPage() {
                     <Pressable key={r.value} onPress={() => { setForm((p) => ({ ...p, role: r.value, permissions: getDefaultPermissionsForRole(r.value) })); }}
                       className={`px-4 py-2.5 rounded-2xl border active:scale-95 transition-transform ${form.role === r.value ? "bg-blue-600 border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
                       <Text className={`text-[13px] font-bold ${form.role === r.value ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{r.label}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500">Department</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  <Pressable onPress={() => setForm((p) => ({ ...p, departmentId: "" }))}
+                    className={`px-4 py-2.5 rounded-2xl border active:scale-95 transition-transform ${!form.departmentId ? "bg-blue-600 border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                    <Text className={`text-[13px] font-bold ${!form.departmentId ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>No Department</Text>
+                  </Pressable>
+                  {departmentsList.map((d) => (
+                    <Pressable key={d.id} onPress={() => setForm((p) => ({ ...p, departmentId: String(d.id) }))}
+                      className={`px-4 py-2.5 rounded-2xl border active:scale-95 transition-transform ${form.departmentId === String(d.id) ? "bg-blue-600 border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"}`}>
+                      <Text className={`text-[13px] font-bold ${form.departmentId === String(d.id) ? "text-white" : "text-slate-600 dark:text-slate-400"}`}>{d.name}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
@@ -344,7 +380,7 @@ export default function OrgUserDetailPage() {
               <Pressable
                 onPress={async () => {
                   try {
-                    const blob = await downloadAttendancePdf({ userId, params: `period=${period}` }).unwrap();
+                    const blob = await downloadAttendancePdf({ userId, params: currentParams }).unwrap();
                     await downloadAndShareBlob(blob, `user-attendance-${userId}-${period}.pdf`);
                   } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
                 }}
@@ -356,7 +392,7 @@ export default function OrgUserDetailPage() {
               <Pressable
                 onPress={async () => {
                   try {
-                    const blob = await downloadAttendanceExcel({ userId, params: `period=${period}` }).unwrap();
+                    const blob = await downloadAttendanceExcel({ userId, params: currentParams }).unwrap();
                     await downloadAndShareBlob(blob, `user-attendance-${userId}-${period}.xlsx`);
                   } catch (e) { Alert.alert("Error", "Failed to download Excel"); }
                 }}
@@ -377,6 +413,33 @@ export default function OrgUserDetailPage() {
               </Pressable>
             ))}
           </ScrollView>
+
+          {period === "custom" && (
+            <View className="mb-4 flex-col gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <View className="flex-row gap-4">
+                <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 mb-2">From Date</Text>
+                  <TextInput
+                    value={customFrom} onChangeText={setCustomFrom} placeholder="YYYY-MM-DD" placeholderTextColor="#94a3b8"
+                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-900 dark:text-white"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 mb-2">To Date</Text>
+                  <TextInput
+                    value={customTo} onChangeText={setCustomTo} placeholder="YYYY-MM-DD" placeholderTextColor="#94a3b8"
+                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-900 dark:text-white"
+                  />
+                </View>
+              </View>
+              <Pressable
+                onPress={() => { setAppliedCustomFrom(customFrom); setAppliedCustomTo(customTo); }}
+                className="bg-blue-600 rounded-xl py-3.5 items-center justify-center active:opacity-80"
+              >
+                <Text className="text-white text-xs font-bold uppercase tracking-wider">Apply Dates</Text>
+              </Pressable>
+            </View>
+          )}
 
           {loadingLogs ? (
             <View className="py-8 items-center"><ActivityIndicator size="large" color="#2563eb" /></View>

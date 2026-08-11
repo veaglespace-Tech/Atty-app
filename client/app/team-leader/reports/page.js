@@ -323,7 +323,6 @@ export default function TeamLeaderReportsPage() {
           <MetricCard label="Half Days" value={selectedMemberReport.halfDays} />
           <MetricCard label="Absent Days" value={selectedMemberReport.absentDays} />
           <MetricCard label="Overtime Days" value={selectedMemberReport.overtimeDays || 0} />
-          <MetricCard label="Overtime Days" value={selectedMemberReport.overtimeDays || 0} />
           <MetricCard label="Total Worked Hrs" value={selectedMemberReport.workedHours} />
         </div>
 
@@ -653,7 +652,6 @@ export default function TeamLeaderReportsPage() {
                     <ReportMetric label="Half Day" value={item.halfDays} />
                     <ReportMetric label="Absent" value={item.absentDays} />
                     <ReportMetric label="Overtime" value={item.overtimeDays || 0} />
-                    <ReportMetric label="Overtime" value={item.overtimeDays || 0} />
                     <ReportMetric label="Worked Hrs" value={formatHoursValue(item.workedHours)} />
                   </div>
 
@@ -693,9 +691,6 @@ export default function TeamLeaderReportsPage() {
                       Overtime
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                      Overtime
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                       Worked Hrs
                     </th>
                   </tr>
@@ -712,7 +707,6 @@ export default function TeamLeaderReportsPage() {
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.absentDays}</td>
-                      <td className="px-3 py-2 text-center text-slate-700">{item.overtimeDays || 0}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.overtimeDays || 0}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{formatHoursValue(item.workedHours)}</td>
                     </tr>

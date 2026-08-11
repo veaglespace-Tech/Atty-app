@@ -29,19 +29,20 @@ const isLocalHost = (hostname) => {
 };
 
 const resolveApiBaseUrl = () => {
+  if (__DEV__) {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      return `http://${window.location.hostname}:5001/api`;
+    }
+    // Updated to point directly to the local server IP for physical devices testing
+    return "http://10.127.159.165:5001/api";
+  }
+
   const explicitApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL);
   if (explicitApiUrl) {
     if (Platform.OS !== "web" && (explicitApiUrl.includes("localhost") || explicitApiUrl.includes("127.0.0.1"))) {
       return DEFAULT_PRODUCTION_API_URL;
     }
     return explicitApiUrl;
-  }
-
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") {
-      return `http://${host}:5000/api`;
-    }
   }
 
   const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)

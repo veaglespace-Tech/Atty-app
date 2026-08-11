@@ -132,14 +132,12 @@ export default function OrgDashboard() {
             </View>
           ) : null}
 
-          {/* MY ATTENDANCE STATS (Only for non-admin members) */}
-          {!isAdmin && (
-            <View className="mb-6">
-              <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
-                <MyAttendanceCore isEmbedded={true} showActions={false} />
-              </Animated.View>
-            </View>
-          )}
+          {/* MY ATTENDANCE STATS & ACTIONS (For EVERYONE) */}
+          <View className="mb-6">
+            <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
+              <MyAttendanceCore user={user} isEmbedded={true} isDashboard={true} showActions={true} />
+            </Animated.View>
+          </View>
 
           {isAdmin && (
             <>

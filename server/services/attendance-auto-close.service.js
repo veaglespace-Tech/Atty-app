@@ -8,10 +8,18 @@ const {
   resolveTimeOfDayMinutes,
 } = require("./attendance-time.service");
 
-const cron = require("node-cron");
+const DEFAULT_INTERVAL_MINUTES = 10;
+const MIN_INTERVAL_MINUTES = 1;
+const MAX_INTERVAL_MINUTES = 60;
 
 let schedulerTimer = null;
 let isRunning = false;
+
+const resolveIntervalMinutes = () => {
+  const raw = Number(process.env.ATTENDANCE_AUTO_CLOSE_INTERVAL_MINUTES || DEFAULT_INTERVAL_MINUTES);
+  if (!Number.isFinite(raw)) return DEFAULT_INTERVAL_MINUTES;
+  return Math.min(MAX_INTERVAL_MINUTES, Math.max(MIN_INTERVAL_MINUTES, Math.floor(raw)));
+};
 
 const runAttendanceAutoCloseJob = async () => {
   if (isRunning) return;
@@ -40,6 +48,12 @@ const runAttendanceAutoCloseJob = async () => {
       const startTime = organization?.attendanceStartTime || config.startTime;
       const endTime = organization?.attendanceEndTime || config.endTime;
       const endMinutes = parseStartTimeMinutes(endTime);
+      // Run the auto-close job at 11:59 PM (23:59) to ensure it's at the end of the day
+      const AUTO_CLOSE_TRIGGER_MINUTES = 23 * 60 + 59;
+
+      if (nowMinutes < AUTO_CLOSE_TRIGGER_MINUTES) {
+        continue;
+      }
 
       const openRecords = await prisma.attendance.findMany({
         where: {
@@ -80,20 +94,24 @@ const runAttendanceAutoCloseJob = async () => {
       ]);
 
       for (const record of openRecords) {
-        // Missing punch out -> Mark ABSENT, with totalMinutesWorked = 0
+        const punchInMinutes = resolveTimeOfDayMinutes(record.punchInAt, config.timeZone);
+        const autoCloseEndMinutes = 23 * 60 + 59;
+        const totalMinutesWorked =
+          punchInMinutes === null ? 0 : Math.max(autoCloseEndMinutes - punchInMinutes, 0);
+        const status = "ABSENT";
         const shiftEndAt = buildDateTimeForDateKey({
           dateKey: today,
-          time: endTime,
+          time: "23:59",
           timeZone: config.timeZone,
         });
 
         await prisma.attendance.update({
           where: { id: record.id },
           data: {
-            punchOutAt: shiftEndAt, // Faked for structural integrity or keep null? We'll fake it to shift end.
-            totalMinutesWorked: 0,
-            status: "ABSENT",
-            notes: "Auto-closed at shift end due to missing punch-out. Marked Absent.",
+            punchOutAt: shiftEndAt,
+            totalMinutesWorked,
+            status,
+            notes: "Auto-closed at shift end due to missing punch-out.",
           },
         });
       }
@@ -135,15 +153,18 @@ const runAttendanceAutoCloseJob = async () => {
 const startAttendanceAutoCloseScheduler = () => {
   if (schedulerTimer) return;
 
-  // Schedule to run every day at 11:59 PM
-  schedulerTimer = cron.schedule("59 23 * * *", () => {
+  const intervalMinutes = resolveIntervalMinutes();
+  const intervalMs = intervalMinutes * 60 * 1000;
+
+  runAttendanceAutoCloseJob().catch(() => {});
+  schedulerTimer = setInterval(() => {
     runAttendanceAutoCloseJob().catch(() => {});
-  });
+  }, intervalMs);
 };
 
 const stopAttendanceAutoCloseScheduler = () => {
   if (!schedulerTimer) return;
-  schedulerTimer.stop();
+  clearInterval(schedulerTimer);
   schedulerTimer = null;
 };
 

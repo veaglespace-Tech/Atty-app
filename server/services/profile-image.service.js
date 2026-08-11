@@ -32,10 +32,6 @@ const uploadProfileImage = async ({ userId, dataUrl }) => {
     errorFactory: createProfileImageError,
     transformation: [
       {
-        width: 512,
-        height: 512,
-        crop: "fill",
-        gravity: "face",
         quality: "auto",
         fetch_format: "auto",
       },

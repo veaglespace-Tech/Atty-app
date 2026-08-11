@@ -37,7 +37,7 @@ export default function WithdrawModal({ visible, onClose, onSuccess }) {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.5,
       });

@@ -6,7 +6,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ArrowLeft, Save, Trash2, Users, UserCheck, Search,
-  Plus, X, ShieldCheck, Mail, User,
+  Plus, X, ShieldCheck, Mail, User, LocateFixed
 } from "lucide-react-native";
 import { useSelector } from "react-redux";
 import {
@@ -14,6 +14,7 @@ import {
   usePatchTeamLeaderTeamMutation, useDeleteTeamLeaderTeamMutation,
 } from "@/services/api/teamLeaderApi";
 import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
+import { getCurrentCoordinates } from "@/utils/location";
 
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback;
@@ -92,6 +93,16 @@ export default function TeamLeaderTeamDetailPage() {
     } catch (e) { setError(getErrorMessage(e, "Failed to update")); } finally { setSavingBasics(false); }
   };
 
+  const [settingGeo, setSettingGeo] = useState(false);
+  const setGeo = async () => {
+    try {
+      setSettingGeo(true); setError(""); setMessage("");
+      const coords = await getCurrentCoordinates();
+      await patchTeamMutation({ teamId, punchInCoordinates: [coords.longitude, coords.latitude] }).unwrap();
+      setMessage("Team location updated successfully"); await refetch();
+    } catch (e) { setError(getErrorMessage(e, "Failed to set location")); } finally { setSettingGeo(false); }
+  };
+
   const saveLeader = async () => {
     try {
       setSavingLeader(true); setError(""); setMessage("");
@@ -138,10 +149,22 @@ export default function TeamLeaderTeamDetailPage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-3"><ArrowLeft size={18} color="#64748b" /><Text className="text-sm font-bold text-slate-600 dark:text-slate-400">Back</Text></Pressable>
-        <Text className="text-xl font-black text-slate-900 dark:text-white">{team.name}</Text>
-        <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{team.description || "No description"}</Text>
+      <View className="px-5 pt-4 pb-6 bg-blue-600 dark:bg-slate-900 border-b border-blue-700 dark:border-slate-800 shadow-sm rounded-b-[32px] mb-2">
+        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-4 mt-2">
+          <View className="h-8 w-8 rounded-full bg-white/20 dark:bg-slate-800 items-center justify-center">
+            <ArrowLeft size={16} color="#ffffff" />
+          </View>
+          <Text className="text-sm font-bold text-white dark:text-slate-300">Back</Text>
+        </Pressable>
+        <View className="flex-row items-center gap-4">
+          <View className="h-14 w-14 rounded-[20px] bg-white/20 dark:bg-slate-800 items-center justify-center border border-white/30 dark:border-slate-700">
+            <Component size={28} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-2xl font-black text-white" numberOfLines={1}>{team.name}</Text>
+            <Text className="text-sm font-medium text-blue-100 dark:text-slate-400 mt-0.5" numberOfLines={2}>{team.description || "No description"}</Text>
+          </View>
+        </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
@@ -150,7 +173,41 @@ export default function TeamLeaderTeamDetailPage() {
         {error ? <View className="mb-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"><Text className="text-sm text-red-700 dark:text-red-300">{error}</Text></View> : null}
         {message ? <View className="mb-3 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"><Text className="text-sm text-emerald-700 dark:text-emerald-300">{message}</Text></View> : null}
 
-        {/* Team Details */}
+        {/* Location / Radius Settings */}
+        <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-100 dark:border-slate-800 p-5 mb-4 shadow-sm shadow-slate-200/50 dark:shadow-none">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-xs font-black uppercase tracking-widest text-slate-500">Location Settings</Text>
+            <View className="h-8 w-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 items-center justify-center border border-indigo-100 dark:border-indigo-800/50">
+              <LocateFixed size={14} className="text-indigo-500" />
+            </View>
+          </View>
+          
+          <View className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[20px] border border-slate-100 dark:border-slate-800 mb-4">
+            <Text className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Current Status</Text>
+            {team.punchInCoordinates?.length === 2 ? (
+              <View className="flex-row items-center gap-2">
+                <View className="h-2 w-2 rounded-full bg-emerald-500" />
+                <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">Geo-fence Active</Text>
+              </View>
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <View className="h-2 w-2 rounded-full bg-amber-500" />
+                <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">Location Not Set</Text>
+              </View>
+            )}
+          </View>
+
+          {canUpdateTeams && (
+            <Pressable onPress={setGeo} disabled={settingGeo}
+              className={`flex-row items-center justify-center gap-2 py-4 rounded-[20px] ${settingGeo ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-indigo-600 dark:bg-indigo-500'} active:scale-[0.98]`}>
+              {settingGeo ? <ActivityIndicator size="small" color="#4f46e5" /> : <LocateFixed size={18} color={settingGeo ? "#4f46e5" : "#fff"} />}
+              <Text className={`font-black tracking-wide ${settingGeo ? 'text-indigo-600 dark:text-indigo-400' : 'text-white'}`}>
+                {settingGeo ? 'Acquiring...' : 'Update Location using GPS'}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+
         <View className="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 mb-4">
           <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Team Details</Text>
           <View className="gap-3">
@@ -174,11 +231,18 @@ export default function TeamLeaderTeamDetailPage() {
               <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">Active</Text>
               <Switch value={form.isActive} onValueChange={(v) => setForm((p) => ({ ...p, isActive: v }))} disabled={!canUpdateTeams} trackColor={{ false: "#e2e8f0", true: "#2563eb" }} thumbColor="#fff" />
             </View>
-            <Pressable onPress={saveBasics} disabled={!canUpdateTeams || savingBasics}
-              className={`w-full py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${savingBasics ? "bg-blue-400" : "bg-blue-600"}`}>
-              {savingBasics ? <ActivityIndicator size="small" color="#fff" /> : <Save size={16} color="#fff" />}
-              <Text className="text-white text-sm font-bold">Save Details</Text>
-            </Pressable>
+            <View className="flex-row gap-2 mt-1">
+              <Pressable onPress={setGeo} disabled={!canUpdateTeams || settingGeo}
+                className={`flex-1 py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${settingGeo ? "bg-slate-100 dark:bg-slate-800" : "bg-slate-100 dark:bg-slate-800"}`}>
+                {settingGeo ? <ActivityIndicator size="small" color="#2563eb" /> : <LocateFixed size={16} className="text-slate-700 dark:text-slate-300" />}
+                <Text className="text-slate-700 dark:text-slate-300 text-sm font-bold">Set Geo</Text>
+              </Pressable>
+              <Pressable onPress={saveBasics} disabled={!canUpdateTeams || savingBasics}
+                className={`flex-1 py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${savingBasics ? "bg-blue-400" : "bg-blue-600"}`}>
+                {savingBasics ? <ActivityIndicator size="small" color="#fff" /> : <Save size={16} color="#fff" />}
+                <Text className="text-white text-sm font-bold">Save Details</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 

@@ -22,7 +22,7 @@ import {
 } from "@/services/api/memberApi";
 import { usePunchInMutation, usePunchOutMutation, useReachedHomeMutation, useRequestRegularizationMutation } from "@/services/api/attendanceApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { getDateKey, getTodayDateKey } from "@/utils/date";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
 import { addNotification } from "@/store/slices/notificationSlice";
@@ -89,14 +89,12 @@ export default function MemberAttendancePage() {
       return { from: dateStr, to: dateStr, limit: 100 };
     }
     if (filterType === "WEEKLY") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 6);
-      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+      const { from, to } = getWeekRange(today);
+      return { from, to, limit: 100 };
     }
     if (filterType === "MONTHLY") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 29);
-      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+      const { from, to } = getMonthRange(today);
+      return { from, to, limit: 100 };
     }
     if (filterType === "CUSTOM") {
       return { from: customRange.from || undefined, to: customRange.to || undefined, limit: 100 };

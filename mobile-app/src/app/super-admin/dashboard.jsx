@@ -4,11 +4,16 @@ import {  BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, 
 import { useColorScheme } from "nativewind";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useGetSuperAdminDashboardQuery } from "@/services/api/superAdminApi";
+import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
+
+
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 
 export default function SuperAdminDashboard(props) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { user } = useAuthSession();
   const { data, isLoading, isFetching, refetch } = useGetSuperAdminDashboardQuery(undefined);
 
   const [page, setPage] = useState(1);
@@ -40,6 +45,13 @@ export default function SuperAdminDashboard(props) {
           </View>
           <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Super Admin Dashboard</Text>
           <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">Global SaaS usage, and organization summary.</Text>
+        </View>
+
+        {/* MY ATTENDANCE STATS & ACTIONS */}
+        <View className="mb-6">
+          <Animated.View entering={FadeInDown.duration(400).delay(150).springify()}>
+            <MyAttendanceCore user={user} isEmbedded={true} isDashboard={true} showActions={true} />
+          </Animated.View>
         </View>
 
         <View className="flex-row flex-wrap mx-[-6px] mb-8">

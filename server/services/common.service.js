@@ -87,6 +87,23 @@ const monthWindow = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) => {
   };
 };
 
+const weekWindow = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) => {
+  const d = value instanceof Date ? new Date(value) : new Date(value || Date.now());
+  const day = d.getDay();
+  const diffToMonday = (day + 6) % 7;
+
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - diffToMonday);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  return {
+    from: dateKey(monday, timeZone),
+    to: dateKey(sunday, timeZone),
+  };
+};
+
 const toDateKey = (value, fallback = null) => {
   if (!value) return fallback;
   const raw = String(value).trim();
@@ -104,31 +121,10 @@ const normalizeStatus = (value, fallback = "") =>
     .trim()
     .toUpperCase();
 
-const parsePositiveInteger = (value, fallback = null) => {
-  const parsed = Number.parseInt(String(value || "").trim(), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
-
 const resolveOrganizationId = (user) => resolveMembershipOrganizationId(user);
 
 const ensureOrganizationId = (req, res) => {
-  const paramOrgId = parsePositiveInteger(req?.params?.orgId || req?.params?.organizationId);
-  const queryOrgId = parsePositiveInteger(req?.query?.orgId || req?.query?.organizationId);
-  const headerOrgId = parsePositiveInteger(req?.headers?.["x-organization-id"]);
-  const bodyOrgId = parsePositiveInteger(req?.body?.orgId || req?.body?.organizationId);
-
-  const directUserOrgId = resolveMembershipOrganizationId(req?.user);
-
-  let organizationId = paramOrgId || queryOrgId || headerOrgId || bodyOrgId || directUserOrgId;
-
-  if (!organizationId && req?.user) {
-    if (Array.isArray(req.user.memberships) && req.user.memberships.length > 0) {
-      organizationId = parsePositiveInteger(req.user.memberships[0]?.orgId);
-    } else if (req.user.role === "SUPER_ADMIN" || req.user.currentRole === "SUPER_ADMIN") {
-      organizationId = 1;
-    }
-  }
-
+  const organizationId = resolveOrganizationId(req.user);
   if (!organizationId) {
     res.status(403);
     throw new Error("Organization context missing");
@@ -220,6 +216,47 @@ const formatReportLocation = (meta, lat, lng) => {
   return "-";
 };
 
+const extractImageUrl = (post) => {
+  if (!post) return null;
+  const meta = typeof post.metadata === "string"
+    ? (function () {
+        try {
+          return JSON.parse(post.metadata);
+        } catch (e) {
+          return null;
+        }
+      })()
+    : post.metadata;
+  if (!meta) return null;
+
+  if (Array.isArray(meta.attachments) && meta.attachments.length > 0) {
+    const imgAtt = meta.attachments.find((att) => {
+      if (!att || !att.url) return false;
+      const resType = String(att.resourceType || "").toLowerCase();
+      const fmt = String(att.format || "").toLowerCase();
+      const isImgFmt = ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(fmt);
+      const isImgUrl = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(att.url);
+      return resType === "image" || isImgFmt || isImgUrl;
+    }) || meta.attachments[0];
+
+    if (imgAtt && imgAtt.url) return imgAtt.url;
+  }
+
+  if (meta.attachment && meta.attachment.url) {
+    return meta.attachment.url;
+  }
+
+  if (meta.imageUrl && typeof meta.imageUrl === "string") {
+    return meta.imageUrl;
+  }
+
+  if (meta.image && typeof meta.image === "string") {
+    return meta.image;
+  }
+
+  return null;
+};
+
 module.exports = {
   clamp,
   parsePositiveInt,
@@ -229,6 +266,7 @@ module.exports = {
   dateKey,
   todayKey,
   monthWindow,
+  weekWindow,
   toDateKey,
   normalizeStatus,
   resolveOrganizationId,
@@ -238,6 +276,7 @@ module.exports = {
   toSummaryItem,
   uniqueNumberList,
   truncateText,
+  extractImageUrl,
   formatDate,
   minutesToHoursValue,
   formatHoursValue,
@@ -245,3 +284,4 @@ module.exports = {
   toPdfTime,
   formatReportLocation,
 };
+

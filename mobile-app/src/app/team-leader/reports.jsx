@@ -5,7 +5,7 @@ import {  ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, U
 import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderReportsQuery, useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation, useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 import { useSelector } from "react-redux";
-import { getDateKey, getTodayDateKey } from "@/utils/date";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange } from "@/utils/date";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const PERIOD_OPTIONS = [
@@ -49,13 +49,13 @@ export default function TeamLeaderReportsPage(props) {
     let toDateStr = getTodayDateKey();
 
     if (period === "weekly") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 6);
-      fromDateStr = getDateKey(fromDate);
+      const range = getWeekRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
     } else if (period === "monthly") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 29);
-      fromDateStr = getDateKey(fromDate);
+      const range = getMonthRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
     } else if (period === "custom") {
       fromDateStr = customRange.from;
       toDateStr = customRange.to;

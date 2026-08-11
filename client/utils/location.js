@@ -42,18 +42,51 @@ const mapGeolocationError = (error) => {
   }
 };
 
-const requestCurrentPosition = (options) =>
+const requestBestPosition = (options, maxWaitTime = 7000) =>
   new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (position.coords.accuracy > 150) {
-          reject(new Error(`Location accuracy is too low (${Math.round(position.coords.accuracy)}m). Please turn on GPS and go near a window or outside.`));
+    let bestPosition = null;
+    let watchId = null;
+    let timeoutId = null;
+
+    const cleanup = () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
+
+    timeoutId = setTimeout(() => {
+      cleanup();
+      if (bestPosition) {
+        // We reject if the best accuracy we found is still worse than 50 meters
+        if (bestPosition.coords.accuracy > 50) {
+          reject(new Error(`Location accuracy is too low (${Math.round(bestPosition.coords.accuracy)}m). Please step outside or near a window for better GPS signal.`));
         } else {
-          resolve(position);
+          resolve(bestPosition);
+        }
+      } else {
+        reject(new Error(GEOLOCATION_TIMEOUT_MESSAGE));
+      }
+    }, maxWaitTime);
+
+    watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+          bestPosition = position;
+        }
+        // Early exit if accuracy is very good (<= 20m)
+        if (bestPosition.coords.accuracy <= 20) {
+          cleanup();
+          resolve(bestPosition);
         }
       },
       (error) => {
-        reject(error);
+        // Only reject immediately if permission is explicitly denied
+        if (error.code === 1) {
+            cleanup();
+            reject(error);
+        }
+        // For error.code 2 (Unavailable) or 3 (Timeout), we do NOT reject immediately.
+        // We let watchPosition keep trying until our 7-second timeout fires, 
+        // because the GPS might just be warming up.
       },
       options
     );
@@ -97,13 +130,17 @@ export const getCurrentCoordinates = async () => {
   }
 
   try {
-    const position = await requestCurrentPosition({
+    const position = await requestBestPosition({
         enableHighAccuracy: true,
-        timeout: 20000,
-        maximumAge: 30000,
+        timeout: 10000,
+        maximumAge: 0, // Force fresh location, don't use cache
     });
     return coordinatesFromPosition(position);
   } catch (error) {
+    // If it's a custom error (like low accuracy string), throw it directly
+    if (error.message && error.message.includes("Location accuracy is too low")) {
+      throw error;
+    }
     throw new Error(mapGeolocationError(error));
   }
 };

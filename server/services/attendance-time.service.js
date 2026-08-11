@@ -199,18 +199,23 @@ const calculateAttendanceStatus = ({
   totalMinutesWorked = 0,
   startTime = null,
   endTime = null,
+  isPunchOutMissing = false,
 } = {}) => {
+  if (isPunchOutMissing) return "ABSENT";
+
   const workedMinutes = Number(totalMinutesWorked || 0);
   const safeWorkedMinutes = Number.isFinite(workedMinutes) && workedMinutes > 0 ? workedMinutes : 0;
+  
+  if (safeWorkedMinutes <= 0) return "ABSENT";
+
   const shiftDurationMinutes = resolveShiftDurationMinutes({ startTime, endTime });
   
   const presentThreshold = Math.floor(shiftDurationMinutes * 0.50);
-  const overtimeThreshold = shiftDurationMinutes; // > 100%
+  const overtimeThreshold = shiftDurationMinutes;
 
-  if (safeWorkedMinutes === 0) return "ABSENT";
   if (safeWorkedMinutes > overtimeThreshold) return "OVERTIME";
   if (safeWorkedMinutes >= presentThreshold) return "PRESENT";
-  return "HALF_DAY"; // Between 1 and 49%
+  return "HALF_DAY";
 };
 
 module.exports = {

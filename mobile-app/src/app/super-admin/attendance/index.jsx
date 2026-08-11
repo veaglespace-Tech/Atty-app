@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, ActivityIndicator, Dimensions, Modal, TextInput, TouchableOpacity, Platform, Alert } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import AppDatePicker from "@/components/ui/AppDatePicker";
 import { router } from "expo-router";
 import { ChevronLeft, CalendarCheck2, Clock, MapPin, Building2, Search, Download, ChevronDown, ChevronRight } from "lucide-react-native";
 import { useGetSuperAdminAttendanceReportsQuery, useGetSuperAdminOrganizationsQuery, useDownloadSuperAdminAttendanceReportsExcelMutation } from "@/services/api/superAdminApi";
@@ -188,59 +188,45 @@ export default function AttendancePage() {
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 ml-1">From Date</Text>
                   <Pressable
                     onPress={() => setShowFromPicker(true)}
-                    className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 h-10 justify-center"
+                    className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 h-10 justify-center active:scale-[0.99]"
                   >
                     <Text className={`text-sm font-semibold ${customRange.from ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
                       {customRange.from || "YYYY-MM-DD"}
                     </Text>
                   </Pressable>
-                  {showFromPicker && (
-                    <DateTimePicker
-                      value={customRange.from ? new Date(customRange.from) : new Date()}
-                      mode="date"
-                      display="default"
-                      maximumDate={new Date()}
-                      onChange={(event, selectedDate) => {
-                        setShowFromPicker(Platform.OS === 'ios');
-                        if (selectedDate) {
-                          const dateStr = selectedDate.toISOString().split('T')[0];
-                          setCustomRange(prev => ({ ...prev, from: dateStr }));
-                          if (Platform.OS === 'android') setShowFromPicker(false);
-                        } else {
-                           setShowFromPicker(false);
-                        }
-                      }}
-                    />
-                  )}
+                  <AppDatePicker
+                    visible={showFromPicker}
+                    value={customRange.from}
+                    maximumDate={new Date()}
+                    title="Select From Date"
+                    onConfirm={(dateKey) => {
+                      setShowFromPicker(false);
+                      if (dateKey) setCustomRange(prev => ({ ...prev, from: dateKey }));
+                    }}
+                    onCancel={() => setShowFromPicker(false)}
+                  />
                 </View>
                 <View className="flex-1">
                   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 ml-1">To Date</Text>
                   <Pressable
                     onPress={() => setShowToPicker(true)}
-                    className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 h-10 justify-center"
+                    className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 h-10 justify-center active:scale-[0.99]"
                   >
                     <Text className={`text-sm font-semibold ${customRange.to ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
                       {customRange.to || "YYYY-MM-DD"}
                     </Text>
                   </Pressable>
-                  {showToPicker && (
-                    <DateTimePicker
-                      value={customRange.to ? new Date(customRange.to) : new Date()}
-                      mode="date"
-                      display="default"
-                      maximumDate={new Date()}
-                      onChange={(event, selectedDate) => {
-                        setShowToPicker(Platform.OS === 'ios');
-                        if (selectedDate) {
-                          const dateStr = selectedDate.toISOString().split('T')[0];
-                          setCustomRange(prev => ({ ...prev, to: dateStr }));
-                          if (Platform.OS === 'android') setShowToPicker(false);
-                        } else {
-                           setShowToPicker(false);
-                        }
-                      }}
-                    />
-                  )}
+                  <AppDatePicker
+                    visible={showToPicker}
+                    value={customRange.to}
+                    maximumDate={new Date()}
+                    title="Select To Date"
+                    onConfirm={(dateKey) => {
+                      setShowToPicker(false);
+                      if (dateKey) setCustomRange(prev => ({ ...prev, to: dateKey }));
+                    }}
+                    onCancel={() => setShowToPicker(false)}
+                  />
                 </View>
               </View>
             )}

@@ -53,7 +53,8 @@ const ensureEnv = () => {
     isTest,
     isProduction,
     port: parsePort(process.env.PORT, 5000),
-    loginRateLimitMax: parseRateLimitMax(process.env.LOGIN_RATE_LIMIT_MAX, 10),
+    loginRateLimitMax: parseRateLimitMax(process.env.LOGIN_RATE_LIMIT_MAX, 100),
+    apiRateLimitMax: parseRateLimitMax(process.env.API_RATE_LIMIT_MAX, 10000),
   };
 };
 

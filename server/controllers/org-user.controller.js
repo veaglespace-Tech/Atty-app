@@ -1,3 +1,6 @@
+const path = require("path");
+const fs = require("fs");
+const axios = require("axios");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
@@ -17,7 +20,9 @@ const {
   toSummaryItem,
   truncateText,
   normalizeStatus,
+  extractImageUrl,
 } = require("../services/common.service");
+const { getDirectDownloadUrl } = require("../utils/download-url");
 const {
   validateEmail,
   validatePersonName,
@@ -386,6 +391,10 @@ exports.downloadOrgUserProfilePdf = asyncHandler(async (req, res) => {
       emergencyContact: detailedUser.emergencyContact,
       currentAddress: detailedUser.currentAddress,
       permanentAddress: detailedUser.permanentAddress,
+      gender: detailedUser.gender,
+      bloodGroup: detailedUser.bloodGroup,
+      existingMember: detailedUser.existingMember,
+      referenceBy: detailedUser.referenceBy,
       profileImageUrl: detailedUser.profileImageUrl,
       joinedAt: detailedUser.membership?.joinedAt || detailedUser.joinedAt,
       lastLoginAt: detailedUser.lastLoginAt,
@@ -447,6 +456,79 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
     userPayload.mobileCountryCode = normalizedPhone.countryCode;
   }
 
+  if (typeof req.body?.email === "string") {
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+      res.status(400);
+      throw new Error("email cannot be empty");
+    }
+    const emailValidation = await validateEmail(email);
+    if (!emailValidation.valid) {
+      res.status(400);
+      throw new Error(emailValidation.error);
+    }
+    if (email !== user.email) {
+      const duplicateUser = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (duplicateUser && duplicateUser.id !== user.id) {
+        res.status(409);
+        throw new Error("User with this email already exists");
+      }
+    }
+    userPayload.email = email;
+  }
+
+  const hasGender = Object.prototype.hasOwnProperty.call(req.body || {}, "gender");
+  if (hasGender) {
+    userPayload.gender = req.body.gender || null;
+  }
+
+  const hasDob = Object.prototype.hasOwnProperty.call(req.body || {}, "dob");
+  if (hasDob) {
+    userPayload.dob = req.body.dob || null;
+  }
+
+  const hasExistingMember = Object.prototype.hasOwnProperty.call(req.body || {}, "existingMember");
+  if (hasExistingMember) {
+    userPayload.existingMember = req.body.existingMember || null;
+  }
+
+  const hasReferenceBy = Object.prototype.hasOwnProperty.call(req.body || {}, "referenceBy");
+  if (hasReferenceBy) {
+    userPayload.referenceBy = req.body.referenceBy || null;
+  }
+
+  const hasBloodGroup = Object.prototype.hasOwnProperty.call(req.body || {}, "bloodGroup");
+  if (hasBloodGroup) {
+    userPayload.bloodGroup = req.body.bloodGroup || null;
+  }
+
+  const hasEmergencyContact = Object.prototype.hasOwnProperty.call(req.body || {}, "emergencyContact");
+  if (hasEmergencyContact) {
+    userPayload.emergencyContact = req.body.emergencyContact || null;
+  }
+
+  const hasCurrentAddress = Object.prototype.hasOwnProperty.call(req.body || {}, "currentAddress");
+  if (hasCurrentAddress) {
+    userPayload.currentAddress = req.body.currentAddress || null;
+  }
+
+  const hasPermanentAddress = Object.prototype.hasOwnProperty.call(req.body || {}, "permanentAddress");
+  if (hasPermanentAddress) {
+    userPayload.permanentAddress = req.body.permanentAddress || null;
+  }
+
+  const hasPhysicalFormNo = Object.prototype.hasOwnProperty.call(req.body || {}, "physicalFormNo");
+  if (hasPhysicalFormNo) {
+    userPayload.physicalFormNo = req.body.physicalFormNo ? String(req.body.physicalFormNo).trim() : null;
+  }
+
+  const hasDepartmentId = Object.prototype.hasOwnProperty.call(req.body || {}, "departmentId");
+  if (hasDepartmentId) {
+    userPayload.departmentId = req.body.departmentId ? Number(req.body.departmentId) : null;
+  }
+
   const hasRole = Object.prototype.hasOwnProperty.call(req.body || {}, "role");
   const currentRole = resolveUserRole(user, orgId) || "MEMBER";
   const nextRole = hasRole ? normalizeRole(req.body?.role || currentRole) : currentRole;
@@ -486,7 +568,6 @@ exports.patchOrgUser = asyncHandler(async (req, res) => {
       throw new Error("isActive must be boolean");
     }
     membershipPayload.isActive = isActive;
-    userPayload.isActive = isActive;
   }
 
   if (Object.prototype.hasOwnProperty.call(req.body || {}, "permissions")) {
@@ -681,6 +762,7 @@ exports.createOrgUser = asyncHandler(async (req, res) => {
           email,
           mobile: normalizedPhone.e164,
           mobileCountryCode: normalizedPhone.countryCode,
+          dob: req.body?.dob ? String(req.body.dob).trim() : null,
           password: hashedPassword,
           role,
           status,
@@ -790,23 +872,17 @@ exports.toggleOrgUserActive = asyncHandler(async (req, res) => {
     targetUserId: req.params.userId,
   });
 
-  await prisma.$transaction([
-    prisma.organizationMember.update({
-      where: {
-        userId_orgId: {
-          userId: user.id,
-          orgId,
-        },
+  await prisma.organizationMember.update({
+    where: {
+      userId_orgId: {
+        userId: user.id,
+        orgId,
       },
-      data: {
-        isActive,
-      },
-    }),
-    prisma.user.update({
-      where: { id: user.id },
-      data: { isActive },
-    })
-  ]);
+    },
+    data: {
+      isActive,
+    },
+  });
 
   const updated = await prisma.user.findUnique({
     where: { id: user.id },
@@ -949,14 +1025,37 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
     }
   }
 
-  const items = posts.map((post) => {
+  const userRole = resolveUserRole(req.user, orgId);
+
+  // Filter posts in-memory for targetRoles
+  const filteredPosts = posts.filter((post) => {
+    const meta = _toSafeObj(post.metadata);
+    if (meta.targetRoles && Array.isArray(meta.targetRoles) && meta.targetRoles.length > 0) {
+      // If user is SUPER_ADMIN, they can see all updates, otherwise check inclusion
+      if (userRole === "SUPER_ADMIN") return true;
+      return meta.targetRoles.includes(userRole);
+    }
+    return true; // No targeted roles, visible to all
+  });
+
+  const actualTotal = filteredPosts.length;
+  const actualUnreadCount = filteredPosts.filter(p => !p.reads || p.reads.length === 0).length;
+
+  const paginatedPosts = filteredPosts.slice(0, limit);
+
+  const items = paginatedPosts.map((post) => {
     const serialized = _serializePollForNotification(post, userId);
+    const imageUrl = extractImageUrl(serialized);
+    const metaObj = serialized.metadata || {};
+    const attachments = metaObj.attachments || (metaObj.attachment ? [metaObj.attachment] : []);
     return {
       id: String(post.id),
       title: post.title,
       message: post.content,
       type: post.type,
       metadata: serialized.metadata,
+      imageUrl,
+      attachments,
       poll: serialized.poll || undefined,
       createdAt: post.createdAt,
       authorName: post.author?.name || "Admin",
@@ -968,14 +1067,14 @@ exports.getOrgNotifications = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     summary: [
-      toSummaryItem("Total Notifications", total),
-      toSummaryItem("Unread Notifications", unreadCount),
+      toSummaryItem("Total Notifications", actualTotal),
+      toSummaryItem("Unread Notifications", actualUnreadCount),
     ],
     items,
     meta: {
       limit,
-      total,
-      unreadCount
+      total: actualTotal,
+      unreadCount: actualUnreadCount
     },
   });
 });
@@ -1013,6 +1112,9 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
 
   const userId = Number(req.user.id);
   const serialized = _serializePollForNotification(post, userId);
+  const imageUrl = extractImageUrl(serialized);
+  const metaObj = serialized.metadata || {};
+  const attachments = metaObj.attachments || (metaObj.attachment ? [metaObj.attachment] : []);
 
   res.status(200).json({
     success: true,
@@ -1022,6 +1124,8 @@ exports.getOrgNotificationById = asyncHandler(async (req, res) => {
       message: post.content,
       type: post.type,
       metadata: serialized.metadata,
+      imageUrl,
+      attachments,
       poll: serialized.poll || undefined,
       createdAt: post.createdAt,
       authorName: post.author?.name || "Admin",
@@ -1113,6 +1217,63 @@ exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
   });
 });
 
+exports.downloadUserDocumentFile = asyncHandler(async (req, res) => {
+  const userId = req.params.userId ? Number(req.params.userId) : null;
+  const rawUrl = req.query.url ? String(req.query.url).trim() : null;
+
+  let docUrl = rawUrl;
+  let docName = req.query.name ? String(req.query.name).trim() : "document";
+
+  if (userId && !docUrl) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { documentUrl: true, documentName: true, name: true },
+    });
+    if (user && user.documentUrl) {
+      docUrl = user.documentUrl;
+      docName = user.documentName || `${user.name || "user"}-document`;
+    }
+  }
+
+  if (!docUrl) {
+    res.status(404);
+    throw new Error("Document not found for this user");
+  }
+
+  let safeFileName = docName.replace(/[^a-zA-Z0-9_.-]/g, "_");
+  const ext = path.extname(safeFileName);
+  if (!ext) {
+    if (docUrl.toLowerCase().includes(".pdf")) safeFileName += ".pdf";
+    else if (docUrl.toLowerCase().includes(".png")) safeFileName += ".png";
+    else if (docUrl.toLowerCase().includes(".jpg") || docUrl.toLowerCase().includes(".jpeg")) safeFileName += ".jpg";
+    else if (docUrl.toLowerCase().includes(".webp")) safeFileName += ".webp";
+    else safeFileName += ".pdf";
+  }
+
+  if (docUrl.includes("/uploads/")) {
+    const relativePath = docUrl.substring(docUrl.indexOf("/uploads/"));
+    const localPath = path.join(__dirname, "..", relativePath);
+
+    if (fs.existsSync(localPath)) {
+      return res.download(localPath, safeFileName);
+    }
+  }
+
+  try {
+    const response = await axios.get(docUrl, { responseType: "arraybuffer" });
+    const contentType = response.headers["content-type"] || "application/pdf";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${safeFileName}"`);
+    res.setHeader("Content-Length", response.data.length);
+    return res.send(Buffer.from(response.data));
+  } catch (error) {
+    console.error("Failed to stream document file:", error?.message);
+    const directUrl = getDirectDownloadUrl(docUrl);
+    return res.redirect(directUrl);
+  }
+});
+
 exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertAnyPermission(
@@ -1141,7 +1302,20 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
       role: true,
       status: true,
       isActive: true,
+      gender: true,
+      dob: true,
+      bloodGroup: true,
+      existingMember: true,
       createdAt: true,
+      physicalFormNo: true,
+      documentUrl: true,
+      documentName: true,
+      department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -1149,28 +1323,56 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
 
   const orgName = organization?.name || "Organization";
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.get("host") || "localhost:5000";
+  const serverBaseUrl = `${protocol}://${host}`;
 
   const columns = [
-    { key: "index", label: "No.", width: 30, align: "center" },
-    { key: "name", label: "Name", width: 120 },
-    { key: "email", label: "Email", width: 140 },
-    { key: "mobile", label: "Contact No.", width: 90 },
-    { key: "role", label: "Role", width: 70 },
-    { key: "status", label: "Status", width: 60, align: "center" },
-    { key: "active", label: "Active", width: 50, align: "center" },
-    { key: "joinedAt", label: "Joined At", width: 70, align: "center" },
+    { key: "index", label: "No.", width: 25, align: "center" },
+    { key: "name", label: "Name", width: 85 },
+    { key: "department", label: "Department", width: 60 },
+    { key: "instrument", label: "Instrument", width: 60 },
+    { key: "physicalFormNo", label: "Form No.", width: 50 },
+    { key: "document", label: "Document", width: 65 },
+    { key: "gender", label: "Gender", width: 35 },
+    { key: "dob", label: "DOB", width: 45 },
+    { key: "bloodGroup", label: "Blood Grp", width: 35 },
+    { key: "existingMember", label: "Type", width: 40 },
+    { key: "email", label: "Email", width: 90 },
+    { key: "mobile", label: "Contact No.", width: 65 },
+    { key: "role", label: "Role", width: 45 },
+    { key: "status", label: "Status", width: 45, align: "center" },
+    { key: "active", label: "Active", width: 35, align: "center" },
+    { key: "joinedAt", label: "Joined At", width: 50, align: "center" },
   ];
 
-  const rows = users.map((user, index) => ({
-    index: index + 1,
-    name: user.name || "-",
-    email: user.email || "-",
-    mobile: user.mobile || "-",
-    role: user.role || "-",
-    status: user.status || "-",
-    active: user.isActive ? "Yes" : "No",
-    joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
-  }));
+  const rows = users.map((user, index) => {
+    const instNames = (user.userInstruments || [])
+      .map((ui) => ui.instrument?.name + (ui.assetId ? ` (${ui.assetId})` : ""))
+      .filter(Boolean)
+      .join(", ");
+
+    const directLink = user.documentUrl ? getDirectDownloadUrl(user.documentUrl) : "-";
+
+    return {
+      index: index + 1,
+      name: user.name || "-",
+      department: user.department?.name || "Unassigned",
+      instrument: instNames || "-",
+      physicalFormNo: user.physicalFormNo || "-",
+      document: user.documentUrl ? { text: user.documentName || "Download PDF", link: directLink } : "-",
+      gender: user.gender || "-",
+      dob: user.dob || "-",
+      bloodGroup: user.bloodGroup || "-",
+      existingMember: user.existingMember || "-",
+      email: user.email || "-",
+      mobile: user.mobile || "-",
+      role: user.role || "-",
+      status: user.status || "-",
+      active: user.isActive ? "Yes" : "No",
+      joinedAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
+    };
+  });
 
   const pdfBuffer = await buildGenericTablePdf({
     title: `${orgName} — User Directory`,
@@ -1178,8 +1380,8 @@ exports.downloadOrgUsersPdf = asyncHandler(async (req, res) => {
     columns,
     rows,
     summaryCards: [
-      { label: "Total Users", value: users.length },
-      { label: "Active Users", value: users.filter((u) => u.isActive).length },
+      { label: "Total Members", value: users.length },
+      { label: "Active Members", value: users.filter((u) => u.isActive).length },
     ],
   });
 
@@ -1201,12 +1403,15 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
   const organization = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { name: true },
+    select: { name: true, organizationCode: true },
   });
 
   const users = await prisma.user.findMany({
     where: {
-      memberships: { some: { orgId } },
+      OR: [
+        { orgId },
+        { memberships: { some: { orgId } } },
+      ],
       deletedAt: null,
     },
     select: {
@@ -1219,10 +1424,24 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       currentAddress: true,
       permanentAddress: true,
       profileImageUrl: true,
+      gender: true,
+      dob: true,
+      existingMember: true,
+      bloodGroup: true,
+      referenceBy: true,
       role: true,
       status: true,
       isActive: true,
       createdAt: true,
+      physicalFormNo: true,
+      documentUrl: true,
+      documentName: true,
+      department: { select: { name: true } },
+      userInstruments: {
+        include: {
+          instrument: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ name: "asc" }],
     take: 5000,
@@ -1230,10 +1449,22 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
 
   const orgName = organization?.name || "Organization";
   const safeName = orgName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.get("host") || "localhost:5000";
+  const serverBaseUrl = `${protocol}://${host}`;
 
   const headers = [
     "Sr. No.",
     "Name",
+    "Department",
+    "Instrument",
+    "Physical Form No.",
+    "Uploaded Document",
+    "Gender",
+    "Date of Birth",
+    "Member Type",
+    "Blood Group",
+    "Reference By",
     "Email",
     "Contact No.",
     "Emergency Contact",
@@ -1249,15 +1480,13 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Users");
 
-  // Title rows
   worksheet.addRow([`${orgName} — User Directory`]);
   worksheet.addRow([`Exported on: ${new Date().toLocaleString("en-IN")}`]);
-  worksheet.addRow([]); // Blank row
+  worksheet.addRow([]);
   worksheet.addRow(headers);
 
-  // Styling titles & merges
-  worksheet.mergeCells("A1:L1");
-  worksheet.mergeCells("A2:L2");
+  worksheet.mergeCells("A1:U1");
+  worksheet.mergeCells("A2:U2");
 
   worksheet.getCell("A1").font = { size: 14, bold: true };
   worksheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
@@ -1272,17 +1501,21 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFE2E8F0" }, // Light gray background
+      fgColor: { argb: "FFE2E8F0" },
     };
   });
 
-  // Set column widths
   headers.forEach((h, i) => {
     const col = worksheet.getColumn(i + 1);
-    col.width = i === 0 ? 8 : i === 7 ? 18 : (i >= 5 && i <= 6 ? 40 : 25);
+    if (i === 0) col.width = 8;
+    else if (i === 16) col.width = 20; // Profile Photo (0-indexed 16)
+    else if (i === 4) col.width = 20; // Physical Form No.
+    else if (i === 5) col.width = 35; // Uploaded Document
+    else if (i === 14 || i === 15) col.width = 35; // Addresses
+    else if (i === 1 || i === 11) col.width = 25; // Name, Email
+    else col.width = 15;
   });
 
-  // Helper for parallel map with concurrency limit
   const mapConcurrent = async (array, limit, fn) => {
     const results = [];
     const promises = [];
@@ -1300,15 +1533,34 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     return results;
   };
 
-  // Fetch images in parallel with concurrency limit of 15
   const userRows = await mapConcurrent(users, 15, async (user, index) => {
     let imageBuffer = null;
     if (user.profileImageUrl) {
       imageBuffer = await fetchImageBuffer(user.profileImageUrl);
     }
+    const instNames = (user.userInstruments || [])
+      .map((ui) => ui.instrument?.name + (ui.assetId ? ` (${ui.assetId})` : ""))
+      .filter(Boolean)
+      .join(", ");
+
+    const documentDownloadLink = user.documentUrl
+      ? getDirectDownloadUrl(user.documentUrl)
+      : "-";
+
     return {
       index: index + 1,
       name: user.name || "-",
+      department: user.department?.name || "Unassigned",
+      instrument: instNames || "-",
+      physicalFormNo: user.physicalFormNo || "-",
+      documentUrl: user.documentUrl || "-",
+      documentDownloadLink,
+      documentName: user.documentName || "Document",
+      gender: user.gender || "-",
+      dob: user.dob || "-",
+      existingMember: user.existingMember || "-",
+      bloodGroup: user.bloodGroup || "-",
+      referenceBy: user.referenceBy || "-",
       email: user.email || "-",
       mobile: user.mobile || "-",
       emergencyContact: user.emergencyContact || "-",
@@ -1323,17 +1575,25 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
     };
   });
 
-  let currentRowIndex = 5;
   for (const rowData of userRows) {
     const row = worksheet.addRow([
       rowData.index,
       rowData.name,
+      rowData.department,
+      rowData.instrument,
+      rowData.physicalFormNo,
+      "-", // Uploaded Document placeholder to be formatted as hyperlink below
+      rowData.gender,
+      rowData.dob,
+      rowData.existingMember,
+      rowData.bloodGroup,
+      rowData.referenceBy,
       rowData.email,
       rowData.mobile,
       rowData.emergencyContact,
       rowData.currentAddress,
       rowData.permanentAddress,
-      "", // Profile Photo cell
+      "", // Profile Photo cell (Col 17 / Col Q)
       rowData.role,
       rowData.status,
       rowData.active,
@@ -1345,6 +1605,20 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     });
 
+    const docCell = row.getCell(6);
+    if (rowData.documentDownloadLink && rowData.documentDownloadLink !== "-") {
+      const linkText = rowData.documentName || "Download PDF";
+      docCell.value = {
+        text: linkText,
+        hyperlink: rowData.documentDownloadLink,
+      };
+      docCell.font = {
+        color: { argb: "FF0563C1" },
+        underline: true,
+        bold: true,
+      };
+    }
+
     if (rowData.imageBuffer) {
       try {
         const ext = (rowData.profileImageUrl || "").toLowerCase().endsWith(".png") ? "png" : "jpeg";
@@ -1353,31 +1627,29 @@ exports.downloadOrgUsersExcel = asyncHandler(async (req, res) => {
           extension: ext,
         });
 
-        const imageWidth = 50;
-        const imageHeight = 50;
-        const cellWidthPixels = 18 * 7.5;
-        const cellHeightPixels = 60 * 1.33;
-        const offsetX = (cellWidthPixels - imageWidth) / 2;
-        const offsetY = (cellHeightPixels - imageHeight) / 2;
+        const imageWidth = 46;
+        const imageHeight = 46;
+        const colWidthPixels = Math.floor(20 * 7 + 12); // 152 px for col width 20
+        const rowHeightPixels = Math.floor(60 * 1.333333); // 80 px for row height 60
+        const offsetX = Math.max(0, (colWidthPixels - imageWidth) / 2);
+        const offsetY = Math.max(0, (rowHeightPixels - imageHeight) / 2);
 
         worksheet.addImage(imageId, {
           tl: { 
-            nativeCol: 7, 
+            nativeCol: 16, // Profile Photo column (0-indexed 16)
             nativeColOff: Math.round(offsetX * 9525), 
-            nativeRow: currentRowIndex - 1, 
+            nativeRow: row.number - 1, 
             nativeRowOff: Math.round(offsetY * 9525)
           },
           ext: { width: imageWidth, height: imageHeight },
           editAs: "oneCell",
         });
       } catch (err) {
-        worksheet.getCell(currentRowIndex, 8).value = "Error loading image";
+        worksheet.getCell(row.number, 17).value = "Error loading image";
       }
     } else {
-      worksheet.getCell(currentRowIndex, 8).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
+      worksheet.getCell(row.number, 17).value = rowData.profileImageUrl && rowData.profileImageUrl !== "-" ? "No Image" : "-";
     }
-
-    currentRowIndex++;
   }
 
   const buffer = await workbook.xlsx.writeBuffer();

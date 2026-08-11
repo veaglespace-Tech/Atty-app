@@ -275,10 +275,6 @@ function ReportRecordCard({ item, index = 0, onPress }) {
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.overtimeDays || 0}</Text>
           </View>
           <View className="w-1/3">
-            <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Overtime</Text>
-            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.overtimeDays || 0}</Text>
-          </View>
-          <View className="w-1/3">
             <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Worked Hrs</Text>
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatHoursValue(item.workedHours)}</Text>
           </View>

@@ -3,7 +3,8 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator,
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { compressPickedImage } from "../../utils/image";
+import AppDatePicker from "@/components/ui/AppDatePicker";
 import { 
   ChevronLeft, 
   ChevronRight,
@@ -59,6 +60,7 @@ export default function SettingsScreen() {
   const [activeTab, setActiveTab] = useState("personal");
   
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
+  const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [documentDataUrl, setDocumentDataUrl] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [removeDocument, setRemoveDocument] = useState(false);
@@ -79,7 +81,7 @@ export default function SettingsScreen() {
     departmentId: user?.departmentId ? String(user.departmentId) : "",
   });
 
-  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !user?.orgId });
+  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !getUserOrganizationId(user) });
   const departmentsList = deptData?.items || [];
 
   const onLogout = () => {
@@ -111,19 +113,32 @@ export default function SettingsScreen() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.2,
-        base64: true, // Need base64 to send to backend as data url
+        quality: 1, // Let ImageManipulator handle compression
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        const base64Img = await compressPickedImage(result.assets[0]);
         setProfileImageDataUrl(base64Img);
+        setRemoveProfileImage(false);
       }
     } catch (err) {
       Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
+  
+  const toggleProfileImageRemoval = () => {
+    if (removeProfileImage) {
+      setRemoveProfileImage(false);
+    } else {
+      if (profileImageDataUrl) {
+        setProfileImageDataUrl("");
+      } else if (user?.profileImageUrl) {
+        setRemoveProfileImage(true);
+      }
     }
   };
 
@@ -171,13 +186,10 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    if (Platform.OS === "android") {
-      setShowDatePicker(false);
-    }
-    if (selectedDate) {
-      const isoStr = selectedDate.toISOString().split("T")[0];
-      setFormData(prev => ({ ...prev, dob: isoStr }));
+  const handleDateConfirm = (dateKey) => {
+    setShowDatePicker(false);
+    if (dateKey) {
+      setFormData(prev => ({ ...prev, dob: dateKey }));
     }
   };
 
@@ -202,6 +214,7 @@ export default function SettingsScreen() {
       if (formData.existingMember !== (user?.existingMember || "")) payload.existingMember = formData.existingMember || undefined;
       if (formData.departmentId !== (user?.departmentId ? String(user.departmentId) : "")) payload.departmentId = formData.departmentId ? Number(formData.departmentId) : null;
       if (profileImageDataUrl) payload.profileImageDataUrl = profileImageDataUrl;
+      else if (removeProfileImage) payload.removeProfileImage = true;
       
       if (documentDataUrl) {
         payload.documentDataUrl = documentDataUrl;
@@ -246,7 +259,7 @@ export default function SettingsScreen() {
   const organizationName = user?.organization?.name || "Workspace";
   
   // Decide if this user can see the Admin panels
-  const canSeeAdminSettings = isAdmin;
+  const canSeeAdminSettings = isAdmin || isSuperAdmin;
 
   const currentProfileImageUrl = profileImageDataUrl || (user?.profileImageUrl ? getFullImageUrl(user.profileImageUrl) : null);
 
@@ -274,22 +287,19 @@ export default function SettingsScreen() {
         <ThemeToggle />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
         <View className="max-w-2xl w-full mx-auto">
         {/* Profile Header */}
         <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
-          <Pressable onPress={pickImage} className="relative mb-4 active:scale-95 transition-transform">
+          <View className="relative mb-4">
             {currentProfileImageUrl ? (
-              <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-2xl border-4 border-white dark:border-slate-800 bg-white" />
+              <Image source={{ uri: currentProfileImageUrl }} resizeMode="contain" className="h-24 w-24 rounded-[2rem] border-4 border-white dark:border-slate-800 bg-white shadow-sm" />
             ) : (
-              <View className="h-24 w-24 rounded-2xl bg-blue-100 dark:bg-blue-900/30 items-center justify-center border-4 border-white dark:border-slate-800">
+              <View className="h-24 w-24 rounded-[2rem] bg-blue-100 dark:bg-blue-900/30 items-center justify-center border-4 border-white dark:border-slate-800 shadow-sm">
                 <User size={40} className="text-blue-600 dark:text-blue-400" />
               </View>
             )}
-            <View className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 rounded-full items-center justify-center border-2 border-white dark:border-slate-800">
-              <Camera size={14} color="#fff" />
-            </View>
-          </Pressable>
+          </View>
           <Text className="text-2xl font-black text-slate-900 dark:text-white text-center">
             {user?.name || "User"}
           </Text>
@@ -541,21 +551,20 @@ export default function SettingsScreen() {
                   </View>
                 ) : (
                   <>
-                    <Pressable onPress={() => setShowDatePicker(true)} className="flex-row items-center bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800/80 rounded-2xl px-4 py-3.5">
+                    <Pressable onPress={() => setShowDatePicker(true)} className="flex-row items-center bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800/80 rounded-2xl px-4 py-3.5 active:scale-[0.99] transition-transform">
                       <Calendar size={18} className="text-slate-400 dark:text-slate-500 mr-3" />
                       <Text className={`flex-1 text-[14px] font-bold ${formData.dob ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}>
                         {formData.dob || "dd-mm-yyyy"}
                       </Text>
                     </Pressable>
-                    {showDatePicker && (
-                      <DateTimePicker
-                        value={formData.dob ? new Date(formData.dob) : new Date()}
-                        mode="date"
-                        display={Platform.OS === "ios" ? "spinner" : "default"}
-                        onChange={handleDateChange}
-                        maximumDate={new Date()}
-                      />
-                    )}
+                    <AppDatePicker
+                      visible={showDatePicker}
+                      value={formData.dob}
+                      maximumDate={new Date()}
+                      title="Select Date of Birth"
+                      onConfirm={handleDateConfirm}
+                      onCancel={() => setShowDatePicker(false)}
+                    />
                   </>
                 )}
               </View>
@@ -572,6 +581,41 @@ export default function SettingsScreen() {
                     placeholder="Enter physical form number"
                     placeholderTextColor="#94a3b8"
                   />
+                </View>
+              </View>
+
+              
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">Profile Photo</Text>
+                <View className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                  <Text className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                    Upload a clear square image to personalize your profile. Max file size: 10 MB.
+                  </Text>
+                  
+                  <View className="flex-row items-center gap-4 mb-3">
+                    <View className="flex-1">
+                      <View className="flex-row flex-wrap items-center gap-2 mb-3">
+                        <Pressable onPress={pickImage} className="flex-row items-center justify-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl px-4 py-3 active:bg-blue-100 dark:active:bg-blue-500/20">
+                          <ImageUp size={16} className="text-blue-600 dark:text-blue-400" />
+                          <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                            {currentProfileImageUrl && !removeProfileImage ? "Change Photo" : "Upload Photo"}
+                          </Text>
+                        </Pressable>
+
+                        {(removeProfileImage || profileImageDataUrl || user?.profileImageUrl) && (
+                          <Pressable onPress={toggleProfileImageRemoval} className="flex-row items-center justify-center gap-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl px-4 py-3 active:bg-rose-100 dark:active:bg-rose-500/20">
+                            <Trash2 size={16} className="text-rose-600 dark:text-rose-400" />
+                            <Text className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+                              {removeProfileImage ? "Keep Current" : profileImageDataUrl ? "Clear Selection" : "Remove"}
+                            </Text>
+                          </Pressable>
+                        )}
+                      </View>
+                      <Text className="text-[11px] font-semibold text-slate-400">
+                        {removeProfileImage ? "Your current profile photo will be removed when you save." : profileImageDataUrl ? "New profile photo is ready. Save changes to publish it." : "Supported formats: JPG, PNG, WEBP. Max: 10 MB."}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </View>
 
@@ -651,7 +695,7 @@ export default function SettingsScreen() {
               </View>
               <View>
                 <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Email Support</Text>
-                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">support@veagle.com</Text>
+                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">info@veaglespace.com</Text>
               </View>
             </View>
             
@@ -661,7 +705,7 @@ export default function SettingsScreen() {
               </View>
               <View>
                 <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Call Us</Text>
-                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">+91 99999 99999</Text>
+                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">+91 82379 99101</Text>
               </View>
             </View>
           </View>

@@ -83,7 +83,7 @@ const findActiveSubscription = async ({ organizationId, now = new Date() }) => {
       status: "ACTIVE",
       OR: [{ activeKey }, { activeKey: null }],
       startDate: {
-        lte: new Date(now.getTime() + 10 * 60 * 1000), // 10 min buffer for clock drift
+        lte: now,
       },
       endDate: {
         gte: now,
@@ -161,19 +161,6 @@ const syncOrganizationSubscriptionState = async ({ organizationId, organization 
   });
 
   if (!activeSubscription) {
-    const isOrgExpiryValid =
-      currentOrganization.subscriptionStatus === "ACTIVE" &&
-      currentOrganization.subscriptionExpiry &&
-      new Date(currentOrganization.subscriptionExpiry).getTime() > now.getTime();
-
-    if (isOrgExpiryValid) {
-      return {
-        organization: currentOrganization,
-        activeSubscription: null,
-        expired: false,
-      };
-    }
-
     const expiredOrganization = await expireOrganizationSubscriptions({
       organizationId: orgId,
       now,
@@ -183,21 +170,6 @@ const syncOrganizationSubscriptionState = async ({ organizationId, organization 
       organization: expiredOrganization,
       activeSubscription: null,
       expired: true,
-    };
-  }
-
-  // Skip transaction if the state is already synced
-  const isSynced =
-    currentOrganization.subscriptionId === activeSubscription.id &&
-    currentOrganization.subscriptionStatus === "ACTIVE" &&
-    currentOrganization.subscriptionExpiry?.getTime() === activeSubscription.endDate?.getTime() &&
-    currentOrganization.planId === (activeSubscription.planId || currentOrganization.planId);
-
-  if (isSynced) {
-    return {
-      organization: currentOrganization,
-      activeSubscription,
-      expired: false,
     };
   }
 

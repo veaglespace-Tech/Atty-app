@@ -271,13 +271,14 @@ export const orgApi = createApi({
     }),
     downloadOrgDepartmentsExcel: builder.mutation({
       query: (params = "") => ({
-        url: `/org/departments/excel${params ? `?${params}` : ""}`,
+        url: `/org/teams/excel${params ? `?${params}` : ""}`,
         method: "GET",
         responseHandler: (response) => response.blob(),
       }),
     }),
     downloadOrgDepartmentsPdf: builder.mutation({
       query: (params = "") => ({
+        url: `/org/teams/pdf${params ? `?${params}` : ""}`,
         url: `/org/departments/pdf${params ? `?${params}` : ""}`,
         method: "GET",
         responseHandler: (response) => response.blob(),
@@ -301,16 +302,16 @@ export const orgApi = createApi({
         method: "PATCH",
         body: payload,
       }),
-      invalidatesTags: ["OrgDepartments", "OrgUsers"],
+      invalidatesTags: ["OrgDepartments"],
     }),
     deleteOrgDepartment: builder.mutation({
       query: (id) => ({
         url: `/org/departments/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["OrgDepartments", "OrgUsers"],
+      invalidatesTags: ["OrgDepartments"],
     }),
-    assignOrgDepartment: builder.mutation({
+    assignDepartmentToUsers: builder.mutation({
       query: (payload) => ({
         url: "/org/departments/assign",
         method: "POST",
@@ -318,7 +319,7 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgDepartments", "OrgUsers"],
     }),
-    unassignOrgDepartment: builder.mutation({
+    unassignDepartmentFromUser: builder.mutation({
       query: ({ departmentId, userId }) => ({
         url: `/org/departments/assign/${departmentId}/${userId}`,
         method: "DELETE",
@@ -350,20 +351,35 @@ export const orgApi = createApi({
         url: `/org/instruments/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["OrgInstruments"],
+      invalidatesTags: ["OrgInstruments", "OrgUsers"],
     }),
     assignOrgInstrument: builder.mutation({
-      query: ({ id, userId }) => ({
-        url: `/org/instruments/${id}/assign`,
+      query: (payload) => ({
+        url: "/org/instruments/assign",
         method: "POST",
-        body: { userId },
+        body: payload,
+      }),
+      invalidatesTags: ["OrgInstruments", "OrgUsers"],
+    }),
+    unassignOrgInstrument: builder.mutation({
+      query: ({ instrumentId, userId }) => ({
+        url: `/org/instruments/assign/${instrumentId}/${userId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgInstruments", "OrgUsers"],
+    }),
+    updateOrgInstrumentAssignment: builder.mutation({
+      query: ({ instrumentId, userId, assetId }) => ({
+        url: `/org/instruments/assign/${instrumentId}/${userId}`,
+        method: "PATCH",
+        body: { assetId },
       }),
       invalidatesTags: ["OrgInstruments", "OrgUsers"],
     }),
     revokeOrgInstrument: builder.mutation({
-      query: (id) => ({
-        url: `/org/instruments/${id}/revoke`,
-        method: "POST",
+      query: ({ instrumentId, userId }) => ({
+        url: `/org/instruments/assign/${instrumentId}/${userId}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["OrgInstruments", "OrgUsers"],
     }),
@@ -482,6 +498,8 @@ export const {
   useUpdateOrgInstrumentMutation,
   useDeleteOrgInstrumentMutation,
   useAssignOrgInstrumentMutation,
+  useUnassignOrgInstrumentMutation,
+  useUpdateOrgInstrumentAssignmentMutation,
   useRevokeOrgInstrumentMutation,
   useGetOrgExpensesBalanceQuery,
   useGetOrgExpenseByIdQuery,
@@ -497,8 +515,8 @@ export const {
   useCreateOrgDepartmentMutation,
   usePatchOrgDepartmentMutation,
   useDeleteOrgDepartmentMutation,
-  useAssignOrgDepartmentMutation,
-  useUnassignOrgDepartmentMutation,
+  useAssignDepartmentToUsersMutation,
+  useUnassignDepartmentFromUserMutation,
   useDownloadOrgDepartmentsExcelMutation,
   useDownloadOrgDepartmentsPdfMutation,
 } = orgApi;

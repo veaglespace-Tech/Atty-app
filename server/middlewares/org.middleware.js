@@ -56,7 +56,7 @@ exports.checkOrgStatus = asyncHandler(async (req, res, next) => {
     org.subscriptionStatus = "EXPIRED";
   }
 
-  if (false) {
+  if (org.subscriptionStatus === "EXPIRED") {
     res.status(402);
     throw new Error("Subscription expired. Please renew to continue.");
   }

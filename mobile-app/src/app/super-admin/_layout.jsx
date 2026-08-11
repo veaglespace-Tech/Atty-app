@@ -20,6 +20,7 @@ export default function SuperAdminLayout() {
           tabBarShowLabel: false,
           tabBarActiveTintColor: '#2563eb',
           tabBarInactiveTintColor: isDark ? '#94a3b8' : '#64748b',
+          safeAreaInsets: { bottom: 0 },
           tabBarStyle: {
             position: 'absolute',
             bottom: 0,
@@ -32,11 +33,13 @@ export default function SuperAdminLayout() {
             borderRightWidth: 1,
             elevation: 20,
             boxShadow: '0px -10px 20px rgba(0,0,0,0.1)',
-            borderTopLeftRadius: 32,
-            borderTopRightRadius: 32,
-            height: 70 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
-            paddingBottom: 12 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
-            paddingTop: 12,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            height: Platform.OS === 'ios' ? (insets.bottom > 0 ? 54 + insets.bottom : 62) : 62,
+            paddingBottom: Platform.OS === 'ios' ? (insets.bottom > 0 ? insets.bottom - 4 : 8) : 8,
+            paddingTop: 8,
+            maxWidth: 768,
+            alignSelf: 'center',
           },
           tabBarLabelStyle: {
             fontSize: 10,
@@ -83,7 +86,7 @@ export default function SuperAdminLayout() {
         <Tabs.Screen name="leads" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="notifications/[id]" options={{ href: null }} />
-        <Tabs.Screen name="organizations/[id]" options={{ href: null }} />
+        <Tabs.Screen name="organization/[id]" options={{ href: null }} />
         <Tabs.Screen name="posts" options={{ href: null }} />
         <Tabs.Screen name="referrals" options={{ href: null }} />
         <Tabs.Screen name="referrals/[id]" options={{ href: null }} />

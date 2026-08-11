@@ -128,84 +128,98 @@ export default function SuperAdminNotificationDetailPage() {
             </p>
           </div>
 
-          {notification.metadata?.attachment && (
-            <div className="mt-8">
-              {notification.metadata.attachment.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || (notification.metadata.attachment.resourceType === "image" && notification.metadata.attachment.format !== "pdf" && !notification.metadata.attachment.url?.match(/\.pdf/i)) ? (
-                <div 
-                  className="relative group/image w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
-                  onContextMenu={(e) => notification.metadata.attachment.allowDownload === false ? e.preventDefault() : null}
-                >
-                  <img 
-                    src={notification.metadata.attachment.url} 
-                    alt={notification.metadata.attachment.name || "Attachment"} 
-                    className={`w-full h-auto max-h-[600px] object-contain bg-slate-50 transition-transform duration-500 group-hover/image:scale-[1.02] dark:bg-slate-900/50 ${notification.metadata.attachment.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
-                  />
-                  {notification.metadata.attachment.allowDownload !== false && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover/image:opacity-100">
-                      <a
-                        href={notification.metadata.attachment.url}
-                        download={notification.metadata.attachment.name || "attachment.jpg"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-xl transition-transform hover:scale-105 active:scale-95"
-                        onClick={(e) => handleFileDownload(e, notification.metadata.attachment.url, notification.metadata.attachment.name || "attachment.jpg")}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                        Download Image
-                      </a>
+          {(() => {
+            const allAttachments = notification.attachments?.length > 0 
+              ? notification.attachments 
+              : (notification.metadata?.attachments || (notification.metadata?.attachment ? [notification.metadata.attachment] : []));
+
+            if (!allAttachments.length) return null;
+
+            return (
+              <div className="mt-8 space-y-4">
+                {allAttachments.map((att, idx) => {
+                  const isImage = att.url?.match(/\.(jpeg|jpg|gif|png|webp)/i) || 
+                    (att.resourceType === "image" && att.format !== "pdf" && !att.url?.match(/\.pdf/i));
+
+                  return isImage ? (
+                    <div 
+                      key={idx}
+                      className="relative group/image w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
+                      onContextMenu={(e) => att.allowDownload === false ? e.preventDefault() : null}
+                    >
+                      <img 
+                        src={att.url} 
+                        alt={att.name || "Attachment"} 
+                        className={`w-full h-auto max-h-[600px] object-contain bg-slate-50 transition-transform duration-500 group-hover/image:scale-[1.02] dark:bg-slate-900/50 ${att.allowDownload === false ? 'pointer-events-none select-none' : ''}`} 
+                      />
+                      {att.allowDownload !== false && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover/image:opacity-100">
+                          <a
+                            href={att.url}
+                            download={att.name || "attachment.jpg"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-xl transition-transform hover:scale-105 active:scale-95"
+                            onClick={(e) => handleFileDownload(e, att.url, att.name || "attachment.jpg")}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Download Image
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ) : (
-                notification.metadata.attachment.allowDownload !== false ? (
-                  <div className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
-                        <Paperclip size={20} className="text-blue-500 dark:text-blue-400" />
+                  ) : (
+                    att.allowDownload !== false ? (
+                      <div key={idx} className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <Paperclip size={20} className="text-blue-500 dark:text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-sm font-bold text-slate-700 dark:text-slate-300">{att.name || "Attached File"}</p>
+                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mt-0.5">Document / File</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                          <a 
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Preview
+                          </a>
+                          <a 
+                            href={att.url}
+                            download={att.name || "attachment"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                            onClick={(e) => handleFileDownload(e, att.url, att.name || "attachment")}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Download
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-bold text-slate-700 dark:text-slate-300">{notification.metadata.attachment.name || "Attached File"}</p>
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mt-0.5">Document / File</p>
+                    ) : (
+                      <div key={idx} className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 opacity-80">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+                          <Paperclip size={20} className="text-slate-400" />
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate text-sm font-bold text-slate-500">{att.name || "Attached File"}</p>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                      <a 
-                        href={notification.metadata.attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                        Preview
-                      </a>
-                      <a 
-                        href={notification.metadata.attachment.url}
-                        download={notification.metadata.attachment.name || "attachment"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
-                        onClick={(e) => handleFileDownload(e, notification.metadata.attachment.url, notification.metadata.attachment.name || "attachment")}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                        Download
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 opacity-80">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
-                      <Paperclip size={20} className="text-slate-400" />
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="truncate text-sm font-bold text-slate-500">{notification.metadata.attachment.name || "Attached File"}</p>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Attachment (Download Disabled)</p>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          )}
+                    )
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

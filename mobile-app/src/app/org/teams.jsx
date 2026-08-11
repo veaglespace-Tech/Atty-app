@@ -336,7 +336,7 @@ function TeamCard({ team, index = 0 }) {
 
   return (
     <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()}>
-      <Pressable onPress={() => router.push(`/org/team/${team.id}`)} className="p-5 mb-3 mx-4 bg-white dark:bg-slate-900 rounded-[24px] shadow-sm border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 active:scale-[0.98] transition-all">
+      <Pressable onPress={() => router.push(`/org/teams/${team.id}`)} className="p-5 mb-3 mx-4 bg-white dark:bg-slate-900 rounded-[24px] shadow-sm border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 active:scale-[0.98] transition-all">
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
             <Text className="text-base font-black text-slate-900 dark:text-white" numberOfLines={1}>

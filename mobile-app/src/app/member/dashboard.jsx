@@ -159,7 +159,7 @@ export default function MemberDashboard(props) {
           <Animated.View
             entering={FadeInDown.duration(400).delay(200).springify()}
           >
-            <MyAttendanceCore isEmbedded={true} showActions={false} />
+            <MyAttendanceCore user={user} isEmbedded={true} isDashboard={true} showActions={true} />
           </Animated.View>
         </View>
       </View>

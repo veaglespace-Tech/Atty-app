@@ -36,7 +36,7 @@ export default function ContactSupport() {
             </View>
             <View>
               <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Email Support</Text>
-              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">support@veagle.com</Text>
+              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">info@veaglespace.com</Text>
             </View>
           </View>
           
@@ -46,7 +46,7 @@ export default function ContactSupport() {
             </View>
             <View>
               <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Call Us</Text>
-              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">+91 99999 99999</Text>
+              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">+91 82379 99101</Text>
             </View>
           </View>
         </View>

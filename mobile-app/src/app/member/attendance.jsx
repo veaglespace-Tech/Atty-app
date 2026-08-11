@@ -8,7 +8,7 @@ export default function MemberAttendancePage(props) {
   return (
     <>
       {" "}
-      <MyAttendanceCore user={user} />
+      <MyAttendanceCore user={user} showActions={false} />
     </>
   );
 }

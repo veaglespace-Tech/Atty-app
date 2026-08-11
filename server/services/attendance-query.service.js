@@ -1,4 +1,4 @@
-const { minutesToHoursValue, todayKey, toDateKey, toSummaryItem, monthWindow, dateKey } = require("./common.service");
+const { minutesToHoursValue, todayKey, toDateKey, toSummaryItem, monthWindow, weekWindow, dateKey } = require("./common.service");
 const { resolveAttendanceLateMinutes } = require("./attendance-time.service");
 const { attendanceRecordSelect } = require("./prisma-selects.service");
 const { resolveUserRole } = require("../utils/membership");
@@ -31,16 +31,23 @@ const mapAttendanceRecord = (record = {}) => {
     date: record.date,
     memberId: record.userId,
     member: user.name || "Unknown",
+    department: user.department?.name || "Unassigned",
+    departmentStatus: user.department ? "Allocated" : "Unallocated",
+    gender: user.gender || "-",
+    dob: user.dob || "-",
+    existingMember: user.existingMember || "-",
+    referenceBy: user.referenceBy || "-",
+    bloodGroup: user.bloodGroup || "-",
+    emergencyContact: user.emergencyContact || "-",
+    currentAddress: user.currentAddress || "-",
+    permanentAddress: user.permanentAddress || "-",
+    joinedAt: user.memberships?.[0]?.joinedAt ? new Date(user.memberships[0].joinedAt).toLocaleDateString("en-IN") : user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
     role: resolveUserRole(user, record.orgId) || "MEMBER",
     status: record.status || "PRESENT",
     punchInAt: record.punchInAt,
     punchOutAt: record.punchOutAt,
-    workedMinutes: !record.punchOutAt && record.punchInAt 
-      ? Math.max(Number(record.totalMinutesWorked || 0), Math.floor((new Date() - new Date(record.punchInAt)) / 60000))
-      : Number(record.totalMinutesWorked || 0),
-    workedHours: !record.punchOutAt && record.punchInAt 
-      ? minutesToHoursValue(Math.max(Number(record.totalMinutesWorked || 0), Math.floor((new Date() - new Date(record.punchInAt)) / 60000)))
-      : minutesToHoursValue(record.totalMinutesWorked || 0),
+    workedMinutes: Number(record.totalMinutesWorked || 0),
+    workedHours: minutesToHoursValue(record.totalMinutesWorked || 0),
     lateMinutes: resolveAttendanceLateMinutes(record),
     punchInValid: record.isPunchInValid !== false,
     punchOutValid: record.isPunchOutValid !== false,
@@ -144,12 +151,14 @@ const buildAttendanceSummary = (records = []) => {
       if (record.status === "PRESENT" || record.status === "REGULARIZED") acc.present += 1;
       else if (record.status === "HALF_DAY") acc.halfDay += 1;
       else if (record.status === "ABSENT") acc.absent += 1;
+      else if (record.status === "OVERTIME") acc.overtime += 1;
       return acc;
     },
     {
       present: 0,
       halfDay: 0,
       absent: 0,
+      overtime: 0,
     }
   );
 
@@ -158,6 +167,7 @@ const buildAttendanceSummary = (records = []) => {
     toSummaryItem("Present", totals.present),
     toSummaryItem("Half Day", totals.halfDay),
     toSummaryItem("Absent", totals.absent),
+    toSummaryItem("Overtime", totals.overtime),
   ];
 };
 
@@ -204,9 +214,8 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
     rangeTo = today;
     periodLabel = "Daily";
   } else if (normalizedPeriod === "weekly") {
-    const from = new Date(now);
-    from.setDate(from.getDate() - 6);
-    rangeFrom = dateKey(from);
+    const window = weekWindow(now);
+    rangeFrom = window.from;
     rangeTo = today;
     periodLabel = "Weekly";
   } else if (normalizedPeriod === "custom") {
@@ -265,8 +274,10 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
       name: user.name,
       email: user.email,
       role: user.role,
-      orgName: user.organization?.name || "-",
-      orgCode: user.organization?.organizationCode || "-",
+      gender: user.gender || "-",
+      existingMember: user.existingMember || "-",
+      orgName: user.organization?.name || "Unknown Org",
+      orgCode: user.organization?.organizationCode || "ORG",
     },
     summary: [
       { label: "Total Logs", value: totalRecords },
@@ -331,9 +342,8 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     rangeTo = today;
     periodLabel = "Daily";
   } else if (normalizedPeriod === "weekly") {
-    const from = new Date(now);
-    from.setDate(from.getDate() - 6);
-    rangeFrom = dateKey(from);
+    const window = weekWindow(now);
+    rangeFrom = window.from;
     rangeTo = today;
     periodLabel = "Weekly";
   } else if (normalizedPeriod === "custom") {

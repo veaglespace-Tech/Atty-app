@@ -2,17 +2,17 @@ import React, { useState, useMemo } from "react";
 import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, SafeAreaView, Alert } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, CalendarCheck2, Clock, X, UserCheck, Download, FileBox, FileText } from "lucide-react-native";
-import { useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation } from "@/services/api/teamLeaderApi";
+import { useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation, useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 import { formatHoursValue } from "@/utils/time";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
-import { getDateKey, getTodayDateKey } from "@/utils/date";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange } from "@/utils/date";
 
-const MetricCard = ({ label, value, bgClass, textClass }) => (
+const MetricCard = ({ label, value, bgClass, textClass, labelClass }) => (
   <View className={`flex-1 rounded-[24px] p-4 border border-slate-100 dark:border-slate-800 ${bgClass}`}>
-    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">{label}</Text>
+    <Text className={`text-[10px] font-black uppercase tracking-widest mb-2 ${labelClass || 'text-slate-500 dark:text-slate-400'}`}>{label}</Text>
     <Text className={`text-2xl font-black ${textClass}`}>{value}</Text>
   </View>
 );
@@ -21,6 +21,10 @@ export default function TeamLeaderAttendancePage() {
   const { user } = useAuthSession();
   const [period, setPeriod] = useState("monthly");
   const [showMyAttendance, setShowMyAttendance] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+
+  const { data: teamsData } = useGetTeamLeaderTeamsQuery(50);
+  const teams = useMemo(() => teamsData?.items || [], [teamsData]);
   
   const queryString = useMemo(() => {
     const today = new Date();
@@ -28,17 +32,27 @@ export default function TeamLeaderAttendancePage() {
     let toDateStr = getTodayDateKey();
 
     if (period === "weekly") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 6);
-      fromDateStr = getDateKey(fromDate);
+      const range = getWeekRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
     } else if (period === "monthly") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 29);
-      fromDateStr = getDateKey(fromDate);
+      const range = getMonthRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    }
+    const params = new URLSearchParams({
+      period,
+      from: fromDateStr,
+      to: toDateStr,
+      limit: "50",
+    });
+
+    if (selectedTeamId) {
+      params.set("teamId", selectedTeamId);
     }
     
-    return `period=${period}&from=${fromDateStr}&to=${toDateStr}&limit=50`;
-  }, [period]);
+    return params.toString();
+  }, [period, selectedTeamId]);
 
   const { data, isLoading, isFetching, refetch } = useGetTeamLeaderAttendanceQuery(queryString);
   const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderReportsPdfMutation();
@@ -68,12 +82,12 @@ export default function TeamLeaderAttendancePage() {
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
+      <View className="px-5 pt-4 pb-6 bg-blue-600 dark:bg-slate-900 border-b border-blue-700 dark:border-slate-800 shadow-sm rounded-b-[32px] mb-4 z-10">
         <View className="flex-row items-center justify-between mb-4">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
+          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-white/20 dark:bg-slate-800">
+            <ChevronLeft size={20} className="text-white" />
           </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Team Attendance</Text>
+          <Text className="text-lg font-black tracking-tight text-white">Team Attendance</Text>
           
           <View className="flex-row items-center gap-2">
             <Pressable
@@ -110,18 +124,40 @@ export default function TeamLeaderAttendancePage() {
           </View>
         </View>
 
-        <View className="flex-row gap-2 mt-2">
+        {teams.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ gap: 8 }}>
+            <Pressable 
+              onPress={() => setSelectedTeamId("")}
+              className={`px-4 py-2 rounded-full border ${selectedTeamId === "" ? 'bg-white dark:bg-slate-800 border-transparent shadow-sm' : 'bg-transparent border-white/20 dark:border-slate-700'}`}
+            >
+              <Text className={`text-[12px] font-black ${selectedTeamId === "" ? 'text-blue-600 dark:text-blue-400' : 'text-blue-100 dark:text-slate-400'}`}>All My Teams</Text>
+            </Pressable>
+            {teams.map(t => (
+              <Pressable
+                key={t.id}
+                onPress={() => setSelectedTeamId(t.id)}
+                className={`px-4 py-2 rounded-full border ${selectedTeamId === t.id ? 'bg-white dark:bg-slate-800 border-transparent shadow-sm' : 'bg-transparent border-white/20 dark:border-slate-700'}`}
+              >
+                <Text className={`text-[12px] font-black ${selectedTeamId === t.id ? 'text-blue-600 dark:text-blue-400' : 'text-blue-100 dark:text-slate-400'}`}>{t.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+
+        <View className="flex-row gap-3 mt-0">
           <MetricCard
             label="Present"
             value={getSummaryValue("Present")}
-            bgClass="bg-emerald-50 dark:bg-emerald-500/10"
-            textClass="text-emerald-600 dark:text-emerald-400" 
+            bgClass="bg-white/10 border-white/20 dark:bg-emerald-500/10 dark:border-emerald-500/20"
+            textClass="text-white dark:text-emerald-400" 
+            labelClass="text-blue-100 dark:text-slate-400"
           />
           <MetricCard
             label="Absent"
             value={getSummaryValue("Absent")}
-            bgClass="bg-rose-50 dark:bg-rose-500/10"
-            textClass="text-rose-600 dark:text-rose-400" 
+            bgClass="bg-white/10 border-white/20 dark:bg-rose-500/10 dark:border-rose-500/20"
+            textClass="text-white dark:text-rose-400" 
+            labelClass="text-blue-100 dark:text-slate-400"
           />
         </View>
       </View>
@@ -222,7 +258,7 @@ export default function TeamLeaderAttendancePage() {
               <X size={20} className="text-slate-500" />
             </Pressable>
           </View>
-          {user ? <MyAttendanceCore user={user} isEmbedded={false} /> : null}
+          {user ? <MyAttendanceCore user={user} isEmbedded={false} showActions={false} /> : null}
         </SafeAreaView>
       </Modal>
     </View>

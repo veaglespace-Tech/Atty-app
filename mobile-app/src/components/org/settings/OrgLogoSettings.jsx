@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, Pressable, Alert, ActivityIndicator, Image } from "react-native";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
+import { compressPickedImage } from "../../../utils/image";
 import { ImageUp, Trash2, Building2 } from "lucide-react-native";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { setCurrentUser } from "@/store/slices/authSlice";
@@ -21,15 +22,14 @@ export default function OrgLogoSettings() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.2,
-        base64: true,
+        quality: 1,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        const base64Img = await compressPickedImage(result.assets[0]);
         setLogoDataUrl(base64Img);
         setRemoveLogo(false);
       }

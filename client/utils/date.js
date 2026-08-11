@@ -35,3 +35,31 @@ export const getDateKey = (value = new Date(), timeZone = APP_TIME_ZONE) => {
 };
 
 export const getTodayDateKey = () => getDateKey(new Date());
+
+export const getWeekRange = (date = new Date()) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diffToMonday = (day + 6) % 7;
+  
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - diffToMonday);
+  
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  return {
+    from: getDateKey(monday),
+    to: getDateKey(sunday),
+  };
+};
+
+export const getMonthRange = (date = new Date()) => {
+  const d = new Date(date);
+  const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  
+  return {
+    from: getDateKey(firstDay),
+    to: getDateKey(lastDay),
+  };
+};

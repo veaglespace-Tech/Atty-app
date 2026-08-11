@@ -125,7 +125,7 @@ export default function TeamLeaderDashboard() {
       {/* MY ATTENDANCE ACTIONS & STATS */}
       <View className="mb-6">
         <Animated.View entering={FadeInDown.duration(400).delay(150).springify()}>
-          <MyAttendanceCore isEmbedded={true} showActions={false} />
+          <MyAttendanceCore user={user} isEmbedded={true} isDashboard={true} showActions={true} />
         </Animated.View>
       </View>
 

@@ -10,6 +10,7 @@ import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import { useDownloadMemberAttendancePdfMutation, useDownloadMemberAttendanceExcelMutation } from "@/services/api/memberApi";
 import { useDispatch } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
+import { getTodayDateKey, getDateKey, getWeekRange, getMonthRange } from "@/utils/date";
 
 export default function Page() {
   const dispatch = useDispatch();
@@ -28,16 +29,14 @@ export default function Page() {
     };
 
     if (filterType === "DAILY") {
-      const todayStr = formatDate(today);
+      const todayStr = getTodayDateKey();
       params += `&from=${todayStr}&to=${todayStr}&limit=100`;
     } else if (filterType === "WEEKLY") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 6);
-      params += `&from=${formatDate(fromDate)}&to=${formatDate(today)}&limit=100`;
+      const { from, to } = getWeekRange(today);
+      params += `&from=${from}&to=${to}&limit=100`;
     } else if (filterType === "MONTHLY") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 29);
-      params += `&from=${formatDate(fromDate)}&to=${formatDate(today)}&limit=100`;
+      const { from, to } = getMonthRange(today);
+      params += `&from=${from}&to=${to}&limit=100`;
     } else if (filterType === "CUSTOM") {
       if (customRange.from) params += `&from=${customRange.from}`;
       if (customRange.to) params += `&to=${customRange.to}`;

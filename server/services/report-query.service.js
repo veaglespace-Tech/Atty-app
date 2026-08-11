@@ -19,13 +19,17 @@ const toReportSummary = (items = []) => {
   const totals = items.reduce(
     (acc, item) => {
       acc.presentDays += Number(item.presentDays || 0);
+      acc.halfDays += Number(item.halfDays || 0);
       acc.absentDays += Number(item.absentDays || 0);
+      acc.overtimeDays += Number(item.overtimeDays || 0);
       acc.workedMinutes += Number(item.workedMinutes || 0);
       return acc;
     },
     {
       presentDays: 0,
+      halfDays: 0,
       absentDays: 0,
+      overtimeDays: 0,
       workedMinutes: 0,
     }
   );
@@ -33,7 +37,9 @@ const toReportSummary = (items = []) => {
   return [
     toSummaryItem("Members", items.length),
     toSummaryItem("Present Days", totals.presentDays),
+    toSummaryItem("Half Days", totals.halfDays),
     toSummaryItem("Absent Days", totals.absentDays),
+    toSummaryItem("Overtime Days", totals.overtimeDays),
     toSummaryItem("Worked Hrs", minutesToHoursValue(totals.workedMinutes)),
   ];
 };
@@ -62,10 +68,22 @@ const buildAttendanceReport = async ({
       name: true,
       role: true,
       orgId: true,
+      department: {
+        select: { name: true },
+      },
+      gender: true,
+      dob: true,
+      existingMember: true,
+      referenceBy: true,
+      bloodGroup: true,
+      emergencyContact: true,
+      currentAddress: true,
+      permanentAddress: true,
+      createdAt: true,
       permissions: true,
       memberships: {
         where: { orgId: Number(orgId) },
-        select: { role: true, orgId: true, isActive: true },
+        select: { role: true, orgId: true, isActive: true, joinedAt: true },
       },
     },
   });
@@ -131,9 +149,20 @@ const buildAttendanceReport = async ({
       id: userId,
       member: user?.name || "Unknown",
       role: mapUserForManagement(user, orgId).role,
+      department: user?.department?.name || "Unassigned",
+      gender: user?.gender || "-",
+      dob: user?.dob || "-",
+      existingMember: user?.existingMember || "-",
+      referenceBy: user?.referenceBy || "-",
+      bloodGroup: user?.bloodGroup || "-",
+      emergencyContact: user?.emergencyContact || "-",
+      currentAddress: user?.currentAddress || "-",
+      permanentAddress: user?.permanentAddress || "-",
+      joinedAt: user?.memberships?.[0]?.joinedAt ? new Date(user.memberships[0].joinedAt).toLocaleDateString("en-IN") : user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
       presentDays: 0,
       halfDays: 0,
       absentDays: 0,
+      overtimeDays: 0,
       workedMinutes: 0,
     });
   }
@@ -148,6 +177,7 @@ const buildAttendanceReport = async ({
       presentDays: 0,
       halfDays: 0,
       absentDays: 0,
+      overtimeDays: 0,
       workedMinutes: 0,
     };
 
@@ -158,6 +188,10 @@ const buildAttendanceReport = async ({
     if (status === "PRESENT") current.presentDays += count;
     else if (status === "HALF_DAY") current.halfDays += count;
     else if (status === "ABSENT") current.absentDays += count;
+    else if (status === "OVERTIME") {
+      current.overtimeDays += count;
+      current.presentDays += count;
+    }
 
     current.workedMinutes += workedMinutes;
     reportMap.set(userId, current);

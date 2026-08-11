@@ -357,15 +357,13 @@ exports.createOrgTeam = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  const fullTeam = await prisma.team.findUnique({
-    where: { id: team.id },
-    select: teamListSelect,
-  });
-
   res.status(201).json({
     success: true,
     message: "Team created successfully",
-    item: mapTeamRecord(fullTeam),
+    item: {
+        id: team.id,
+        name: team.name
+    }
   });
 });
 

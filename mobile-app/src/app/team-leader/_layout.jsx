@@ -23,6 +23,7 @@ export default function TeamLeaderLayout() {
           tabBarShowLabel: false,
           tabBarActiveTintColor: '#2563eb',
           tabBarInactiveTintColor: '#94a3b8',
+          safeAreaInsets: { bottom: 0 },
           tabBarStyle: {
             position: 'absolute',
             bottom: 0,
@@ -35,10 +36,10 @@ export default function TeamLeaderLayout() {
             borderRightWidth: 1,
             elevation: 20,
             boxShadow: '0px -10px 20px rgba(0,0,0,0.3)',
-            borderTopLeftRadius: 32,
-            borderTopRightRadius: 32,
-            height: 65 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
-            paddingBottom: 8 + (Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 0),
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            height: Platform.OS === 'ios' ? (insets.bottom > 0 ? 54 + insets.bottom : 62) : 62,
+            paddingBottom: Platform.OS === 'ios' ? (insets.bottom > 0 ? insets.bottom - 4 : 8) : 8,
             paddingTop: 8,
             maxWidth: 768,
             alignSelf: 'center',
@@ -69,8 +70,7 @@ export default function TeamLeaderLayout() {
           name="attendance"
           options={{
             title: 'Attendance',
-            tabBarIcon: ({ color }) => <CalendarCheck2 size={24} color={color} />,
-            href: hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_TEAM) ? undefined : null,
+            tabBarIcon: ({ color }) => <CalendarCheck2 size={24} color={color} />
           }}
         />
         <Tabs.Screen
@@ -82,6 +82,7 @@ export default function TeamLeaderLayout() {
         />
         <Tabs.Screen name="expenses" options={{ href: null }} />
         <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
+        <Tabs.Screen name="instruments" options={{ href: null }} />
         <Tabs.Screen name="my-attendance" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="notifications/[id]" options={{ href: null }} />

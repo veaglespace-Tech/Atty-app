@@ -183,11 +183,7 @@ const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
   const regularizedCount = Number(statusCountMap.REGULARIZED || 0);
   const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
   const absentCount = Number(statusCountMap.ABSENT || 0);
-  let liveMinutes = 0;
-  if (todayRecord && todayRecord.punchInAt && !todayRecord.punchOutAt) {
-    liveMinutes = Math.max(0, Math.floor((new Date() - new Date(todayRecord.punchInAt)) / 60000));
-  }
-  const workedHours = minutesToHoursValue((monthlyAggregate?._sum?.totalMinutesWorked || 0) + liveMinutes);
+  const workedHours = minutesToHoursValue(monthlyAggregate?._sum?.totalMinutesWorked || 0);
 
   return {
     summary: [
@@ -652,6 +648,22 @@ exports.requestRegularization = asyncHandler(async (req, res) => {
   if (!date || !reason) {
     res.status(400);
     throw new Error("Date and reason are required");
+  }
+
+  const today = todayKey();
+  const requestDate = new Date(date);
+  const todayDate = new Date(today);
+  const diffTime = todayDate.getTime() - requestDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+
+  if (date >= today) {
+    res.status(400);
+    throw new Error("Regularization request cannot be submitted for current or future dates.");
+  }
+
+  if (diffDays > 29) {
+    res.status(400);
+    throw new Error("Regularization request can only be submitted for past dates up to 29 days back.");
   }
 
   // Check if pending request exists

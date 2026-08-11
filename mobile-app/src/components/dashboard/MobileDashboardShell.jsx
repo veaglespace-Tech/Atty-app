@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
-import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert } from "lucide-react-native";
+import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert, Newspaper, Music } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 import { useColorScheme } from "nativewind";
 import { useGetOrgNotificationsQuery, useGetOrgRegistrationRequestsQuery } from "@/services/api/orgApi";
@@ -40,7 +40,7 @@ const HeaderBadges = ({ user, isDark }) => {
         >
           <ClipboardCheck size={20} color={isDark ? "#ffffff" : "#0f172a"} />
           {pendingRequestsCount > 0 && (
-            <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white dark:border-slate-900">
+            <View className="absolute -top-1 -right-1 bg-amber-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white dark:border-slate-900">
               <Text className="text-white text-[9px] font-bold">{pendingRequestsCount > 99 ? '99+' : pendingRequestsCount}</Text>
             </View>
           )}
@@ -110,7 +110,7 @@ const getTabsForRole = (user) => {
       { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" },
       { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
       { title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" },
-      { title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" },
+      { title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" },
       { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
       { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
       { title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" },
@@ -122,49 +122,81 @@ const getTabsForRole = (user) => {
     const tabs = [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
-      { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" }
     ];
-    if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL) || hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_TEAM)) {
-      tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
-    }
-    if (hasPermission(user, PERMISSIONS.USERS.VIEW) || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
-      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
-    }
-    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) || hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN)) {
-      tabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
-      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
-    }
+    
     if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
+      tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
       tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
     }
-    if (hasPermission(user, PERMISSIONS.POSTS.CREATE) || hasPermission(user, PERMISSIONS.POSTS.VIEW)) {
+    
+    if (hasPermission(user, PERMISSIONS.USERS.CREATE)) {
+      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
+    }
+    
+    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
+      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+    }
+    
+    if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
+      tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    }
+    
+    if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
-    if (hasPermission(user, PERMISSIONS.LOCATION.MANAGE) || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
-      tabs.push({ title: "Instruments", icon: <CreditCard {...commonIconProps} />, href: "instruments" });
+    
+    if (hasPermission(user, PERMISSIONS.USERS.CREATE)) {
+      tabs.push({ title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" });
+      tabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
     }
+    
     if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
-    tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    
+    if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
+      tabs.push({ title: "Funds & Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
+    }
+    
+    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION?.VIEW || "SUBSCRIPTION.VIEW")) {
+      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
+    }
+    
     tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
+    
     return tabs;
   }
   
   if (role === ROLES.TEAM_LEADER) {
     const tabs = [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
-      { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
-      { title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-      { title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" },
-      { title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" },
-      { title: "Users", icon: <Users {...commonIconProps} />, href: "users" },
-      { title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "requests" },
-      { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
-      { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" },
-      { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
     ];
+    if (hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN) || hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
+      tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
+    }
+    tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
+    if (hasPermission(user, PERMISSIONS.USERS.VIEW) || hasPermission(user, PERMISSIONS.USERS.CREATE)) {
+      tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
+    }
+    if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
+      tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "requests" });
+    }
+    if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
+      tabs.push({ title: "Posts", icon: <Newspaper {...commonIconProps} />, href: "posts" });
+    }
+    tabs.push({ title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" });
+    if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
+      tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
+    }
+    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION?.VIEW || "SUBSCRIPTION.VIEW")) {
+      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
+    }
+    if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
+      tabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
+    }
+    tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
+    tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
+    
     return tabs;
   }
   
@@ -172,16 +204,27 @@ const getTabsForRole = (user) => {
   const memberTabs = [
     { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
     { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
-    { title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" }
   ];
 
   if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) || hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN)) {
     memberTabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
     memberTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
   }
+  
+  memberTabs.push({ title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" });
+
+  if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
+    memberTabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
+  }
+
+  if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
+    memberTabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
+  }
+  
   if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
     memberTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
+  
   memberTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
   memberTabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
   
@@ -249,7 +292,7 @@ export default function MobileDashboardShell({ children }) {
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
 
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
       
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (

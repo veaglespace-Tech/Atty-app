@@ -125,36 +125,6 @@ export default function OrgMyAttendancePage() {
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchAttendance} tintColor="#2563eb" />}>
         
-        <View className="bg-white dark:bg-slate-900/80 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden mb-4 shadow-sm">
-          <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white mb-4">Actions</Text>
-          
-          <View className="flex-row flex-wrap gap-3">
-            <Pressable
-              onPress={() => setPendingPunchType("in")}
-              disabled={!canPunchIn || actionLoading !== ""}
-              className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchIn ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
-              
-              {actionLoading === "in" ? <ActivityIndicator color="white" /> : <MapPinned size={18} color={!canPunchIn ? "#94a3b8" : "white"} />}
-              <Text className={`font-bold ml-2 ${!canPunchIn ? 'text-slate-400' : 'text-white'}`}>Punch In</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setPendingPunchType("out")}
-              disabled={!canPunchOut || actionLoading !== ""}
-              className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchOut ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
-              
-              {actionLoading === "out" ? <ActivityIndicator color="white" /> : <Timer size={18} color={!canPunchOut ? "#94a3b8" : "white"} />}
-              <Text className={`font-bold ml-2 ${!canPunchOut ? 'text-slate-400' : 'text-white'}`}>Punch Out</Text>
-            </Pressable>
-          </View>
-
-          <Pressable
-            onPress={() => setIsRegularizeModalOpen(true)}
-            className="mt-3 flex-row items-center justify-center py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            <FileWarning size={16} color="#f59e0b" />
-            <Text className="font-bold text-slate-700 dark:text-slate-300 ml-2">Technical Issue? Regularize</Text>
-          </Pressable>
-        </View>
 
         <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
           <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">

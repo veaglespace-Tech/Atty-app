@@ -86,14 +86,38 @@ const getSettingsSchema = (isAdmin) => z.object({
     .trim()
     .min(1, "Mobile number is required")
     .refine(
-      (value) => !value || toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
-      "Enter a valid mobile number"
-    )
-    .refine(
-      (value) => !value || toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
-      "Mobile number is too long"
+      (value) => !value || toDigitsOnly(value).length === 10,
+      "Mobile number must be exactly 10 digits"
     ),
-  emergencyContact: isAdmin ? z.string().trim().optional() : z.string().trim().min(1, "Emergency mobile is required"),
+  emergencyCountryCode: z
+    .string()
+    .trim()
+    .optional(),
+  emergencyContact: isAdmin
+    ? z
+        .string()
+        .trim()
+        .optional()
+        .refine(
+          (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+          "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
+        )
+        .refine(
+          (value) => !value || toDigitsOnly(value).length === 10,
+          "Emergency contact must be exactly 10 digits"
+        )
+    : z
+        .string()
+        .trim()
+        .min(1, "Emergency contact is required")
+        .refine(
+          (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+          "Emergency contact can only contain numbers, spaces, hyphens, or '+'"
+        )
+        .refine(
+          (value) => !value || toDigitsOnly(value).length === 10,
+          "Emergency contact must be exactly 10 digits"
+        ),
   currentAddress: z.string().trim().min(1, "Full address is required"),
   permanentAddress: z.string().trim().optional(),
   bloodGroup: z.string().trim().optional(),
@@ -122,21 +146,35 @@ const formatValue = (value, fallback = "-") => {
   return String(value);
 };
 
-const getFormDefaults = (user) => ({
-  name: user?.name || "",
-  email: user?.email || "",
-  mobileCountryCode: user?.mobileCountryCode || "+91",
-  mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode) || "",
-  emergencyContact: user?.emergencyContact || "",
-  currentAddress: user?.currentAddress || "",
-  permanentAddress: user?.permanentAddress || "",
-  bloodGroup: user?.bloodGroup || "",
-  gender: user?.gender || "",
-  dob: user?.dob || "",
-  existingMember: user?.existingMember?.toUpperCase() || "",
-  departmentId: user?.departmentId ? String(user.departmentId) : "",
-  physicalFormNo: user?.physicalFormNo || "",
-});
+const getFormDefaults = (user) => {
+  let defaultEmergencyCountryCode = "+91";
+  let defaultEmergencyContact = user?.emergencyContact || "";
+
+  if (defaultEmergencyContact.startsWith("+")) {
+    const match = defaultEmergencyContact.match(/^(\+\d{1,3})(\d+)$/);
+    if (match) {
+      defaultEmergencyCountryCode = match[1];
+      defaultEmergencyContact = match[2];
+    }
+  }
+
+  return {
+    name: user?.name || "",
+    email: user?.email || "",
+    mobileCountryCode: user?.mobileCountryCode || "+91",
+    mobile: getLocalPhoneNumber(user?.mobile, user?.mobileCountryCode) || "",
+    emergencyCountryCode: defaultEmergencyCountryCode,
+    emergencyContact: defaultEmergencyContact,
+    currentAddress: user?.currentAddress || "",
+    permanentAddress: user?.permanentAddress || "",
+    bloodGroup: user?.bloodGroup || "",
+    gender: user?.gender || "",
+    dob: user?.dob || "",
+    existingMember: user?.existingMember?.toUpperCase() || "",
+    departmentId: user?.departmentId ? String(user.departmentId) : "",
+    physicalFormNo: user?.physicalFormNo || "",
+  };
+};
 
 function DetailCard({ icon: Icon, label, value }) {
   return (
@@ -848,11 +886,13 @@ function OrgDetailsSettings() {
         {isDirty && (
           <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button type="button" onClick={() => reset()} disabled={isUpdating} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-6">
+              <button type="button" onClick={() => reset()} disabled={isUpdating} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
                 Cancel
               </button>
-              <button type="submit" disabled={isUpdating} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-6">
-                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
+              <button type="submit" disabled={isUpdating} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
+                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+                <span className="hidden sm:inline">Save Changes</span>
+                <span className="sm:hidden">Save</span>
               </button>
             </div>
           </div>
@@ -869,7 +909,7 @@ export default function WorkspaceSettingsPage() {
   const [forgotPassword, { isLoading: sendingResetLink }] = useForgotPasswordMutation();
   const { data: meData } = useGetMeQuery();
   const organizationId = getUserOrganizationId(user);
-  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !organizationId });
+  const { data: deptData, isSuccess: isDeptSuccess } = useGetOrgDepartmentsQuery(undefined, { skip: !organizationId });
   const departmentsList = deptData?.items || [];
 
   useEffect(() => {
@@ -907,28 +947,40 @@ export default function WorkspaceSettingsPage() {
   const canManageOrgSettings = effectiveRole === ROLES.ORG_ADMIN || effectiveRole === ROLES.SUB_ADMIN;
   const canSkipEmergencyContact = hasPermission(user, PERMISSIONS.USERS.CREATE) || isSuperAdmin;
 
-  const onDocumentSelected = (event) => {
+  const onDocumentSelected = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
 
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setDocumentError("Document file size must be 10 MB or smaller.");
+      setDocumentError("Document file size is too large. Please select a file under 10MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setDocumentDataUrl(reader.result);
-      setDocumentName(file.name);
-      setRemoveDocument(false);
-      setDocumentError("");
-    };
-    reader.onerror = () => {
-      setDocumentError("Failed to read the selected document.");
-    };
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("image/")) {
+      try {
+        const nextDataUrl = await compressImage(file, false);
+        setDocumentDataUrl(nextDataUrl);
+        setDocumentName(file.name);
+        setRemoveDocument(false);
+        setDocumentError("");
+      } catch (error) {
+        setDocumentError(error.message || "Failed to process the document image.");
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setDocumentDataUrl(reader.result);
+        setDocumentName(file.name);
+        setRemoveDocument(false);
+        setDocumentError("");
+      };
+      reader.onerror = () => {
+        setDocumentError("Failed to read the selected document.");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const toggleDocumentRemoval = () => {
@@ -960,14 +1012,11 @@ export default function WorkspaceSettingsPage() {
   } = useForm({
     resolver: zodResolver(getSettingsSchema(canSkipEmergencyContact)),
     mode: "onChange",
-    defaultValues: getFormDefaults(user),
-  });
-
-  useEffect(() => {
-    if (user) {
-      reset(getFormDefaults(user));
+    values: getFormDefaults(user),
+    resetOptions: {
+      keepDirtyValues: true,
     }
-  }, [user, reset, departmentsList]);
+  });
 
   const formValues = useWatch({ control });
   const previewName = formValues.name || user?.name || "Workspace User";
@@ -1049,38 +1098,62 @@ export default function WorkspaceSettingsPage() {
     setDocumentError("");
   };
 
-  const compressImage = (file) =>
+  const compressImage = (file, isProfile = true) =>
     new Promise((resolve, reject) => {
       const img = new Image();
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const { width, height } = img;
-        const TARGET_SIZE = 512;
-        
-        const minDim = Math.min(width, height);
-        const sourceX = (width - minDim) / 2;
-        const sourceY = (height - minDim) / 2;
-
-        canvas.width = TARGET_SIZE;
-        canvas.height = TARGET_SIZE;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-          img,
-          sourceX,
-          sourceY,
-          minDim,
-          minDim,
-          0,
-          0,
-          TARGET_SIZE,
-          TARGET_SIZE
-        );
+
+        if (isProfile) {
+          const TARGET_SIZE = 512;
+          const minDim = Math.min(width, height);
+          const sourceX = (width - minDim) / 2;
+          const sourceY = (height - minDim) / 2;
+
+          canvas.width = TARGET_SIZE;
+          canvas.height = TARGET_SIZE;
+          ctx.drawImage(
+            img,
+            sourceX,
+            sourceY,
+            minDim,
+            minDim,
+            0,
+            0,
+            TARGET_SIZE,
+            TARGET_SIZE
+          );
+        } else {
+          const MAX_DIM = 1200;
+          let newWidth = width;
+          let newHeight = height;
+
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              newWidth = MAX_DIM;
+              newHeight = (height * MAX_DIM) / width;
+            } else {
+              newHeight = MAX_DIM;
+              newWidth = (width * MAX_DIM) / height;
+            }
+          }
+
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        }
         
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/jpeg", isProfile ? 0.85 : 0.75);
         resolve(dataUrl);
+        URL.revokeObjectURL(img.src);
       };
-      img.onerror = () => reject(new Error("Failed to read the selected image."));
+      img.onerror = () => {
+        reject(new Error("Failed to read the selected image."));
+        URL.revokeObjectURL(img.src);
+      };
     });
 
   const onProfileImageSelected = async (event) => {
@@ -1090,12 +1163,17 @@ export default function WorkspaceSettingsPage() {
     if (!file) return;
 
     if (!ACCEPTED_PROFILE_IMAGE_TYPES.has(file.type)) {
-      setProfileImageError("Upload a JPG, PNG, WEBP, or GIF image.");
+      setProfileImageError("Invalid format. Please upload a JPG, PNG, WEBP, or GIF image.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setProfileImageError("Profile photo is too large. Please select an image under 10MB.");
       return;
     }
 
     try {
-      const nextDataUrl = await compressImage(file);
+      const nextDataUrl = await compressImage(file, true);
       
       if (nextDataUrl.length > 5 * 1024 * 1024) {
         setProfileImageError("Image is too large even after compression. Please choose a smaller image.");
@@ -1144,7 +1222,9 @@ export default function WorkspaceSettingsPage() {
       payload.mobileCountryCode = nextMobileCountryCode || user?.mobileCountryCode || "";
     }
 
-    payload.emergencyContact = values.emergencyContact;
+    payload.emergencyContact = values.emergencyContact
+      ? `${values.emergencyCountryCode || "+91"}${toDigitsOnly(values.emergencyContact)}`
+      : "";
     payload.currentAddress = values.currentAddress;
     payload.permanentAddress = values.permanentAddress;
     payload.bloodGroup = values.bloodGroup;
@@ -1186,14 +1266,12 @@ export default function WorkspaceSettingsPage() {
       );
     } catch (error) {
       setProfileImageError("");
-      if (!error?.status) {
-        dispatch(
-          addNotification({
-            type: "error",
-            message: error?.message || "Failed to update profile.",
-          })
-        );
-      }
+      dispatch(
+        addNotification({
+          type: "error",
+          message: error?.data?.message || error?.message || "Failed to update profile.",
+        })
+      );
     }
   };
 
@@ -1437,7 +1515,7 @@ export default function WorkspaceSettingsPage() {
                 </div>
                 <div>
                   <label htmlFor="settings-departmentId" className={labelClassName}>Department</label>
-                  <select id="settings-departmentId" aria-invalid={errors.departmentId ? "true" : "false"} className={cn(inputClassName, errors.departmentId ? errorInputClassName : "")} {...register("departmentId")}>
+                  <select key={`dept-${isDeptSuccess}`} id="settings-departmentId" aria-invalid={errors.departmentId ? "true" : "false"} className={cn(inputClassName, errors.departmentId ? errorInputClassName : "")} {...register("departmentId")}>
                     <option value="">Select Department</option>
                     {departmentsList.map((d) => (
                       <option key={d.id} value={String(d.id)}>
@@ -1476,9 +1554,19 @@ export default function WorkspaceSettingsPage() {
                 </div>
                 {!canSkipEmergencyContact && (
                   <div className="md:col-span-2">
-                    <label htmlFor="settings-emergencyContact" className={labelClassName}>Emergency Contact</label>
-                    <input id="settings-emergencyContact" type="text" placeholder="E.g., +91 9876543210" aria-invalid={errors.emergencyContact ? "true" : "false"} className={cn(inputClassName, errors.emergencyContact ? errorInputClassName : "")} {...register("emergencyContact")} />
-                    {errors.emergencyContact && <p className="ml-1 mt-1.5 text-xs font-medium text-rose-500">{errors.emergencyContact.message}</p>}
+                    <CountryPhoneField
+                      label="Emergency Contact"
+                      countryCode={formValues.emergencyCountryCode || ""}
+                      phone={formValues.emergencyContact || ""}
+                      onCountryCodeChange={(e) => setValue("emergencyCountryCode", e.target.value, { shouldValidate: true, shouldDirty: true })}
+                      onPhoneChange={(e) => setValue("emergencyContact", e.target.value.replace(/[^\d]/g, ""), { shouldValidate: true, shouldDirty: true })}
+                      countryCodeError={errors.emergencyCountryCode?.message}
+                      phoneError={errors.emergencyContact?.message}
+                      helpText=""
+                      labelClassName={labelClassName}
+                    />
+                    <input type="hidden" {...register("emergencyCountryCode")} />
+                    <input type="hidden" {...register("emergencyContact")} />
                   </div>
                 )}
               </div>
@@ -1593,28 +1681,7 @@ export default function WorkspaceSettingsPage() {
           </div>
         )}
 
-        {/* Sticky Save Bar */}
-        {(activeTab === "personal" || activeTab === "contact") && (
-          <div
-            className={cn(
-              "fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[0_18px_40px_rgba(30,112,209,0.15)] border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-6 transition-all duration-500",
-              canSubmit ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
-            )}
-          >
-            <div className="hidden sm:block min-w-[200px]">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">Unsaved Changes</p>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Please save your profile updates.</p>
-            </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button type="button" onClick={resetForm} disabled={isSaving} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-6">
-                Cancel
-              </button>
-              <button type="submit" disabled={isSaving} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-6">
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
-              </button>
-            </div>
-          </div>
-        )}
+
       </form>
 
       {/* Organization Settings */}

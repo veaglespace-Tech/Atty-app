@@ -13,7 +13,8 @@ import {
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import AppDatePicker from "@/components/ui/AppDatePicker";
+import { compressPickedImage } from "../../utils/image";
 import {
   ChevronLeft,
   ChevronRight,
@@ -85,6 +86,7 @@ export default function SettingsScreen() {
   const [activeTab, setActiveTab] = useState("personal");
 
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
+  const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [documentDataUrl, setDocumentDataUrl] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [removeDocument, setRemoveDocument] = useState(false);
@@ -142,19 +144,32 @@ export default function SettingsScreen() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.2,
-        base64: true, // Need base64 to send to backend as data url
+        quality: 1, // Let ImageManipulator handle compression
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        const base64Img = await compressPickedImage(result.assets[0]);
         setProfileImageDataUrl(base64Img);
+        setRemoveProfileImage(false);
       }
     } catch (err) {
       Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
+  
+  const toggleProfileImageRemoval = () => {
+    if (removeProfileImage) {
+      setRemoveProfileImage(false);
+    } else {
+      if (profileImageDataUrl) {
+        setProfileImageDataUrl("");
+      } else if (user?.profileImageUrl) {
+        setRemoveProfileImage(true);
+      }
     }
   };
 
@@ -204,13 +219,10 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    if (Platform.OS === "android") {
-      setShowDatePicker(false);
-    }
-    if (selectedDate) {
-      const isoStr = selectedDate.toISOString().split("T")[0];
-      setFormData((prev) => ({ ...prev, dob: isoStr }));
+  const handleDateConfirm = (dateKey) => {
+    setShowDatePicker(false);
+    if (dateKey) {
+      setFormData((prev) => ({ ...prev, dob: dateKey }));
     }
   };
 
@@ -336,7 +348,7 @@ export default function SettingsScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
         <View className="max-w-2xl w-full mx-auto">
@@ -707,7 +719,7 @@ export default function SettingsScreen() {
                     <>
                       <Pressable
                         onPress={() => setShowDatePicker(true)}
-                        className="flex-row items-center bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800/80 rounded-2xl px-4 py-3.5"
+                        className="flex-row items-center bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800/80 rounded-2xl px-4 py-3.5 active:scale-[0.99] transition-transform"
                       >
                         <Calendar
                           size={18}
@@ -719,19 +731,14 @@ export default function SettingsScreen() {
                           {formData.dob || "dd-mm-yyyy"}
                         </Text>
                       </Pressable>
-                      {showDatePicker && (
-                        <DateTimePicker
-                          value={
-                            formData.dob ? new Date(formData.dob) : new Date()
-                          }
-                          mode="date"
-                          display={
-                            Platform.OS === "ios" ? "spinner" : "default"
-                          }
-                          onChange={handleDateChange}
-                          maximumDate={new Date()}
-                        />
-                      )}
+                      <AppDatePicker
+                        visible={showDatePicker}
+                        value={formData.dob}
+                        maximumDate={new Date()}
+                        title="Select Date of Birth"
+                        onConfirm={handleDateConfirm}
+                        onCancel={() => setShowDatePicker(false)}
+                      />
                     </>
                   )}
                 </View>
@@ -879,7 +886,7 @@ export default function SettingsScreen() {
                     Email Support
                   </Text>
                   <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    support@veagle.com
+                    info@veaglespace.com
                   </Text>
                 </View>
               </View>
@@ -896,7 +903,7 @@ export default function SettingsScreen() {
                     Call Us
                   </Text>
                   <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    +91 99999 99999
+                    +91 82379 99101
                   </Text>
                 </View>
               </View>

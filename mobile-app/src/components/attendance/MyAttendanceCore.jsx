@@ -1,16 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator, Alert, Pressable, Modal } from "react-native";
-import { Timer, MapPinned, FileWarning } from "lucide-react-native";
+import { Timer, MapPinned, FileWarning, RotateCw, Download, ChevronLeft, ChevronRight } from "lucide-react-native";
 
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
 import { usePunchInMutation, usePunchOutMutation, useRequestRegularizationMutation, useReachedHomeMutation } from "@/services/api/attendanceApi";
 import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
 import RegularizationModal from "@/components/attendance/RegularizationModal";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
-import { getTodayDateKey, getDateKey } from "@/utils/date";
+import { getTodayDateKey, getDateKey, getWeekRange, getMonthRange } from "@/utils/date";
 import { useDownloadMemberAttendancePdfMutation, useDownloadMemberAttendanceExcelMutation } from "@/services/api/memberApi";
-import { Download, ChevronLeft, ChevronRight } from "lucide-react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import AppDatePicker from "@/components/ui/AppDatePicker";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
@@ -55,12 +54,12 @@ const formatPunchLocation = (record) => {
   return formatCoordinates(record?.punchInCoordinates);
 };
 
-export default function MyAttendanceCore({ user, isEmbedded = false, showActions = true, showStats = true }) {
+export default function MyAttendanceCore({ user, isEmbedded = false, showActions = true, showStats = true, isDashboard = false }) {
   const [actionLoading, setActionLoading] = useState("");
   const [pendingPunchType, setPendingPunchType] = useState("");
   const [isRegularizeModalOpen, setIsRegularizeModalOpen] = useState(false);
   const [showPageSizeModal, setShowPageSizeModal] = useState(false);
-  const [filterType, setFilterType] = useState("ALL");
+  const [filterType, setFilterType] = useState(isDashboard ? "DAILY" : "ALL");
   const [customRange, setCustomRange] = useState({ from: new Date(), to: new Date() });
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
@@ -74,14 +73,12 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
       return { from: dateStr, to: dateStr, limit: 730 };
     }
     if (filterType === "WEEKLY") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 6);
-      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 730 };
+      const { from, to } = getWeekRange(today);
+      return { from, to, limit: 730 };
     }
     if (filterType === "MONTHLY") {
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - 29);
-      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 730 };
+      const { from, to } = getMonthRange(today);
+      return { from, to, limit: 730 };
     }
     if (filterType === "CUSTOM") {
       return { from: getDateKey(customRange.from), to: getDateKey(customRange.to), limit: 730 };
@@ -248,6 +245,9 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
   const canPunchOut = Boolean(todayRecord?.punchInAt) && !todayRecord?.punchOutAt;
   const canReachHome = Boolean(todayRecord?.punchOutAt) && !todayRecord?.reachedHomeAt;
 
+  const userRole = (user?.currentRole || user?.role || "").toUpperCase();
+  const isRegularizeAllowed = userRole !== "ORG_ADMIN" && userRole !== "SUPER_ADMIN";
+
   const Container = isEmbedded ? View : ScrollView;
   const containerProps = isEmbedded ?
   { className: "gap-4" } :
@@ -260,46 +260,127 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
   return (
     <Container {...containerProps}>
       {showActions && (
-      <View className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden mb-4">
-        <Text className="text-xl font-black text-slate-900 dark:text-white mb-4">Actions</Text>
+      <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 p-5 overflow-hidden mb-4 shadow-sm">
+        <View className="flex-row items-center justify-between mb-4">
+          <Text className="text-xl font-black text-slate-900 dark:text-white">
+            Member Attendance
+          </Text>
+          <Pressable
+            onPress={fetchAttendance}
+            disabled={loading}
+            className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl active:scale-95 border border-slate-200/60 dark:border-slate-700/60"
+          >
+            <RotateCw size={13} color="#64748b" style={{ marginRight: 5 }} />
+            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Refresh
+            </Text>
+          </Pressable>
+        </View>
         
-        <View className="flex-row flex-wrap gap-3">
+        {/* Buttons List */}
+        <View style={{ gap: 10 }}>
+          {/* Punch In */}
           <Pressable
             onPress={() => setPendingPunchType("in")}
             disabled={!canPunchIn || actionLoading !== "" || loading}
-            className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchIn || loading ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
-            
-            {actionLoading === "in" || loading ? <ActivityIndicator color={!canPunchIn || loading ? "#94a3b8" : "white"} /> : <MapPinned size={18} color={!canPunchIn || loading ? "#94a3b8" : "white"} />}
-            <Text className={`font-bold ml-2 ${!canPunchIn || loading ? 'text-slate-400' : 'text-white'}`}>Punch In</Text>
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-98 ${
+              !canPunchIn || loading
+                ? "bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50"
+                : "bg-blue-600 shadow-md shadow-blue-600/25"
+            }`}
+          >
+            {actionLoading === "in" || (loading && !todayRecord) ? (
+              <ActivityIndicator color={!canPunchIn ? "#94a3b8" : "white"} />
+            ) : (
+              <MapPinned size={18} color={!canPunchIn ? "#94a3b8" : "white"} />
+            )}
+            <Text
+              className={`font-bold text-sm ml-2 ${
+                !canPunchIn ? "text-slate-400 dark:text-slate-500" : "text-white"
+              }`}
+            >
+              Punch In
+            </Text>
           </Pressable>
 
+          {/* Punch Out */}
           <Pressable
             onPress={() => setPendingPunchType("out")}
             disabled={!canPunchOut || actionLoading !== "" || loading}
-            className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${!canPunchOut || loading ? 'bg-slate-100 dark:bg-slate-800' : 'bg-blue-600'}`}>
-            
-            {actionLoading === "out" || loading ? <ActivityIndicator color={!canPunchOut || loading ? "#94a3b8" : "white"} /> : <Timer size={18} color={!canPunchOut || loading ? "#94a3b8" : "white"} />}
-            <Text className={`font-bold ml-2 ${!canPunchOut || loading ? 'text-slate-400' : 'text-white'}`}>Punch Out</Text>
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-98 ${
+              !canPunchOut || loading
+                ? "bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50"
+                : "bg-slate-800 dark:bg-slate-700 border border-slate-700 dark:border-slate-600 shadow-sm"
+            }`}
+          >
+            {actionLoading === "out" ? (
+              <ActivityIndicator color={!canPunchOut ? "#94a3b8" : "white"} />
+            ) : (
+              <Timer size={18} color={!canPunchOut ? "#94a3b8" : "white"} />
+            )}
+            <Text
+              className={`font-bold text-sm ml-2 ${
+                !canPunchOut ? "text-slate-400 dark:text-slate-500" : "text-white"
+              }`}
+            >
+              Punch Out
+            </Text>
           </Pressable>
+
+          {/* Reached Home */}
+          <Pressable
+            onPress={submitReachedHome}
+            disabled={!canReachHome || actionLoading !== "" || loading}
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-98 ${
+              !canReachHome || loading
+                ? "bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50"
+                : "bg-blue-500 shadow-md shadow-blue-500/25"
+            }`}
+          >
+            {actionLoading === "home" ? (
+              <ActivityIndicator color={!canReachHome ? "#94a3b8" : "white"} />
+            ) : (
+              <MapPinned size={18} color={!canReachHome ? "#94a3b8" : "white"} />
+            )}
+            <Text
+              className={`font-bold text-sm ml-2 ${
+                !canReachHome ? "text-slate-400 dark:text-slate-500" : "text-white"
+              }`}
+            >
+              Reached Home
+            </Text>
+          </Pressable>
+
+          {/* Technical Issue? Regularize */}
+          {isRegularizeAllowed && (
+            <Pressable
+              onPress={() => setIsRegularizeModalOpen(true)}
+              disabled={loading || isSubmittingRegularization}
+              className="w-full flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 active:scale-98 shadow-sm"
+            >
+              <FileWarning size={16} color="#f59e0b" style={{ marginRight: 8 }} />
+              <Text className="font-bold text-sm text-white dark:text-slate-100">
+                Technical Issue? Regularize
+              </Text>
+            </Pressable>
+          )}
         </View>
 
-        <Pressable
-          onPress={submitReachedHome}
-          disabled={!canReachHome || actionLoading !== "" || loading}
-          className={`mt-3 flex-row items-center justify-center py-3 rounded-xl ${!canReachHome || loading ? 'bg-slate-100 dark:bg-slate-800' : 'bg-emerald-600 border border-emerald-500'}`}>
-          {actionLoading === "home" ? <ActivityIndicator color={!canReachHome || loading ? "#94a3b8" : "white"} /> : <MapPinned size={18} color={!canReachHome || loading ? "#94a3b8" : "white"} />}
-          <Text className={`font-bold ml-2 ${!canReachHome || loading ? 'text-slate-400' : 'text-white'}`}>Reached Home</Text>
-        </Pressable>
-
-        {user?.role === "MEMBER" &&
-        <Pressable
-          onPress={() => setIsRegularizeModalOpen(true)}
-          className="mt-3 flex-row items-center justify-center py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-          
-            <FileWarning size={16} color="#f59e0b" />
-            <Text className="font-bold text-slate-700 dark:text-slate-300 ml-2">Technical Issue? Regularize</Text>
-          </Pressable>
-        }
+        {/* Mode & Live Chips */}
+        <View className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex-row flex-wrap items-center gap-2">
+          <View className="flex-row items-center rounded-full border border-emerald-200/70 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5">
+            <View className="h-2 w-2 rounded-full bg-emerald-500 mr-2" />
+            <Text className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+              Live Location (GPS Only)
+            </Text>
+          </View>
+          <View className="flex-row items-center rounded-full border border-blue-200/70 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5">
+            <View className="h-2 w-2 rounded-full bg-blue-500 mr-2" />
+            <Text className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+              Live Selfie Required
+            </Text>
+          </View>
+        </View>
       </View>
       )}
 
@@ -331,73 +412,75 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
       <View className="mb-4">
         <View className="flex-row items-center justify-between mb-2 ml-1">
           <Text className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-            Attendance History
+            {isDashboard ? "Today's Log" : "Attendance History"}
           </Text>
         </View>
         
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-          {["ALL", "DAILY", "WEEKLY", "MONTHLY", "CUSTOM"].map((opt) => (
-            <Pressable
-              key={opt}
-              onPress={() => setFilterType(opt)}
-              className={`px-4 py-2 rounded-full mr-2 border ${filterType === opt ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
-            >
-              <Text className={`text-xs font-bold ${filterType === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>{opt}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        {!isDashboard && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            {["ALL", "DAILY", "WEEKLY", "MONTHLY", "CUSTOM"].map((opt) => (
+              <Pressable
+                key={opt}
+                onPress={() => setFilterType(opt)}
+                className={`px-4 py-2 rounded-full mr-2 border ${filterType === opt ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
+              >
+                <Text className={`text-xs font-bold ${filterType === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>{opt}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
         
         {filterType === "CUSTOM" && (
           <View className="flex-row items-center gap-2 mb-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
             <View className="flex-1">
               <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">From</Text>
-              <Pressable onPress={() => setShowFromPicker(true)} className="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg">
+              <Pressable onPress={() => setShowFromPicker(true)} className="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg active:scale-[0.99]">
                 <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{getDateKey(customRange.from)}</Text>
               </Pressable>
-              {showFromPicker && (
-                <DateTimePicker
-                  value={customRange.from}
-                  mode="date"
-                  display="default"
-                  maximumDate={new Date()}
-                  onChange={(event, date) => {
-                    setShowFromPicker(false);
-                    if (date) setCustomRange(prev => ({ ...prev, from: date }));
-                  }}
-                />
-              )}
+              <AppDatePicker
+                visible={showFromPicker}
+                value={customRange.from}
+                maximumDate={new Date()}
+                title="Select From Date"
+                onConfirm={(dateKey, date) => {
+                  setShowFromPicker(false);
+                  if (date) setCustomRange(prev => ({ ...prev, from: date }));
+                }}
+                onCancel={() => setShowFromPicker(false)}
+              />
             </View>
             <View className="flex-1">
               <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">To</Text>
-              <Pressable onPress={() => setShowToPicker(true)} className="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg">
+              <Pressable onPress={() => setShowToPicker(true)} className="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg active:scale-[0.99]">
                 <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">{getDateKey(customRange.to)}</Text>
               </Pressable>
-              {showToPicker && (
-                <DateTimePicker
-                  value={customRange.to}
-                  mode="date"
-                  display="default"
-                  maximumDate={new Date()}
-                  onChange={(event, date) => {
-                    setShowToPicker(false);
-                    if (date) setCustomRange(prev => ({ ...prev, to: date }));
-                  }}
-                />
-              )}
+              <AppDatePicker
+                visible={showToPicker}
+                value={customRange.to}
+                maximumDate={new Date()}
+                title="Select To Date"
+                onConfirm={(dateKey, date) => {
+                  setShowToPicker(false);
+                  if (date) setCustomRange(prev => ({ ...prev, to: date }));
+                }}
+                onCancel={() => setShowToPicker(false)}
+              />
             </View>
           </View>
         )}
 
-        <View className="flex-row gap-2 mt-1">
-          <Pressable onPress={handleDownloadPdf} disabled={downloadingPdf} className="flex-1 flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-            {downloadingPdf ? <ActivityIndicator size="small" /> : <Download size={14} className="text-slate-600 dark:text-slate-400" />}
-            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-2">Export PDF</Text>
-          </Pressable>
-          <Pressable onPress={handleDownloadExcel} disabled={downloadingExcel} className="flex-1 flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-            {downloadingExcel ? <ActivityIndicator size="small" /> : <Download size={14} className="text-slate-600 dark:text-slate-400" />}
-            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-2">Export Excel</Text>
-          </Pressable>
-        </View>
+        {!isDashboard && (
+          <View className="flex-row gap-2 mt-1">
+            <Pressable onPress={handleDownloadPdf} disabled={downloadingPdf} className="flex-1 flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+              {downloadingPdf ? <ActivityIndicator size="small" /> : <Download size={14} className="text-slate-600 dark:text-slate-400" />}
+              <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-2">Export PDF</Text>
+            </Pressable>
+            <Pressable onPress={handleDownloadExcel} disabled={downloadingExcel} className="flex-1 flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+              {downloadingExcel ? <ActivityIndicator size="small" /> : <Download size={14} className="text-slate-600 dark:text-slate-400" />}
+              <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-2">Export Excel</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {records.length === 0 ?
@@ -508,7 +591,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
             onClose={() => setPendingPunchType("")}
             onSubmit={(selfieImageDataUrl) => submitPunch(pendingPunchType, selfieImageDataUrl)} />
           
-          {user?.role === "MEMBER" && (
+          {isRegularizeAllowed && (
             <RegularizationModal
               open={isRegularizeModalOpen}
               onClose={() => setIsRegularizeModalOpen(false)}

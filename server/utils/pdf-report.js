@@ -16,19 +16,22 @@ const TABLE_HEADER_HEIGHT = 24;
 const TABLE_ROW_HEIGHT = 22;
 
 const TABLE_COLUMNS = [
-  { key: "entryNo", label: "No.", width: 44, align: "center" },
-  { key: "userId", label: "ID", width: 44, align: "center" },
-  { key: "userName", label: "Member", width: 92, align: "left" },
-  { key: "contact", label: "Phone", width: 68, align: "left" },
-  { key: "email", label: "Email", width: 114, align: "left" },
-  { key: "date", label: "Date", width: 60, align: "center" },
-  { key: "punchIn", label: "In", width: 44, align: "center" },
-  { key: "punchOut", label: "Out", width: 44, align: "center" },
-  { key: "reachedHome", label: "Home", width: 44, align: "center" },
-  { key: "reachedHomeLocation", label: "Home Loc", width: 72, align: "left" },
-  { key: "totalHours", label: "Tot Hrs", width: 40, align: "center" },
-  { key: "presentHours", label: "Prs Hrs", width: 40, align: "center" },
-  { key: "absent", label: "Abs", width: 40, align: "center" },
+  { key: "entryNo", label: "No.", width: 35, align: "center" },
+  { key: "userId", label: "ID", width: 35, align: "center" },
+  { key: "userName", label: "Member", width: 75, align: "left" },
+  { key: "department", label: "Dept", width: 60, align: "left" },
+  { key: "gender", label: "Gender", width: 40, align: "center" },
+  { key: "existingMember", label: "Type", width: 55, align: "left" },
+  { key: "contact", label: "Phone", width: 55, align: "left" },
+  { key: "email", label: "Email", width: 75, align: "left" },
+  { key: "date", label: "Date", width: 50, align: "center" },
+  { key: "punchIn", label: "In", width: 35, align: "center" },
+  { key: "punchOut", label: "Out", width: 35, align: "center" },
+  { key: "reachedHome", label: "Home", width: 35, align: "center" },
+  { key: "reachedHomeLocation", label: "Home Loc", width: 65, align: "left" },
+  { key: "totalHours", label: "Tot Hrs", width: 35, align: "center" },
+  { key: "presentHours", label: "Prs Hrs", width: 35, align: "center" },
+  { key: "absent", label: "Abs", width: 30, align: "center" },
 ];
 
 const normalizeText = (value) => String(value === null || value === undefined ? "" : value).trim();
@@ -38,6 +41,8 @@ const PDF_LABEL_OVERRIDES = {
   activeorganizations: "Active Orgs",
   blockedorganizations: "Blocked Orgs",
   createdat: "Created",
+  department: "Department",
+  departmentstatus: "Dept Status",
   includedrecords: "Records",
   organizationcode: "Org Code",
   presentduration: "Present Hrs",
@@ -406,12 +411,29 @@ const drawGenericTableRow = (doc, columns, row, rowIndex, startY) => {
   doc.font("Helvetica").fontSize(8).fillColor(COLORS.ink);
 
   columns.forEach((column) => {
-    const value = clipTextToWidth(doc, row[column.key], column.width - 8);
-    doc.text(value, cursorX + 4, startY + 7, {
-      width: column.width - 8,
-      align: column.align,
-      lineBreak: false,
-    });
+    const rawVal = row[column.key];
+    const isLinkObj = rawVal && typeof rawVal === "object" && rawVal.link;
+    const textToDisplay = isLinkObj ? (rawVal.text || "View Document") : rawVal;
+    const value = clipTextToWidth(doc, textToDisplay, column.width - 8);
+
+    if (isLinkObj && rawVal.link) {
+      doc.fillColor("#1D4ED8").font("Helvetica-Bold");
+      doc.text(value, cursorX + 4, startY + 7, {
+        width: column.width - 8,
+        align: column.align,
+        lineBreak: false,
+        link: rawVal.link,
+        underline: true,
+      });
+      doc.font("Helvetica").fillColor(COLORS.ink);
+    } else {
+      doc.fillColor(COLORS.ink);
+      doc.text(value, cursorX + 4, startY + 7, {
+        width: column.width - 8,
+        align: column.align,
+        lineBreak: false,
+      });
+    }
     cursorX += column.width;
   });
 

@@ -12,6 +12,8 @@ const {
   toSummaryItem,
   uniqueNumberList,
   todayKey,
+  monthWindow,
+  weekWindow,
   truncateText,
   formatHoursValue,
   formatReportLocation,
@@ -836,9 +838,7 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
   assertPermission(res, req.user, PERMISSIONS.REPORTS.VIEW, orgId);
 
   const to = todayKey();
-  const fromDate = new Date();
-  fromDate.setDate(fromDate.getDate() - 29);
-  const from = dateKey(fromDate);
+  const from = monthWindow(new Date()).from;
 
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
@@ -923,14 +923,21 @@ function assertReportDownloadAccess({ organization, res }) {
 }
 
 const resolveTeamLeaderReportRange = (req) => {
-  const to = todayKey();
-  const fromDate = new Date();
-  fromDate.setDate(fromDate.getDate() - 29);
-  const from = dateKey(fromDate);
-
-  const rangeFrom = String(req.query.from || from);
-  const rangeTo = String(req.query.to || to);
   const period = String(req.query.period || "custom").toLowerCase();
+  let defaultFrom = monthWindow(new Date()).from;
+  let defaultTo = todayKey();
+
+  if (period === "weekly") {
+    const w = weekWindow(new Date());
+    defaultFrom = w.from;
+    defaultTo = w.to;
+  } else if (period === "daily") {
+    defaultFrom = todayKey();
+    defaultTo = todayKey();
+  }
+
+  const rangeFrom = String(req.query.from || defaultFrom);
+  const rangeTo = String(req.query.to || defaultTo);
 
   let periodLabel = "Custom";
   if (period === "daily") periodLabel = "Daily";
@@ -972,6 +979,8 @@ const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds
           email: true,
           mobileCountryCode: true,
           mobile: true,
+          gender: true,
+          existingMember: true,
         },
       },
     },
@@ -1037,6 +1046,9 @@ const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds
       punchIn: toPdfTime(record.punchInAt),
       punchOut: toPdfTime(record.punchOutAt),
       reachedHome: toPdfTime(record.reachedHomeAt),
+      gender: record.user?.gender || "-",
+      existingMember: record.user?.existingMember || "-",
+      status: String(record.status || "-").toUpperCase(),
       totalHours: formatHoursValue(totalMinutesWorked, { fromMinutes: true }),
       presentHours: formatHoursValue(presentMinutes, { fromMinutes: true }),
       absent: isAbsent ? "YES" : "NO",
@@ -1069,15 +1081,11 @@ const buildAttendanceExcelBuffer = ({
     { key: "date", label: "Date", width: 80 },
     { key: "userId", label: "Member ID", width: 68 },
     { key: "userName", label: "Member Name", width: 120 },
-    { key: "contact", label: "Contact", width: 92 },
-    { key: "email", label: "Email", width: 132 },
+    { key: "existingMember", label: "Member Type", width: 90 },
+    { key: "status", label: "Status", width: 90 },
     { key: "punchIn", label: "Punch In", width: 70 },
     { key: "punchOut", label: "Punch Out", width: 70 },
-    { key: "reachedHome", label: "Reached Home", width: 70 },
     { key: "totalHours", label: "Worked Hrs", width: 88 },
-    { key: "presentHours", label: "Present Hrs", width: 96 },
-    { key: "absent", label: "Is Absent", width: 64 },
-    { key: "reachedHomeLocation", label: "Reached Home Location", width: 200 },
   ];
 
   const infoLines = [

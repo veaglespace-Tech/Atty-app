@@ -12,14 +12,13 @@ const {
   validateResetPasswordToken,
   resetPassword,
   saveLead,
-  checkEmail,
+  verifySuperAdminOtp,
   updatePushToken,
 } = require("../controllers/auth.controller");
 const {
   validateReferralCode,
   submitJoinRequest,
 } = require("../controllers/registration-request.controller");
-const { verifyAndRegister } = require("../controllers/payment.controller");
 const { userProtected } = require("../middlewares/auth.middleware");
 const { validateBody } = require("../middlewares/validation.middleware");
 
@@ -39,23 +38,12 @@ const loginSchema = z.object({
   loginAs: z.string().trim().optional(),
 });
 
-const forgotPasswordSchema = z
-  .object({
-    email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
-    organizationCode: z.string().trim().optional(),
-    organizationId: numericIdSchema.optional(),
-    loginAs: z.string().trim().min(1, "Role is required"),
-  })
-  .superRefine((value, ctx) => {
-    const normalizedRole = String(value.loginAs || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
-    if (normalizedRole !== "SUPER_ADMIN" && !value.organizationCode && !value.organizationId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Organization selection is required for this role",
-        path: ["organizationId"],
-      });
-    }
-  });
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
+  organizationCode: z.string().trim().optional(),
+  organizationId: numericIdSchema.optional(),
+  loginAs: z.string().trim().optional(),
+});
 
 const resetPasswordTokenSchema = z.object({
   token: z.string().trim().min(1, "Reset token is required"),
@@ -89,7 +77,18 @@ const registerSchema = z
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.string().trim().min(4, "Mobile number is too short").optional(),
     mobileCountryCode: z.string().trim().optional(),
-    emergencyContact: z.string().trim().min(4, "Emergency contact is too short").optional(),
+    emergencyContact: z
+      .string()
+      .trim()
+      .refine(
+        (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+        "Emergency contact contains invalid characters"
+      )
+      .refine(
+        (value) => !value || (value.replace(/\D/g, "").length >= 10 && value.replace(/\D/g, "").length <= 15),
+        "Emergency contact must be between 10 and 15 digits"
+      )
+      .optional(),
     currentAddress: z.string().trim().min(5, "Current address is too short").max(191).optional(),
     permanentAddress: z.string().trim().min(5, "Permanent address is too short").max(191).optional(),
     countryCode: z.string().trim().optional(),
@@ -114,10 +113,35 @@ const updateMeSchema = z
     email: z.string().trim().email("Enter a valid email address").optional(),
     mobile: z.union([z.string().trim().min(4, "Mobile number is too short"), z.literal("")]).optional(),
     mobileCountryCode: z.union([z.string().trim().min(1, "Country code is required"), z.literal("")]).optional(),
-    emergencyContact: z.string().trim().optional(),
+    emergencyContact: z
+      .string()
+      .trim()
+      .refine(
+        (value) => !value || /^\+?[0-9\s\-()]+$/.test(value),
+        "Emergency contact contains invalid characters"
+      )
+      .refine(
+        (value) => !value || (value.replace(/\D/g, "").length >= 10 && value.replace(/\D/g, "").length <= 15),
+        "Emergency contact must be between 10 and 15 digits"
+      )
+      .optional()
+      .or(z.literal("")),
     currentAddress: z.string().trim().optional(),
     permanentAddress: z.string().trim().optional(),
     bloodGroup: z.string().trim().optional(),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
+    dob: z.string().trim().optional(),
+    existingMember: z.enum(["SENIOR", "JUNIOR", "SEMI_SENIOR", "SEMI-SENIOR", "semi-senior", "Semi Senior"]).optional().or(z.literal("")),
+    departmentId: z.union([z.number(), z.string(), z.null()]).optional(),
+    physicalFormNo: z.string().trim().optional(),
+    documentName: z.string().trim().optional(),
+    documentDataUrl: z
+      .string()
+      .trim()
+      .min(1, "Document is required")
+      .max(20_000_000, "Document file is too large (max 10MB)")
+      .optional(),
+    removeDocument: z.boolean().optional(),
     profileImageDataUrl: z
       .string()
       .trim()
@@ -147,14 +171,9 @@ router.get("/organizations/search", searchOrganizations);
 router.get("/join/:referralCode", validateReferralCode);
 router.post("/join/:referralCode", submitJoinRequest);
 router.post("/register", validateBody(registerSchema), register);
-router.post("/register-org", verifyAndRegister);
-const checkEmailSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
-});
-
-router.post("/check-email", validateBody(checkEmailSchema), checkEmail);
 router.post("/save-lead", saveLead);
 router.post("/login", validateBody(loginSchema), login);
+router.post("/verify-super-admin-otp", verifySuperAdminOtp);
 router.post("/forgot-password", validateBody(forgotPasswordSchema), forgotPassword);
 router.post(
   "/reset-password/validate",

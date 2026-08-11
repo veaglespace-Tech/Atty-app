@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, Alert, Image } from "react-native";
-import { Building2, Save, Trash2, ImageUp } from "lucide-react-native";
-import { useDispatch, useSelector } from "react-redux";
+import { View, Text, Pressable, Image, ActivityIndicator, Alert } from "react-native";
+import { Building2, ImageUp, Trash2 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { useSelector, useDispatch } from "react-redux";
 import { useUpdateOrgLogoMutation } from "@/services/api/orgApi";
 import { setCurrentUser } from "@/store/slices/authSlice";
 
 export default function OrgLogoSettings() {
+  const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
   const [updateOrgLogo, { isLoading }] = useUpdateOrgLogoMutation();
   const [logoDataUrl, setLogoDataUrl] = useState("");
   const [removeLogo, setRemoveLogo] = useState(false);
@@ -20,34 +20,37 @@ export default function OrgLogoSettings() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.7,
+        quality: 0.8,
         base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        const asset = result.assets[0];
+        const mimeType = asset.mimeType || "image/jpeg";
+        const base64Img = `data:${mimeType};base64,${asset.base64}`;
         setLogoDataUrl(base64Img);
         setRemoveLogo(false);
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to pick image.");
+      console.error(err);
+      Alert.alert("Error", "Failed to pick image");
     }
   };
 
   const toggleLogoRemoval = () => {
     if (removeLogo) {
       setRemoveLogo(false);
-      return;
-    }
-    if (logoDataUrl) {
-      setLogoDataUrl("");
-      return;
-    }
-    if (currentLogoUrl) {
-      setRemoveLogo(true);
+    } else {
+      if (logoDataUrl) {
+        setLogoDataUrl("");
+      } else {
+        if (currentLogoUrl) {
+          setRemoveLogo(true);
+        }
+      }
     }
   };
 
@@ -62,16 +65,17 @@ export default function OrgLogoSettings() {
 
       const response = await updateOrgLogo(payload).unwrap();
       const updatedLogoUrl = response?.data?.logoUrl || null;
-
-      if (user) {
-        const updatedUser = {
-          ...user,
-          organization: {
-            ...(user.organization || {}),
-            logoUrl: updatedLogoUrl,
-          },
-        };
-        dispatch(setCurrentUser(updatedUser));
+      
+      if (user?.organization) {
+        dispatch(
+          setCurrentUser({
+            ...user,
+            organization: {
+              ...user.organization,
+              logoUrl: updatedLogoUrl,
+            },
+          })
+        );
       }
 
       setLogoDataUrl("");
@@ -84,52 +88,51 @@ export default function OrgLogoSettings() {
 
   return (
     <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">
-      <View className="flex-row items-center gap-3 mb-5">
-        <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-500/20">
-          <ImageUp size={18} className="text-purple-600 dark:text-purple-400" />
-        </View>
+      <View className="flex-row items-center justify-between mb-5">
         <View className="flex-1">
-          <Text className="text-base font-black text-slate-900 dark:text-white">Organization Logo</Text>
-          <Text className="text-xs font-semibold text-slate-500">Upload a logo for the dashboard.</Text>
+          <Text className="text-lg font-bold text-slate-900 dark:text-white">Organization Logo</Text>
+          <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-2">Upload a logo to appear in the dashboard navigation.</Text>
         </View>
       </View>
 
-      <View className="gap-y-4">
-        <View className="flex-row items-center gap-4">
-          <View className="h-20 w-20 rounded-2xl bg-slate-100 dark:bg-slate-800 items-center justify-center overflow-hidden">
-            {previewLogoUrl ? (
-              <Image source={{ uri: previewLogoUrl }} className="h-full w-full object-cover" />
-            ) : (
-              <Building2 size={32} className="text-slate-400" />
-            )}
-          </View>
-          <View className="flex-1 gap-2">
-            <Pressable onPress={pickImage}>
-              <View className="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800  flex-row items-center justify-center gap-2">
-                <ImageUp size={14} className="text-slate-700 dark:text-slate-300" />
-                <Text className="font-bold text-slate-700 dark:text-slate-300 text-sm">{previewLogoUrl ? "Change" : "Upload"}</Text>
-              </View>
+      <View className="flex-row flex-wrap items-center gap-4">
+        <View className="h-24 w-24 rounded-[2rem] bg-slate-100 dark:bg-slate-800 items-center justify-center overflow-hidden shadow-sm">
+          {previewLogoUrl ? (
+            <Image source={{ uri: previewLogoUrl }} className="h-full w-full object-cover" />
+          ) : (
+            <Building2 size={32} className="text-slate-400" />
+          )}
+        </View>
+        <View className="flex-1 min-w-[200px]">
+          <View className="flex-row flex-wrap items-center gap-2 mb-3">
+            <Pressable onPress={pickImage} className="flex-row items-center justify-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl px-4 py-2.5 active:bg-blue-100 dark:active:bg-blue-500/20">
+              <ImageUp size={16} className="text-blue-600 dark:text-blue-400" />
+              <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                {previewLogoUrl ? "Change Logo" : "Upload Logo"}
+              </Text>
             </Pressable>
             {(removeLogo || logoDataUrl || currentLogoUrl) ? (
-              <Pressable onPress={toggleLogoRemoval}>
-                <View className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700  flex-row items-center justify-center gap-2">
-                  <Trash2 size={14} className="text-rose-500" />
-                  <Text className="font-bold text-rose-500 text-sm">{removeLogo ? "Keep Current" : logoDataUrl ? "Clear" : "Remove"}</Text>
-                </View>
+              <Pressable onPress={toggleLogoRemoval} className="flex-row items-center justify-center gap-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 rounded-xl px-4 py-2.5 active:bg-rose-100 dark:active:bg-rose-500/20">
+                <Trash2 size={16} className="text-rose-600 dark:text-rose-400" />
+                <Text className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+                  {removeLogo ? "Keep Current Logo" : logoDataUrl ? "Clear Selection" : "Remove Logo"}
+                </Text>
               </Pressable>
             ) : null}
           </View>
+          <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            {removeLogo ? "Your current logo will be removed when you save." : logoDataUrl ? "New logo is ready. Save changes to publish it." : "Supported formats: JPG, PNG, WEBP. Max: 10 MB."}
+          </Text>
         </View>
-
-        <Pressable
-          onPress={handleSave}
-          disabled={isLoading || !hasPendingChange}
-        >
-          <View className={`mt-2 flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-white   ${isLoading || !hasPendingChange ? 'opacity-50' : ''}`}>
-            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white dark:text-slate-900 text-sm">Save Logo Update</Text>}
-          </View>
-        </Pressable>
       </View>
+
+      <Pressable
+        onPress={handleSave}
+        disabled={isLoading || !hasPendingChange}
+        className={`mt-6 w-full flex-row items-center justify-center py-3.5 rounded-2xl ${isLoading || !hasPendingChange ? 'bg-blue-400' : 'bg-blue-600 shadow-sm active:bg-blue-700'}`}
+      >
+        {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text className="font-bold text-white text-[15px]">Save Logo Update</Text>}
+      </Pressable>
     </View>
   );
 }

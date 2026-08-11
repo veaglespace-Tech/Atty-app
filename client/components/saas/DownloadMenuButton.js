@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 export default function DownloadMenuButton({
   label = "Download",
   onDownloadPdf,
-  onDownloadExcel,
+   onDownloadExcel,
   downloadingPdf = false,
   downloadingExcel = false,
   disabled = false,

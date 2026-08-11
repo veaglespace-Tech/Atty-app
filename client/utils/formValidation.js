@@ -113,6 +113,27 @@ export const validatePhoneInput = (
   return null;
 };
 
+export const validateEmergencyContact = (
+  value,
+  { label = "Emergency contact", required = true } = {}
+) => {
+  const normalized = normalizeTextInput(value);
+  if (!normalized) {
+    return required ? `${label} is required` : null;
+  }
+  if (!/^\+?[0-9\s\-()]+$/.test(normalized)) {
+    return `${label} can only contain numbers, spaces, hyphens, and a leading '+'`;
+  }
+  const digits = toDigitsOnly(normalized);
+  if (digits.length < 10) {
+    return `${label} must be at least 10 digits`;
+  }
+  if (digits.length > 15) {
+    return `${label} cannot exceed 15 digits`;
+  }
+  return null;
+};
+
 export const validatePasswordInput = (
   value,
   { required = true, min = 8, max = 64 } = {}
@@ -177,6 +198,7 @@ export const validateManagedUserForm = ({
   name,
   email,
   mobile,
+  emergencyContact,
   password,
   passwordRequired = false,
 }) => {
@@ -191,6 +213,7 @@ export const validateManagedUserForm = ({
     }) ||
     validateEmailInput(email) ||
     validatePhoneInput(mobile, { label: "Mobile number" }) ||
+    (emergencyContact ? validateEmergencyContact(emergencyContact, { required: false }) : null) ||
     validatePasswordInput(password, { required: passwordRequired })
   );
 };

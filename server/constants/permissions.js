@@ -44,6 +44,9 @@ const PERMISSIONS = Object.freeze({
   ROLES: {
     VIEW: "roles:view",
     MANAGE: "roles:manage",
+  },
+  EXPENSES: {
+    MANAGE: "expenses:manage"
   }
 });
 
@@ -100,7 +103,7 @@ const ROLE_DEFAULT_PERMISSIONS = Object.freeze({
     PERMISSIONS.POSTS.CREATE,
     PERMISSIONS.SUBSCRIPTION.VIEW,
     PERMISSIONS.LOCATION.VIEW,
-    PERMISSIONS.LOCATION.MANAGE
+    PERMISSIONS.LOCATION.MANAGE,
   ]),
   MEMBER: Object.freeze([
     PERMISSIONS.ATTENDANCE.VIEW_OWN,

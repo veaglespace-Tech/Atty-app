@@ -422,15 +422,6 @@ export default function OrgAttendancePage() {
  <View className="w-[48%]">
  <MetricCard label="Overtime" value={getSummaryValue("Overtime") || 0} />
  </View>
- <View className="w-[48%]">
- <MetricCard label="Total Logged Hrs" value={formatHoursValue(getSummaryValue("Total Logged Hrs") || 0)} />
- </View>
- <View className="w-[48%]">
- <MetricCard label="Avg Check In" value={getSummaryValue("Avg Check In") || "-"} />
- </View>
- <View className="w-[48%]">
- <MetricCard label="Avg Check Out" value={getSummaryValue("Avg Check Out") || "-"} />
- </View>
  </View>
 
  {/* SETTINGS */}

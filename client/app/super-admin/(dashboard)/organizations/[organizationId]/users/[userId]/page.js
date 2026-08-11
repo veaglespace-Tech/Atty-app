@@ -168,6 +168,7 @@ export default function SuperAdminUserDetailPage() {
       name: form.name,
       email: form.email,
       mobile: form.mobile,
+      emergencyContact: form.emergencyContact,
       password: "",
       passwordRequired: false,
     });
