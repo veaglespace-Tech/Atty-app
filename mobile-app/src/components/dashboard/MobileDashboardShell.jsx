@@ -372,17 +372,15 @@ export default function MobileDashboardShell({ children }) {
       >
         <View className="flex-1 flex-row relative">
           {/* Backdrop */}
-          <Pressable onPress={closeDrawer} style={{ flex: 1 }}>
+          <Pressable 
+            onPress={closeDrawer} 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}
+          >
             <Animated.View 
               style={{ 
+                flex: 1,
                 opacity: fadeAnim, 
                 backgroundColor: 'rgba(15, 23, 42, 0.65)',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 1,
               }}
             />
           </Pressable>
@@ -390,6 +388,10 @@ export default function MobileDashboardShell({ children }) {
           {/* Sliding Drawer */}
           <Animated.View
             style={{ 
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
               transform: [{ translateX: slideAnim }], 
               width: DRAWER_WIDTH,
               paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 20) : Math.max(insets.top, 12),
