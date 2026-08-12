@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
+import { View, Text, Pressable, Modal, Animated, Dimensions, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert, Newspaper, Music } from "lucide-react-native";
 import { useDispatch } from "react-redux";
@@ -262,12 +262,12 @@ export default function MobileDashboardShell({ children }) {
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       })
     ]).start();
   };
@@ -277,12 +277,12 @@ export default function MobileDashboardShell({ children }) {
       Animated.timing(slideAnim, {
         toValue: -DRAWER_WIDTH,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       })
     ]).start(() => {
       setIsDrawerOpen(false);
@@ -372,7 +372,7 @@ export default function MobileDashboardShell({ children }) {
       >
         <View className="flex-1 flex-row relative">
           {/* Backdrop */}
-          <TouchableWithoutFeedback onPress={closeDrawer}>
+          <Pressable onPress={closeDrawer} style={{ flex: 1 }}>
             <Animated.View 
               style={{ 
                 opacity: fadeAnim, 
@@ -385,7 +385,7 @@ export default function MobileDashboardShell({ children }) {
                 zIndex: 1,
               }}
             />
-          </TouchableWithoutFeedback>
+          </Pressable>
 
           {/* Sliding Drawer */}
           <Animated.View
