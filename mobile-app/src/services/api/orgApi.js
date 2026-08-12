@@ -278,7 +278,6 @@ export const orgApi = createApi({
     }),
     downloadOrgDepartmentsPdf: builder.mutation({
       query: (params = "") => ({
-        url: `/org/teams/pdf${params ? `?${params}` : ""}`,
         url: `/org/departments/pdf${params ? `?${params}` : ""}`,
         method: "GET",
         responseHandler: (response) => response.blob(),
