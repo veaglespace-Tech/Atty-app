@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import {
-  Search, User, ShieldCheck, Mail, Phone, Plus, RefreshCw, Download
+  Search, User, ShieldCheck, Mail, Phone, Plus, RefreshCw, Download, Archive
 } from "lucide-react-native";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -224,6 +224,13 @@ export default function OrgUsersPage() {
               className="h-11 w-11 items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[18px] active:scale-95 transition-transform">
               <RefreshCw size={18} className="text-slate-700 dark:text-slate-300" />
             </Pressable>
+            {(actorRole === ROLES.ORG_ADMIN || actorRole === ROLES.SUPER_ADMIN) && (
+              <Pressable
+                onPress={() => router.push("/org/users/archived")}
+                className="h-11 w-11 items-center justify-center bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 rounded-[18px] active:scale-95 transition-transform">
+                <Archive size={18} className="text-rose-600 dark:text-rose-400" />
+              </Pressable>
+            )}
             <Pressable
               onPress={() => {
                 if (filteredUsers.length === 0) {

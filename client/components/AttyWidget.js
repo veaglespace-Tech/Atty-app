@@ -147,7 +147,7 @@ function BotAvatar({ avatarBorder }) {
       >
         <div className="h-full w-full">
           <Image
-            src="/logo-transparent.webp"
+            src="/logo-transparent.png"
             alt="Atty"
             width={32}
             height={32}
@@ -466,7 +466,7 @@ export default function AttyWidget() {
               <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1rem] border border-white/25 bg-white p-0.5 shadow-[0_14px_30px_rgba(3,10,28,0.18)] sm:rounded-[1.2rem]">
                 <div className="h-full w-full">
                   <Image
-                    src="/logo-transparent.webp"
+                    src="/logo-transparent.png"
                     alt="Atty"
                     width={56}
                     height={56}

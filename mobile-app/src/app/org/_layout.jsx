@@ -105,6 +105,7 @@ export default function OrgLayout() {
         <Tabs.Screen name="teams/[id]" options={{ href: null }} />
         <Tabs.Screen name="teams" options={{ href: null }} />
         <Tabs.Screen name="users/[id]" options={{ href: null }} />
+        <Tabs.Screen name="users/archived" options={{ href: null }} />
         <Tabs.Screen name="workspace" options={{ href: null }} />
       </Tabs>
     </MobileDashboardShell>

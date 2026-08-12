@@ -4,11 +4,11 @@
     "slug": "atty",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/veagle-space-logo.webp",
+    "icon": "./assets/images/veagle-space-logo.png",
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/veagle-space-logo.webp",
+      "icon": "./assets/images/veagle-space-logo.png",
       "bundleIdentifier": "com.veaglespace.atty",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -18,7 +18,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/veagle-space-logo.webp"
+        "foregroundImage": "./assets/images/veagle-space-logo.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.veaglespace.atty",
@@ -26,7 +26,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/veagle-space-logo.webp"
+      "favicon": "./assets/images/veagle-space-logo.png"
     },
     "plugins": [
       "expo-router",
@@ -34,7 +34,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
-          "image": "./assets/images/veagle-space-logo.webp",
+          "image": "./assets/images/veagle-space-logo.png",
           "imageWidth": 76
         }
       ],
@@ -72,7 +72,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/veagle-space-logo.webp",
+          "icon": "./assets/images/veagle-space-logo.png",
           "color": "#208AEF"
         }
       ]

@@ -12,7 +12,7 @@ export const metadata = {
   title: "Veagle Attendee - Attendance Management Simplified",
   description: "Modern multi-tenant attendance management system for organizations.",
   icons: {
-    icon: "/logo-transparent.webp",
+    icon: "/logo-transparent.png",
   },
 };
 

@@ -411,13 +411,15 @@ export default function OrgUsersPage() {
               {bulkMode || selectedUserIds.length > 0 ? "Exit Selection Mode" : "Bulk Select"}
             </button>
 
-            <Link
-              href="/org/users/archived"
-              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto text-rose-600 dark:text-rose-400"
-            >
-              <Archive size={15} />
-              Archived Users
-            </Link>
+            {(actorRole === ROLES.ORG_ADMIN || actorRole === ROLES.SUPER_ADMIN) && (
+              <Link
+                href="/org/users/archived"
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto text-rose-600 dark:text-rose-400"
+              >
+                <Archive size={15} />
+                Archived Users
+              </Link>
+            )}
 
             <button
               type="button"
