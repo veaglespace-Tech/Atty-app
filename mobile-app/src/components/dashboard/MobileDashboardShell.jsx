@@ -401,13 +401,13 @@ export default function MobileDashboardShell({ children }) {
               left: 0,
               transform: [{ translateX: slideAnim }], 
               width: drawerWidth,
-              paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 20) : Math.max(insets.top, 12),
+              paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 55) : Math.max(insets.top, 12),
               paddingBottom: Math.max(insets.bottom, 16),
               backgroundColor: isDark ? '#020617' : '#ffffff',
               zIndex: 10,
               elevation: 16,
             }}
-            className="h-full flex-col"
+            className="h-full flex-col shadow-2xl"
           >
             <View 
               className="flex-1 w-full pt-2 pb-4 border-r"
