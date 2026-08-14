@@ -42,6 +42,14 @@ export default function AttendanceFaceCaptureModal({
     }
   }, [open, permission, requestPermission]);
 
+  useEffect(() => {
+    if (!open) {
+      setCapturedImageNative("");
+      setCameraErrorNative("");
+      setLocalSubmitting(false);
+    }
+  }, [open]);
+
   const handleClose = () => {
     if (Platform.OS === 'web') {
       handleCloseWeb();

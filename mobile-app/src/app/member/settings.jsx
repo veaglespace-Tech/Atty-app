@@ -108,7 +108,7 @@ export default function SettingsScreen() {
   });
 
   const { data: deptData } = useGetOrgDepartmentsQuery(undefined, {
-    skip: !user?.orgId,
+    skip: !getUserOrganizationId(user),
   });
   const departmentsList = deptData?.items || [];
 

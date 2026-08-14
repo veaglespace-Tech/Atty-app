@@ -81,7 +81,7 @@ export default function SettingsScreen() {
     departmentId: user?.departmentId ? String(user.departmentId) : "",
   });
 
-  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !user?.orgId });
+  const { data: deptData } = useGetOrgDepartmentsQuery(undefined, { skip: !getUserOrganizationId(user) });
   const departmentsList = deptData?.items || [];
 
   const onLogout = () => {

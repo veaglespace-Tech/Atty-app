@@ -11,8 +11,8 @@ import { logout } from "@/store/slices/authSlice";
 import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission } from "@/utils/roles";
 import { API_BASE_URL } from "@/services/api/baseApi";
 import AnimatedLogo from '../AnimatedLogo.jsx';
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.75, 350);
+const { width: INITIAL_SCREEN_WIDTH } = Dimensions.get("window");
+const INITIAL_DRAWER_WIDTH = Math.min(INITIAL_SCREEN_WIDTH * 0.75, 350);
 
 const HeaderBadges = ({ user, isDark }) => {
   const role = user?.currentRole || user?.role;
@@ -245,7 +245,9 @@ export default function MobileDashboardShell({ children }) {
   const pathname = usePathname();
   const isSettingsPage = Boolean(pathname?.endsWith("/settings"));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const { width: screenWidth } = Dimensions.get("window");
+  const drawerWidth = Math.min(screenWidth * 0.75, 350);
+  const slideAnim = useRef(new Animated.Value(-INITIAL_DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const [avatarError, setAvatarError] = useState(false);
@@ -258,24 +260,29 @@ export default function MobileDashboardShell({ children }) {
 
   const openDrawer = () => {
     setIsDrawerOpen(true);
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: Platform.OS !== 'web',
-      })
-    ]).start();
+    slideAnim.setValue(-drawerWidth);
+    
+    // Defer animation to ensure Modal is mounted and laid out
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: Platform.OS !== 'web',
+        })
+      ]).start();
+    }, Platform.OS === 'ios' ? 50 : 0);
   };
 
   const closeDrawer = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
-        toValue: -DRAWER_WIDTH,
+        toValue: -drawerWidth,
         duration: 250,
         useNativeDriver: Platform.OS !== 'web',
       }),
@@ -393,21 +400,17 @@ export default function MobileDashboardShell({ children }) {
               bottom: 0,
               left: 0,
               transform: [{ translateX: slideAnim }], 
-              width: DRAWER_WIDTH,
+              width: drawerWidth,
               paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 20) : Math.max(insets.top, 12),
               paddingBottom: Math.max(insets.bottom, 16),
               backgroundColor: isDark ? '#020617' : '#ffffff',
               zIndex: 10,
-              shadowColor: '#000',
-              shadowOffset: { width: 4, height: 0 },
-              shadowOpacity: 0.15,
-              shadowRadius: 10,
               elevation: 16,
             }}
             className="h-full flex-col"
           >
             <View 
-              className="flex-1 pt-2 pb-4 border-r"
+              className="flex-1 w-full pt-2 pb-4 border-r"
               style={{
                 backgroundColor: isDark ? '#020617' : '#ffffff',
                 borderRightColor: isDark ? '#1e293b' : '#e2e8f0'
@@ -442,7 +445,7 @@ export default function MobileDashboardShell({ children }) {
                 </Pressable>
               </View>
 
-              <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+              <ScrollView className="flex-1 w-full px-4" showsVerticalScrollIndicator={false}>
                 <Text 
                   className="text-xs font-black uppercase tracking-widest px-2 mb-3"
                   style={{ color: isDark ? '#64748b' : '#94a3b8' }}
