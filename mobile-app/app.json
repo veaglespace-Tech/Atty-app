@@ -2,7 +2,7 @@
   "expo": {
     "name": "ATTY",
     "slug": "atty",
-    "version": "1.0.2",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/veagle-space-logo.png",
     "scheme": "mobileapp",
@@ -17,6 +17,7 @@
       }
     },
     "android": {
+      "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/atty-adaptive-foreground.png"
