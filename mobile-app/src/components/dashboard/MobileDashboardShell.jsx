@@ -329,7 +329,7 @@ export default function MobileDashboardShell({ children }) {
             bottom: 0,
             left: 0,
             width: drawerWidth,
-            paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 55) : Math.max(insets.top, 12),
+            paddingTop: Math.max(insets.top, 16),
             paddingBottom: Math.max(insets.bottom, 16),
             backgroundColor: isDark ? '#020617' : '#ffffff',
             zIndex: 10,
