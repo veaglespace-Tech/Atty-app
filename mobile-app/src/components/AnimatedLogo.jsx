@@ -2,10 +2,11 @@ import React, { useEffect } from 'react';
 import { Image, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 
-const AnimatedLogo = ({ className, style, resizeMode = "contain", animationType = "3d" }) => {
+const AnimatedLogo = ({ className, style, resizeMode = "contain", animationType = "none" }) => {
   const rotation = useSharedValue(0);
 
   useEffect(() => {
+    if (animationType === "none") return;
     rotation.value = withRepeat(
       withTiming(360, {
         duration: 6000,
@@ -14,9 +15,10 @@ const AnimatedLogo = ({ className, style, resizeMode = "contain", animationType 
       -1, // infinite
       false // do not reverse
     );
-  }, []);
+  }, [animationType]);
 
   const animatedStyle = useAnimatedStyle(() => {
+    if (animationType === "none") return {};
     if (animationType === "2d") {
       return {
         transform: [
@@ -33,6 +35,18 @@ const AnimatedLogo = ({ className, style, resizeMode = "contain", animationType 
       backfaceVisibility: 'visible',
     };
   });
+
+  if (animationType === "none") {
+    return (
+      <View style={[style, { alignItems: 'center', justifyContent: 'center' }]} className={className}>
+        <Image
+          source={require('../../assets/images/veagle-space-logo.png')}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode={resizeMode}
+        />
+      </View>
+    );
+  }
 
   return (
     <Animated.View style={[style, animatedStyle, { alignItems: 'center', justifyContent: 'center' }]} className={className}>
