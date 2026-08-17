@@ -27,9 +27,10 @@ const AnimatedLogo = ({ className, style, resizeMode = "contain", animationType 
     
     return {
       transform: [
-        { perspective: 600 },
+        { perspective: 800 },
         { rotateY: `${rotation.value}deg` }
       ],
+      backfaceVisibility: 'visible',
     };
   });
 
