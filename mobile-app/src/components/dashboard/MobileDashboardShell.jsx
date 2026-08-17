@@ -392,7 +392,7 @@ export default function MobileDashboardShell({ children }) {
             style={{ 
               transform: [{ translateX: slideAnim }], 
               width: drawerWidth,
-              paddingTop: Platform.OS === 'ios' ? Math.max(insets.top + 6, 44) : Math.max(insets.top, 12),
+              paddingTop: Platform.OS === 'ios' ? Math.max(insets.top + 14, 52) : Math.max(insets.top, 12),
               paddingBottom: Math.max(insets.bottom, 16),
               backgroundColor: isDark ? '#020617' : '#ffffff',
               zIndex: 10,
@@ -411,7 +411,7 @@ export default function MobileDashboardShell({ children }) {
                 borderRightColor: isDark ? '#1e293b' : '#e2e8f0'
               }}
             >
-              <View className="px-6 flex-row items-center justify-between mb-6 mt-2">
+              <View className="px-5 flex-row items-center justify-between mb-6 mt-2">
                 <View className="flex-row items-center gap-3 flex-1">
                   <AnimatedLogo 
                     style={{ width: 34, height: 34 }}
@@ -442,8 +442,12 @@ export default function MobileDashboardShell({ children }) {
 
               <ScrollView className="flex-1 w-full px-4" showsVerticalScrollIndicator={false}>
                 <Text 
-                  className="text-xs font-black uppercase tracking-widest px-2 mb-3"
-                  style={{ color: isDark ? '#64748b' : '#94a3b8' }}
+                  className="text-xs font-black uppercase px-2 mb-3"
+                  style={{ 
+                    color: isDark ? '#64748b' : '#94a3b8',
+                    letterSpacing: 1.5,
+                    paddingLeft: 4,
+                  }}
                 >
                   Navigation
                 </Text>
