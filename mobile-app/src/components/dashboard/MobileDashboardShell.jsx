@@ -419,8 +419,10 @@ export default function MobileDashboardShell({ children }) {
             >
               <View className="px-5 flex-row items-center justify-between mb-6 mt-2">
                 <View className="flex-row items-center gap-3 flex-1">
-                  <AnimatedLogo
+                  <Image
+                    source={require('../../../assets/images/veagle-space-logo.png')}
                     style={{ width: 34, height: 34 }}
+                    resizeMode="contain"
                   />
                   <View className="flex-row items-center flex-1">
                     <Text
