@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Image, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 
-const AnimatedLogo = ({ className, style, resizeMode = "contain" }) => {
+const AnimatedLogo = ({ className, style, resizeMode = "contain", animationType = "3d" }) => {
   const rotation = useSharedValue(0);
 
   useEffect(() => {
@@ -17,6 +17,14 @@ const AnimatedLogo = ({ className, style, resizeMode = "contain" }) => {
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => {
+    if (animationType === "2d") {
+      return {
+        transform: [
+          { rotateZ: `${rotation.value}deg` }
+        ],
+      };
+    }
+    
     return {
       transform: [
         { perspective: 600 },
