@@ -386,25 +386,25 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
 
       {showStats && (
       <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-        <View className="w-[48%] bg-[#0f172a] dark:bg-slate-900 p-4 rounded-[20px] border border-slate-800 flex-col justify-between">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Today</Text>
-          <Text className="text-xl font-black text-white" numberOfLines={1} adjustsFontSizeToFit>{todayStatusValue}</Text>
+        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Today</Text>
+          <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1} adjustsFontSizeToFit>{todayStatusValue}</Text>
         </View>
-        <View className="w-[48%] bg-[#0f172a] dark:bg-slate-900 p-4 rounded-[20px] border border-slate-800 flex-col justify-between">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Reached</Text>
-          <Text className="text-xl font-black text-white" numberOfLines={1} adjustsFontSizeToFit>{formatDateTime(todayRecord?.reachedHomeAt)}</Text>
+        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Reached</Text>
+          <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1} adjustsFontSizeToFit>{formatDateTime(todayRecord?.reachedHomeAt)}</Text>
         </View>
-        <View className="w-[48%] bg-[#0f172a] dark:bg-slate-900 p-4 rounded-[20px] border border-slate-800 flex-col justify-between">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Present (M)</Text>
-          <Text className="text-2xl font-black text-white">{summaryMap.get("Present This Month") || 0}</Text>
+        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Present (M)</Text>
+          <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Present This Month") || 0}</Text>
         </View>
-        <View className="w-[48%] bg-[#0f172a] dark:bg-slate-900 p-4 rounded-[20px] border border-slate-800 flex-col justify-between">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Absent (M)</Text>
-          <Text className="text-2xl font-black text-white">{summaryMap.get("Absent This Month") || 0}</Text>
+        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Absent (M)</Text>
+          <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Absent This Month") || 0}</Text>
         </View>
-        <View className="w-full bg-[#0f172a] dark:bg-slate-900 p-4 rounded-[20px] border border-slate-800 flex-row items-center justify-between">
-          <Text className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">Worked Hrs This Month</Text>
-          <Text className="text-2xl font-black text-white">{formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}</Text>
+        <View className="w-full bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
+          <Text className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">Worked Hrs This Month</Text>
+          <Text className="text-2xl font-black text-slate-900 dark:text-white">{formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}</Text>
         </View>
       </View>
       )}

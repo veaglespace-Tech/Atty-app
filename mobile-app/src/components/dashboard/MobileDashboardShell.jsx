@@ -17,9 +17,9 @@ const HeaderBadges = ({ user, isDark }) => {
   const role = user?.currentRole || user?.role;
   const rawRoot = DASHBOARD_ROOT_BY_ROLE[role] || "org";
   const cleanRoot = `/${rawRoot.replace(/^\//, '')}`;
-  
+
   const canSeeRequests = user ? (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS) || hasPermission(user, PERMISSIONS.USERS.CREATE)) : false;
-  
+
   const { data: notificationsData } = useGetOrgNotificationsQuery(undefined, { skip: !user });
   const { data: regData } = useGetOrgRegistrationRequestsQuery(undefined, { skip: !canSeeRequests });
 
@@ -33,7 +33,7 @@ const HeaderBadges = ({ user, isDark }) => {
   return (
     <View className="flex-row items-center mr-3" style={{ gap: 12 }}>
       {canSeeRequests && (
-        <Pressable 
+        <Pressable
           onPress={() => router.push(reqPath)}
           className="relative items-center justify-center h-10 w-10 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm active:scale-95 transition-transform"
         >
@@ -45,7 +45,7 @@ const HeaderBadges = ({ user, isDark }) => {
           )}
         </Pressable>
       )}
-      <Pressable 
+      <Pressable
         onPress={() => router.push(`${cleanRoot}/notifications`)}
         className="relative items-center justify-center h-10 w-10 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm active:scale-95 transition-transform"
       >
@@ -79,7 +79,7 @@ const getTabsForRole = (user) => {
   if (!user) return [];
   const role = ROLE_ALIASES[(user.currentRole || user.role)?.toUpperCase()] || (user.currentRole || user.role);
   const commonIconProps = { size: 18, color: "#2563eb" };
-  
+
   if (role === ROLES.SUPER_ADMIN) {
     return [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
@@ -117,56 +117,56 @@ const getTabsForRole = (user) => {
       { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
     ];
   }
-  
+
   if (role === ROLES.SUB_ADMIN) {
     const tabs = [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
       { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "my-attendance" },
     ];
-    
+
     if (hasPermission(user, PERMISSIONS.USERS.UPDATE_STATUS)) {
       tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
       tabs.push({ title: "Requests", icon: <ClipboardCheck {...commonIconProps} />, href: "registration-requests" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.USERS.CREATE)) {
       tabs.push({ title: "Users", icon: <Users {...commonIconProps} />, href: "users" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL)) {
       tabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.ATTENDANCE.VIEW_ALL)) {
       tabs.push({ title: "Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
       tabs.push({ title: "Posts", icon: <MessageSquare {...commonIconProps} />, href: "posts" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.USERS.CREATE)) {
       tabs.push({ title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" });
       tabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
       tabs.push({ title: "Funds & Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
     }
-    
+
     if (hasPermission(user, PERMISSIONS.SUBSCRIPTION?.VIEW || "SUBSCRIPTION.VIEW")) {
       tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
     }
-    
+
     tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
-    
+
     return tabs;
   }
-  
+
   if (role === ROLES.TEAM_LEADER) {
     const tabs = [
       { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
@@ -196,10 +196,10 @@ const getTabsForRole = (user) => {
     }
     tabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
     tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
-    
+
     return tabs;
   }
-  
+
   // MEMBER / LIFE_MEMBER
   const memberTabs = [
     { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
@@ -210,7 +210,7 @@ const getTabsForRole = (user) => {
     memberTabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
     memberTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
   }
-  
+
   memberTabs.push({ title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" });
 
   if (hasPermission(user, PERMISSIONS.POSTS.CREATE)) {
@@ -220,14 +220,14 @@ const getTabsForRole = (user) => {
   if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
     memberTabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
   }
-  
+
   if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
     memberTabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
   }
-  
+
   memberTabs.push({ title: "Notifications", icon: <Bell {...commonIconProps} />, href: "notifications" });
   memberTabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
-  
+
   return memberTabs;
 };
 
@@ -294,13 +294,13 @@ export default function MobileDashboardShell({ children }) {
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
 
   return (
-    <SafeAreaView 
-      edges={['top', 'left', 'right']} 
-      style={{ flex: 1, backgroundColor: isDark ? '#020617' : '#ffffff' }} 
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: isDark ? '#020617' : '#ffffff' }}
       className="bg-white dark:bg-[#020617]"
     >
       <StatusBar style={isDark ? "light" : "dark"} backgroundColor={isDark ? "#020617" : "#ffffff"} />
-      
+
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (
         <View className="flex-row items-center justify-between px-4 pt-3 pb-3 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 h-[64px]">
@@ -316,10 +316,10 @@ export default function MobileDashboardShell({ children }) {
           {/* Center: Org Logo or Brand */}
           <View className="flex-1 items-center justify-center px-2 pointer-events-none">
             {headerOrgLogoUrl && !logoError ? (
-              <Image 
-                source={{ uri: headerOrgLogoUrl }} 
-                style={{ height: 32, width: '100%', maxWidth: 120 }} 
-                resizeMode="contain" 
+              <Image
+                source={{ uri: headerOrgLogoUrl }}
+                style={{ height: 32, width: '100%', maxWidth: 120 }}
+                resizeMode="contain"
                 onError={() => setLogoError(true)}
               />
             ) : (
@@ -338,7 +338,7 @@ export default function MobileDashboardShell({ children }) {
           {/* Right Side: Profile Info & Badges */}
           <View className="flex-row items-center z-10">
             <HeaderBadges user={user} isDark={isDark} />
-            
+
             <Pressable
               onPress={() => {
                 const activeRole = user?.currentRole || user?.role;
@@ -349,10 +349,10 @@ export default function MobileDashboardShell({ children }) {
               className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform shadow-sm overflow-hidden"
             >
               {headerProfileUrl && !avatarError ? (
-                <Image 
-                  source={{ uri: headerProfileUrl }} 
-                  style={{ width: '100%', height: '100%' }} 
-                  resizeMode="cover" 
+                <Image
+                  source={{ uri: headerProfileUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
                   onError={() => setAvatarError(true)}
                 />
               ) : (
@@ -379,9 +379,9 @@ export default function MobileDashboardShell({ children }) {
         <View style={{ flex: 1, flexDirection: 'row' }}>
           {/* Backdrop */}
           <TouchableWithoutFeedback onPress={closeDrawer}>
-            <Animated.View 
-              style={{ 
-                opacity: fadeAnim, 
+            <Animated.View
+              style={{
+                opacity: fadeAnim,
                 backgroundColor: 'rgba(15, 23, 42, 0.65)',
                 position: 'absolute',
                 top: 0,
@@ -395,8 +395,8 @@ export default function MobileDashboardShell({ children }) {
 
           {/* Sliding Drawer */}
           <Animated.View
-            style={{ 
-              transform: [{ translateX: slideAnim }], 
+            style={{
+              transform: [{ translateX: slideAnim }],
               width: drawerWidth,
               paddingTop: Platform.OS === 'ios' ? Math.max(insets.top + 14, 52) : Math.max(insets.top, 12),
               paddingBottom: Math.max(insets.bottom, 16),
@@ -410,7 +410,7 @@ export default function MobileDashboardShell({ children }) {
             }}
             className="h-full flex-col"
           >
-            <View 
+            <View
               className="flex-1 w-full pt-2 pb-4 border-r"
               style={{
                 backgroundColor: isDark ? '#020617' : '#ffffff',
@@ -419,17 +419,17 @@ export default function MobileDashboardShell({ children }) {
             >
               <View className="px-5 flex-row items-center justify-between mb-6 mt-2">
                 <View className="flex-row items-center gap-3 flex-1">
-                  <AnimatedLogo 
+                  <AnimatedLogo
                     style={{ width: 34, height: 34 }}
                   />
                   <View className="flex-row items-center flex-1">
-                    <Text 
+                    <Text
                       className="text-2xl font-black tracking-tight mr-1.5"
                       style={{ color: isDark ? '#ffffff' : '#0f172a' }}
                     >
                       Veagle
                     </Text>
-                    <Text 
+                    <Text
                       className="text-2xl font-black text-blue-500 tracking-tight flex-shrink"
                       numberOfLines={1}
                     >
@@ -437,7 +437,7 @@ export default function MobileDashboardShell({ children }) {
                     </Text>
                   </View>
                 </View>
-                <Pressable 
+                <Pressable
                   onPress={closeDrawer}
                   style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }}
                   className="h-10 w-10 items-center justify-center rounded-full ml-2 flex-shrink-0"
@@ -447,9 +447,9 @@ export default function MobileDashboardShell({ children }) {
               </View>
 
               <ScrollView className="flex-1 w-full px-4" showsVerticalScrollIndicator={false}>
-                <Text 
+                <Text
                   className="text-xs font-black uppercase px-2 mb-3"
-                  style={{ 
+                  style={{
                     color: isDark ? '#64748b' : '#94a3b8',
                     letterSpacing: 1.5,
                     paddingLeft: 4,
@@ -457,7 +457,7 @@ export default function MobileDashboardShell({ children }) {
                 >
                   Navigation
                 </Text>
-                
+
                 <View className="gap-y-1">
                   {getTabsForRole(user).map((tab) => (
                     <Pressable
@@ -473,7 +473,7 @@ export default function MobileDashboardShell({ children }) {
                       }}
                       className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50/80 dark:active:bg-slate-800/80 active:scale-95 transition-all">
                       <View className="flex-row items-center gap-4">
-                        <View 
+                        <View
                           className="w-10 h-10 rounded-xl items-center justify-center"
                           style={{
                             backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
@@ -483,7 +483,7 @@ export default function MobileDashboardShell({ children }) {
                         >
                           {tab.icon}
                         </View>
-                        <Text 
+                        <Text
                           className="text-[15px] font-bold"
                           style={{ color: isDark ? '#f8fafc' : '#0f172a' }}
                         >
@@ -496,7 +496,7 @@ export default function MobileDashboardShell({ children }) {
                 </View>
               </ScrollView>
 
-              <View 
+              <View
                 className="px-6 pt-6 mt-4 border-t"
                 style={{ borderTopColor: isDark ? '#1e293b' : '#f1f5f9' }}
               >
