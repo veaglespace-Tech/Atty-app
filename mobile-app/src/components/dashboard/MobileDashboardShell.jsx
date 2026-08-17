@@ -452,76 +452,75 @@ export default function MobileDashboardShell({ children }) {
   );
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
-      
-      {/* Global Header Bar with Menu Button */}
-      {!isSettingsPage && (
-        <View className="flex-row items-center justify-between px-4 pt-3 pb-3 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 h-[64px]">
-          {/* Left Side: Hamburger Menu */}
-          <View className="flex-row items-center w-12 z-10">
-            <Pressable
-              onPress={openDrawer}
-              className="h-10 w-10 items-center justify-center rounded-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm active:scale-95 transition-transform">
-              <Menu size={20} color={isDark ? "#ffffff" : "#0f172a"} />
-            </Pressable>
-          </View>
+    <View style={{ flex: 1 }}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
+        
+        {/* Global Header Bar with Menu Button */}
+        {!isSettingsPage && (
+          <View className="flex-row items-center justify-between px-4 pt-3 pb-3 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 h-[64px]">
+            {/* Left Side: Hamburger Menu */}
+            <View className="flex-row items-center w-12 z-10">
+              <Pressable
+                onPress={openDrawer}
+                className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform shadow-sm"
+              >
+                <Menu size={22} color={isDark ? "#94a3b8" : "#334155"} />
+              </Pressable>
+            </View>
 
-          {/* Center: Org Logo or Brand */}
-          <View className="flex-1 items-center justify-center px-2 pointer-events-none">
-            {headerOrgLogoUrl && !logoError ? (
-              <Image 
-                source={{ uri: headerOrgLogoUrl }} 
-                style={{ height: 32, width: '100%', maxWidth: 120 }} 
-                resizeMode="contain" 
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <View className="flex-row items-center justify-center overflow-hidden">
-                <AnimatedLogo style={{ width: 28, height: 28, marginRight: 8 }} />
-                <Text className="text-xl font-black text-slate-900 dark:text-white leading-tight tracking-tight mr-1" numberOfLines={1}>
-                  Veagle
-                </Text>
-                <Text className="text-xl font-black text-blue-500 leading-tight tracking-tight" numberOfLines={1}>
-                  Atty
+            {/* Center: Logo + Org Name */}
+            <View className="absolute inset-0 flex-row items-center justify-center" pointerEvents="none">
+              <View className="flex-row items-center gap-2.5 max-w-[60%]" pointerEvents="none">
+                {headerOrgLogoUrl && !logoError ? (
+                  <Image 
+                    source={{ uri: headerOrgLogoUrl }} 
+                    style={{ width: 32, height: 32, borderRadius: 10 }}
+                    resizeMode="cover"
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <AnimatedLogo style={{ width: 32, height: 32 }} />
+                )}
+                <Text className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight" numberOfLines={1}>
+                  {user?.organization?.name || "Dashboard"}
                 </Text>
               </View>
-            )}
+            </View>
+
+            {/* Right Side: Notifications + Profile */}
+            <View className="flex-row items-center gap-2">
+              <HeaderBadges user={user} isDark={isDark} />
+              <Pressable
+                onPress={() => {
+                  const activeRole = user?.currentRole || user?.role;
+                  const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
+                  const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
+                  router.push(`${basePath}/settings`);
+                }}
+                className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform shadow-sm overflow-hidden"
+              >
+                {headerProfileUrl && !avatarError ? (
+                  <Image 
+                    source={{ uri: headerProfileUrl }} 
+                    style={{ width: '100%', height: '100%' }} 
+                    resizeMode="cover" 
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <Text className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
+                    {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
           </View>
+        )}
 
-          {/* Right Side: Profile Info & Badges */}
-          <View className="flex-row items-center z-10">
-            <HeaderBadges user={user} isDark={isDark} />
-            
-            <Pressable
-              onPress={() => {
-                const activeRole = user?.currentRole || user?.role;
-                const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
-                const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/org";
-                router.push(`${basePath}/settings`);
-              }}
-              className="items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform shadow-sm overflow-hidden"
-            >
-              {headerProfileUrl && !avatarError ? (
-                <Image 
-                  source={{ uri: headerProfileUrl }} 
-                  style={{ width: '100%', height: '100%' }} 
-                  resizeMode="cover" 
-                  onError={() => setAvatarError(true)}
-                />
-              ) : (
-                <Text className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
-                  {user?.firstName?.charAt(0) || user?.name?.charAt(0) || "U"}
-                </Text>
-              )}
-            </Pressable>
-          </View>
-        </View>
-      )}
+        {/* Renders the current tab's content */}
+        {children || <Slot />}
+      </SafeAreaView>
 
-      {/* Renders the current tab's content */}
-      {children || <Slot />}
-
-      {/* Side Drawer - rendered as overlay (no Modal, fixes iOS clipping) */}
+      {/* Side Drawer - rendered OUTSIDE SafeAreaView to prevent iOS clipping */}
       {isDrawerVisible && (
         <View 
           style={{ 
@@ -537,6 +536,6 @@ export default function MobileDashboardShell({ children }) {
           {drawerContent}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
