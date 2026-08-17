@@ -351,8 +351,10 @@ export default function MobileDashboardShell({ children }) {
         >
           <View style={{ paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, marginTop: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-              <AnimatedLogo 
+              <Image 
+                source={require('../../assets/images/veagle-space-logo.png')}
                 style={{ width: 34, height: 34 }}
+                resizeMode="contain"
               />
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                 <Text 
