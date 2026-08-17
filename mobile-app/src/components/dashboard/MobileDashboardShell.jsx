@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Dimensions, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
+import { View, Text, Pressable, Modal, Dimensions, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert, Newspaper, Music } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 import { useColorScheme } from "nativewind";
+import Reanimated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { useGetOrgNotificationsQuery, useGetOrgRegistrationRequestsQuery } from "@/services/api/orgApi";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -11,8 +12,6 @@ import { logout } from "@/store/slices/authSlice";
 import { ROLES, DASHBOARD_ROOT_BY_ROLE, ROLE_ALIASES, PERMISSIONS, hasPermission } from "@/utils/roles";
 import { API_BASE_URL } from "@/services/api/baseApi";
 import AnimatedLogo from '../AnimatedLogo.jsx';
-const { width: INITIAL_SCREEN_WIDTH } = Dimensions.get("window");
-const INITIAL_DRAWER_WIDTH = Math.min(INITIAL_SCREEN_WIDTH * 0.75, 350);
 
 const HeaderBadges = ({ user, isDark }) => {
   const role = user?.currentRole || user?.role;
@@ -247,8 +246,8 @@ export default function MobileDashboardShell({ children }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { width: screenWidth } = Dimensions.get("window");
   const drawerWidth = Math.min(screenWidth * 0.75, 350);
-  const slideAnim = useRef(new Animated.Value(-INITIAL_DRAWER_WIDTH)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useSharedValue(-drawerWidth);
+  const fadeAnim = useSharedValue(0);
 
   const [avatarError, setAvatarError] = useState(false);
   const [logoError, setLogoError] = useState(false);
@@ -260,41 +259,31 @@ export default function MobileDashboardShell({ children }) {
 
   const openDrawer = () => {
     setIsDrawerOpen(true);
-    slideAnim.setValue(-drawerWidth);
+    slideAnim.value = -drawerWidth;
     
     // Defer animation to ensure Modal is mounted and laid out
     setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: Platform.OS !== 'web',
-        })
-      ]).start();
+      slideAnim.value = withTiming(0, { duration: 300 });
+      fadeAnim.value = withTiming(1, { duration: 300 });
     }, Platform.OS === 'ios' ? 50 : 0);
   };
 
   const closeDrawer = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: -drawerWidth,
-        duration: 250,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: Platform.OS !== 'web',
-      })
-    ]).start(() => {
-      setIsDrawerOpen(false);
+    slideAnim.value = withTiming(-drawerWidth, { duration: 250 });
+    fadeAnim.value = withTiming(0, { duration: 250 }, (finished) => {
+      if (finished) {
+        runOnJS(setIsDrawerOpen)(false);
+      }
     });
   };
+
+  const drawerAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: slideAnim.value }],
+  }));
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+  }));
 
   const headerOrgLogoUrl = getFullImageUrl(user?.organization?.logoUrl);
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
@@ -383,30 +372,34 @@ export default function MobileDashboardShell({ children }) {
             onPress={closeDrawer} 
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}
           >
-            <Animated.View 
-              style={{ 
-                flex: 1,
-                opacity: fadeAnim, 
-                backgroundColor: 'rgba(15, 23, 42, 0.65)',
-              }}
+            <Reanimated.View 
+              style={[
+                { 
+                  flex: 1,
+                  backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                },
+                backdropAnimatedStyle
+              ]}
             />
           </Pressable>
 
           {/* Sliding Drawer */}
-          <Animated.View
-            style={{ 
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              left: 0,
-              transform: [{ translateX: slideAnim }], 
-              width: drawerWidth,
-              paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 55) : Math.max(insets.top, 12),
-              paddingBottom: Math.max(insets.bottom, 16),
-              backgroundColor: isDark ? '#020617' : '#ffffff',
-              zIndex: 10,
-              elevation: 16,
-            }}
+          <Reanimated.View
+            style={[
+              { 
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: drawerWidth,
+                paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 55) : Math.max(insets.top, 12),
+                paddingBottom: Math.max(insets.bottom, 16),
+                backgroundColor: isDark ? '#020617' : '#ffffff',
+                zIndex: 10,
+                elevation: 16,
+              },
+              drawerAnimatedStyle
+            ]}
             className="h-full flex-col shadow-2xl"
           >
             <View 
