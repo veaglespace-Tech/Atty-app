@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { View, Text, Pressable, Modal, Dimensions, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Pressable, BackHandler, Dimensions, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert, Newspaper, Music } from "lucide-react-native";
 import { useDispatch } from "react-redux";
@@ -244,6 +244,7 @@ export default function MobileDashboardShell({ children }) {
   const pathname = usePathname();
   const isSettingsPage = Boolean(pathname?.endsWith("/settings"));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const { width: screenWidth } = Dimensions.get("window");
   const drawerWidth = Math.min(screenWidth * 0.75, 350);
   const slideAnim = useSharedValue(-drawerWidth);
@@ -258,14 +259,15 @@ export default function MobileDashboardShell({ children }) {
   };
 
   const openDrawer = () => {
+    setIsDrawerVisible(true);
     setIsDrawerOpen(true);
     slideAnim.value = -drawerWidth;
     
-    // Defer animation to ensure Modal is mounted and laid out
-    setTimeout(() => {
+    // Small delay to ensure state + layout is committed before animating
+    requestAnimationFrame(() => {
       slideAnim.value = withTiming(0, { duration: 300 });
       fadeAnim.value = withTiming(1, { duration: 300 });
-    }, Platform.OS === 'ios' ? 50 : 0);
+    });
   };
 
   const closeDrawer = () => {
@@ -273,9 +275,20 @@ export default function MobileDashboardShell({ children }) {
     fadeAnim.value = withTiming(0, { duration: 250 }, (finished) => {
       if (finished) {
         runOnJS(setIsDrawerOpen)(false);
+        runOnJS(setIsDrawerVisible)(false);
       }
     });
   };
+
+  // Handle Android hardware back button to close drawer
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+      closeDrawer();
+      return true;
+    });
+    return () => handler.remove();
+  }, [isDrawerOpen]);
 
   const drawerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: slideAnim.value }],
@@ -287,6 +300,156 @@ export default function MobileDashboardShell({ children }) {
 
   const headerOrgLogoUrl = getFullImageUrl(user?.organization?.logoUrl);
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
+
+  // Drawer content - shared between Modal (Android/web) and overlay (iOS)
+  const drawerContent = (
+    <View style={{ flex: 1 }}>
+      {/* Backdrop */}
+      <Pressable 
+        onPress={closeDrawer} 
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}
+      >
+        <Reanimated.View 
+          style={[
+            { 
+              flex: 1,
+              backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            },
+            backdropAnimatedStyle
+          ]}
+        />
+      </Pressable>
+
+      {/* Sliding Drawer */}
+      <Reanimated.View
+        style={[
+          { 
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: drawerWidth,
+            paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 55) : Math.max(insets.top, 12),
+            paddingBottom: Math.max(insets.bottom, 16),
+            backgroundColor: isDark ? '#020617' : '#ffffff',
+            zIndex: 10,
+            elevation: 16,
+          },
+          drawerAnimatedStyle
+        ]}
+      >
+        <View 
+          style={{
+            flex: 1,
+            width: '100%',
+            paddingTop: 8,
+            paddingBottom: 16,
+            backgroundColor: isDark ? '#020617' : '#ffffff',
+            borderRightWidth: 1,
+            borderRightColor: isDark ? '#1e293b' : '#e2e8f0'
+          }}
+        >
+          <View style={{ paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+              <AnimatedLogo 
+                style={{ width: 34, height: 34 }}
+              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Text 
+                  style={{ fontSize: 24, fontWeight: '900', letterSpacing: -0.5, marginRight: 6, color: isDark ? '#ffffff' : '#0f172a' }}
+                >
+                  Veagle
+                </Text>
+                <Text 
+                  style={{ fontSize: 24, fontWeight: '900', letterSpacing: -0.5, color: '#3b82f6', flexShrink: 1 }}
+                  numberOfLines={1}
+                >
+                  Attendee
+                </Text>
+              </View>
+            </View>
+            <Pressable 
+              onPress={closeDrawer}
+              style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9', height: 40, width: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, marginLeft: 8 }}
+            >
+              <X size={20} color={isDark ? "#94a3b8" : "#64748b"} />
+            </Pressable>
+          </View>
+
+          <ScrollView style={{ flex: 1, width: '100%', paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+            <Text 
+              style={{ fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2, paddingHorizontal: 8, marginBottom: 12, color: isDark ? '#64748b' : '#94a3b8' }}
+            >
+              Navigation
+            </Text>
+            
+            <View style={{ gap: 4 }}>
+              {getTabsForRole(user).map((tab) => (
+                <Pressable
+                  key={tab.title}
+                  onPress={() => {
+                    closeDrawer();
+                    setTimeout(() => {
+                      const activeRole = user?.currentRole || user?.role;
+                      const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
+                      const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
+                      router.push(`${basePath}/${tab.href}`);
+                    }, 200);
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 16 }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View 
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
+                        borderWidth: 1,
+                        borderColor: isDark ? '#1e293b' : '#e2e8f0'
+                      }}
+                    >
+                      {tab.icon}
+                    </View>
+                    <Text 
+                      style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f8fafc' : '#0f172a' }}
+                    >
+                      {tab.title}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color={isDark ? "#475569" : "#cbd5e1"} />
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View 
+            style={{ paddingHorizontal: 24, paddingTop: 24, marginTop: 16, borderTopWidth: 1, borderTopColor: isDark ? '#1e293b' : '#f1f5f9' }}
+          >
+            <Pressable
+              onPress={onLogout}
+              style={{
+                backgroundColor: isDark ? 'rgba(244, 63, 94, 0.1)' : '#fff1f2',
+                borderColor: isDark ? 'rgba(244, 63, 94, 0.2)' : '#ffe4e6',
+                borderWidth: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                paddingVertical: 14,
+                borderRadius: 16,
+              }}
+            >
+              <LogOut size={18} color={isDark ? "#fb7185" : "#e11d48"} />
+              <Text style={{ fontWeight: '700', color: isDark ? '#fb7185' : '#e11d48' }}>Sign Out</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Reanimated.View>
+    </View>
+  );
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
@@ -358,152 +521,22 @@ export default function MobileDashboardShell({ children }) {
       {/* Renders the current tab's content */}
       {children || <Slot />}
 
-      {/* Side Drawer Modal */}
-      <Modal
-        visible={isDrawerOpen}
-        transparent
-        animationType="none"
-        statusBarTranslucent={true}
-        onRequestClose={closeDrawer}
-      >
-        <View className="flex-1 flex-row relative">
-          {/* Backdrop */}
-          <Pressable 
-            onPress={closeDrawer} 
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}
-          >
-            <Reanimated.View 
-              style={[
-                { 
-                  flex: 1,
-                  backgroundColor: 'rgba(15, 23, 42, 0.65)',
-                },
-                backdropAnimatedStyle
-              ]}
-            />
-          </Pressable>
-
-          {/* Sliding Drawer */}
-          <Reanimated.View
-            style={[
-              { 
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: 0,
-                width: drawerWidth,
-                paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 55) : Math.max(insets.top, 12),
-                paddingBottom: Math.max(insets.bottom, 16),
-                backgroundColor: isDark ? '#020617' : '#ffffff',
-                zIndex: 10,
-                elevation: 16,
-              },
-              drawerAnimatedStyle
-            ]}
-            className="h-full flex-col shadow-2xl"
-          >
-            <View 
-              className="flex-1 w-full pt-2 pb-4 border-r"
-              style={{
-                backgroundColor: isDark ? '#020617' : '#ffffff',
-                borderRightColor: isDark ? '#1e293b' : '#e2e8f0'
-              }}
-            >
-              <View className="px-6 flex-row items-center justify-between mb-8 mt-2">
-                <View className="flex-row items-center gap-3 flex-1">
-                  <AnimatedLogo 
-                    style={{ width: 34, height: 34 }}
-                  />
-                  <View className="flex-row items-center flex-1">
-                    <Text 
-                      className="text-2xl font-black tracking-tight mr-1.5"
-                      style={{ color: isDark ? '#ffffff' : '#0f172a' }}
-                    >
-                      Veagle
-                    </Text>
-                    <Text 
-                      className="text-2xl font-black text-blue-500 tracking-tight flex-shrink"
-                      numberOfLines={1}
-                    >
-                      Attendee
-                    </Text>
-                  </View>
-                </View>
-                <Pressable 
-                  onPress={closeDrawer}
-                  style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }}
-                  className="h-10 w-10 items-center justify-center rounded-full ml-2 flex-shrink-0"
-                >
-                  <X size={20} color={isDark ? "#94a3b8" : "#64748b"} />
-                </Pressable>
-              </View>
-
-              <ScrollView className="flex-1 w-full px-4" showsVerticalScrollIndicator={false}>
-                <Text 
-                  className="text-xs font-black uppercase tracking-widest px-2 mb-3"
-                  style={{ color: isDark ? '#64748b' : '#94a3b8' }}
-                >
-                  Navigation
-                </Text>
-                
-                <View className="gap-y-1">
-                  {getTabsForRole(user).map((tab) => (
-                    <Pressable
-                      key={tab.title}
-                      onPress={() => {
-                        closeDrawer();
-                        setTimeout(() => {
-                          const activeRole = user?.currentRole || user?.role;
-                          const normalizedRole = ROLE_ALIASES[activeRole?.toUpperCase()] || activeRole;
-                          const basePath = DASHBOARD_ROOT_BY_ROLE[normalizedRole] || "/member";
-                          router.push(`${basePath}/${tab.href}`);
-                        }, 200);
-                      }}
-                      className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50/80 dark:active:bg-slate-800/80 active:scale-95 transition-all">
-                      <View className="flex-row items-center gap-4">
-                        <View 
-                          className="w-10 h-10 rounded-xl items-center justify-center"
-                          style={{
-                            backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-                            borderWidth: 1,
-                            borderColor: isDark ? '#1e293b' : '#e2e8f0'
-                          }}
-                        >
-                          {tab.icon}
-                        </View>
-                        <Text 
-                          className="text-[15px] font-bold"
-                          style={{ color: isDark ? '#f8fafc' : '#0f172a' }}
-                        >
-                          {tab.title}
-                        </Text>
-                      </View>
-                      <ChevronRight size={16} color={isDark ? "#475569" : "#cbd5e1"} />
-                    </Pressable>
-                  ))}
-                </View>
-              </ScrollView>
-
-              <View 
-                className="px-6 pt-6 mt-4 border-t"
-                style={{ borderTopColor: isDark ? '#1e293b' : '#f1f5f9' }}
-              >
-                <Pressable
-                  onPress={onLogout}
-                  style={{
-                    backgroundColor: isDark ? 'rgba(244, 63, 94, 0.1)' : '#fff1f2',
-                    borderColor: isDark ? 'rgba(244, 63, 94, 0.2)' : '#ffe4e6'
-                  }}
-                  className="flex-row items-center justify-center gap-2 py-3.5 rounded-2xl border active:opacity-70"
-                >
-                  <LogOut size={18} color={isDark ? "#fb7185" : "#e11d48"} />
-                  <Text className="font-bold" style={{ color: isDark ? '#fb7185' : '#e11d48' }}>Sign Out</Text>
-                </Pressable>
-              </View>
-            </View>
-          </Animated.View>
+      {/* Side Drawer - rendered as overlay (no Modal, fixes iOS clipping) */}
+      {isDrawerVisible && (
+        <View 
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            zIndex: 999,
+          }}
+          pointerEvents={isDrawerOpen ? 'auto' : 'none'}
+        >
+          {drawerContent}
         </View>
-      </Modal>
+      )}
     </SafeAreaView>
   );
 }
