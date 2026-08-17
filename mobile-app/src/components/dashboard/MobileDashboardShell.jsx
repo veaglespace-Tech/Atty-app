@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, Pressable, Modal, Animated, Dimensions, TouchableWithoutFeedback, ScrollView, Image, Platform, useColorScheme as useRNColorScheme } from "react-native";
 import { router, Link, Slot, usePathname } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { LogOut, Menu, X, ChevronRight, User, Users, Component, ClipboardCheck, CalendarCheck2, FileBarChart, CreditCard, MessageSquare, Bell, BarChart3, Building2, Book, Gift, Database, Inbox, Settings, Shield, ShieldAlert, Newspaper, Music } from "lucide-react-native";
 import { useDispatch } from "react-redux";
 import { useColorScheme } from "nativewind";
@@ -293,7 +294,12 @@ export default function MobileDashboardShell({ children }) {
   const headerProfileUrl = getFullImageUrl(user?.profileImageUrl || user?.avatar || user?.profilePicture);
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1 }} className="bg-slate-50 dark:bg-slate-950">
+    <SafeAreaView 
+      edges={['top', 'left', 'right']} 
+      style={{ flex: 1, backgroundColor: isDark ? '#020617' : '#ffffff' }} 
+      className="bg-white dark:bg-[#020617]"
+    >
+      <StatusBar style={isDark ? "light" : "dark"} backgroundColor={isDark ? "#020617" : "#ffffff"} />
       
       {/* Global Header Bar with Menu Button */}
       {!isSettingsPage && (
