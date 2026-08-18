@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 import React from "react";
 import {
   View,
@@ -91,7 +92,7 @@ export default function MemberDashboard(props) {
                 </Text>
                 <Text className="text-3xl font-black tracking-tight text-slate-950 dark:text-white mb-1">
                   Hello,{" "}
-                  {user?.firstName || user?.name?.split(" ")[0] || "User"}!
+                  {formatName(user?.name) || "User"}!
                 </Text>
                 <Text className="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-300">
                   Manage your attendance and track your activity.

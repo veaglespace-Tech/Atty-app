@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 import React, { useMemo, useState } from "react";
 import { View, Text, RefreshControl, ScrollView, Modal, Pressable, TouchableOpacity } from "react-native";
 import {  BarChart3, Building2, CreditCard, ShieldCheck, Users, CalendarCheck2, Book, Gift, MessageSquare, Bell, Database, Settings, ChevronLeft, ChevronRight, ChevronDown  } from "lucide-react-native";

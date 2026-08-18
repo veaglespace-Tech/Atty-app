@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator, Image, Platform } from "react-native";
 import { router } from "expo-router";
@@ -301,7 +302,7 @@ export default function SettingsScreen() {
             )}
           </View>
           <Text className="text-2xl font-black text-slate-900 dark:text-white text-center">
-            {user?.name || "User"}
+            {formatName(user?.name) || "User"}
           </Text>
           <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">
             {user?.email}

@@ -4,11 +4,11 @@
     "slug": "atty",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/veagle-space-logo.png",
+    "icon": "./assets/images/new-app-icon.png",
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/veagle-space-logo.png",
+      "icon": "./assets/images/new-app-icon.png",
       "bundleIdentifier": "com.veaglespace.atty",
       "buildNumber": "6",
       "infoPlist": {
@@ -20,7 +20,7 @@
       "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/atty-adaptive-foreground.png"
+        "foregroundImage": "./assets/images/new-adaptive-icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.veaglespace.atty",
@@ -35,7 +35,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#ffffff",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }

@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 import { memo, useState } from "react";
 import { View, Text, Pressable, ScrollView, Modal } from "react-native";
 import { Image } from "expo-image";
@@ -170,7 +171,7 @@ export default function Navbar() {
               <>
                   <View className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950 mb-4">
                     <Text className="text-sm font-bold text-slate-900 dark:text-white">
-                      {user?.name || "User"}
+                      {formatName(user?.name) || "User"}
                     </Text>
                     <Text className="text-xs uppercase text-slate-500">
                       {formatRoleLabel(currentRole)}

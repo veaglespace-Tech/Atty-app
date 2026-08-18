@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { formatName } from "@/utils/nameFormat";
 import { View, Text, Pressable, ScrollView, RefreshControl, TextInput, Modal, ActivityIndicator, Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import { 
@@ -298,7 +299,7 @@ export default function OrgDepartmentsPage() {
                     <Text className="text-sm text-slate-500 mb-3">{dept.description || "No description provided."}</Text>
                     <View className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 self-start px-3 py-1 rounded-lg">
                       <Users size={14} className="text-slate-600 dark:text-slate-400" />
-                      <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{(dept.memberCount ?? dept.membersCount ?? dept._count?.members ?? 0)} Members</Text>
+                      <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{users.filter(u => String(u.departmentId) === String(dept.id)).length} Members</Text>
                     </View>
                   </View>
                 </Animated.View>
@@ -327,7 +328,7 @@ export default function OrgDepartmentsPage() {
                {displayedUsers.map((user, i) => (
                   <View key={user.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 mb-2 border border-slate-200 dark:border-slate-800 flex-row items-center justify-between">
                     <View className="flex-1 pr-4">
-                      <Text className="text-sm font-bold text-slate-900 dark:text-white" numberOfLines={1}>{user.name}</Text>
+                      <Text className="text-sm font-bold text-slate-900 dark:text-white" numberOfLines={1}>{formatName(user.name)}</Text>
                       <Text className="text-xs text-slate-500 mt-0.5">{user.email}</Text>
                       <View className="flex-row items-center mt-2">
                         {user.departmentId ? (
@@ -371,7 +372,7 @@ export default function OrgDepartmentsPage() {
         <View className="flex-1 bg-slate-900/60 justify-center p-5">
           <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xl">
              <Text className="text-lg font-black text-slate-900 dark:text-white mb-2">Assign Department</Text>
-             <Text className="text-sm text-slate-500 mb-4">Select a department for {memberToEdit?.name}.</Text>
+             <Text className="text-sm text-slate-500 mb-4">Select a department for {formatName(memberToEdit?.name)}.</Text>
              <ScrollView style={{ maxHeight: 200 }} className="mb-4">
                <Pressable onPress={() => setTargetDeptIdForMember("")} className={`p-3 rounded-xl mb-2 border ${targetDeptIdForMember === "" ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800" : "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700"}`}>
                  <Text className={`font-bold ${targetDeptIdForMember === "" ? "text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"}`}>None (Unassign)</Text>

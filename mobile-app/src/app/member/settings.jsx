@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -377,7 +378,7 @@ export default function SettingsScreen() {
               </View>
             </Pressable>
             <Text className="text-2xl font-black text-slate-900 dark:text-white text-center">
-              {user?.name || "User"}
+              {formatName(user?.name) || "User"}
             </Text>
             <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">
               {user?.email}

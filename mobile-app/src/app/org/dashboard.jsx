@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 import React from "react";
 import { View, Text, ActivityIndicator, RefreshControl, ScrollView, Pressable, Share } from "react-native";
 import { useGetOrgDashboardQuery } from "@/services/api/orgApi";

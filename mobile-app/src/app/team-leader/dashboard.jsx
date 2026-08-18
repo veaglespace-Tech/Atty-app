@@ -1,3 +1,4 @@
+import { formatName } from "@/utils/nameFormat";
 // Team Leader Dashboard Component
 import React from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Dimensions } from "react-native";
