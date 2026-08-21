@@ -4,7 +4,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator,
 import { router } from "expo-router";
 import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
-import { compressPickedImage } from "../../utils/image";
+import { compressPickedImage, compressDocumentImage } from "../../utils/image";
 import AppDatePicker from "@/components/ui/AppDatePicker";
 import { 
   ChevronLeft, 
@@ -34,7 +34,7 @@ import {
 } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as WebBrowser from "expo-web-browser";
 
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -146,12 +146,18 @@ export default function SettingsScreen() {
   const handlePickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "image/*"],
+        type: "*/*",
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        
+        if (asset.size > 2 * 1024 * 1024) {
+          Alert.alert("Error", "Document size should not exceed 2MB. Please select a smaller file.");
+          return;
+        }
+
         let dataUrl;
         if (Platform.OS === "web") {
           const response = await fetch(asset.uri);
@@ -163,9 +169,13 @@ export default function SettingsScreen() {
             reader.readAsDataURL(blob);
           });
         } else {
-          const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
-          const mimeType = asset.mimeType || "application/octet-stream";
-          dataUrl = `data:${mimeType};base64,${base64}`;
+          if (asset.mimeType?.startsWith("image/")) {
+            dataUrl = await compressDocumentImage(asset.uri);
+          } else {
+            const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+            const mimeType = asset.mimeType || "application/octet-stream";
+            dataUrl = `data:${mimeType};base64,${base64}`;
+          }
         }
 
         setDocumentDataUrl(dataUrl);
@@ -174,7 +184,7 @@ export default function SettingsScreen() {
       }
     } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Failed to pick document");
+      Alert.alert("Error", err?.message || "Failed to pick document");
     }
   };
 

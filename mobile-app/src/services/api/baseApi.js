@@ -6,9 +6,9 @@ import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
 import { router } from "expo-router";
 
-const DEFAULT_LOCAL_WEB_API_URL = "http://127.0.0.1:5001/api";
-const DEFAULT_ANDROID_EMULATOR_API_URL = "http://10.0.2.2:5001/api";
-const DEFAULT_IOS_SIMULATOR_API_URL = "http://127.0.0.1:5001/api";
+const DEFAULT_LOCAL_WEB_API_URL = "http://127.0.0.1:5000/api";
+const DEFAULT_ANDROID_EMULATOR_API_URL = "http://10.0.2.2:5000/api";
+const DEFAULT_IOS_SIMULATOR_API_URL = "http://127.0.0.1:5000/api";
 const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
 
 const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");
@@ -31,10 +31,10 @@ const isLocalHost = (hostname) => {
 const resolveApiBaseUrl = () => {
   if (__DEV__) {
     if (Platform.OS === "web" && typeof window !== "undefined") {
-      return `http://${window.location.hostname}:5001/api`;
+      return `http://${window.location.hostname}:5000/api`;
     }
     // Updated to point directly to the local server IP for physical devices testing
-    return "http://10.127.159.165:5001/api";
+    return "http://10.127.159.165:5000/api";
   }
 
   const explicitApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL);
@@ -60,7 +60,7 @@ console.log("[API] Resolved Base URL (Cache Bust):", API_BASE_URL);
 
 const LIVE_SERVER_URL = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD) || "https://atty.veaglespace.com/api";
 
-const createBaseQuery = (url, timeoutMs = 15000) => fetchBaseQuery({
+const createBaseQuery = (url, timeoutMs = 120000) => fetchBaseQuery({
   baseUrl: url,
   timeout: timeoutMs,
   credentials: "include",
