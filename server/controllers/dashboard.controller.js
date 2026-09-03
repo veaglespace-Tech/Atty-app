@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
 const { resolveUserRole } = require("../utils/membership");
-const { todayKey, monthWindow, dateKey } = require("../services/common.service");
+const { todayKey } = require("../services/common.service");
 
 exports.getStats = asyncHandler(async (req, res) => {
   const orgId = Number(req.user.organizationId || req.user.organization);
@@ -95,66 +95,16 @@ exports.getStats = asyncHandler(async (req, res) => {
     return;
   }
 
-  const { from: monthFrom, to: monthTo } = monthWindow(new Date());
-
-  const [myAttendance, recentAttendances] = await Promise.all([
-    prisma.attendance.count({
-      where: {
-        userId,
-        deletedAt: null,
-        date: {
-          gte: monthFrom,
-          lte: monthTo,
-        },
-        status: {
-          in: ["PRESENT", "HALF_DAY"],
-        },
-      },
-    }),
-    prisma.attendance.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-      },
-      orderBy: { date: "desc" },
-      take: 60,
-      select: { date: true, status: true },
-    }),
-  ]);
-
-  const totalDaysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-
-  let streak = 0;
-  const attendanceDateSet = new Map();
-  recentAttendances.forEach((a) => {
-    if (a.status === "PRESENT" || a.status === "HALF_DAY") {
-      attendanceDateSet.set(a.date, true);
-    }
+  const myAttendance = await prisma.attendance.count({
+    where: {
+      userId,
+      deletedAt: null,
+    },
   });
 
-  const checkDate = new Date();
-  const todayStr = dateKey(checkDate);
-
-  if (!attendanceDateSet.has(todayStr)) {
-    checkDate.setDate(checkDate.getDate() - 1);
-  }
-
-  for (let i = 0; i < 60; i++) {
-    const dStr = dateKey(checkDate);
-    const dayOfWeek = checkDate.getDay();
-    if (attendanceDateSet.has(dStr)) {
-      streak += 1;
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else if (dayOfWeek === 0) {
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
   res.status(200).json({
-    myAttendance: `${myAttendance}/${totalDaysInMonth}`,
-    streak,
+    myAttendance: `${myAttendance}/30`,
+    streak: 5,
   });
 });
 

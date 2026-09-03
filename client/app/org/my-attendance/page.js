@@ -10,6 +10,7 @@ const AttendanceFaceCaptureModal = dynamic(
   { ssr: false }
 );
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
+import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import useLocalPagination from "@/hooks/useLocalPagination";
 import { useGetMemberAttendanceQuery, useGetMemberDashboardQuery } from "@/services/api/memberApi";
@@ -203,23 +204,23 @@ export default function MyAttendancePage() {
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">My Attendance</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Punch in/out with device location or manual coordinates, and track your attendance history.
             </p>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            <button
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
+            <button title="Refresh"
               type="button"
               onClick={fetchAttendance}
               disabled={loading}
               className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
+              
             </button>
           </div>
         </div>
@@ -340,7 +341,7 @@ export default function MyAttendancePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h4 className="truncate text-base font-black text-slate-900">{record.date}</h4>
-                      <p className="mt-1 text-xs text-slate-500">{record.status}</p>
+                      <div className="mt-1"><AttendanceStatusBadge status={record.status} /></div>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                       {record.punchInValid === false || record.punchOutValid === false ? "Geo No" : "Geo Yes"}
@@ -395,7 +396,7 @@ export default function MyAttendancePage() {
                   {paginatedRecords.map((record) => (
                     <tr key={record.id}>
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
+                      <td className="px-3 py-2 text-slate-700"><AttendanceStatusBadge status={record.status} /></td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>

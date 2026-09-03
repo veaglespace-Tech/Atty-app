@@ -209,15 +209,15 @@ export default function OrgPostsPage() {
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Organization Posts</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Create and manage notifications, polls, and articles for your organization members.
             </p>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
             <button
               type="button"
               onClick={() => {
@@ -248,14 +248,14 @@ export default function OrgPostsPage() {
               {updateOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
 
-            <button
+            <button title="Refresh"
               type="button"
               onClick={refetch}
               disabled={isLoading || isFetching}
               className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {isLoading || isFetching ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
+              
             </button>
           </div>
         </div>

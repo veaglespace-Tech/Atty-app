@@ -26,7 +26,7 @@ export default function DashboardBrandBlock() {
         <div key="veagle" className="brand-logo-reveal relative mx-auto flex h-24 w-24 items-center justify-center md:h-32 md:w-32">
           <div className="relative h-full w-full">
             <Image
-              src="/logo-transparent.png"
+              src="/logo-transparent.webp"
               alt="Veagle logo mark"
               width={80}
               height={80}

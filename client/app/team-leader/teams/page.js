@@ -149,7 +149,7 @@ export default function TeamLeaderTeamsPage() {
     () =>
       users.filter(
         (user) =>
-          [ROLES.MEMBER].includes(normalizeRole(user.role)) &&
+          [ROLES.MEMBER, ROLES.LIFE_MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN].includes(normalizeRole(user.role)) &&
           user.active
       ),
     [users]
@@ -377,14 +377,14 @@ export default function TeamLeaderTeamsPage() {
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Team Leader Teams</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Manage teams, assign members, and control team geofence based on your granted permissions.
             </p>
           </div>
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
             {canCreateTeams ? (
               <button
                 type="button"
@@ -394,14 +394,14 @@ export default function TeamLeaderTeamsPage() {
                 Create Team
               </button>
             ) : null}
-            <button
+            <button title="Refresh"
               type="button"
               onClick={fetchData}
               disabled={loading}
               className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
+              
             </button>
           </div>
         </div>

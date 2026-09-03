@@ -395,10 +395,10 @@ export default function OrgDepartmentsPage() {
       )}
 
       {/* Main Section Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
+      <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 gap-6 no-scrollbar">
         <button
           onClick={() => setActiveTab("departments")}
-          className={`pb-3 text-sm font-semibold transition-colors relative ${
+          className={`whitespace-nowrap pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "departments"
               ? "text-blue-600 dark:text-blue-400"
               : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -415,7 +415,7 @@ export default function OrgDepartmentsPage() {
 
         <button
           onClick={() => setActiveTab("allocations")}
-          className={`pb-3 text-sm font-semibold transition-colors relative ${
+          className={`whitespace-nowrap pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "allocations"
               ? "text-blue-600 dark:text-blue-400"
               : "text-slate-500 hover:text-slate-700 dark:text-slate-400"

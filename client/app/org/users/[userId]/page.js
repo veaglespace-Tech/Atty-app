@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Download,
   Loader2,
+  Mail,
   RotateCcw,
   ShieldAlert,
   Trash2,
@@ -23,6 +24,7 @@ import {
   useRestoreArchivedUserMutation,
   useGetOrgUserAttendanceLogsQuery,
   useDownloadOrgUserAttendancePdfMutation,
+  useEmailOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,
 } from "@/services/api/orgApi";
 import { useGetRolesQuery } from "@/services/api/roleApi";
@@ -193,6 +195,7 @@ export default function OrgUserDetailPage() {
   );
   
   const [downloadPdfMutation, { isLoading: downloadingPdf }] = useDownloadOrgUserAttendancePdfMutation();
+  const [emailPdfMutation, { isLoading: emailingPdf }] = useEmailOrgUserAttendancePdfMutation();
   const [downloadExcelMutation, { isLoading: downloadingExcel }] = useDownloadOrgUserAttendanceExcelMutation();
 
   const user = userData?.item || null;
@@ -433,6 +436,17 @@ export default function OrgUserDetailPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to download PDF"));
+    }
+  };
+
+  const handleEmailLogsPdf = async () => {
+    try {
+      setError("");
+      setMessage("");
+      const response = await emailPdfMutation({ userId, params: queryString }).unwrap();
+      setMessage(response.message || "Attendance report sent to email successfully.");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to send PDF to email"));
     }
   };
 
@@ -992,6 +1006,15 @@ export default function OrgUserDetailPage() {
           >
             {downloadingPdf ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
             Download PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleEmailLogsPdf}
+            disabled={emailingPdf || loadingLogs || fetchingLogs || !logsData?.items?.length}
+            className="brand-btn brand-btn-soft brand-btn-sm"
+          >
+            {emailingPdf ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+            Send to Email
           </button>
           <button
             type="button"

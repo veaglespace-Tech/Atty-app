@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
 import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin } from "lucide-react";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
+import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetTeamLeaderAttendanceQuery,
@@ -434,8 +435,8 @@ export default function TeamLeaderAttendancePage() {
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Team Leader Attendance</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Track your team attendance logs, punch timings, and geo-validation status.
@@ -615,7 +616,7 @@ export default function TeamLeaderAttendancePage() {
         </form>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <MetricCard label="Records" value={summaryMap.get("Records") || 0} />
         <MetricCard label="Present" value={summaryMap.get("Present") || 0} />
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
@@ -700,6 +701,7 @@ export default function TeamLeaderAttendancePage() {
                 <option value="HALF_DAY">Half Day</option>
                 <option value="ABSENT">Absent</option>
                 <option value="OVERTIME">Overtime</option>
+                <option value="REGULARIZED">Regularized</option>
               </select>
             </label>
 
@@ -799,9 +801,7 @@ export default function TeamLeaderAttendancePage() {
                       <h4 className="truncate text-base font-black text-slate-900">{record.member}</h4>
                       <p className="mt-1 text-xs text-slate-500">{record.date}</p>
                     </div>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                      {record.status}
-                    </span>
+                    <AttendanceStatusBadge status={record.status} />
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -845,7 +845,7 @@ export default function TeamLeaderAttendancePage() {
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
                       <td className="px-3 py-2 font-semibold text-slate-900">{record.member}</td>
                       <td className="px-3 py-2 text-slate-700">{record.role}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
+                      <td className="px-3 py-2 text-slate-700"><AttendanceStatusBadge status={record.status} /></td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatLocation(record)}</td>

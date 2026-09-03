@@ -14,8 +14,11 @@ const getMetricConfig = (label) => {
   const labelLower = label?.toLowerCase() || '';
   if (labelLower.includes("records") || labelLower.includes("total")) return { icon: FileText, iconColor: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" };
   if (labelLower.includes("present")) return { icon: UserCheck, iconColor: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-50 dark:bg-emerald-500/10" };
+  if (labelLower.includes("regularized")) return { icon: UserCheck, iconColor: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" };
+  if (labelLower.includes("worked hrs") || labelLower.includes("worked hours")) return { icon: Clock, iconColor: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-50 dark:bg-purple-500/10" };
   if (labelLower.includes("half day")) return { icon: Clock, iconColor: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-50 dark:bg-amber-500/10" };
   if (labelLower.includes("absent")) return { icon: CalendarX, iconColor: "text-red-600 dark:text-red-400", iconBg: "bg-red-50 dark:bg-red-500/10" };
+  if (labelLower.includes("overtime")) return { icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-50 dark:bg-indigo-500/10" };
   return { icon: FileText, iconColor: "text-slate-600 dark:text-slate-400", iconBg: "bg-slate-50 dark:bg-slate-500/10" };
 };
 
@@ -66,37 +69,6 @@ const DropdownFilter = ({ label, value, options, onSelect }) => {
  </Pressable>
  </Modal>
  </View>
- );
-};
-
-const ExportDropdown = ({ onPdf, onExcel, loadingPdf, loadingExcel }) => {
- const [open, setOpen] = useState(false);
- return (
- <>
- <Pressable onPress={() => setOpen(true)} className="flex-row items-center gap-2 bg-blue-500 dark:bg-blue-600 px-5 py-2.5 rounded-full active:opacity-80">
- <Download size={16} color="#fff" />
- <Text className="text-white text-sm font-bold">Export</Text>
- <ChevronDown size={14} color="#fff" />
- </Pressable>
- <Modal visible={open} animationType="slide" transparent={true} onRequestClose={() => setOpen(false)}>
- <Pressable className="flex-1 justify-end bg-black dark:bg-black" onPress={() => setOpen(false)}>
- <Pressable onPress={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-950 rounded-t-[32px] pt-4 pb-8 max-h-[80%] border-t border-slate-200 dark:border-slate-800 ">
- <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" />
- <Text className="text-xl font-black text-slate-900 dark:text-white px-6 mb-4">Export Options</Text>
- <View className="px-4 gap-3">
- <Pressable onPress={() => { setOpen(false); onPdf(); }} disabled={loadingPdf} className="flex-row items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
- {loadingPdf ? <ActivityIndicator size="small" /> : <FileBox size={18} className="text-slate-600 dark:text-slate-400" />}
- <Text className="text-[15px] font-bold text-slate-700 dark:text-slate-300">Export as PDF</Text>
- </Pressable>
- <Pressable onPress={() => { setOpen(false); onExcel(); }} disabled={loadingExcel} className="flex-row items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
- {loadingExcel ? <ActivityIndicator size="small" /> : <FileText size={18} className="text-slate-600 dark:text-slate-400" />}
- <Text className="text-[15px] font-bold text-slate-700 dark:text-slate-300">Export as Excel</Text>
- </Pressable>
- </View>
- </Pressable>
- </Pressable>
- </Modal>
- </>
  );
 };
 
@@ -156,8 +128,16 @@ export default function OrgAttendancePage() {
  };
 
 
- const queryString = period === "custom" ? `period=custom&from=${appliedCustomFrom}&to=${appliedCustomTo}` : `period=${period}`;
- const { data, isLoading, isFetching, refetch } = useGetOrgAttendanceQuery(queryString);
+  const queryString = period === "custom" ? `period=custom&from=${appliedCustomFrom}&to=${appliedCustomTo}` : `period=${period}`;
+  
+  const exportQueryString = React.useMemo(() => {
+    let q = queryString;
+    if (statusFilter !== "ALL") q += `&status=${statusFilter}`;
+    if (search) q += `&search=${encodeURIComponent(search)}`;
+    return q;
+  }, [queryString, statusFilter, search]);
+
+  const { data, isLoading, isFetching, refetch } = useGetOrgAttendanceQuery(queryString);
  const { data: settingsData, isLoading: loadingSettings, refetch: refetchSettings } = useGetOrgAttendanceSettingsQuery();
  const { data: teamsData } = useGetOrgTeamsQuery("limit=100", { skip: !canManageTeamAttendance });
  
@@ -226,7 +206,7 @@ export default function OrgAttendancePage() {
     if (status === "PRESENT") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
     if (status === "ABSENT") return "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-400 border-rose-200 dark:border-rose-800";
     if (status === "HALF_DAY") return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-400 border-amber-200 dark:border-amber-800";
-    if (status === "OVERTIME") return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+    if (status === "REGULARIZED") return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800";
     if (status === "OVERTIME") return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-400 border-purple-200 dark:border-purple-800";
     return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-400 border-slate-200 dark:border-slate-800";
   };
@@ -278,48 +258,69 @@ export default function OrgAttendancePage() {
  return (
  
  <View className="flex-1 bg-slate-50 dark:bg-slate-950">
- <View className="px-5 pt-6 pb-6 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
- <View className="flex-row items-center justify-between mb-2">
- <Text className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Organization Attendance</Text>
- </View>
- <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-6">
- Configure organization geofence and monitor team attendance logs.
- </Text>
- 
- <View className="flex-row gap-2 flex-wrap">
- <ExportDropdown 
- loadingPdf={downloadingPdf} 
- loadingExcel={downloadingExcel}
- onPdf={async () => {
- try {
- const blob = await downloadOrgAttendancePdf(queryString).unwrap();
- await downloadAndShareBlob(blob, `attendance-report-${period}.pdf`);
- } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
- }}
- onExcel={async () => {
- try {
- const blob = await downloadOrgAttendanceExcel(queryString).unwrap();
- await downloadAndShareBlob(blob, `attendance-report-${period}.xlsx`);
- } catch (e) { Alert.alert("Error", "Failed to download Excel"); }
- }}
- />
- <Pressable 
- onPress={handleRefresh}
- className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-full active:opacity-80"
- >
- <RefreshControl refreshing={isFetching || loadingSettings} style={{display: 'none'}} />
- <Text className="text-slate-700 dark:text-slate-300 text-sm font-bold">Refresh</Text>
- </Pressable>
- </View>
- </View>
+  <View className="px-5 pt-6 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between">
+    <Text className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Reports</Text>
+    <Pressable 
+      onPress={handleRefresh}
+      className="flex-row items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-full active:opacity-80"
+    >
+      {isFetching || loadingSettings ? <ActivityIndicator size="small" /> : null}
+      <Text className="text-slate-700 dark:text-slate-300 text-xs font-bold">Refresh</Text>
+    </Pressable>
+  </View>
 
- <ScrollView
- className="flex-1"
- contentContainerStyle={{ paddingBottom: 100, paddingTop: 24 }}
- refreshControl={
- <RefreshControl refreshing={isFetching || loadingSettings} onRefresh={handleRefresh} tintColor="#2563eb" />
- }
- >
+  <ScrollView
+    className="flex-1"
+    contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
+    refreshControl={
+      <RefreshControl refreshing={isFetching || loadingSettings} onRefresh={handleRefresh} tintColor="#2563eb" />
+    }
+  >
+    <View className="px-4 mb-6">
+      <View className="flex-row gap-3 mb-5">
+        <Pressable 
+          onPress={async () => {
+            try {
+              const blob = await downloadOrgAttendancePdf(exportQueryString).unwrap();
+              await downloadAndShareBlob(blob, `attendance-report-${period}.pdf`);
+            } catch (e) { Alert.alert("Error", "Failed to download PDF"); }
+          }}
+          disabled={downloadingPdf}
+          className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-[16px] bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
+        >
+          {downloadingPdf ? <ActivityIndicator size="small" color="#94a3b8" /> : <FileBox size={16} className="text-slate-500 dark:text-slate-400" />}
+          <Text className="text-sm font-black text-slate-700 dark:text-slate-300">Export PDF</Text>
+        </Pressable>
+        <Pressable 
+          onPress={async () => {
+            try {
+              const blob = await downloadOrgAttendanceExcel(exportQueryString).unwrap();
+              await downloadAndShareBlob(blob, `attendance-report-${period}.xlsx`);
+            } catch (e) { Alert.alert("Error", "Failed to download Excel"); }
+          }}
+          disabled={downloadingExcel}
+          className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-[16px] bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
+        >
+          {downloadingExcel ? <ActivityIndicator size="small" color="#94a3b8" /> : <FileText size={16} className="text-slate-500 dark:text-slate-400" />}
+          <Text className="text-sm font-black text-slate-700 dark:text-slate-300">Export Excel</Text>
+        </Pressable>
+      </View>
+
+      <View className="flex-row justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full p-1">
+        {['daily', 'weekly', 'monthly', 'custom'].map((p) => (
+          <Pressable
+            key={p}
+            onPress={() => setPeriod(p)}
+            className={`flex-1 items-center justify-center py-2.5 rounded-full ${period === p ? 'bg-blue-600 shadow-sm' : 'bg-transparent'}`}
+          >
+            <Text className={`text-[12px] font-black capitalize ${period === p ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+              {p}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+
  {/* FILTERS */}
  <View className="mt-6 mx-4 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 p-5">
  <View className="gap-y-4">
@@ -334,38 +335,13 @@ export default function OrgAttendancePage() {
  { label: "Present", value: "PRESENT" },
  { label: "Absent", value: "ABSENT" },
  { label: "Half Day", value: "HALF_DAY" },
- { label: "Overtime", value: "OVERTIME" },
+ { label: "Regularized", value: "REGULARIZED" },
  { label: "Overtime", value: "OVERTIME" }
  ]}
  />
  </View>
  
  <View>
-  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Report Period</Text>
-  <View className="flex-row gap-2">
-  <Pressable 
-  onPress={() => setPeriod('custom')} 
-  className={`px-4 py-3.5 rounded-xl border flex-row items-center justify-center ${period === 'custom' ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800'}`}
-  >
-  <Text className={`text-[11px] font-black uppercase tracking-widest ${period === 'custom' ? 'text-white' : 'text-slate-700 dark:text-slate-400'}`}>Custom</Text>
-  </Pressable>
-  <View className="flex-1">
-  <DropdownFilter
-  label="Report Period"
-  value={period}
-  onSelect={setPeriod}
-  options={[
-  { label: "Daily", value: "daily" },
-  { label: "Weekly", value: "weekly" },
-  { label: "Monthly", value: "monthly" },
-  { label: "Custom", value: "custom" }
-  ]}
-  />
-  </View>
-  </View>
-  </View>
-
-  <View>
   <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Search Member</Text>
   <View className="flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3">
   <Search size={16} className="text-slate-400" />
@@ -414,6 +390,9 @@ export default function OrgAttendancePage() {
  <MetricCard label="Present" value={getSummaryValue("Present")} />
  </View>
  <View className="w-[48%]">
+ <MetricCard label="Regularized" value={getSummaryValue("Regularized") || 0} />
+ </View>
+ <View className="w-[48%]">
  <MetricCard label="Half Day" value={getSummaryValue("Half Day") || 0} />
  </View>
  <View className="w-[48%]">
@@ -421,6 +400,9 @@ export default function OrgAttendancePage() {
  </View>
  <View className="w-[48%]">
  <MetricCard label="Overtime" value={getSummaryValue("Overtime") || 0} />
+ </View>
+ <View className="w-full">
+ <MetricCard label="Worked Hrs" value={formatHoursValue(getSummaryValue("Worked Hrs") || 0)} />
  </View>
  </View>
 

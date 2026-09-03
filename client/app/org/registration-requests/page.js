@@ -89,10 +89,10 @@ export default function RequestsPage() {
         </div>
         
         {/* Tabs */}
-        <div className="flex space-x-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800 max-w-md">
+        <div className="flex w-full overflow-x-auto space-x-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800 no-scrollbar">
           <button
             onClick={() => setActiveTab("REGISTRATION")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+            className={`flex flex-1 whitespace-nowrap shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
               activeTab === "REGISTRATION"
                 ? "bg-white text-blue-600 shadow dark:bg-slate-700 dark:text-blue-400"
                 : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
@@ -107,7 +107,7 @@ export default function RequestsPage() {
           </button>
           <button
             onClick={() => setActiveTab("ATTENDANCE")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+            className={`flex flex-1 whitespace-nowrap shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
               activeTab === "ATTENDANCE"
                 ? "bg-white text-blue-600 shadow dark:bg-slate-700 dark:text-blue-400"
                 : "text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
@@ -275,14 +275,14 @@ function RegistrationRequestsTab({ items, loading, refetch }) {
               {items.length} pending
             </span>
           )}
-          <button
+          <button title="Refresh"
             type="button"
             onClick={refreshRequests}
             disabled={loading}
             className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
+            
           </button>
         </div>
       </div>
@@ -336,7 +336,7 @@ function RegistrationRequestsTab({ items, loading, refetch }) {
               {selectedRequests.length > 0 && (
                 <div className="ml-auto flex items-center gap-2">
                   <span className="mr-2 hidden text-xs font-medium text-slate-500 sm:inline">{selectedRequests.length} selected</span>
-                  <button
+                  <button title="Refresh"
                     type="button"
                     onClick={handleBulkAccept}
                     disabled={isBulkActionBusy || loading}
@@ -580,7 +580,7 @@ function AttendanceRequestsTab({ pendingItems, loading, refetch }) {
             className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
+            
           </button>
         </div>
       </div>

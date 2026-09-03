@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Archive, ArrowRight, Loader2, Plus, RefreshCcw, Search, X } from "lucide-react";
 import CountryPhoneField from "@/components/CountryPhoneField";
+import PasswordInput from "@/components/PasswordInput";
 
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import SectionEyebrow from "@/components/SectionEyebrow";
@@ -684,9 +685,9 @@ function CreateOrganizationModal({ isOpen, onClose, plans, onCreated }) {
                     inputClassName="py-2.5"
                   />
                   <FormField label="Initial Password">
-                    <input
+                    <PasswordInput
                       required
-                      type="password"
+                      icon={null}
                       value={form.admin.password}
                       onChange={(e) => onChange("admin", "password", e.target.value)}
                       className="dashboard-field-control w-full"

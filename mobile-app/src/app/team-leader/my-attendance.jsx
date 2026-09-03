@@ -156,22 +156,34 @@ export default function OrgMyAttendancePage() {
           </Pressable>
         </View>
 
-        <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Today Status</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white tracking-tight" numberOfLines={1} adjustsFontSizeToFit>{todayStatusValue}</Text>
+        <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Records</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Records") || 0}</Text>
           </View>
-          <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Worked Hrs</Text>
-            <Text className="text-xl font-black text-slate-900 dark:text-white tracking-tight" numberOfLines={1} adjustsFontSizeToFit>{formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}</Text>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Present</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Present") || 0}</Text>
           </View>
-          <View className="w-[48%] bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-[24px] border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">Present</Text>
-            <Text className="text-3xl font-black text-emerald-700 dark:text-emerald-300 tracking-tight">{summaryMap.get("Present This Month") || 0}</Text>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Regularized</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Regularized") || 0}</Text>
           </View>
-          <View className="w-[48%] bg-rose-50 dark:bg-rose-500/10 p-5 rounded-[24px] border border-rose-100 dark:border-rose-800/50 shadow-sm">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-2">Absent</Text>
-            <Text className="text-3xl font-black text-rose-700 dark:text-rose-300 tracking-tight">{summaryMap.get("Absent This Month") || 0}</Text>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Half Day</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Half Day") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Absent</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Absent") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Overtime</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Overtime") || 0}</Text>
+          </View>
+          <View className="w-full bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Worked Hrs</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white" numberOfLines={1} adjustsFontSizeToFit>{formatHoursValue(summaryMap.get("Worked Hrs") || 0)}</Text>
           </View>
         </View>
 

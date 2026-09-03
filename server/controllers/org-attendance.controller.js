@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const prisma = require("../lib/prisma");
+const sendEmail = require("../utils/email");
 
 const {
   ensureOrganizationId,
@@ -266,6 +267,91 @@ exports.downloadOrgUserAttendancePdf = asyncHandler(async (req, res) => {
   res.status(200).send(pdfBuffer);
 });
 
+exports.emailOrgUserAttendancePdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
+  
+  const userId = Number(req.params.userId);
+  const payload = await buildUserAttendancePayload({
+    userId,
+    orgId,
+    period: req.query.period,
+    fromInput: req.query.from,
+    toInput: req.query.to,
+  });
+
+  if (!payload.user.email) {
+    res.status(400);
+    throw new Error("User does not have an email address to send the report to.");
+  }
+
+  const subtitleLines = [
+    `User: ${payload.user.name} (${payload.user.email}) | Gender: ${payload.user.gender} | Type: ${payload.user.existingMember}`,
+    `Organization: ${payload.user.orgName} (${payload.user.orgCode})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const summaryCards = payload.summary.map(s => ({
+    label: s.label,
+    value: s.value,
+  }));
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "DETAILED USER ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40, align: "left" },
+      { key: "date", label: "Date", width: 90 },
+      { key: "status", label: "Status", width: 80, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 90, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 90, align: "center" },
+      { key: "reachedHome", label: "R. Home", width: 90, align: "center" },
+      { key: "reachedHomeLocation", label: "R. Home Loc", width: 90 },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 80, align: "center" },
+      { key: "geoValid", label: "Geo Valid", width: 60, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => {
+      let geoValid = "Yes";
+      if (item.punchInValid === false || item.punchOutValid === false) {
+        geoValid = "No";
+      } else if (item.punchInValid == null && item.punchOutValid == null) {
+        geoValid = "-";
+      }
+
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
+        reachedHomeLocation: item.reachedHomeAt ? formatReportLocation(item.reachedHomeLocationMeta, item.reachedHomeLatitude, item.reachedHomeLongitude) : "-",
+        workedHoursLabel: item.workedHours.toFixed(2),
+        geoValid,
+      };
+    }),
+    size: "A4",
+  });
+
+  const safeName = String(payload.user.name || "user").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.pdf`;
+
+  await sendEmail({
+    email: payload.user.email,
+    subject: `Attendance Report - ${payload.user.name} - ${payload.meta.periodLabel}`,
+    message: `Hello ${payload.user.name},\n\nPlease find your detailed attendance report for ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to}) attached to this email.\n\nRegards,\n${payload.user.orgName}`,
+    attachments: [
+      {
+        filename: filename,
+        content: pdfBuffer,
+      },
+    ],
+  });
+
+  res.status(200).json({ success: true, message: "Attendance report sent to email successfully." });
+});
+
 exports.downloadOrgUserAttendanceExcel = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_ALL);
@@ -361,7 +447,6 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
     subtitleLines,
     summaryCards,
     columns: [
-<<<<<<< HEAD
       { key: "entryNo", label: "No.", width: 30, align: "left" },
       { key: "user", label: "Member", width: 80 },
       { key: "role", label: "Role", width: 55 },
@@ -373,20 +458,6 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
       { key: "punchOut", label: "Punch Out", width: 50, align: "center" },
       { key: "overtime", label: "Overtime", width: 60, align: "center" },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 60, align: "center" },
-=======
-      { key: "entryNo", label: "No.", width: 25, align: "left" },
-      { key: "user", label: "Member", width: 75 },
-      { key: "role", label: "Role", width: 50 },
-      { key: "department", label: "Department", width: 60 },
-      { key: "existingMember", label: "Type", width: 45 },
-      { key: "date", label: "Date", width: 50 },
-      { key: "status", label: "Status", width: 50, align: "center" },
-      { key: "punchIn", label: "Punch In", width: 45, align: "center" },
-      { key: "punchOut", label: "Punch Out", width: 45, align: "center" },
-      { key: "reachedHome", label: "R. Home", width: 45, align: "center" },
-      { key: "overtime", label: "Overtime", width: 50, align: "center" },
-      { key: "workedHoursLabel", label: "Worked Hrs", width: 50, align: "center" },
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
     ],
     rows: payload.items.map((item, index) => {
       const statusUpper = String(item.status || "").toUpperCase();
@@ -400,10 +471,6 @@ exports.downloadOrgAttendancePdf = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
-<<<<<<< HEAD
-=======
-        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
         overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
         workedHoursLabel: item.workedHours.toFixed(2),
       };
@@ -454,21 +521,10 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
       { key: "existingMember", label: "Member Type", width: 90 },
       { key: "date", label: "Date", width: 85 },
       { key: "status", label: "Status", width: 80 },
-<<<<<<< HEAD
       { key: "punchIn", label: "Punch In", width: 80 },
       { key: "punchOut", label: "Punch Out", width: 80 },
       { key: "overtime", label: "Overtime", width: 80 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 80 },
-=======
-      { key: "punchIn", label: "Punch In", width: 100 },
-      { key: "punchOut", label: "Punch Out", width: 100 },
-      { key: "reachedHome", label: "Reached Home", width: 100 },
-      { key: "overtime", label: "Overtime", width: 80 },
-      { key: "workedHoursLabel", label: "Worked Hrs", width: 90 },
-      { key: "punchInLocation", label: "Punch In Location", width: 200 },
-      { key: "punchOutLocation", label: "Punch Out Location", width: 200 },
-      { key: "reachedHomeLocation", label: "Reached Home Location", width: 200 },
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
     ],
     rows: payload.items.map((item, index) => {
       const statusUpper = String(item.status || "").toUpperCase();
@@ -482,10 +538,6 @@ exports.downloadOrgAttendanceExcel = asyncHandler(async (req, res) => {
         status: item.status,
         punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
         punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
-<<<<<<< HEAD
-=======
-        reachedHome: item.reachedHomeAt ? toPdfTime(item.reachedHomeAt) : "-",
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
         overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
         workedHoursLabel: item.workedHours.toFixed(2),
       };

@@ -169,26 +169,7 @@ exports.assignInstrumentToUsers = asyncHandler(async (req, res) => {
     }));
   }
 
-  const assetIdsToAssign = dataToInsert.map(d => d.assetId);
-  const uniqueAssetIds = new Set(assetIdsToAssign);
-  if (uniqueAssetIds.size !== assetIdsToAssign.length) {
-    res.status(400);
-    throw new Error("Duplicate Physical ID / Size found in the request");
-  }
 
-  const userIdsToAssign = dataToInsert.map(d => d.userId);
-  const existingAssignments = await prisma.userInstrument.findMany({
-    where: {
-      instrumentId: Number(instrumentId),
-      assetId: { in: assetIdsToAssign },
-      userId: { notIn: userIdsToAssign }
-    },
-  });
-
-  if (existingAssignments.length > 0) {
-    res.status(400);
-    throw new Error(`Physical ID / Size '${existingAssignments[0].assetId}' is already assigned to another user for this instrument`);
-  }
 
   await prisma.userInstrument.createMany({
     data: dataToInsert,
@@ -249,18 +230,7 @@ exports.updateInstrumentAssignment = asyncHandler(async (req, res) => {
     throw new Error("Physical ID / Number is strictly required");
   }
 
-  const existingAssignment = await prisma.userInstrument.findFirst({
-    where: {
-      instrumentId: Number(instrumentId),
-      assetId: String(assetId),
-      userId: { not: Number(userId) },
-    },
-  });
 
-  if (existingAssignment) {
-    res.status(400);
-    throw new Error(`Physical ID / Size '${assetId}' is already assigned to another user for this instrument`);
-  }
 
   await prisma.userInstrument.update({
     where: {
@@ -279,7 +249,4 @@ exports.updateInstrumentAssignment = asyncHandler(async (req, res) => {
     message: "Instrument assignment updated successfully",
   });
 });
-<<<<<<< HEAD
 
-=======
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1

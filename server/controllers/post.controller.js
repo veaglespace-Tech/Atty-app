@@ -1,8 +1,5 @@
 const asyncHandler = require("express-async-handler");
-<<<<<<< HEAD
 const { Expo } = require("expo-server-sdk");
-=======
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 const prisma = require("../lib/prisma");
 const { resolveOrganizationId, resolveUserRole } = require("../utils/membership");
 const { assertPermission } = require("../services/access.service");
@@ -265,11 +262,7 @@ exports.createPost = asyncHandler(async (req, res) => {
     include: POST_INCLUDE,
   });
 
-<<<<<<< HEAD
   console.log(`[DEBUG CONTROLLER PUSH] Calling notifyNewPost service...`);
-=======
-  // Send Push Notifications
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   notifyNewPost(post, req.user.id, orgId, resolvedTeamId);
 
   res.status(201).json({

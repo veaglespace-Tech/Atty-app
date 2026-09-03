@@ -1466,14 +1466,14 @@ export default function DataPanelPage({
             />
           ) : null}
 
-          <button
+          <button title="Refresh"
             type="button"
             onClick={fetchData}
             disabled={loading}
             className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
+            
           </button>
         </div>
 
@@ -1557,7 +1557,7 @@ export default function DataPanelPage({
       ) : null}
 
       {summary.length > 0 || children ? (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${summary.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           {summary.map((card, index) => {
             const theme = RECORD_THEMES[index % RECORD_THEMES.length];
             const { value, valueClassName } = getSummaryDisplay(card);

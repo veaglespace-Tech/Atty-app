@@ -341,11 +341,11 @@ export default function PaymentDetailPage() {
         {/* View Toggle & Actions */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Tab Switchers */}
-          <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+          <div className="flex w-full overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800 no-scrollbar sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab("receipt")}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 activeTab === "receipt"
                   ? "bg-white text-slate-900 shadow dark:bg-slate-900 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -356,7 +356,7 @@ export default function PaymentDetailPage() {
             <button
               type="button"
               onClick={() => setActiveTab("edit")}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 activeTab === "edit"
                   ? "bg-white text-slate-900 shadow dark:bg-slate-900 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"

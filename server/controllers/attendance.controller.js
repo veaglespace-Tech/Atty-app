@@ -187,11 +187,15 @@ const buildSelfAttendancePayload = async ({ orgId, userId, limit = 45 }) => {
 
   return {
     summary: [
-      toSummaryItem("Today Status", todayRecord?.status || "No Records"),
-      toSummaryItem("Present This Month", presentCount + regularizedCount + halfDayCount),
-      toSummaryItem("Absent This Month", absentCount),
-      toSummaryItem("Worked Hrs This Month", workedHours),
+      toSummaryItem("Records", monthlyStatus.reduce((acc, entry) => acc + Number(entry._count?._all || 0), 0)),
+      toSummaryItem("Present", presentCount),
+      toSummaryItem("Regularized", regularizedCount),
+      toSummaryItem("Half Day", halfDayCount),
+      toSummaryItem("Absent", absentCount),
+      toSummaryItem("Overtime", Number(statusCountMap.OVERTIME || 0)),
+      toSummaryItem("Worked Hrs", workedHours),
     ],
+    workedHours,
     items: recentRecords.map(mapAttendanceRecord),
     meta: {
       monthFrom: from,
@@ -417,7 +421,11 @@ exports.punchOut = asyncHandler(async (req, res) => {
   }
 
   const punchOutAt = new Date();
-  const diff = attendance.punchInAt ? Math.abs(punchOutAt - attendance.punchInAt) : 0;
+  const punchInAtDate = attendance.punchInAt ? new Date(attendance.punchInAt) : null;
+  const diff =
+    punchInAtDate && !Number.isNaN(punchInAtDate.getTime())
+      ? Math.abs(punchOutAt.getTime() - punchInAtDate.getTime())
+      : 0;
   const totalMinutesWorked = Math.floor(diff / 1000 / 60);
   const status = calculateAttendanceStatus({
     totalMinutesWorked,
@@ -572,7 +580,7 @@ exports.getAttendance = asyncHandler(async (req, res) => {
       userId: user.id,
       userName: user.name || "Unknown",
       userRole: user.memberships[0]?.role || "MEMBER",
-      status: record ? (record.status === "PRESENT" ? "Present" : record.status === "HALF_DAY" ? "Half Day" : "Absent") : "Absent",
+      status: record ? (record.status === "PRESENT" ? "Present" : record.status === "HALF_DAY" ? "Half Day" : record.status === "OVERTIME" ? "Overtime" : record.status === "REGULARIZED" ? "Regularized" : "Absent") : "Absent",
       checkIn: record?.punchInAt ? new Date(record.punchInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
       checkOut: record?.punchOutAt ? new Date(record.punchOutAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--",
       lateMinutes: record ? resolveAttendanceLateMinutes(record) : 0,
@@ -590,7 +598,7 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const today = todayKey();
 
-  const [present, halfDay, late, totalEligibleUsers] = await Promise.all([
+  const [present, halfDay, late, overtime, regularized, totalEligibleUsers] = await Promise.all([
     prisma.attendance.count({
       where: {
         orgId,
@@ -620,6 +628,22 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
         },
       },
     }),
+    prisma.attendance.count({
+      where: {
+        orgId,
+        date: today,
+        status: "OVERTIME",
+        deletedAt: null,
+      },
+    }),
+    prisma.attendance.count({
+      where: {
+        orgId,
+        date: today,
+        status: "REGULARIZED",
+        deletedAt: null,
+      },
+    }),
     prisma.user.count({
       where: {
         memberships: { some: { orgId, isActive: true } },
@@ -630,7 +654,7 @@ exports.getAttendanceSummary = asyncHandler(async (req, res) => {
     }),
   ]);
 
-  const absent = totalEligibleUsers - (present + halfDay);
+  const absent = totalEligibleUsers - (present + halfDay + overtime + regularized);
 
   res.status(200).json({
     present,

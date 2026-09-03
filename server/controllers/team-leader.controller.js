@@ -12,8 +12,6 @@ const {
   toSummaryItem,
   uniqueNumberList,
   todayKey,
-  monthWindow,
-  weekWindow,
   truncateText,
   formatHoursValue,
   formatReportLocation,
@@ -838,7 +836,9 @@ exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
   assertPermission(res, req.user, PERMISSIONS.REPORTS.VIEW, orgId);
 
   const to = todayKey();
-  const from = monthWindow(new Date()).from;
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - 29);
+  const from = dateKey(fromDate);
 
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
@@ -923,21 +923,14 @@ function assertReportDownloadAccess({ organization, res }) {
 }
 
 const resolveTeamLeaderReportRange = (req) => {
+  const to = todayKey();
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - 29);
+  const from = dateKey(fromDate);
+
+  const rangeFrom = String(req.query.from || from);
+  const rangeTo = String(req.query.to || to);
   const period = String(req.query.period || "custom").toLowerCase();
-  let defaultFrom = monthWindow(new Date()).from;
-  let defaultTo = todayKey();
-
-  if (period === "weekly") {
-    const w = weekWindow(new Date());
-    defaultFrom = w.from;
-    defaultTo = w.to;
-  } else if (period === "daily") {
-    defaultFrom = todayKey();
-    defaultTo = todayKey();
-  }
-
-  const rangeFrom = String(req.query.from || defaultFrom);
-  const rangeTo = String(req.query.to || defaultTo);
 
   let periodLabel = "Custom";
   if (period === "daily") periodLabel = "Daily";

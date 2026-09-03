@@ -16,14 +16,10 @@ dist/
 coverage/
 .cache/
 .turbo/
-.expo/
-web-build/
-expo-env.d.ts
 
 # Environment files
 .env
 .env.*
-.env*.local
 !.env.example
 !.env*.example
 
@@ -57,25 +53,20 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Temporary / scratch files
+temp_*.js
+temp_*.ts
+*_temp.js
+*_old.js
+read-excel.js
+test-excel.*
+scratch.*
 
-# Metro
-.metro-health-check*
+# Database backup dumps
+*.sql
+!server/prisma/migrations/**/*.sql
+!server/scripts/subscription_end_date_trigger.sql
 
-# macOS
-*.pem
-
-# Generated Expo/native folders
-.expo/
-ios/
-android/
-mobile-app/.expo/
-mobile-app/ios/
-mobile-app/android/
+# Excel / CSV test outputs
+*.xlsx
+*.csv

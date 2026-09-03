@@ -5,7 +5,6 @@ const {
   dateKey,
   formatHoursValue,
   monthWindow,
-  weekWindow,
   parseLimit,
   toDateKey,
   toSummaryItem,
@@ -34,9 +33,10 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000
 
 const defaultRange = () => {
   const now = new Date()
-  const { from } = monthWindow(now)
+  const from = new Date(now)
+  from.setDate(from.getDate() - 29)
   return {
-    from,
+    from: dateKey(from),
     to: dateKey(now),
   }
 }
@@ -51,9 +51,10 @@ const rangeFromPeriod = (period = "monthly") => {
   }
 
   if (normalized === "weekly") {
-    const { from } = weekWindow(now)
+    const from = new Date(now)
+    from.setDate(from.getDate() - 6)
     return {
-      from,
+      from: dateKey(from),
       to: today,
       periodLabel: "Weekly",
     }
@@ -191,6 +192,7 @@ const buildAttendanceExcelBuffer = ({
 
   const summaryColumns = [
     { key: "presentDays", label: "Present", width: 60 },
+    { key: "regularizedDays", label: "Regularized", width: 60 },
     { key: "absentDays", label: "Absent", width: 60 },
     { key: "halfDays", label: "Half Day", width: 60 },
     { key: "overtimeDays", label: "Overtime", width: 60 },
@@ -225,6 +227,7 @@ const buildAttendanceExcelBuffer = ({
     ]
     
     let present = 0;
+    let regularized = 0;
     let absent = 0;
     let halfDay = 0;
     let overtime = 0;
@@ -235,6 +238,7 @@ const buildAttendanceExcelBuffer = ({
       
       if (status) {
         if (status === "PRESENT") { displayStatus = "P"; present++; }
+        else if (status === "REGULARIZED") { displayStatus = "R"; regularized++; }
         else if (status === "OVERTIME") { displayStatus = "O"; overtime++; present++; }
         else if (status === "ABSENT") { displayStatus = "A"; absent++; }
         else if (status === "HALF_DAY") { displayStatus = "Half Day"; halfDay++; }
@@ -253,6 +257,7 @@ const buildAttendanceExcelBuffer = ({
     });
     
     rowData.push(present);
+    rowData.push(regularized);
     rowData.push(absent);
     rowData.push(halfDay);
     rowData.push(overtime);
@@ -532,6 +537,7 @@ exports.downloadOrgReportsPdf = asyncHandler(async (req, res) => {
       { key: "department", label: "Department", width: 75 },
       { key: "existingMember", label: "Type", width: 60 },
       { key: "presentDays", label: "Present Days", width: 55, align: "center" },
+      { key: "regularizedDays", label: "Reg. Days", width: 50, align: "center" },
       { key: "halfDays", label: "Half Days", width: 45, align: "center" },
       { key: "absentDays", label: "Absent Days", width: 55, align: "center" },
       { key: "overtimeDays", label: "Overtime Days", width: 60, align: "center" },

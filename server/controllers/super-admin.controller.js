@@ -12,7 +12,6 @@ const {
   truncateText,
   normalizeStatus,
   toPdfTime,
-  weekWindow,
 } = require("../services/common.service");
 const { filterVisiblePlans } = require("../services/plan.service");
 const {
@@ -2789,10 +2788,7 @@ exports.patchSuperAdminUser = asyncHandler(async (req, res) => {
   if (req.body?.referenceBy !== undefined) {
     userPayload.referenceBy = req.body.referenceBy ? truncateText(req.body.referenceBy, 120) : null;
   }
-<<<<<<< HEAD
 
-=======
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
   if (req.body?.role !== undefined) {
     const role = normalizeRole(req.body.role);
     userPayload.role = role;
@@ -3313,8 +3309,9 @@ const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, or
     rangeTo = today;
     periodLabel = "Daily";
   } else if (normalizedPeriod === "weekly") {
-    const { from } = weekWindow(now);
-    rangeFrom = from;
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    rangeFrom = dateKey(from);
     rangeTo = today;
     periodLabel = "Weekly";
   } else if (normalizedPeriod === "custom") {
@@ -3415,12 +3412,14 @@ const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, or
 
     const current = userSummaryMap.get(uid) || {
       presentDays: 0,
+      regularizedDays: 0,
       halfDays: 0,
       absentDays: 0,
       workedMinutes: 0,
     };
 
     if (status === "PRESENT") current.presentDays += count;
+    else if (status === "REGULARIZED") current.regularizedDays += count;
     else if (status === "HALF_DAY") current.halfDays += count;
     else if (status === "ABSENT") current.absentDays += count;
 
@@ -3431,6 +3430,7 @@ const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, or
   const items = users.map((user) => {
     const summary = userSummaryMap.get(user.id) || {
       presentDays: 0,
+      regularizedDays: 0,
       halfDays: 0,
       absentDays: 0,
       workedMinutes: 0,
@@ -3453,6 +3453,7 @@ const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, or
       orgName: user.organization?.name || "-",
       orgCode: user.organization?.organizationCode || "-",
       presentDays: summary.presentDays,
+      regularizedDays: summary.regularizedDays,
       halfDays: summary.halfDays,
       absentDays: summary.absentDays,
       workedHours: minutesToHoursValue(summary.workedMinutes),
@@ -3461,12 +3462,14 @@ const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, or
 
   const totalUsers = items.length;
   let totalPresentDays = 0;
+  let totalRegularizedDays = 0;
   let totalHalfDays = 0;
   let totalAbsentDays = 0;
   let totalWorkedHours = 0;
 
   for (const item of items) {
     totalPresentDays += item.presentDays;
+    totalRegularizedDays += item.regularizedDays;
     totalHalfDays += item.halfDays;
     totalAbsentDays += item.absentDays;
     totalWorkedHours += item.workedHours;
@@ -3485,6 +3488,7 @@ const buildSuperAdminAttendancePayload = async ({ period, fromInput, toInput, or
     summary: [
       { label: "Members", value: totalUsers },
       { label: "Present Days", value: totalPresentDays },
+      { label: "Regularized Days", value: totalRegularizedDays },
       { label: "Half Days", value: totalHalfDays },
       { label: "Absent Days", value: totalAbsentDays },
       { label: "Worked Hrs", value: Number(totalWorkedHours.toFixed(2)) },
@@ -3548,6 +3552,7 @@ exports.downloadSuperAdminAttendanceReportsPdf = asyncHandler(async (req, res) =
       { key: "orgNameCode", label: "Organization", width: 130 },
       { key: "roleLabel", label: "Role", width: 70 },
       { key: "presentDays", label: "Present", width: 50, align: "center" },
+      { key: "regularizedDays", label: "Reg.", width: 45, align: "center" },
       { key: "halfDays", label: "Half", width: 45, align: "center" },
       { key: "absentDays", label: "Absent", width: 50, align: "center" },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 65, align: "center" },
@@ -3604,6 +3609,7 @@ exports.downloadSuperAdminAttendanceReportsExcel = asyncHandler(async (req, res)
       { key: "orgCode", label: "Org Code", width: 68 },
       { key: "role", label: "Role", width: 88 },
       { key: "presentDays", label: "Present Days", width: 64 },
+      { key: "regularizedDays", label: "Regularized Days", width: 64 },
       { key: "halfDays", label: "Half Days", width: 64 },
       { key: "absentDays", label: "Absent Days", width: 64 },
       { key: "workedHoursLabel", label: "Worked Hrs", width: 88 },

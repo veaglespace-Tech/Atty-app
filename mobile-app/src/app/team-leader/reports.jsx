@@ -247,8 +247,11 @@ export default function TeamLeaderReportsPage(props) {
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
           <MetricCard label="Members" value={summaryMap.get("Members") || 0} icon={<Users size={16} className="text-indigo-500" />} />
           <MetricCard label="Present" value={summaryMap.get("Present Days") || 0} icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
+          <MetricCard label="Regularized" value={summaryMap.get("Regularized Days") || 0} icon={<CheckCircle2 size={16} className="text-blue-500" />} />
+          <MetricCard label="Half Day" value={summaryMap.get("Half Days") || 0} icon={<Timer size={16} className="text-orange-500" />} />
           <MetricCard label="Absent" value={summaryMap.get("Absent Days") || 0} icon={<XCircle size={16} className="text-rose-500" />} />
-          <MetricCard label="Worked Hrs" value={formatHoursValue(summaryMap.get("Worked Hrs"))} icon={<Timer size={16} className="text-amber-500" />} />
+          <MetricCard label="Overtime" value={summaryMap.get("Overtime Days") || 0} icon={<Timer size={16} className="text-purple-500" />} />
+          <MetricCard label="Worked Hrs" value={formatHoursValue(summaryMap.get("Worked Hrs"))} icon={<Timer size={16} className="text-amber-500" />} isFullWidth />
         </View>
 
         <Text className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 ml-2">Member Reports ({reports.length})</Text>
@@ -416,9 +419,9 @@ export default function TeamLeaderReportsPage(props) {
   );
 }
 
-function MetricCard({ label, value, icon }) {
+function MetricCard({ label, value, icon, isFullWidth }) {
   return (
-    <View className="w-[48%] bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+    <View className={`${isFullWidth ? 'w-full' : 'w-[48%]'} bg-white dark:bg-slate-900/80 p-4 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm`}>
       <View className="flex-row items-center gap-2 mb-2">
         {icon}
         <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</Text>

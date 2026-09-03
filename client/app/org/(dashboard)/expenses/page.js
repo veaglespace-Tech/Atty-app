@@ -564,21 +564,21 @@ export default function OrgExpensesPage() {
       {showExpenseModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl w-full max-w-lg border dark:border-slate-800 max-h-[90vh] overflow-y-auto">
-            <div className="flex space-x-4 mb-6 border-b border-gray-200 dark:border-slate-800">
+            <div className="flex space-x-4 mb-6 border-b border-gray-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
               <button
-                className={`pb-2 font-medium ${expenseTab === "deposit" ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"}`}
+                className={`whitespace-nowrap pb-2 font-medium ${expenseTab === "deposit" ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"}`}
                 onClick={() => setExpenseTab("deposit")}
               >
                 Deposit
               </button>
               <button
-                className={`pb-2 font-medium ${expenseTab === "withdrawal" ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"}`}
+                className={`whitespace-nowrap pb-2 font-medium ${expenseTab === "withdrawal" ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"}`}
                 onClick={() => setExpenseTab("withdrawal")}
               >
                 Expense Details
               </button>
               <button
-                className={`pb-2 font-medium ${expenseTab === "settle-claim" ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"}`}
+                className={`whitespace-nowrap pb-2 font-medium ${expenseTab === "settle-claim" ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"}`}
                 onClick={() => setExpenseTab("settle-claim")}
               >
                 Settle Claim

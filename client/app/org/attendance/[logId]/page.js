@@ -6,6 +6,7 @@ import { useGetOrgAttendanceLogByIdQuery } from "@/services/api/orgApi";
 import { formatRoleLabel } from "@/utils/roles";
 import { formatHoursValue } from "@/utils/time";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
+import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -120,7 +121,7 @@ export default function OrgAttendanceLogDetailPage() {
             </div>
             <div className="dashboard-detail-tile">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Status</p>
-              <p className="mt-1 text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">{record.status}</p>
+              <div className="mt-1"><AttendanceStatusBadge status={record.status} /></div>
             </div>
 
             <div className="dashboard-detail-tile">

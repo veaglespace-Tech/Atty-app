@@ -204,10 +204,11 @@ export default function OrgReportsPage() {
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
           <MetricCard label="Members" value={summaryMap.get("Members") || 0} />
           <MetricCard label="Present" value={summaryMap.get("Present Days") || 0} />
+          <MetricCard label="Regularized" value={summaryMap.get("Regularized Days") || 0} />
           <MetricCard label="Half Day" value={summaryMap.get("Half Days") || 0} />
           <MetricCard label="Absent" value={summaryMap.get("Absent Days") || 0} />
           <MetricCard label="Overtime" value={summaryMap.get("Overtime Days") || 0} />
-          <MetricCard label="Worked Hrs" value={formatHoursValue(summaryMap.get("Worked Hrs") || 0)} />
+          <MetricCard label="Worked Hrs" value={formatHoursValue(summaryMap.get("Worked Hrs") || 0)} isFullWidth />
         </View>
 
         <Text className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4 ml-1">
@@ -235,9 +236,9 @@ export default function OrgReportsPage() {
   );
 }
 
-function MetricCard({ label, value }) {
+function MetricCard({ label, value, isFullWidth }) {
   return (
-    <View className="w-[48%] bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm">
+    <View className={`${isFullWidth ? 'w-full' : 'w-[48%]'} bg-white dark:bg-slate-900/80 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm`}>
       <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{label}</Text>
       <Text className="text-xl font-black text-slate-900 dark:text-white tracking-tight" numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
     </View>

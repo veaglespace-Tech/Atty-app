@@ -143,11 +143,18 @@ exports.getMemberDashboard = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     summary: [
-      toSummaryItem("Today Status", todayRecord?.status || "No Records"),
-      toSummaryItem("Present This Month", presentCount + regularizedCount + halfDayCount),
+      toSummaryItem("Records", monthlyStatus.reduce((acc, entry) => acc + Number(entry._count?._all || 0), 0)),
+      toSummaryItem("Present", presentCount),
+      toSummaryItem("Regularized", regularizedCount),
+      toSummaryItem("Half Day", halfDayCount),
+      toSummaryItem("Absent", absentCount),
+      toSummaryItem("Overtime", Number(statusCountMap.OVERTIME || 0)),
+      toSummaryItem("Worked Hrs", workedHours),
+      toSummaryItem("Present This Month", presentCount),
       toSummaryItem("Absent This Month", absentCount),
       toSummaryItem("Worked Hrs This Month", workedHours),
     ],
+    workedHours,
     items,
     meta: {
       monthFrom: from,
@@ -172,7 +179,7 @@ exports.getMemberAttendance = asyncHandler(async (req, res) => {
     userIds: [userId],
   });
 
-  const [records, total] = await Promise.all([
+  const [records, total, groupedStatus, workedAggregate] = await Promise.all([
     prisma.attendance.findMany({
       where,
       select: attendanceRecordSelect,
@@ -180,14 +187,47 @@ exports.getMemberAttendance = asyncHandler(async (req, res) => {
       take: limit,
     }),
     prisma.attendance.count({ where }),
+    prisma.attendance.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.attendance.aggregate({
+      where,
+      _sum: { totalMinutesWorked: true },
+    }),
   ]);
+
+  const statusCountMap = groupedStatus.reduce((acc, entry) => {
+    acc[entry.status] = Number(entry._count?._all || 0);
+    return acc;
+  }, {});
+
+  const presentCount = Number(statusCountMap.PRESENT || 0);
+  const regularizedCount = Number(statusCountMap.REGULARIZED || 0);
+  const halfDayCount = Number(statusCountMap.HALF_DAY || 0);
+  const absentCount = Number(statusCountMap.ABSENT || 0);
+  const overtimeCount = Number(statusCountMap.OVERTIME || 0);
+  const workedHours = minutesToHoursValue(workedAggregate?._sum?.totalMinutesWorked || 0);
 
   const items = records.map(mapAttendanceRecord);
 
   res.status(200).json({
     success: true,
     items,
-    summary: buildAttendanceSummary(items),
+    workedHours,
+    summary: [
+      toSummaryItem("Records", total),
+      toSummaryItem("Present", presentCount),
+      toSummaryItem("Regularized", regularizedCount),
+      toSummaryItem("Half Day", halfDayCount),
+      toSummaryItem("Absent", absentCount),
+      toSummaryItem("Overtime", overtimeCount),
+      toSummaryItem("Worked Hrs", workedHours),
+      toSummaryItem("Present This Month", presentCount),
+      toSummaryItem("Absent This Month", absentCount),
+      toSummaryItem("Worked Hrs This Month", workedHours),
+    ],
     meta: {
       total,
       limit,

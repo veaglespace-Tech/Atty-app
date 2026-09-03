@@ -356,15 +356,15 @@ export default function OrgInstrumentsPage() {
   return (
     <section className="space-y-6">
       <div className={`${sectionCardClassName} mobile-compact-panel`}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-[1.65rem] font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">Instruments</h2>
             <p className="mobile-hide-copy mt-2.5 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Create instruments and assign them to your members.
             </p>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
             <select
               value={reportFilterId}
               onChange={(e) => setReportFilterId(e.target.value)}
@@ -430,10 +430,10 @@ export default function OrgInstrumentsPage() {
         ) : null}
       </div>
 
-      <div className="flex space-x-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 p-1 mb-6 max-w-md">
+      <div className="flex w-full overflow-x-auto space-x-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 p-1 mb-6 max-w-md no-scrollbar">
         <button
           onClick={() => setActiveTab("instruments")}
-          className={`w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors ${
+          className={`w-full whitespace-nowrap shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-colors ${
             activeTab === "instruments"
               ? "bg-white text-blue-900 shadow dark:bg-blue-900/60 dark:text-blue-100"
               : "text-slate-600 hover:bg-white/[0.12] hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -443,7 +443,7 @@ export default function OrgInstrumentsPage() {
         </button>
         <button
           onClick={() => setActiveTab("members")}
-          className={`w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors ${
+          className={`w-full whitespace-nowrap shrink-0 rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-colors ${
             activeTab === "members"
               ? "bg-white text-blue-900 shadow dark:bg-blue-900/60 dark:text-blue-100"
               : "text-slate-600 hover:bg-white/[0.12] hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -758,6 +758,16 @@ export default function OrgInstrumentsPage() {
                       {inst.description || "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => {
+                          setSelectedInstrumentId(String(inst.id));
+                          setSelectedUsers({});
+                          setActiveTab("members");
+                        }}
+                        className="inline-flex items-center gap-1 rounded text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 font-semibold text-xs mr-4"
+                      >
+                        Assign
+                      </button>
                       <button
                         onClick={() => handleDeleteInstrument(inst.id, inst.name)}
                         className="inline-flex items-center gap-1 rounded text-red-600 hover:text-red-700 hover:underline dark:text-red-400 dark:hover:text-red-300 font-semibold text-xs"

@@ -375,85 +375,87 @@ export default function OrgUsersPage() {
   return (
     <section className="space-y-6">
       <div className={`${sectionCardClassName} mobile-compact-panel relative z-50`}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-[1.65rem] font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">Organization Users</h2>
             <p className="mobile-hide-copy mt-2.5 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Directory keeps core fields simple. Click a user row to open full profile and actions.
             </p>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setCreateOpen((prev) => !prev)}
-              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
-            >
-              <Plus size={15} />
-              Create Member
-              {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
+          <div className="flex w-full flex-col items-end gap-2 sm:w-auto lg:shrink-0 lg:max-w-full">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setCreateOpen((prev) => !prev)}
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+              >
+                <Plus size={15} />
+                Create Member
+                {createOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                const next = !bulkMode;
-                setBulkMode(next);
-                if (!next) setSelectedUserIds([]);
-              }}
-              className={`brand-btn brand-btn-md w-full sm:w-auto ${
-                bulkMode || selectedUserIds.length > 0
-                  ? "brand-btn-primary"
-                  : "brand-btn-secondary text-blue-600 dark:text-blue-400"
-              }`}
-            >
-              <CheckSquare size={15} />
-              {bulkMode || selectedUserIds.length > 0 ? "Exit Selection Mode" : "Bulk Select"}
-            </button>
+              {!isFreePlan ? (
+                <DownloadMenuButton
+                  label={
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Download size={15} />
+                      Export
+                      <ChevronDown size={14} className="opacity-70" />
+                    </span>
+                  }
+                  onDownloadExcel={handleDownloadExcel}
+                  onDownloadPdf={handleDownloadPdf}
+                  downloadingExcel={downloading}
+                  downloadingPdf={downloadingPdf}
+                  disabled={isLoading}
+                  align="right"
+                  className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+                />
+              ) : (
+                <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 w-full sm:w-auto mt-2 sm:mt-0">
+                  <LockKeyhole size={16} />
+                  Download locked on free plan.
+                </div>
+              )}
 
-            {(actorRole === ROLES.ORG_ADMIN || actorRole === ROLES.SUPER_ADMIN) && (
-              <Link
+              <button title="Refresh"
+                type="button"
+                onClick={refetch}
+                disabled={loading}
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+              >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+                
+              </button>
+            </div>
+
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !bulkMode;
+                  setBulkMode(next);
+                  if (!next) setSelectedUserIds([]);
+                }}
+                className={`brand-btn brand-btn-md w-full sm:w-auto ${
+                  bulkMode || selectedUserIds.length > 0
+                    ? "brand-btn-primary"
+                    : "brand-btn-secondary text-blue-600 dark:text-blue-400"
+                }`}
+              >
+                <CheckSquare size={15} />
+                {bulkMode || selectedUserIds.length > 0 ? "Exit Selection Mode" : "Bulk Select"}
+              </button>
+
+              <Link title="Archived Users"
                 href="/org/users/archived"
                 className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto text-rose-600 dark:text-rose-400"
               >
                 <Archive size={15} />
-                Archived Users
+                
               </Link>
-            )}
-
-            <button
-              type="button"
-              onClick={refetch}
-              disabled={loading}
-              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
-            </button>
-
-            {!isFreePlan ? (
-              <DownloadMenuButton
-                label={
-                  <span className="flex items-center justify-center gap-1.5">
-                    <Download size={15} />
-                    Export
-                    <ChevronDown size={14} className="opacity-70" />
-                  </span>
-                }
-                onDownloadExcel={handleDownloadExcel}
-                onDownloadPdf={handleDownloadPdf}
-                downloadingExcel={downloading}
-                downloadingPdf={downloadingPdf}
-                disabled={isLoading}
-                align="right"
-                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-              />
-            ) : (
-              <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 w-full sm:w-auto mt-2 sm:mt-0">
-                <LockKeyhole size={16} />
-                Download locked on free plan.
-              </div>
-            )}
+            </div>
           </div>
         </div>
 

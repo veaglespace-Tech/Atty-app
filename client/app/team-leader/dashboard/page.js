@@ -58,14 +58,14 @@ export default function TeamLeaderDashboardPage() {
             </p>
           </div>
 
-          <button
+          <button title="Refresh"
             type="button"
             onClick={fetchDashboard}
             disabled={loading}
             className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto shrink-0"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
+            
           </button>
         </div>
 

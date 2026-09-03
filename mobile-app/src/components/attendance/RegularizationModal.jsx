@@ -155,7 +155,7 @@ export default function RegularizationModal({
               <Pressable
                 onPress={handleSubmit}
                 disabled={isSubmitting || !date || !reason.trim()}
-                className={`w-full py-3.5 rounded-xl items-center justify-center flex-row active:scale-98 ${
+                className={`w-full py-3.5 rounded-xl items-center justify-center flex-row active:scale-95 ${
                   isSubmitting || !date || !reason.trim()
                     ? "bg-blue-600/50"
                     : "bg-blue-600 shadow-md shadow-blue-600/20"

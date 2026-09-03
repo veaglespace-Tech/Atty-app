@@ -100,59 +100,7 @@ export default function MemberDashboard(props) {
               </View>
             </View>
 
-            <View className="flex-row gap-4 mb-2">
-              <View className="flex-1 bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between min-h-[110px]">
-                <View className="flex-row items-center mb-4 justify-between">
-                  <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                    Attendance
-                  </Text>
-                  <View className="h-8 w-8 rounded-full items-center justify-center bg-emerald-50 dark:bg-emerald-500/10 shrink-0">
-                    <CheckCircle2 size={14} color="#10b981" />
-                  </View>
-                </View>
-                {isStatsLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color="#10b981"
-                    className="self-start"
-                  />
-                ) : (
-                  <Text
-                    className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                  >
-                    {stats?.myAttendance || "0/30"}
-                  </Text>
-                )}
-              </View>
 
-              <View className="flex-1 bg-white dark:bg-slate-900 p-5 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-sm justify-between min-h-[110px]">
-                <View className="flex-row items-center mb-4 justify-between">
-                  <Text className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                    Streak
-                  </Text>
-                  <View className="h-8 w-8 rounded-full items-center justify-center bg-amber-50 dark:bg-amber-500/10 shrink-0">
-                    <Zap size={14} color="#f59e0b" />
-                  </View>
-                </View>
-                {isStatsLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color="#f59e0b"
-                    className="self-start"
-                  />
-                ) : (
-                  <Text
-                    className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                  >
-                    {stats?.streak || 0}
-                  </Text>
-                )}
-              </View>
-            </View>
           </View>
         </View>
 

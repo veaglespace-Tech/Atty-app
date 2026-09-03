@@ -448,6 +448,7 @@ export default function SuperAdminAttendanceReportsPage() {
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <MetricCard label="Total Logs" value={userLoading ? "-" : getUserMetricValue("Total Logs")} />
           <MetricCard label="Present Days" value={userLoading ? "-" : getUserMetricValue("Present Days")} />
+          <MetricCard label="Regularized Days" value={userLoading ? "-" : getUserMetricValue("Regularized Days")} />
           <MetricCard label="Half Days" value={userLoading ? "-" : getUserMetricValue("Half Days")} />
           <MetricCard label="Overtime Days" value={userLoading ? "-" : getUserMetricValue("Overtime Days")} />
           <MetricCard label="Worked Hours" value={userLoading ? "-" : `${getUserMetricValue("Worked Hrs")} hrs`} />
@@ -465,7 +466,7 @@ export default function SuperAdminAttendanceReportsPage() {
             <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
               Daily Attendance Logs ({userLogs.length} entries)
             </h3>
-            <button
+            <button title="Refresh"
               type="button"
               onClick={refetchUserLogs}
               disabled={userLoading}
@@ -584,7 +585,7 @@ export default function SuperAdminAttendanceReportsPage() {
               className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
+              
             </button>
 
             <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
@@ -814,9 +815,10 @@ export default function SuperAdminAttendanceReportsPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
         <MetricCard label="Platform Members" value={loading ? "-" : getMetricValue("Members")} />
         <MetricCard label="Present Days" value={loading ? "-" : getMetricValue("Present Days")} />
+        <MetricCard label="Regularized Days" value={loading ? "-" : getMetricValue("Regularized Days")} />
         <MetricCard label="Half Days" value={loading ? "-" : getMetricValue("Half Days")} />
         <MetricCard label="Absent Days" value={loading ? "-" : getMetricValue("Absent Days")} />
         <MetricCard label="Overtime Days" value={loading ? "-" : getMetricValue("Overtime Days")} />

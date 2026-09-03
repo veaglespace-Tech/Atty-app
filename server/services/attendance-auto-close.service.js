@@ -27,9 +27,18 @@ const runAttendanceAutoCloseJob = async () => {
 
   try {
     const config = readAttendanceTimeConfig();
-    const today = todayKey(config.timeZone);
-    const nowMinutes = resolveTimeOfDayMinutes(new Date(), config.timeZone);
+    const { dateKey } = require("./common.service");
+    
+    const now = new Date();
+    const nowMinutes = resolveTimeOfDayMinutes(now, config.timeZone);
     if (nowMinutes === null) return;
+
+    const targetDate = new Date(now);
+    // If it's not late night (e.g. before 23:00), we process yesterday to catch any missed closures
+    if (nowMinutes < 23 * 60) {
+      targetDate.setDate(targetDate.getDate() - 1);
+    }
+    const targetDayKey = dateKey(targetDate, config.timeZone);
 
     const organizations = await prisma.organization.findMany({
       where: {
@@ -47,18 +56,11 @@ const runAttendanceAutoCloseJob = async () => {
     for (const organization of organizations) {
       const startTime = organization?.attendanceStartTime || config.startTime;
       const endTime = organization?.attendanceEndTime || config.endTime;
-      const endMinutes = parseStartTimeMinutes(endTime);
-      // Run the auto-close job at 11:59 PM (23:59) to ensure it's at the end of the day
-      const AUTO_CLOSE_TRIGGER_MINUTES = 23 * 60 + 59;
-
-      if (nowMinutes < AUTO_CLOSE_TRIGGER_MINUTES) {
-        continue;
-      }
-
+      
       const openRecords = await prisma.attendance.findMany({
         where: {
           orgId: organization.id,
-          date: today,
+          date: targetDayKey,
           deletedAt: null,
           punchInAt: { not: null },
           punchOutAt: null,
@@ -84,7 +86,7 @@ const runAttendanceAutoCloseJob = async () => {
         prisma.attendance.findMany({
           where: {
             orgId: organization.id,
-            date: today,
+            date: targetDayKey,
             deletedAt: null,
           },
           select: {
@@ -98,9 +100,15 @@ const runAttendanceAutoCloseJob = async () => {
         const autoCloseEndMinutes = 23 * 60 + 59;
         const totalMinutesWorked =
           punchInMinutes === null ? 0 : Math.max(autoCloseEndMinutes - punchInMinutes, 0);
-        const status = "ABSENT";
+        
+        const status = calculateAttendanceStatus({
+          totalMinutesWorked,
+          startTime,
+          endTime,
+        });
+
         const shiftEndAt = buildDateTimeForDateKey({
-          dateKey: today,
+          dateKey: targetDayKey,
           time: "23:59",
           timeZone: config.timeZone,
         });
@@ -127,7 +135,7 @@ const runAttendanceAutoCloseJob = async () => {
         .map((userId) => ({
           orgId: organization.id,
           userId,
-          date: today,
+          date: targetDayKey,
           status: "ABSENT",
           totalMinutesWorked: 0,
           lateMinutes: 0,

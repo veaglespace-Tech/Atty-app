@@ -87,23 +87,6 @@ const monthWindow = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) => {
   };
 };
 
-const weekWindow = (value = new Date(), timeZone = DEFAULT_APP_TIME_ZONE) => {
-  const d = value instanceof Date ? new Date(value) : new Date(value || Date.now());
-  const day = d.getDay();
-  const diffToMonday = (day + 6) % 7;
-
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - diffToMonday);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  return {
-    from: dateKey(monday, timeZone),
-    to: dateKey(sunday, timeZone),
-  };
-};
-
 const toDateKey = (value, fallback = null) => {
   if (!value) return fallback;
   const raw = String(value).trim();
@@ -256,6 +239,7 @@ const extractImageUrl = (post) => {
 
   return null;
 };
+
 module.exports = {
   clamp,
   parsePositiveInt,
@@ -265,7 +249,6 @@ module.exports = {
   dateKey,
   todayKey,
   monthWindow,
-  weekWindow,
   toDateKey,
   normalizeStatus,
   resolveOrganizationId,

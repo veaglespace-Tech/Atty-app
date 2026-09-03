@@ -257,6 +257,12 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    emailOrgUserAttendancePdf: builder.mutation({
+      query: ({ userId, params = "" }) => ({
+        url: `/org/users/${userId}/attendance/email${params ? `?${params}` : ""}`,
+        method: "POST",
+      }),
+    }),
     downloadOrgUserAttendanceExcel: builder.mutation({
       query: ({ userId, params = "" }) => ({
         url: `/org/users/${userId}/attendance/excel${params ? `?${params}` : ""}`,
@@ -416,6 +422,7 @@ export const {
   useUpdateOrgDetailsMutation,
   useGetOrgUserAttendanceLogsQuery,
   useDownloadOrgUserAttendancePdfMutation,
+  useEmailOrgUserAttendancePdfMutation,
   useDownloadOrgUserAttendanceExcelMutation,
   useGetOrgRegistrationRequestsQuery,
   useAcceptRegistrationRequestMutation,

@@ -111,7 +111,7 @@ export default function Navbar() {
               <div key={pathname} className="brand-logo-reveal relative flex h-16 w-16 shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 md:h-20 md:w-20 2xl:h-24 2xl:w-24">
                 <div className="relative h-full w-full">
                   <Image
-                    src="/logo-transparent.png"
+                    src="/logo-transparent.webp"
                     alt="Veagle logo mark"
                     fill
                     priority

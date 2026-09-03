@@ -47,6 +47,38 @@ class ExpoPushProvider {
       const chunk = chunks[i];
       try {
         const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+        console.log(
+          `[EXPO PUSH TICKETS] Chunk ${i + 1}/${chunks.length}:`,
+          JSON.stringify(tickets, null, 2)
+        );
+
+
+        // Get Expo push receipts
+const receiptIds = tickets
+  .filter((ticket) => ticket.status === "ok" && ticket.id)
+  .map((ticket) => ticket.id);
+
+if (receiptIds.length > 0) {
+  // Wait briefly for Expo to generate receipts
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  try {
+    const receipts =
+      await this.expo.getPushNotificationReceiptsAsync(receiptIds);
+
+    console.log(
+      "[EXPO PUSH RECEIPTS]",
+      JSON.stringify(receipts, null, 2)
+    );
+  } catch (receiptError) {
+    console.error(
+      "[EXPO RECEIPT ERROR]",
+      receiptError.message
+    );
+  }
+}
+
+        
         for (let j = 0; j < tickets.length; j++) {
           const ticket = tickets[j];
           const targetToken = chunk[j]?.to;
@@ -56,7 +88,7 @@ class ExpoPushProvider {
           } else {
             failureCount++;
             const errorCode = ticket.details?.error;
-            
+
             if (errorCode === "DeviceNotRegistered" || errorCode === "InvalidCredentials") {
               if (targetToken) {
                 staleTokens.push(targetToken);

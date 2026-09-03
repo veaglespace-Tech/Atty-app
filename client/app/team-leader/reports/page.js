@@ -320,6 +320,7 @@ export default function TeamLeaderReportsPage() {
         {/* Metrics Cards */}
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <MetricCard label="Present Days" value={selectedMemberReport.presentDays} />
+          <MetricCard label="Regularized Days" value={selectedMemberReport.regularizedDays} />
           <MetricCard label="Half Days" value={selectedMemberReport.halfDays} />
           <MetricCard label="Absent Days" value={selectedMemberReport.absentDays} />
           <MetricCard label="Overtime Days" value={selectedMemberReport.overtimeDays || 0} />
@@ -403,8 +404,8 @@ export default function TeamLeaderReportsPage() {
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel relative z-20 overflow-visible rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">
               Team Leader Reports
             </h2>
@@ -414,7 +415,7 @@ export default function TeamLeaderReportsPage() {
             </p>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
             <button
               type="button"
               onClick={() => {
@@ -600,9 +601,10 @@ export default function TeamLeaderReportsPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
         <MetricCard label="Members" value={visibleSummaryMap.get("Members") || 0} />
         <MetricCard label="Present" value={visibleSummaryMap.get("Present Days") || 0} />
+        <MetricCard label="Regularized" value={visibleSummaryMap.get("Regularized Days") || 0} />
         <MetricCard label="Half Day" value={visibleSummaryMap.get("Half Days") || 0} />
         <MetricCard label="Absent" value={visibleSummaryMap.get("Absent Days") || 0} />
         <MetricCard label="Overtime" value={visibleSummaryMap.get("Overtime Days") || 0} />
@@ -682,6 +684,9 @@ export default function TeamLeaderReportsPage() {
                       Present
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Regularized
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                       Half Day
                     </th>
                     <th className="whitespace-nowrap px-3 py-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
@@ -705,6 +710,7 @@ export default function TeamLeaderReportsPage() {
                       <td className="px-3 py-2 font-semibold text-slate-900">{item.member}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.role}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.presentDays}</td>
+                      <td className="px-3 py-2 text-center text-slate-700">{item.regularizedDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.halfDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.absentDays}</td>
                       <td className="px-3 py-2 text-center text-slate-700">{item.overtimeDays || 0}</td>

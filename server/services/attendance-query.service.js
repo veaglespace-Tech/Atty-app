@@ -1,4 +1,4 @@
-const { minutesToHoursValue, todayKey, toDateKey, toSummaryItem, monthWindow, weekWindow, dateKey } = require("./common.service");
+const { minutesToHoursValue, todayKey, toDateKey, toSummaryItem, monthWindow, dateKey } = require("./common.service");
 const { resolveAttendanceLateMinutes } = require("./attendance-time.service");
 const { attendanceRecordSelect } = require("./prisma-selects.service");
 const { resolveUserRole } = require("../utils/membership");
@@ -135,6 +135,7 @@ const buildAttendanceWhere = ({
 
   if (search && String(search).trim().length > 0) {
     where.user = {
+      ...(where.user || {}),
       OR: [
         { name: { contains: String(search).trim() } },
         { email: { contains: String(search).trim() } },
@@ -148,26 +149,37 @@ const buildAttendanceWhere = ({
 const buildAttendanceSummary = (records = []) => {
   const totals = records.reduce(
     (acc, record) => {
-      if (record.status === "PRESENT" || record.status === "REGULARIZED") acc.present += 1;
+      if (record.status === "PRESENT") acc.present += 1;
+      else if (record.status === "REGULARIZED") acc.regularized += 1;
       else if (record.status === "HALF_DAY") acc.halfDay += 1;
       else if (record.status === "ABSENT") acc.absent += 1;
       else if (record.status === "OVERTIME") acc.overtime += 1;
+      acc.workedMinutes += Number(record.workedMinutes || 0);
       return acc;
     },
     {
       present: 0,
+      regularized: 0,
       halfDay: 0,
       absent: 0,
       overtime: 0,
+      workedMinutes: 0,
     }
   );
+
+  const workedHours = minutesToHoursValue(totals.workedMinutes);
 
   return [
     toSummaryItem("Records", records.length),
     toSummaryItem("Present", totals.present),
+    toSummaryItem("Regularized", totals.regularized),
     toSummaryItem("Half Day", totals.halfDay),
     toSummaryItem("Absent", totals.absent),
     toSummaryItem("Overtime", totals.overtime),
+    toSummaryItem("Worked Hrs", workedHours),
+    toSummaryItem("Present This Month", totals.present),
+    toSummaryItem("Absent This Month", totals.absent),
+    toSummaryItem("Worked Hrs This Month", workedHours),
   ];
 };
 
@@ -214,8 +226,9 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
     rangeTo = today;
     periodLabel = "Daily";
   } else if (normalizedPeriod === "weekly") {
-    const window = weekWindow(now);
-    rangeFrom = window.from;
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    rangeFrom = dateKey(from);
     rangeTo = today;
     periodLabel = "Weekly";
   } else if (normalizedPeriod === "custom") {
@@ -255,6 +268,7 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
   const logs = await prisma.attendance.findMany({
     where: {
       userId,
+      ...(orgId ? { orgId: Number(orgId) } : {}),
       deletedAt: null,
       date: { gte: rangeFrom, lte: rangeTo },
     },
@@ -285,6 +299,9 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
       { label: "Half Days", value: halfDays },
       { label: "Absent Days", value: absentDays },
       { label: "Worked Hrs", value: Number(workedHours.toFixed(2)) },
+      { label: "Present This Month", value: presentDays },
+      { label: "Absent This Month", value: absentDays },
+      { label: "Worked Hrs This Month", value: Number(workedHours.toFixed(2)) },
     ],
     items: logs.map(log => ({
       id: log.id,
@@ -342,8 +359,9 @@ const buildOrgAttendancePayload = async ({ orgId, period, fromInput, toInput, st
     rangeTo = today;
     periodLabel = "Daily";
   } else if (normalizedPeriod === "weekly") {
-    const window = weekWindow(now);
-    rangeFrom = window.from;
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    rangeFrom = dateKey(from);
     rangeTo = today;
     periodLabel = "Weekly";
   } else if (normalizedPeriod === "custom") {

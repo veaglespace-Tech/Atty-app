@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Loader2, LocateFixed, RefreshCcw, Save, Search, MapPin, X, Download, FileBox, FileText, ChevronDown, LockKeyhole } from "lucide-react";
 import { addNotification } from "@/store/slices/notificationSlice";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
+import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import {
   useGetOrgAttendanceQuery,
@@ -122,6 +123,7 @@ const STATUS_OPTIONS = [
   { value: "ABSENT", label: "Absent" },
   { value: "HALF_DAY", label: "Half Day" },
   { value: "OVERTIME", label: "Overtime" },
+  { value: "REGULARIZED", label: "Regularized" },
 ];
 
 const todayKey = getTodayDateKey;
@@ -549,23 +551,23 @@ export default function OrgAttendancePage() {
   return (
     <section className="space-y-6">
       <div className="light-glow-card-static mobile-compact-panel relative z-20 overflow-visible rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Organization Attendance</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Configure organization geofence and monitor team attendance logs.
             </p>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            <button
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
+            <button title="Refresh"
               type="button"
               onClick={refreshData}
               disabled={loading}
               className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
+              
             </button>
             
             {!isFreePlan ? (
@@ -791,12 +793,17 @@ export default function OrgAttendancePage() {
         />
       ) : null}
 
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
         <MetricCard label="Records" value={summaryMap.get("Records") || 0} />
         <MetricCard label="Present" value={summaryMap.get("Present") || 0} />
+        <MetricCard label="Regularized" value={summaryMap.get("Regularized") || 0} />
         <MetricCard label="Half Day" value={summaryMap.get("Half Day") || 0} />
         <MetricCard label="Absent" value={summaryMap.get("Absent") || 0} />
         <MetricCard label="Overtime" value={summaryMap.get("Overtime") || 0} />
+        <MetricCard
+          label="Worked Hrs"
+          value={formatHoursValue(summaryMap.get("Worked Hrs") ?? 0)}
+        />
       </div>
 
       {canSetWorkspaceLocation || canManageTeamAttendance ? (
@@ -940,9 +947,7 @@ export default function OrgAttendancePage() {
                       <h4 className="truncate text-base font-black text-slate-900">{record.member}</h4>
                       <p className="mt-1 text-xs text-slate-500">{record.date}</p>
                     </div>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                      {record.status}
-                    </span>
+                    <AttendanceStatusBadge status={record.status} />
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -986,9 +991,7 @@ export default function OrgAttendancePage() {
                       <td className="px-3 py-3 text-slate-900 font-bold">{record.member}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-slate-700 font-semibold">{formatRoleLabel(record.role)}</td>
                       <td className="px-3 py-3 text-center">
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                          {record.status}
-                        </span>
+                        <AttendanceStatusBadge status={record.status} />
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-center text-slate-700">
                         {record.punchInAt ? new Date(record.punchInAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "-"}

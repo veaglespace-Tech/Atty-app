@@ -201,8 +201,6 @@ const calculateAttendanceStatus = ({
   endTime = null,
   isPunchOutMissing = false,
 } = {}) => {
-  if (isPunchOutMissing) return "ABSENT";
-
   const workedMinutes = Number(totalMinutesWorked || 0);
   const safeWorkedMinutes = Number.isFinite(workedMinutes) && workedMinutes > 0 ? workedMinutes : 0;
   

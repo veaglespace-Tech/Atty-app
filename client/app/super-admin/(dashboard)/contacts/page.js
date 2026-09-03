@@ -118,13 +118,13 @@ export default function SuperAdminContactsPage() {
           </div>
 
           <div className="flex items-center gap-2 self-start">
-            <button
+            <button title="Refresh"
               onClick={refetch}
               disabled={loading}
               className="brand-btn brand-btn-secondary brand-btn-md h-fit"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-              Refresh
+              
             </button>
             
             {inquiries.length > 0 && (

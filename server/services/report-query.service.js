@@ -19,6 +19,7 @@ const toReportSummary = (items = []) => {
   const totals = items.reduce(
     (acc, item) => {
       acc.presentDays += Number(item.presentDays || 0);
+      acc.regularizedDays += Number(item.regularizedDays || 0);
       acc.halfDays += Number(item.halfDays || 0);
       acc.absentDays += Number(item.absentDays || 0);
       acc.overtimeDays += Number(item.overtimeDays || 0);
@@ -27,6 +28,7 @@ const toReportSummary = (items = []) => {
     },
     {
       presentDays: 0,
+      regularizedDays: 0,
       halfDays: 0,
       absentDays: 0,
       overtimeDays: 0,
@@ -37,6 +39,7 @@ const toReportSummary = (items = []) => {
   return [
     toSummaryItem("Members", items.length),
     toSummaryItem("Present Days", totals.presentDays),
+    toSummaryItem("Regularized Days", totals.regularizedDays),
     toSummaryItem("Half Days", totals.halfDays),
     toSummaryItem("Absent Days", totals.absentDays),
     toSummaryItem("Overtime Days", totals.overtimeDays),
@@ -67,10 +70,7 @@ const buildAttendanceReport = async ({
       id: true,
       name: true,
       role: true,
-<<<<<<< HEAD
       orgId: true,
-=======
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
       department: {
         select: { name: true },
       },
@@ -163,6 +163,7 @@ const buildAttendanceReport = async ({
       permanentAddress: user?.permanentAddress || "-",
       joinedAt: user?.memberships?.[0]?.joinedAt ? new Date(user.memberships[0].joinedAt).toLocaleDateString("en-IN") : user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "-",
       presentDays: 0,
+      regularizedDays: 0,
       halfDays: 0,
       absentDays: 0,
       overtimeDays: 0,
@@ -179,6 +180,7 @@ const buildAttendanceReport = async ({
       member: "Unknown",
       role: "MEMBER",
       presentDays: 0,
+      regularizedDays: 0,
       halfDays: 0,
       absentDays: 0,
       overtimeDays: 0,
@@ -191,12 +193,10 @@ const buildAttendanceReport = async ({
     const workedMinutes = Number(row._sum?.totalMinutesWorked || 0);
 
     if (status === "PRESENT") current.presentDays += count;
+    else if (status === "REGULARIZED") current.regularizedDays += count;
     else if (status === "HALF_DAY") current.halfDays += count;
     else if (status === "ABSENT") current.absentDays += count;
-    else if (status === "OVERTIME") {
-      current.overtimeDays += count;
-      current.presentDays += count;
-    }
+    else if (status === "OVERTIME") current.overtimeDays += count;
 
     if (row.date) {
       current.daily[row.date] = status;
@@ -208,7 +208,7 @@ const buildAttendanceReport = async ({
 
   // --- 6. For members with fewer recorded days than totalDays, fill the rest as absent ---
   for (const entry of reportMap.values()) {
-    const recordedDays = entry.presentDays + entry.halfDays + entry.absentDays;
+    const recordedDays = entry.presentDays + entry.regularizedDays + entry.halfDays + entry.absentDays + entry.overtimeDays;
     if (recordedDays < totalDays) {
       entry.absentDays += (totalDays - recordedDays);
     }

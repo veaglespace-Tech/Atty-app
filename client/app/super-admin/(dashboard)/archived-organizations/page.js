@@ -91,14 +91,14 @@ export default function ArchivedOrganizationsPage() {
           <ArrowLeft size={14} /> Back to Organizations
         </button>
 
-        <button
+        <button title="Refresh"
           type="button"
           onClick={refetch}
           disabled={loading}
           className="brand-btn brand-btn-secondary brand-btn-sm"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
-          Refresh
+          
         </button>
       </div>
 

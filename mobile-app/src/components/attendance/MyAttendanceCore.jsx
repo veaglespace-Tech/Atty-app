@@ -136,13 +136,18 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
   const [reachedHomeMutation] = useReachedHomeMutation();
 
   const records = useMemo(() => Array.isArray(attendanceData?.items) ? attendanceData.items : [], [attendanceData]);
-  const summary = useMemo(() => Array.isArray(dashboardData?.summary) ? dashboardData.summary : [], [dashboardData]);
+  const summary = useMemo(() => Array.isArray(attendanceData?.summary) ? attendanceData.summary : (Array.isArray(dashboardData?.summary) ? dashboardData.summary : []), [attendanceData, dashboardData]);
 
   const loading = dashboardLoading || dashboardFetching || attendanceLoading || attendanceFetching;
   const summaryMap = useMemo(() => toSummaryMap(summary), [summary]);
 
   const serverTodayKey = attendanceData?.meta?.today || todayKey();
-  const todayRecord = useMemo(() => records.find((record) => String(record.date).startsWith(serverTodayKey)) || null, [records, serverTodayKey]);
+  const recentRecords = useMemo(() => Array.isArray(dashboardData?.items) ? dashboardData.items : [], [dashboardData]);
+  const todayRecord = useMemo(() => {
+    return records.find((record) => String(record.date).startsWith(serverTodayKey)) 
+      || recentRecords.find((record) => String(record.date).startsWith(serverTodayKey)) 
+      || null;
+  }, [records, recentRecords, serverTodayKey]);
   const todayStatusValue = summaryMap.get("Today Status") || todayRecord?.status || "No Record";
 
   const {
@@ -283,7 +288,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
           <Pressable
             onPress={() => setPendingPunchType("in")}
             disabled={!canPunchIn || actionLoading !== "" || loading}
-            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-98 ${
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-95 ${
               !canPunchIn || loading
                 ? "bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50"
                 : "bg-blue-600 shadow-md shadow-blue-600/25"
@@ -307,7 +312,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
           <Pressable
             onPress={() => setPendingPunchType("out")}
             disabled={!canPunchOut || actionLoading !== "" || loading}
-            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-98 ${
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-95 ${
               !canPunchOut || loading
                 ? "bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50"
                 : "bg-slate-800 dark:bg-slate-700 border border-slate-700 dark:border-slate-600 shadow-sm"
@@ -331,7 +336,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
           <Pressable
             onPress={submitReachedHome}
             disabled={!canReachHome || actionLoading !== "" || loading}
-            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-98 ${
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-2xl active:scale-95 ${
               !canReachHome || loading
                 ? "bg-slate-100 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50"
                 : "bg-blue-500 shadow-md shadow-blue-500/25"
@@ -356,7 +361,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
             <Pressable
               onPress={() => setIsRegularizeModalOpen(true)}
               disabled={loading || isSubmittingRegularization}
-              className="w-full flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 active:scale-98 shadow-sm"
+              className="w-full flex-row items-center justify-center py-3.5 rounded-2xl bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 active:scale-95 shadow-sm"
             >
               <FileWarning size={16} color="#f59e0b" style={{ marginRight: 8 }} />
               <Text className="font-bold text-sm text-white dark:text-slate-100">
@@ -385,28 +390,36 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
       )}
 
       {showStats && (
-      <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
-        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Today</Text>
-          <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1} adjustsFontSizeToFit>{todayStatusValue}</Text>
+        <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Records</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Records") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Present</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Present") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Regularized</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Regularized") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Half Day</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Half Day") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Absent</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Absent") || 0}</Text>
+          </View>
+          <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Overtime</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Overtime") || 0}</Text>
+          </View>
+          <View className="w-full bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
+            <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Worked Hrs</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white" numberOfLines={1} adjustsFontSizeToFit>{formatHoursValue(summaryMap.get("Worked Hrs") || 0)}</Text>
+          </View>
         </View>
-        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Reached</Text>
-          <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1} adjustsFontSizeToFit>{formatDateTime(todayRecord?.reachedHomeAt)}</Text>
-        </View>
-        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Present (M)</Text>
-          <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Present This Month") || 0}</Text>
-        </View>
-        <View className="w-[48%] bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-col justify-between shadow-sm">
-          <Text className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mb-2" numberOfLines={1} adjustsFontSizeToFit>Absent (M)</Text>
-          <Text className="text-2xl font-black text-slate-900 dark:text-white">{summaryMap.get("Absent This Month") || 0}</Text>
-        </View>
-        <View className="w-full bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
-          <Text className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">Worked Hrs This Month</Text>
-          <Text className="text-2xl font-black text-slate-900 dark:text-white">{formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}</Text>
-        </View>
-      </View>
       )}
 
       <View className="mb-4">

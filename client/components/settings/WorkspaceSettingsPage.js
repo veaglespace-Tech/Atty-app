@@ -43,7 +43,7 @@ import {
   resolveUserPermissions,
   ROLES,
 } from "@/utils/roles";
-import { getLocalPhoneNumber } from "@/utils/phone";
+import { getLocalPhoneNumber, COUNTRY_PHONE_OPTIONS } from "@/utils/phone";
 import { cn } from "@/lib/utils";
 import {
   useGetOrgAttendanceSettingsQuery,
@@ -151,10 +151,19 @@ const getFormDefaults = (user) => {
   let defaultEmergencyContact = user?.emergencyContact || "";
 
   if (defaultEmergencyContact.startsWith("+")) {
-    const match = defaultEmergencyContact.match(/^(\+\d{1,3})(\d+)$/);
-    if (match) {
-      defaultEmergencyCountryCode = match[1];
-      defaultEmergencyContact = match[2];
+    const sortedOptions = [...COUNTRY_PHONE_OPTIONS].sort((a, b) => b.code.length - a.code.length);
+    const matchedOption = sortedOptions.find(opt => defaultEmergencyContact.startsWith(opt.code));
+    
+    if (matchedOption) {
+      defaultEmergencyCountryCode = matchedOption.code;
+      defaultEmergencyContact = defaultEmergencyContact.slice(matchedOption.code.length);
+    } else {
+      const match = defaultEmergencyContact.match(/^(\+\d{1,3})(\d+)$/);
+      if (match) {
+        // Fallback for unsupported country codes
+        defaultEmergencyCountryCode = match[1];
+        defaultEmergencyContact = match[2];
+      }
     }
   }
 
@@ -1552,23 +1561,22 @@ export default function WorkspaceSettingsPage() {
                   <input type="hidden" {...register("mobileCountryCode")} />
                   <input type="hidden" {...register("mobile")} />
                 </div>
-                {!canSkipEmergencyContact && (
-                  <div className="md:col-span-2">
-                    <CountryPhoneField
-                      label="Emergency Contact"
-                      countryCode={formValues.emergencyCountryCode || ""}
-                      phone={formValues.emergencyContact || ""}
-                      onCountryCodeChange={(e) => setValue("emergencyCountryCode", e.target.value, { shouldValidate: true, shouldDirty: true })}
-                      onPhoneChange={(e) => setValue("emergencyContact", e.target.value.replace(/[^\d]/g, ""), { shouldValidate: true, shouldDirty: true })}
-                      countryCodeError={errors.emergencyCountryCode?.message}
-                      phoneError={errors.emergencyContact?.message}
-                      helpText=""
-                      labelClassName={labelClassName}
-                    />
-                    <input type="hidden" {...register("emergencyCountryCode")} />
-                    <input type="hidden" {...register("emergencyContact")} />
-                  </div>
-                )}
+                <div className="md:col-span-2">
+                  <CountryPhoneField
+                    label="Emergency Contact"
+                    required={!canSkipEmergencyContact}
+                    countryCode={formValues.emergencyCountryCode || ""}
+                    phone={formValues.emergencyContact || ""}
+                    onCountryCodeChange={(e) => setValue("emergencyCountryCode", e.target.value, { shouldValidate: true, shouldDirty: true })}
+                    onPhoneChange={(e) => setValue("emergencyContact", e.target.value.replace(/[^\d]/g, ""), { shouldValidate: true, shouldDirty: true })}
+                    countryCodeError={errors.emergencyCountryCode?.message}
+                    phoneError={errors.emergencyContact?.message}
+                    helpText=""
+                    labelClassName={labelClassName}
+                  />
+                  <input type="hidden" {...register("emergencyCountryCode")} />
+                  <input type="hidden" {...register("emergencyContact")} />
+                </div>
               </div>
             </div>
 
@@ -1660,9 +1668,9 @@ export default function WorkspaceSettingsPage() {
             {/* Referral Link */}
             {!isSuperAdmin && referralCode && (
               <div className="light-glow-card-static rounded-[1.75rem] p-6 lg:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
+                <div className="min-w-0 w-full">
                   <h3 className="text-base font-semibold tracking-[-0.02em] text-slate-900 dark:text-white">Referral Link</h3>
-                  <p className="text-sm text-slate-500 mt-1 truncate max-w-sm">{referralLinkUrl || referralCode}</p>
+                  <p className="text-sm text-slate-500 mt-1 truncate w-full">{referralLinkUrl || referralCode}</p>
                 </div>
                 <button
                   type="button"
@@ -1681,30 +1689,7 @@ export default function WorkspaceSettingsPage() {
           </div>
         )}
 
-        {/* Sticky Save Bar */}
-        {(activeTab === "personal" || activeTab === "contact") && (
-          <div
-            className={cn(
-              "fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[0_18px_40px_rgba(30,112,209,0.15)] border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-6 transition-all duration-500",
-              canSubmit ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
-            )}
-          >
-            <div className="hidden sm:block min-w-[200px]">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">Unsaved Changes</p>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Please save your profile updates.</p>
-            </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button type="button" onClick={resetForm} disabled={isSaving} className="brand-btn brand-btn-secondary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
-                Cancel
-              </button>
-              <button type="submit" disabled={isSaving} className="brand-btn brand-btn-primary brand-btn-md flex-1 sm:flex-none justify-center px-4 sm:px-6">
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
-                <span className="hidden sm:inline">Save Changes</span>
-                <span className="sm:hidden">Save</span>
-              </button>
-            </div>
-          </div>
-        )}
+
       </form>
 
       {/* Organization Settings */}

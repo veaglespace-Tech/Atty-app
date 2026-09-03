@@ -121,6 +121,7 @@ const attendanceTeamSelect = {
 
 const attendanceRecordSelect = {
   id: true,
+  orgId: true,
   userId: true,
   teamId: true,
   date: true,

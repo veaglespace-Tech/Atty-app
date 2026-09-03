@@ -52,9 +52,8 @@ exports.raiseClaim = async (req, res, next) => {
       receiptPublicId = uploadResult.publicId;
     }
 
-    const claimNo = `CLM-${Date.now()}`;
+      const claimNo = `CLM-${Date.now()}`;
 
-<<<<<<< HEAD
       const claim = await prisma.expenseClaim.create({
         data: {
           orgId: parseInt(orgId),
@@ -68,21 +67,6 @@ exports.raiseClaim = async (req, res, next) => {
           status: "PENDING",
         },
       });
-=======
-    const claim = await prisma.expenseClaim.create({
-      data: {
-        orgId: parseInt(orgId),
-        userId: parseInt(userId),
-        claimNo,
-        expenseType,
-        description,
-        amount: parseFloat(amount),
-        receiptUrl,
-        receiptPublicId,
-        status: "PENDING",
-      },
-    });
->>>>>>> a01164d8eae9ad547aa5f4852667e6e0c5bc20f1
 
     res.status(201).json({
       success: true,

@@ -252,7 +252,7 @@ export default function SuperAdminAccessPage() {
         ) : null}
 
         {/* Tabs */}
-        <div className="relative mt-8 flex border-b border-slate-200 dark:border-slate-800">
+        <div className="relative mt-8 flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 no-scrollbar">
           <TabButton
             active={activeTab === "PERMISSIONS"}
             onClick={() => setActiveTab("PERMISSIONS")}
@@ -487,7 +487,7 @@ function TabButton({ active, onClick, icon, label }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-4 text-sm font-black transition-all ${active
+      className={`flex whitespace-nowrap shrink-0 items-center gap-2 px-6 py-4 text-sm font-black transition-all ${active
         ? "border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400"
         : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
         }`}

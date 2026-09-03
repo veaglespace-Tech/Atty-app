@@ -57,10 +57,12 @@ const assertWithinPlanUserLimit = async ({ orgId, res, additionalUsers = 1 }) =>
         memberships: {
           some: {
             orgId: Number(orgId),
+            isActive: true,
           },
         },
         deletedAt: null,
         status: "APPROVED",
+        isActive: true,
       },
     });
 

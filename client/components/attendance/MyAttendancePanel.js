@@ -22,6 +22,7 @@ import {
 } from "@/services/api/attendanceApi";
 import dynamic from "next/dynamic";
 import RegularizationModal from "@/components/attendance/RegularizationModal";
+import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 
 const AttendanceFaceCaptureModal = dynamic(
   () => import("@/components/attendance/AttendanceFaceCaptureModal"),
@@ -218,7 +219,7 @@ export default function MyAttendancePanel({
   return (
     <section className="space-y-4">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="mobile-compact-title text-2xl font-black text-slate-900">{title}</h2>
@@ -229,14 +230,14 @@ export default function MyAttendancePanel({
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">{description}</p>
           </div>
 
-          <button
+          <button title="Refresh"
             type="button"
             onClick={refreshPanel}
             disabled={loading}
             className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
+            
           </button>
         </div>
 
@@ -328,17 +329,17 @@ export default function MyAttendancePanel({
         />
         <MetricCard
           label="Present This Month"
-          value={summaryMap.get("Present This Month") || 0}
+          value={summaryMap.get("Present") ?? 0}
           icon={<CheckCircle2 size={16} />}
         />
         <MetricCard
           label="Absent This Month"
-          value={summaryMap.get("Absent This Month") || 0}
+          value={summaryMap.get("Absent") ?? 0}
           icon={<XCircle size={16} />}
         />
         <MetricCard
           label="Worked Hrs"
-          value={formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}
+          value={formatHoursValue(summaryMap.get("Worked Hrs") ?? data?.workedHours ?? 0)}
           icon={<Timer size={16} />}
         />
       </div>
@@ -364,7 +365,7 @@ export default function MyAttendancePanel({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h4 className="truncate text-base font-black text-slate-900">{record.date}</h4>
-                      <p className="mt-1 text-xs text-slate-500">{record.status}</p>
+                      <div className="mt-1"><AttendanceStatusBadge status={record.status} /></div>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                       {record.punchInValid === false || record.punchOutValid === false ? "Geo No" : "Geo Yes"}
@@ -411,7 +412,7 @@ export default function MyAttendancePanel({
                   {recentRecords.map((record) => (
                     <tr key={record.id}>
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
+                      <td className="px-3 py-2 text-slate-700"><AttendanceStatusBadge status={record.status} /></td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       {currentRole !== "ORG_ADMIN" && (

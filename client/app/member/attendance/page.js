@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle, Filter, FileWarning } from "lucide-react";
+import { CheckCircle2, Loader2, MapPinned, RefreshCcw, Timer, UserCheck, XCircle, Filter, FileWarning, FileText } from "lucide-react";
 import dynamic from "next/dynamic";
 import RegularizationModal from "@/components/attendance/RegularizationModal";
 
@@ -11,6 +11,7 @@ const AttendanceFaceCaptureModal = dynamic(
   { ssr: false }
 );
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
+import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import DownloadMenuButton from "@/components/saas/DownloadMenuButton";
 import useLocalPagination from "@/hooks/useLocalPagination";
@@ -22,7 +23,7 @@ import {
 } from "@/services/api/memberApi";
 import { usePunchInMutation, usePunchOutMutation, useReachedHomeMutation, useRequestRegularizationMutation } from "@/services/api/attendanceApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange } from "@/utils/date";
+import { getDateKey, getTodayDateKey } from "@/utils/date";
 import { getCurrentCoordinates } from "@/utils/location";
 import { formatHoursValue } from "@/utils/time";
 import { addNotification } from "@/store/slices/notificationSlice";
@@ -89,12 +90,14 @@ export default function MemberAttendancePage() {
       return { from: dateStr, to: dateStr, limit: 100 };
     }
     if (filterType === "WEEKLY") {
-      const { from, to } = getWeekRange(today);
-      return { from, to, limit: 100 };
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 6);
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
     }
     if (filterType === "MONTHLY") {
-      const { from, to } = getMonthRange(today);
-      return { from, to, limit: 100 };
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 29);
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
     }
     if (filterType === "CUSTOM") {
       return { from: customRange.from || undefined, to: customRange.to || undefined, limit: 100 };
@@ -126,8 +129,8 @@ export default function MemberAttendancePage() {
     [attendanceData]
   );
   const summary = useMemo(
-    () => (Array.isArray(dashboardData?.summary) ? dashboardData.summary : []),
-    [dashboardData]
+    () => (Array.isArray(attendanceData?.summary) ? attendanceData.summary : []),
+    [attendanceData]
   );
   const loading = dashboardLoading || dashboardFetching || attendanceLoading || attendanceFetching;
 
@@ -305,22 +308,22 @@ export default function MemberAttendancePage() {
   return (
     <section className="space-y-6 pb-24">
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Member Attendance</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Punch in/out with device location or manual coordinates, and track your attendance history.
             </p>
           </div>
 
-          <button
+          <button title="Refresh"
             type="button"
             onClick={fetchAttendance}
             disabled={loading}
             className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
+            
           </button>
         </div>
 
@@ -387,27 +390,41 @@ export default function MemberAttendancePage() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
         <MetricCard
-          label="Today Status"
-          value={todayStatusValue}
-          valueClassName={todayStatusValue === "No Record" ? "text-xl" : undefined}
-          icon={<UserCheck size={16} />}
+          label="Records"
+          value={summaryMap.get("Records") || 0}
+          icon={<FileText size={16} />}
         />
         <MetricCard
-          label="Present This Month"
-          value={summaryMap.get("Present This Month") || 0}
+          label="Present"
+          value={summaryMap.get("Present") || 0}
           icon={<CheckCircle2 size={16} />}
         />
         <MetricCard
-          label="Absent This Month"
-          value={summaryMap.get("Absent This Month") || 0}
+          label="Regularized"
+          value={summaryMap.get("Regularized") || 0}
+          icon={<CheckCircle2 size={16} />}
+        />
+        <MetricCard
+          label="Half Day"
+          value={summaryMap.get("Half Day") || 0}
+          icon={<Timer size={16} />}
+        />
+        <MetricCard
+          label="Absent"
+          value={summaryMap.get("Absent") || 0}
           icon={<XCircle size={16} />}
         />
         <MetricCard
-          label="Worked Hrs"
-          value={formatHoursValue(summaryMap.get("Worked Hrs This Month") || 0)}
+          label="Overtime"
+          value={summaryMap.get("Overtime") || 0}
           icon={<Timer size={16} />}
+        />
+        <MetricCard
+          label="Worked Hrs"
+          value={formatHoursValue(summaryMap.get("Worked Hrs") ?? attendanceData?.workedHours ?? 0)}
+          icon={<UserCheck size={16} />}
         />
       </div>
 
@@ -488,7 +505,7 @@ export default function MemberAttendancePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h4 className="truncate text-base font-black text-slate-900">{record.date}</h4>
-                      <p className="mt-1 text-xs text-slate-500">{record.status}</p>
+                      <div className="mt-1"><AttendanceStatusBadge status={record.status} /></div>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                       {record.punchInValid === false || record.punchOutValid === false ? "Geo No" : "Geo Yes"}
@@ -535,7 +552,7 @@ export default function MemberAttendancePage() {
                   {paginatedRecords.map((record) => (
                     <tr key={record.id}>
                       <td className="px-3 py-2 text-slate-700">{record.date}</td>
-                      <td className="px-3 py-2 text-slate-700">{record.status}</td>
+                      <td className="px-3 py-2 text-slate-700"><AttendanceStatusBadge status={record.status} /></td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchInAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatDateTime(record.punchOutAt)}</td>
                       <td className="px-3 py-2 text-slate-700">{formatPunchLocation(record)}</td>
