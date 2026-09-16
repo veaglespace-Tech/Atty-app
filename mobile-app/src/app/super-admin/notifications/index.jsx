@@ -83,9 +83,7 @@ export default function NotificationsPage() {
         <View className="mb-6 flex-row items-start justify-between">
           <View className="flex-1 pr-4">
             <View className="self-start bg-blue-500/10 px-3 py-1 rounded-full mb-3 border border-blue-500/20 flex-row items-center">
-              <Pressable onPress={() => router.canGoBack() ? router.back() : router.push("/super-admin/dashboard")} className="mr-1 py-1">
-                <ChevronLeft size={12} className="text-blue-500" />
-              </Pressable>
+              {/* Back button removed */}
               <Text className="text-[10px] font-black uppercase tracking-widest text-blue-400">Notifications</Text>
             </View>
             <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Notifications Feed</Text>

@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, Loader2, Plus, RefreshCcw, Search, UserPlus } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, FileBox, FileText, Loader2, Plus, RefreshCcw, Search, UserPlus } from "lucide-react";
 import PaginationControls from "@/components/dashboard/PaginationControls";
 import CountryPhoneField from "@/components/CountryPhoneField";
 import PasswordInput from "@/components/PasswordInput";
 import useLocalPagination from "@/hooks/useLocalPagination";
-import { useGetTeamLeaderUsersQuery } from "@/services/api/teamLeaderApi";
+import { 
+  useGetTeamLeaderUsersQuery,
+  useDownloadTeamLeaderUsersPdfMutation,
+  useDownloadTeamLeaderUsersExcelMutation,
+} from "@/services/api/teamLeaderApi";
 import { useCreateOrgUserMutation } from "@/services/api/orgApi";
 import { useGetRolesQuery } from "@/services/api/roleApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
@@ -58,14 +62,64 @@ export default function TeamLeaderUsersPage() {
   });
 
   const { data: rolesData } = useGetRolesQuery();
+  const [createUserMutation] = useCreateOrgUserMutation();
+
+  const [downloadUsersPdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderUsersPdfMutation();
+  const [downloadUsersExcel, { isLoading: downloadingExcel }] = useDownloadTeamLeaderUsersExcelMutation();
+
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onDownloadPdf = async () => {
+    try {
+      const blob = await downloadUsersPdf().unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-members-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download PDF"));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      const blob = await downloadUsersExcel().unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-members-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download Excel"));
+    }
+  };
+
   const {
     data: usersData,
     isLoading,
     isFetching,
     refetch,
   } = useGetTeamLeaderUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS);
-
-  const [createUserMutation] = useCreateOrgUserMutation();
 
   const actorRole = normalizeRole(authUser?.currentRole);
   const allRoles = useMemo(() => rolesData?.data || [], [rolesData]);
@@ -198,7 +252,7 @@ export default function TeamLeaderUsersPage() {
 
   return (
     <section className="space-y-6">
-      <div className={sectionCardClassName}>
+      <div className={`${sectionCardClassName} !overflow-visible`}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-[280px] flex-1">
             <h2 className="mobile-compact-title text-2xl font-black text-slate-900 dark:text-white">My Team Members</h2>
@@ -239,6 +293,42 @@ export default function TeamLeaderUsersPage() {
               {isLoading || isFetching ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               
             </button>
+
+            <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                disabled={isLoading || isFetching || downloadingPdf || downloadingExcel}
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+              >
+                {(downloadingPdf || downloadingExcel) ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export
+                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showDownloadMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl z-50">
+                  <button
+                    onClick={onDownloadPdf}
+                    className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400"
+                  >
+                    <FileBox size={16} />
+                    Download PDF
+                  </button>
+                  <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                  <button
+                    onClick={onDownloadExcel}
+                    className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  >
+                    <FileText size={16} />
+                    Download Excel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

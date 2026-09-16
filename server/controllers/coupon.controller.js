@@ -69,12 +69,12 @@ exports.getAdminCoupons = async (req, res) => {
   }
 };
 
-// Get assignable users (SUB_ADMIN, TEAM_LEADER)
+// Get assignable users (SUB_ADMIN, TEAM_LEADER, SUB_TEAM_LEADER)
 exports.getAssignableUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
       where: {
-        role: { in: ['ORG_ADMIN', 'SUB_ADMIN', 'TEAM_LEADER'] },
+        role: { in: ['ORG_ADMIN', 'SUB_ADMIN', 'TEAM_LEADER', 'SUB_TEAM_LEADER'] },
         isActive: true,
         deletedAt: null
       },

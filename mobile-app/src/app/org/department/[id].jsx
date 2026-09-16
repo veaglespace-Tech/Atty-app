@@ -135,7 +135,7 @@ export default function OrgDepartmentDetailPage() {
   if (!department) {
     return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950 p-5">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-4"><ArrowLeft size={18} color="#64748b" /><Text className="text-sm font-bold text-slate-600">Back</Text></Pressable>
+        {/* Back button removed */}
         <View className="p-5 rounded-2xl bg-amber-50 border border-amber-200"><Text className="text-sm font-semibold text-amber-700">Department not found.</Text></View>
       </View>
     );
@@ -144,7 +144,7 @@ export default function OrgDepartmentDetailPage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-3"><ArrowLeft size={18} color="#64748b" /><Text className="text-sm font-bold text-slate-600 dark:text-slate-400">Back</Text></Pressable>
+        {/* Back button removed */}
         <Text className="text-xl font-black text-slate-900 dark:text-white">{department.name}</Text>
         <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{department.description || "No description"}</Text>
       </View>

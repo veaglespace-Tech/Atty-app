@@ -20,31 +20,31 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Notifications</Text>
-          <View className="w-10 items-end">
-            {unreadCount > 0 && (
-              <Pressable 
-                onPress={() => markAllAsRead()} 
-                className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30"
-              >
-                <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400" />
-              </Pressable>
-            )}
-          </View>
-        </View>
-      </View>
-
+    <View className="flex-1 bg-[#F8FAFC] dark:bg-[#020617]">
       <ScrollView 
         className="flex-1" 
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
       >
+        <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] z-10">
+          <View className="w-full max-w-5xl mx-auto">
+            <View className="flex-row items-center justify-between mt-2 mb-2">
+              <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Notifications</Text>
+              <View className="flex-row items-center gap-1.5">
+                {unreadCount > 0 && (
+                  <Pressable 
+                    onPress={() => markAllAsRead()} 
+                    className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:scale-95 border border-slate-200 dark:border-slate-700"
+                  >
+                    <CheckCircle2 size={18} className="text-slate-700 dark:text-slate-300" />
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View className="p-4 w-full max-w-5xl mx-auto">
         {isLoading && notifications.length === 0 ? (
           <View className="flex-1 items-center justify-center py-20">
             <ActivityIndicator size="large" color="#2563eb" />
@@ -120,6 +120,7 @@ export default function NotificationsPage() {
             })}
           </View>
         )}
+        </View>
       </ScrollView>
     </View>
   );

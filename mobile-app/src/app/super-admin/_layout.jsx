@@ -91,6 +91,8 @@ export default function SuperAdminLayout() {
         <Tabs.Screen name="referrals" options={{ href: null }} />
         <Tabs.Screen name="referrals/[id]" options={{ href: null }} />
         <Tabs.Screen name="roles" options={{ href: null }} />
+        <Tabs.Screen name="teams" options={{ href: null }} />
+        <Tabs.Screen name="teams/[teamId]" options={{ href: null }} />
         <Tabs.Screen name="users/[id]" options={{ href: null }} />
       </Tabs>
     </MobileDashboardShell>

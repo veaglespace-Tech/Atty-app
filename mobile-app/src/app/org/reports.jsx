@@ -6,23 +6,57 @@ import { ChevronLeft, FileBarChart, FileText, Download, FileBox, FileArchive, Se
 import { useGetOrgReportsQuery, useGetOrgAttendanceQuery, useDownloadOrgReportPdfMutation, useDownloadOrgReportExcelMutation } from "@/services/api/orgApi";
 import { formatHoursValue } from "@/utils/time";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange, getYearRange, getAllTimeRange } from "@/utils/date";
 
-const PERIODS = [
+const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+  { value: "all", label: "All Time" },
   { value: "custom", label: "Custom" },
 ];
 
 export default function OrgReportsPage() {
   const [period, setPeriod] = useState("monthly");
   
-  const [customFrom, setCustomFrom] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0];
+  const [customRange, setCustomRange] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30); return { from: getDateKey(d), to: getTodayDateKey() };
   });
-  const [customTo, setCustomTo] = useState(() => new Date().toISOString().split('T')[0]);
 
-  const queryString = period === "custom" ? `period=custom&from=${customFrom}&to=${customTo}` : `period=${period}`;
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams({ period });
+    
+    const today = new Date();
+    let fromDateStr = getTodayDateKey();
+    let toDateStr = getTodayDateKey();
+
+    if (period === "weekly") {
+      const range = getWeekRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "monthly") {
+      const range = getMonthRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "yearly") {
+      const range = getYearRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "all") {
+      const range = getAllTimeRange();
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "custom") {
+      fromDateStr = customRange.from;
+      toDateStr = customRange.to;
+    }
+    
+    if (fromDateStr) params.set("from", fromDateStr);
+    if (toDateStr) params.set("to", toDateStr);
+
+    return params.toString();
+  }, [period, customRange]);
 
   const { data, isLoading, isFetching, refetch } = useGetOrgReportsQuery(queryString);
   const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadOrgReportPdfMutation();
@@ -161,8 +195,8 @@ export default function OrgReportsPage() {
           showsHorizontalScrollIndicator={false}
           className="mt-5 -mx-5 px-5"
           contentContainerStyle={{ gap: 8, paddingRight: 40 }}>
-          {PERIODS.map((p) => {
-            const isActive = p.value === period;
+          {PERIOD_OPTIONS.map((p) => {
+            const isActive = period === p.value;
             return (
               <Pressable
                 key={p.value}
@@ -185,12 +219,12 @@ export default function OrgReportsPage() {
         {period === "custom" && (
           <View className="mt-4 flex-row gap-4">
              <View className="flex-1">
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">From</Text>
-                <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="YYYY-MM-DD" className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
-             </View>
-             <View className="flex-1">
-                <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">To</Text>
-                <TextInput value={customTo} onChangeText={setCustomTo} placeholder="YYYY-MM-DD" className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">From</Text>
+                  <TextInput value={customRange.from} onChangeText={v => setCustomRange(p => ({ ...p, from: v }))} placeholder="YYYY-MM-DD" className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
+               </View>
+               <View className="flex-1">
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">To</Text>
+                  <TextInput value={customRange.to} onChangeText={v => setCustomRange(p => ({ ...p, to: v }))} placeholder="YYYY-MM-DD" className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white" />
              </View>
           </View>
         )}

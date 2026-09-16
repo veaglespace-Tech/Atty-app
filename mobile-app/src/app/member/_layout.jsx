@@ -70,10 +70,11 @@ export default function MemberLayout() {
         <Tabs.Screen
           name="teams"
           options={{
-            title: "Teams",
+            title: "My Teams",
             tabBarIcon: ({ color }) => <Users size={24} color={color} />,
           }}
         />
+        <Tabs.Screen name="teams/[teamId]" options={{ href: null }} />
         <Tabs.Screen
           name="settings"
           options={{

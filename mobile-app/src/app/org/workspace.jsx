@@ -205,23 +205,17 @@ function TimeSettings() {
 export default function OrgWorkspacePage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition-colors">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Workspace</Text>
-          <View className="w-10" />
-        </View>
-      </View>
       
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}>
         
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
-          <Text className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 ml-1">Configurations</Text>
-          <Text className="text-3xl font-black text-slate-900 dark:text-white mb-6 tracking-tight ml-1">Attendance Settings</Text>
+          <View className="mb-6 pt-4">
+            <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white mb-2">Workspace</Text>
+            <Text className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 ml-1">Configurations</Text>
+            <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight ml-1">Attendance Settings</Text>
+          </View>
           
           <LocationSettings />
           <TimeSettings />

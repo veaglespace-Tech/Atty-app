@@ -45,6 +45,7 @@ const enforceAbac = (resourceType) => {
           deletedAt: null,
           OR: [
             { leaderId: userId },
+            { subLeaderId: userId },
             { createdById: userId },
             {
               members: {
@@ -53,7 +54,7 @@ const enforceAbac = (resourceType) => {
             },
           ],
         },
-        select: { id: true, leaderId: true, createdById: true },
+        select: { id: true, leaderId: true, subLeaderId: true, createdById: true },
       });
 
       if (!team) {
@@ -65,9 +66,13 @@ const enforceAbac = (resourceType) => {
       // e.g., Members can't modify the team. Only leader/creator can.
       const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
       if (isMutation) {
-        if (Number(team.leaderId) !== userId && Number(team.createdById) !== userId) {
+        if (
+          Number(team.leaderId) !== userId &&
+          Number(team.subLeaderId) !== userId &&
+          Number(team.createdById) !== userId
+        ) {
           res.status(403);
-          throw new Error("You can only modify teams assigned to you as a leader");
+          throw new Error("You can only modify teams assigned to you as a leader or sub-leader");
         }
       }
 

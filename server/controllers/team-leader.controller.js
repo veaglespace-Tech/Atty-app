@@ -15,6 +15,7 @@ const {
   truncateText,
   formatHoursValue,
   formatReportLocation,
+  toPdfTime,
 } = require("../services/common.service");
 const { assertPermission, assertRoleScope } = require("../services/access.service");
 const { normalizeCoordinatesInput } = require("../services/location.service");
@@ -39,7 +40,8 @@ const {
   organizationSubscriptionSelect,
 } = require("../services/prisma-selects.service");
 const { assertWithinPlanTeamLimit, isFreePlan } = require("../services/organization-plan.service");
-const { buildAttendanceDetailedPdf } = require("../utils/pdf-report");
+const { buildAttendanceDetailedPdf, buildGenericTablePdf } = require("../utils/pdf-report");
+const { buildExportWorkbookBuffer } = require("../utils/excel-report");
 const xlsx = require("xlsx");
 
 const MODULES = [
@@ -86,13 +88,6 @@ const getAccessibleTeams = async ({ orgId, userId, role }) => {
       OR: [
         { leaderId: userId },
         { createdById: userId },
-        {
-          members: {
-            some: {
-              userId,
-            },
-          },
-        },
       ],
     },
     select: {
@@ -131,6 +126,7 @@ const getTeamPatchPermissionState = (req, orgId) => {
   const canUpdateTeam = hasPermission(req.user, PERMISSIONS.TEAM.UPDATE, orgId);
   const canManageAttendance = hasPermission(req.user, PERMISSIONS.ATTENDANCE.MANAGE, orgId);
   const canSetLocation = hasPermission(req.user, PERMISSIONS.LOCATION.MANAGE, orgId);
+  const canAssignMembers = hasPermission(req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId);
 
   return {
     canUpdateTeam,
@@ -140,9 +136,15 @@ const getTeamPatchPermissionState = (req, orgId) => {
       !canUpdateTeam &&
       (canManageAttendance || canSetLocation) &&
       hasAttendanceFields &&
-      !hasBasicTeamFields &&
       !hasMemberIds &&
-      !hasLeaderId,
+      !hasLeaderId &&
+      !Object.prototype.hasOwnProperty.call(body, "subLeaderId"),
+    canPatchAssignmentOnly:
+      !canUpdateTeam &&
+      canAssignMembers &&
+      (hasMemberIds || hasLeaderId || Object.prototype.hasOwnProperty.call(body, "subLeaderId")) &&
+      !hasBasicTeamFields &&
+      !hasAttendanceFields,
   };
 };
 
@@ -152,6 +154,7 @@ const validateTeamAssignmentInputs = async ({
   orgId,
   memberIds,
   leaderId,
+  subLeaderId,
 }) => {
   if (leaderId) {
     const leader = await prisma.user.findFirst({
@@ -180,8 +183,25 @@ const validateTeamAssignmentInputs = async ({
       res.status(404);
       throw new Error("Leader not found in organization");
     }
-    if (Number(leader.id) !== Number(req.user.id)) {
-      assertRoleScope(res, req.user, resolveUserRole(leader, orgId), orgId);
+  }
+
+  if (subLeaderId) {
+    const subLeader = await prisma.user.findFirst({
+      where: {
+        id: subLeaderId,
+        deletedAt: null,
+        memberships: {
+          some: {
+            orgId,
+            isActive: true,
+          },
+        },
+      },
+      select: { id: true },
+    });
+    if (!subLeader) {
+      res.status(404);
+      throw new Error("Sub-Leader not found in organization");
     }
   }
 
@@ -212,9 +232,6 @@ const validateTeamAssignmentInputs = async ({
       res.status(400);
       throw new Error("Some members are not valid organization users");
     }
-    users.forEach((user) =>
-      assertRoleScope(res, req.user, resolveUserRole(user, orgId), orgId)
-    );
   }
 };
 
@@ -324,7 +341,7 @@ exports.getTeamLeaderDashboard = asyncHandler(async (req, res) => {
 
 exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
-  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_OWN, orgId);
+
   const limit = parseLimit(req.query.limit, 300, 2000);
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
@@ -369,7 +386,7 @@ exports.getTeamLeaderTeams = asyncHandler(async (req, res) => {
 exports.getTeamLeaderTeamById = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   const teamId = Number(req.params.teamId);
-  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_OWN, orgId);
+
 
   const accessibleTeamIds = await getAccessibleTeamIds({
     orgId,
@@ -452,7 +469,7 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
 
   const items = users
     .map((user) => mapUserForManagement(user, orgId))
-    .filter((user) => user.role !== "SUPER_ADMIN" && user.role !== "ORG_ADMIN");
+    .filter((user) => user.role !== "SUPER_ADMIN");
 
 
   res.status(200).json({
@@ -467,6 +484,151 @@ exports.getTeamLeaderUsers = asyncHandler(async (req, res) => {
       limit,
     },
   });
+});
+
+const getTeamLeaderUsersPayload = async (req, res, orgId) => {
+  const userId = Number(req.user.id);
+  
+  let accessibleTeamIds = await getAccessibleTeamIds({
+    orgId,
+    userId,
+    role: resolveUserRole(req.user, orgId),
+  });
+
+  if (req.query.teamId) {
+    const requestedTeamId = Number(req.query.teamId);
+    if (!accessibleTeamIds.includes(requestedTeamId)) {
+      return { items: [], summaryCards: [] };
+    }
+    accessibleTeamIds = [requestedTeamId];
+  }
+
+  if (accessibleTeamIds.length === 0) {
+    return { items: [], summaryCards: [] };
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+      isActive: true,
+      memberships: {
+        some: {
+          orgId,
+          isActive: true,
+        },
+      },
+      OR: [
+        { teamMemberships: { some: { teamId: { in: accessibleTeamIds } } } },
+        { teamsLed: { some: { id: { in: accessibleTeamIds }, deletedAt: null } } },
+      ],
+    },
+    select: userManagementSelect,
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
+    take: 10000,
+  });
+
+  const items = users
+    .map((user) => mapUserForManagement(user, orgId))
+    .filter((user) => user.role !== "SUPER_ADMIN")
+    .map((item, index) => ({
+      entryNo: String(index + 1),
+      id: item.id,
+      name: item.name || "-",
+      email: item.email || "-",
+      mobile: item.mobile || "-",
+      role: item.role || "MEMBER",
+      status: item.active ? "Active" : "Inactive",
+      joinDate: item.createdAt ? dateKey(item.createdAt) : "-",
+    }));
+
+  const summaryCards = [
+    { label: "Total Team Users", value: items.length },
+    { label: "Active", value: items.filter(u => u.status === "Active").length },
+    { label: "Inactive", value: items.filter(u => u.status === "Inactive").length },
+  ];
+
+  return { items, summaryCards };
+};
+
+exports.downloadTeamLeaderUsersPdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.USERS.VIEW, orgId);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true },
+  });
+
+  const payload = await getTeamLeaderUsersPayload(req, res, orgId);
+
+  const subtitleLines = [
+    `Organization: ${org?.name || "Org"} (${org?.organizationCode || "ORG"})`,
+    `Generated: ${todayKey()}`,
+  ];
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "TEAM MEMBERS DETAILS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 25, align: "left" },
+      { key: "name", label: "Name", width: 100 },
+      { key: "email", label: "Email", width: 130 },
+      { key: "mobile", label: "Mobile", width: 80 },
+      { key: "role", label: "Role", width: 70 },
+      { key: "status", label: "Status", width: 50, align: "center" },
+      { key: "joinDate", label: "Joined", width: 60, align: "center" },
+    ],
+    rows: payload.items.map(i => ({ ...i, entryNo: i.entryNo.padStart(3, "0") })),
+    size: "A4",
+  });
+
+  const safeName = String(org?.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-users-${safeName}-${todayKey()}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadTeamLeaderUsersExcel = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.USERS.VIEW, orgId);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true },
+  });
+
+  const payload = await getTeamLeaderUsersPayload(req, res, orgId);
+
+  const subtitleLines = [
+    `Organization: ${org?.name || "Org"} (${org?.organizationCode || "ORG"})`,
+    `Generated: ${todayKey()}`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "TEAM MEMBERS DETAILS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40 },
+      { key: "name", label: "Name", width: 150 },
+      { key: "email", label: "Email", width: 200 },
+      { key: "mobile", label: "Mobile", width: 120 },
+      { key: "role", label: "Role", width: 100 },
+      { key: "status", label: "Status", width: 80 },
+      { key: "joinDate", label: "Joined Date", width: 100 },
+    ],
+    rows: payload.items,
+  });
+
+  const safeName = String(org?.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-users-${safeName}-${todayKey()}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
 });
 
 exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
@@ -511,7 +673,12 @@ exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
       : parseId(req.body?.leaderId);
   const leaderId =
     requestedLeaderId ||
-    (resolveUserRole(req.user, orgId) === "TEAM_LEADER" ? Number(req.user.id) : null);
+    (resolveUserRole(req.user, orgId) === "TEAM_LEADER" || resolveUserRole(req.user, orgId) === "SUB_TEAM_LEADER" ? Number(req.user.id) : null);
+
+  const subLeaderId =
+    req.body?.subLeaderId === null || req.body?.subLeaderId === ""
+      ? null
+      : parseId(req.body?.subLeaderId);
 
   await validateTeamAssignmentInputs({
     req,
@@ -519,6 +686,7 @@ exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
     orgId,
     memberIds,
     leaderId,
+    subLeaderId,
   });
 
   let created;
@@ -537,6 +705,7 @@ exports.createTeamLeaderTeam = asyncHandler(async (req, res) => {
           description,
           attendanceRadius: Math.round(radius),
           leaderId,
+          subLeaderId,
           longitude: coordinates ? coordinates[0] : null,
           latitude: coordinates ? coordinates[1] : null,
           createdById: Number(req.user.id),
@@ -604,7 +773,11 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
   assertTeamMutationAccess({ req, res, team, orgId });
 
   const patchPermissionState = getTeamPatchPermissionState(req, orgId);
-  if (!patchPermissionState.canUpdateTeam && !patchPermissionState.canPatchAttendanceOnly) {
+  if (
+    !patchPermissionState.canUpdateTeam &&
+    !patchPermissionState.canPatchAttendanceOnly &&
+    !patchPermissionState.canPatchAssignmentOnly
+  ) {
     res.status(403);
     throw new Error("Missing required permission");
   }
@@ -646,14 +819,19 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
 
   const hasMemberIds = Object.prototype.hasOwnProperty.call(req.body || {}, "memberIds");
   const hasLeaderId = Object.prototype.hasOwnProperty.call(req.body || {}, "leaderId");
+  const hasSubLeaderId = Object.prototype.hasOwnProperty.call(req.body || {}, "subLeaderId");
   const memberIds = uniqueNumberList(req.body?.memberIds || []);
   const leaderId =
     req.body?.leaderId === null || req.body?.leaderId === ""
       ? null
       : parseId(req.body?.leaderId);
+  const subLeaderId =
+    req.body?.subLeaderId === null || req.body?.subLeaderId === ""
+      ? null
+      : parseId(req.body?.subLeaderId);
 
   if (
-    (hasMemberIds || hasLeaderId) &&
+    (hasMemberIds || hasLeaderId || hasSubLeaderId) &&
     !hasPermission(req.user, PERMISSIONS.TEAM.ASSIGN_MEMBERS, orgId)
   ) {
     res.status(403);
@@ -666,6 +844,7 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
     orgId,
     memberIds: hasMemberIds ? memberIds : [],
     leaderId: hasLeaderId ? leaderId : null,
+    subLeaderId: hasSubLeaderId ? subLeaderId : null,
   });
 
   let updated;
@@ -685,6 +864,7 @@ exports.patchTeamLeaderTeam = asyncHandler(async (req, res) => {
         data: {
           ...payload,
           ...(hasLeaderId ? { leaderId } : {}),
+          ...(hasSubLeaderId ? { subLeaderId } : {}),
         },
       });
 
@@ -831,6 +1011,187 @@ exports.getTeamLeaderAttendance = asyncHandler(async (req, res) => {
   });
 });
 
+const getTeamLeaderAttendancePayload = async (req, res, orgId) => {
+  const accessibleTeams = await getAccessibleTeams({
+    orgId,
+    userId: Number(req.user.id),
+    role: resolveUserRole(req.user, orgId),
+  });
+  const accessibleTeamIds = accessibleTeams.map((team) => team.id);
+
+  if (accessibleTeamIds.length === 0) {
+    return { items: [], summary: [], meta: { periodLabel: req.query.period, from: req.query.from, to: req.query.to } };
+  }
+
+  const targetTeamId = req.query.teamId ? Number(req.query.teamId) : null;
+  const filteredTeamIds = targetTeamId && accessibleTeamIds.includes(targetTeamId) 
+    ? [targetTeamId] 
+    : accessibleTeamIds;
+
+  const where = buildAttendanceWhere({
+    orgId,
+    date: req.query.date,
+    from: req.query.from,
+    to: req.query.to,
+    status: req.query.status,
+    teamIds: filteredTeamIds,
+  });
+
+  const records = await prisma.attendance.findMany({
+    where,
+    select: attendanceRecordSelect,
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    take: 10000,
+  });
+
+  let items = records.map(mapAttendanceRecord);
+  const statusFilter = String(req.query.status || "").toUpperCase();
+  if (statusFilter && statusFilter !== "ALL" && statusFilter !== "ABSENT") {
+    items = items.filter((item) => item.status === statusFilter);
+  } else if (statusFilter === "ABSENT") {
+    items = items.filter((item) => item.status === "ABSENT");
+  }
+
+  const summary = buildAttendanceSummary(items);
+  const summaryCards = summary.map(s => ({ label: s.label, value: s.value }));
+  
+  let periodLabel = "Monthly";
+  if (req.query.period === "daily") periodLabel = "Daily";
+  if (req.query.period === "weekly") periodLabel = "Weekly";
+  if (req.query.period === "yearly") periodLabel = "Yearly";
+  if (req.query.period === "all") periodLabel = "All Time";
+  if (req.query.period === "custom") periodLabel = "Custom";
+
+  return {
+    items,
+    summaryCards,
+    meta: {
+      periodLabel,
+      from: req.query.from || todayKey(),
+      to: req.query.to || todayKey(),
+    }
+  };
+};
+
+exports.downloadTeamLeaderAttendancePdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_TEAM, orgId);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true }
+  });
+
+  const payload = await getTeamLeaderAttendancePayload(req, res, orgId);
+
+  const subtitleLines = [
+    `Organization: ${org?.name || "Org"} (${org?.organizationCode || "ORG"})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "TEAM ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 30, align: "left" },
+      { key: "user", label: "Member", width: 80 },
+      { key: "role", label: "Role", width: 55 },
+      { key: "department", label: "Department", width: 65 },
+      { key: "existingMember", label: "Type", width: 50 },
+      { key: "date", label: "Date", width: 55 },
+      { key: "status", label: "Status", width: 55, align: "center" },
+      { key: "punchIn", label: "Punch In", width: 50, align: "center" },
+      { key: "punchOut", label: "Punch Out", width: 50, align: "center" },
+      { key: "overtime", label: "Overtime", width: 60, align: "center" },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 60, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => {
+      const statusUpper = String(item.status || "").toUpperCase();
+      return {
+        entryNo: String(index + 1).padStart(3, "0"),
+        user: item.member || "-",
+        role: item.role || "MEMBER",
+        department: item.department || "Unassigned",
+        existingMember: item.existingMember || "-",
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
+        workedHoursLabel: item.workedHours.toFixed(2),
+      };
+    }),
+    size: "A4",
+  });
+
+  const safeName = String(org?.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadTeamLeaderAttendanceExcel = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.ATTENDANCE.VIEW_TEAM, orgId);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true }
+  });
+
+  const payload = await getTeamLeaderAttendancePayload(req, res, orgId);
+
+  const subtitleLines = [
+    `Organization: ${org?.name || "Org"} (${org?.organizationCode || "ORG"})`,
+    `Period: ${payload.meta.periodLabel} (${payload.meta.from} to ${payload.meta.to})`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "TEAM ATTENDANCE LOGS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40 },
+      { key: "user", label: "Member", width: 120 },
+      { key: "role", label: "Role", width: 90 },
+      { key: "department", label: "Department", width: 100 },
+      { key: "existingMember", label: "Member Type", width: 90 },
+      { key: "date", label: "Date", width: 85 },
+      { key: "status", label: "Status", width: 80 },
+      { key: "punchIn", label: "Punch In", width: 80 },
+      { key: "punchOut", label: "Punch Out", width: 80 },
+      { key: "overtime", label: "Overtime", width: 80 },
+      { key: "workedHoursLabel", label: "Worked Hrs", width: 80 },
+    ],
+    rows: payload.items.map((item, index) => {
+      const statusUpper = String(item.status || "").toUpperCase();
+      return {
+        entryNo: String(index + 1),
+        user: item.member || "-",
+        role: item.role || "MEMBER",
+        department: item.department || "Unassigned",
+        existingMember: item.existingMember || "-",
+        date: item.date,
+        status: item.status,
+        punchIn: item.punchInAt ? toPdfTime(item.punchInAt) : "-",
+        punchOut: item.punchOutAt ? toPdfTime(item.punchOutAt) : "-",
+        overtime: statusUpper === "OVERTIME" ? "YES" : "NO",
+        workedHoursLabel: item.workedHours.toFixed(2),
+      };
+    }),
+  });
+
+  const safeName = String(org?.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-attendance-logs-${safeName}-${payload.meta.from}-to-${payload.meta.to}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
+});
+
 exports.getTeamLeaderReports = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSIONS.REPORTS.VIEW, orgId);
@@ -945,179 +1306,6 @@ const resolveTeamLeaderReportRange = (req) => {
   };
 };
 
-const buildTeamLeaderPdfReportData = async ({ orgId, rangeFrom, rangeTo, teamIds }) => {
-  const records = await prisma.attendance.findMany({
-    where: {
-      orgId,
-      deletedAt: null,
-      teamId: {
-        in: teamIds,
-      },
-      date: {
-        gte: rangeFrom,
-        lte: rangeTo,
-      },
-    },
-    select: {
-      userId: true,
-      date: true,
-      punchInAt: true,
-      punchOutAt: true,
-      totalMinutesWorked: true,
-      status: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          mobileCountryCode: true,
-          mobile: true,
-          gender: true,
-          existingMember: true,
-        },
-      },
-    },
-    orderBy: [{ date: "asc" }, { createdAt: "asc" }],
-  });
-
-  let presentEntries = 0;
-  let absentEntries = 0;
-  let totalWorkedMinutes = 0;
-  let totalPresentMinutes = 0;
-
-  const compareNames = (left, right) =>
-    String(left || "").trim().toLowerCase().localeCompare(String(right || "").trim().toLowerCase());
-
-  const toPdfContact = (user) => {
-    const code = String(user?.mobileCountryCode || "").trim();
-    const mobile = String(user?.mobile || "").trim();
-    if (!code && !mobile) return "-";
-    return `${code}${mobile}`;
-  };
-
-  const toPdfTime = (date) => {
-    if (!date) return "-";
-    const d = new Date(date);
-    if (Number.isNaN(d.getTime())) return "-";
-    return d.toLocaleTimeString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
-  const sortedRecords = [...records].sort((left, right) => {
-    if (String(left.date || "") !== String(right.date || "")) {
-      return String(left.date || "").localeCompare(String(right.date || ""));
-    }
-
-    const nameComparison = compareNames(left.user?.name, right.user?.name);
-    if (nameComparison !== 0) return nameComparison;
-
-    return Number(left.userId || 0) - Number(right.userId || 0);
-  });
-
-  const rows = sortedRecords.map((record, index) => {
-    const totalMinutesWorked = Number(record.totalMinutesWorked || 0);
-    const isAbsent = String(record.status || "").toUpperCase() === "ABSENT";
-    const presentMinutes = isAbsent ? 0 : totalMinutesWorked;
-
-    if (isAbsent) absentEntries += 1;
-    else presentEntries += 1;
-
-    totalWorkedMinutes += totalMinutesWorked;
-    totalPresentMinutes += presentMinutes;
-
-    return {
-      entryNo: String(index + 1).padStart(3, "0"),
-      userId: String(record.user?.id ?? record.userId ?? "-"),
-      userName: record.user?.name || "-",
-      contact: toPdfContact(record.user),
-      email: record.user?.email || "-",
-      date: record.date || "-",
-      punchIn: toPdfTime(record.punchInAt),
-      punchOut: toPdfTime(record.punchOutAt),
-      reachedHome: toPdfTime(record.reachedHomeAt),
-      gender: record.user?.gender || "-",
-      existingMember: record.user?.existingMember || "-",
-      status: String(record.status || "-").toUpperCase(),
-      totalHours: formatHoursValue(totalMinutesWorked, { fromMinutes: true }),
-      presentHours: formatHoursValue(presentMinutes, { fromMinutes: true }),
-      absent: isAbsent ? "YES" : "NO",
-      reachedHomeLocation: record.reachedHomeAt ? formatReportLocation(record.reachedHomeLocationMeta, record.reachedHomeLatitude, record.reachedHomeLongitude) : "-",
-    };
-  });
-
-  return {
-    rows,
-    summary: {
-      totalRecords: records.length,
-      presentEntries,
-      absentEntries,
-      totalWorkedMinutes,
-      totalPresentMinutes,
-    },
-  };
-};
-
-const buildAttendanceExcelBuffer = ({
-  organization,
-  periodLabel,
-  rangeFrom,
-  rangeTo,
-  summary,
-  rows,
-}) => {
-  const columns = [
-    { key: "entryNo", label: "No.", width: 42 },
-    { key: "date", label: "Date", width: 80 },
-    { key: "userId", label: "Member ID", width: 68 },
-    { key: "userName", label: "Member Name", width: 120 },
-    { key: "existingMember", label: "Member Type", width: 90 },
-    { key: "status", label: "Status", width: 90 },
-    { key: "punchIn", label: "Punch In", width: 70 },
-    { key: "punchOut", label: "Punch Out", width: 70 },
-    { key: "totalHours", label: "Worked Hrs", width: 88 },
-  ];
-
-  const infoLines = [
-    `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
-    `Period: ${String(periodLabel || "Report").toUpperCase()} | Range: ${rangeFrom} to ${rangeTo}`,
-    `Records: ${Number(summary?.totalRecords || 0)} | Present Entries: ${Number(summary?.presentEntries || 0)} | Absent Entries: ${Number(summary?.absentEntries || 0)}`,
-    `Worked Hrs: ${formatHoursValue(summary?.totalWorkedMinutes || 0, { fromMinutes: true })} | Present Hrs: ${formatHoursValue(summary?.totalPresentMinutes || 0, { fromMinutes: true })}`,
-  ];
-
-  const sheetData = [
-    ["ATTENDANCE REPORT"],
-    ...infoLines.map((line) => [line]),
-    [],
-    columns.map((column) => column.label),
-    ...rows.map((row) => columns.map((column) => row?.[column.key] ?? "-")),
-  ];
-
-  const worksheet = xlsx.utils.aoa_to_sheet(sheetData);
-  const lastColumnIndex = Math.max(columns.length - 1, 0);
-  const lastColumnLabel = xlsx.utils.encode_col(lastColumnIndex);
-  const headerRowNumber = infoLines.length + 3;
-
-  worksheet["!cols"] = columns.map((column) => ({
-    wch: Math.max(12, Math.round(Number(column.width || 84) / 6)),
-  }));
-  worksheet["!merges"] = Array.from({ length: infoLines.length + 1 }, (_, index) => ({
-    s: { r: index, c: 0 },
-    e: { r: index, c: lastColumnIndex },
-  }));
-  const totalRows = headerRowNumber + rows.length;
-  worksheet["!autofilter"] = {
-    ref: `A${headerRowNumber}:${lastColumnLabel}${totalRows}`,
-  };
-
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
-  return xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
-};
-
 exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
   const orgId = ensureOrganizationId(req, res);
   assertPermission(res, req.user, PERMISSIONS.REPORTS.DOWNLOAD, orgId);
@@ -1144,7 +1332,7 @@ exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
       where: { id: orgId },
       select: organizationSubscriptionSelect,
     }),
-    buildTeamLeaderPdfReportData({
+    buildAttendanceReport({
       orgId,
       rangeFrom: range.from,
       rangeTo: range.to,
@@ -1154,14 +1342,28 @@ exports.downloadTeamLeaderReportsPdf = asyncHandler(async (req, res) => {
 
   assertReportDownloadAccess({ organization, res });
 
-  const pdfBuffer = await buildAttendanceDetailedPdf({
-    organizationName: organization?.name || "Organization",
-    organizationCode: organization?.organizationCode || "",
-    periodLabel: String(range.periodLabel || "Report").toUpperCase(),
-    rangeFrom: range.from,
-    rangeTo: range.to,
-    summary: reportData.summary,
-    rows: reportData.rows,
+  const { buildGenericTablePdf } = require("../utils/pdf-report");
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "TEAM REPORTS",
+    subtitleLines: [
+      `Organization: ${organization?.name || "Organization"} | Code: ${organization?.organizationCode || "-"}`,
+      `Period: ${String(range.periodLabel || "Report").toUpperCase()} | Range: ${range.from} to ${range.to}`,
+    ],
+    summaryCards: reportData.summary.map(s => ({ label: s.label, value: s.value })),
+    columns: [
+      { key: "member", label: "Name", width: 140 },
+      { key: "id", label: "ID", width: 60 },
+      { key: "department", label: "Department", width: 90 },
+      { key: "existingMember", label: "Employee Type", width: 90 },
+      { key: "presentDays", label: "Present", width: 60 },
+      { key: "regularizedDays", label: "Regularized", width: 60 },
+      { key: "halfDays", label: "Half Day", width: 60 },
+      { key: "absentDays", label: "Absent", width: 60 },
+      { key: "overtimeDays", label: "Overtime", width: 60 },
+      { key: "workedHours", label: "Worked Hrs", width: 80 },
+    ],
+    rows: reportData.items,
   });
 
   const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-");
@@ -1198,7 +1400,7 @@ exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
       where: { id: orgId },
       select: organizationSubscriptionSelect,
     }),
-    buildTeamLeaderPdfReportData({
+    buildAttendanceReport({
       orgId,
       rangeFrom: range.from,
       rangeTo: range.to,
@@ -1208,13 +1410,15 @@ exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
 
   assertReportDownloadAccess({ organization, res });
 
+  const { buildAttendanceExcelBuffer } = require("./org-dashboard.controller");
+
   const excelBuffer = buildAttendanceExcelBuffer({
     organization,
     periodLabel: range.periodLabel,
     rangeFrom: range.from,
     rangeTo: range.to,
     summary: reportData.summary,
-    rows: reportData.rows,
+    rows: reportData.items,
   });
 
   const safePeriod = String(range.period || "report").replace(/[^a-z0-9_-]+/gi, "-");
@@ -1222,5 +1426,147 @@ exports.downloadTeamLeaderReportsExcel = asyncHandler(async (req, res) => {
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+  res.status(200).send(excelBuffer);
+});
+
+const getTeamLeaderTeamsPayload = async (req, res, orgId) => {
+  const accessibleTeams = await getAccessibleTeams({
+    orgId,
+    userId: Number(req.user.id),
+    role: resolveUserRole(req.user, orgId),
+  });
+
+  let teamIds = accessibleTeams.map((team) => team.id);
+  
+  if (req.query.teamId) {
+    const requestedTeamId = Number(req.query.teamId);
+    if (!teamIds.includes(requestedTeamId)) {
+      return { items: [], summaryCards: [] };
+    }
+    teamIds = [requestedTeamId];
+  }
+
+  if (teamIds.length === 0) {
+    return { items: [], summaryCards: [] };
+  }
+
+  const teams = await prisma.team.findMany({
+    where: {
+      id: { in: teamIds },
+      orgId,
+      deletedAt: null,
+    },
+    select: teamDetailSelect,
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
+    take: 10000,
+  });
+
+  const items = teams.map(mapTeamRecord);
+  const summary = buildTeamSummary(items);
+  const summaryCards = summary.map((s) => ({ label: s.label, value: s.value }));
+
+  return { items, summaryCards };
+};
+
+exports.downloadTeamLeaderTeamsPdf = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_OWN, orgId);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true },
+  });
+
+  const payload = await getTeamLeaderTeamsPayload(req, res, orgId);
+
+  const subtitleLines = [
+    `Organization: ${org?.name || "Org"} (${org?.organizationCode || "ORG"})`,
+    `Generated: ${todayKey()}`,
+  ];
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "TEAM DETAILS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 25, align: "left" },
+      { key: "name", label: "Team Name", width: 90 },
+      { key: "leader", label: "Leader", width: 80 },
+      { key: "subLeader", label: "Sub Leader", width: 80 },
+      { key: "memberCount", label: "Members", width: 45, align: "center" },
+      { key: "memberNames", label: "Member Names", width: 130 },
+      { key: "status", label: "Status", width: 45, align: "center" },
+      { key: "radius", label: "Radius", width: 40, align: "center" },
+    ],
+    rows: payload.items.map((item, index) => ({
+      entryNo: String(index + 1).padStart(3, "0"),
+      name: item.name || "-",
+      leader: item.leaderName || "-",
+      subLeader: item.subLeaderName || "-",
+      memberCount: String(item.memberCount || 0),
+      memberNames: (item.memberNames || []).join(", ") || "-",
+      status: item.isActive ? "Active" : "Inactive",
+      radius: String(item.attendanceRadius || 25) + "m",
+    })),
+    size: "A4",
+  });
+
+  const safeName = String(org?.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-details-${safeName}-${todayKey()}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadTeamLeaderTeamsExcel = asyncHandler(async (req, res) => {
+  const orgId = ensureOrganizationId(req, res);
+  assertPermission(res, req.user, PERMISSIONS.TEAM.VIEW_OWN, orgId);
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, organizationCode: true },
+  });
+
+  const payload = await getTeamLeaderTeamsPayload(req, res, orgId);
+
+  const subtitleLines = [
+    `Organization: ${org?.name || "Org"} (${org?.organizationCode || "ORG"})`,
+    `Generated: ${todayKey()}`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "TEAM DETAILS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40 },
+      { key: "name", label: "Team Name", width: 120 },
+      { key: "leader", label: "Leader", width: 100 },
+      { key: "subLeader", label: "Sub Leader", width: 100 },
+      { key: "memberCount", label: "Members", width: 60 },
+      { key: "memberNames", label: "Member Names", width: 200 },
+      { key: "status", label: "Status", width: 70 },
+      { key: "radius", label: "Radius (m)", width: 70 },
+      { key: "description", label: "Description", width: 150 },
+    ],
+    rows: payload.items.map((item, index) => ({
+      entryNo: String(index + 1),
+      name: item.name || "-",
+      leader: item.leaderName || "-",
+      subLeader: item.subLeaderName || "-",
+      memberCount: String(item.memberCount || 0),
+      memberNames: (item.memberNames || []).join(", ") || "-",
+      status: item.isActive ? "Active" : "Inactive",
+      radius: String(item.attendanceRadius || 25),
+      description: item.description || "-",
+    })),
+  });
+
+  const safeName = String(org?.name || "org").replace(/[^a-z0-9_-]+/gi, "-");
+  const filename = `team-details-${safeName}-${todayKey()}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.status(200).send(excelBuffer);
 });

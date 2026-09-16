@@ -86,18 +86,7 @@ export default function NotificationDetailPage() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10">
         <View className="flex-row items-center justify-between mb-4">
-          <Pressable 
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/org/notifications");
-              }
-            }}
-            className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 transition-colors active:bg-slate-200"
-          >
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
+          {/* Back button removed */}
           <Text className="text-sm font-bold text-slate-500 dark:text-slate-400">Back to Notifications</Text>
           <View className="w-10" />
         </View>

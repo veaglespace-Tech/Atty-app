@@ -49,7 +49,7 @@ const EXPIRED_APPROVAL_LOGIN_MESSAGE =
 const getSessionCookieOptions = (rememberMe = false) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  sameSite: "lax",
   maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : SESSION_TOKEN_TTL_MS,
   path: "/",
 });
@@ -57,7 +57,7 @@ const getSessionCookieOptions = (rememberMe = false) => ({
 const getSessionCookieClearOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  sameSite: "lax",
   path: "/",
 });
 
@@ -545,6 +545,20 @@ const authUserInclude = {
     },
   },
   department: true,
+  teamMemberships: {
+    select: {
+      team: {
+        select: {
+          id: true,
+        }
+      }
+    }
+  },
+  teamsLed: {
+    select: {
+      id: true,
+    }
+  }
 };
 
 const authUserWriteInclude = {
@@ -887,6 +901,8 @@ const serializeSessionUser = (user, organization = null) => {
     organizationId: normalized.organizationId || null,
     organizationCode: org?.organizationCode || null,
     city: org?.city || null,
+    teamMemberships: normalized.teamMemberships || [],
+    teamsLed: normalized.teamsLed || [],
     organization: org
       ? {
         id: org.id,

@@ -1,9 +1,6 @@
 const prisma = require("../lib/prisma");
-const { todayKey } = require("./common.service");
+const { todayKey, dateKey } = require("./common.service");
 const {
-  buildDateTimeForDateKey,
-  calculateAttendanceStatus,
-  parseStartTimeMinutes,
   readAttendanceTimeConfig,
   resolveTimeOfDayMinutes,
 } = require("./attendance-time.service");
@@ -27,7 +24,6 @@ const runAttendanceAutoCloseJob = async () => {
 
   try {
     const config = readAttendanceTimeConfig();
-    const { dateKey } = require("./common.service");
     
     const now = new Date();
     const nowMinutes = resolveTimeOfDayMinutes(now, config.timeZone);
@@ -48,15 +44,10 @@ const runAttendanceAutoCloseJob = async () => {
       },
       select: {
         id: true,
-        attendanceStartTime: true,
-        attendanceEndTime: true,
       },
     });
 
     for (const organization of organizations) {
-      const startTime = organization?.attendanceStartTime || config.startTime;
-      const endTime = organization?.attendanceEndTime || config.endTime;
-      
       const openRecords = await prisma.attendance.findMany({
         where: {
           orgId: organization.id,
@@ -67,7 +58,6 @@ const runAttendanceAutoCloseJob = async () => {
         },
         select: {
           id: true,
-          punchInAt: true,
         },
       });
 
@@ -95,40 +85,25 @@ const runAttendanceAutoCloseJob = async () => {
         }),
       ]);
 
+      // 1. Mark open records (forgot to punch out) as ABSENT, leaving punchOutAt as blank
       for (const record of openRecords) {
-        const punchInMinutes = resolveTimeOfDayMinutes(record.punchInAt, config.timeZone);
-        const autoCloseEndMinutes = 23 * 60 + 59;
-        const totalMinutesWorked =
-          punchInMinutes === null ? 0 : Math.max(autoCloseEndMinutes - punchInMinutes, 0);
-        
-        const status = calculateAttendanceStatus({
-          totalMinutesWorked,
-          startTime,
-          endTime,
-        });
-
-        const shiftEndAt = buildDateTimeForDateKey({
-          dateKey: targetDayKey,
-          time: "23:59",
-          timeZone: config.timeZone,
-        });
-
         await prisma.attendance.update({
           where: { id: record.id },
           data: {
-            punchOutAt: shiftEndAt,
-            totalMinutesWorked,
-            status,
-            notes: "Auto-closed at shift end due to missing punch-out.",
+            totalMinutesWorked: 0,
+            status: "ABSENT",
+            notes: "Auto-marked absent due to missing punch-out.",
           },
         });
       }
 
+      // 2. Mark eligible users who didn't show up at all as ABSENT
       const existingUserIdSet = new Set(
         existingAttendanceRows
           .map((row) => Number(row.userId))
           .filter((userId) => Number.isFinite(userId) && userId > 0)
       );
+      
       const absentRows = eligibleUsers
         .map((user) => Number(user.id))
         .filter((userId) => Number.isFinite(userId) && userId > 0 && !existingUserIdSet.has(userId))
@@ -141,7 +116,7 @@ const runAttendanceAutoCloseJob = async () => {
           lateMinutes: 0,
           isPunchInValid: false,
           isPunchOutValid: false,
-          notes: "Auto-marked absent at shift end due to missing punch-in.",
+          notes: "Auto-marked absent due to missing punch-in.",
         }));
 
       if (absentRows.length > 0) {

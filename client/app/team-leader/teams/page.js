@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   ChevronDown,
   ChevronUp,
+  Download,
+  FileBox,
+  FileText,
   Loader2,
   LocateFixed,
   RefreshCcw,
@@ -24,9 +27,11 @@ import {
   useGetTeamLeaderTeamsQuery,
   useGetTeamLeaderUsersQuery,
   usePatchTeamLeaderTeamMutation,
+  useDownloadTeamLeaderTeamsPdfMutation,
+  useDownloadTeamLeaderTeamsExcelMutation,
 } from "@/services/api/teamLeaderApi";
 import { DASHBOARD_FETCH_LIMITS, DASHBOARD_PAGE_SIZE_OPTIONS } from "@/utils/dashboardLimits";
-import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
+import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole, getDashboardRootByRole } from "@/utils/roles";
 import {
   getErrorMessage,
   normalizeTextInput,
@@ -102,6 +107,7 @@ export default function TeamLeaderTeamsPage() {
   const canDeleteTeams = hasPermission(authUser, PERMISSIONS.TEAM.DELETE);
   const canAssignMembers = hasPermission(authUser, PERMISSIONS.TEAM.ASSIGN_MEMBERS);
   const canManageAttendance = hasPermission(authUser, PERMISSIONS.ATTENDANCE.MANAGE);
+  const rootPath = getDashboardRootByRole(authUser?.currentRole || ROLES.MEMBER);
   const [submitting, setSubmitting] = useState(false);
   const [actionTeamId, setActionTeamId] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
@@ -119,6 +125,21 @@ export default function TeamLeaderTeamsPage() {
     longitude: "",
     latitude: "",
   });
+
+  const myTeamIds = useMemo(() => {
+    const ids = new Set();
+    if (authUser?.teamMemberships) {
+      authUser.teamMemberships.forEach((tm) => {
+        if (tm?.team?.id) ids.add(String(tm.team.id));
+      });
+    }
+    if (authUser?.teamsLed) {
+      authUser.teamsLed.forEach((t) => {
+        if (t?.id) ids.add(String(t.id));
+      });
+    }
+    return ids;
+  }, [authUser]);
 
   const {
     data: teamsData,
@@ -139,6 +160,57 @@ export default function TeamLeaderTeamsPage() {
   const [createTeamMutation] = useCreateTeamLeaderTeamMutation();
   const [patchTeamMutation] = usePatchTeamLeaderTeamMutation();
   const [deleteTeamMutation] = useDeleteTeamLeaderTeamMutation();
+  const [downloadTeamsPdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderTeamsPdfMutation();
+  const [downloadTeamsExcel, { isLoading: downloadingExcel }] = useDownloadTeamLeaderTeamsExcelMutation();
+
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [downloadMenuRef]);
+
+  const onDownloadPdf = async () => {
+    try {
+      setError("");
+      const blob = await downloadTeamsPdf().unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-details-${new Date().toISOString().slice(0,10)}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download PDF."));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      setError("");
+      const blob = await downloadTeamsExcel().unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-details-${new Date().toISOString().slice(0,10)}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download Excel."));
+    }
+  };
 
   const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
   const users = useMemo(() => (Array.isArray(usersData?.items) ? usersData.items : []), [usersData]);
@@ -376,10 +448,10 @@ export default function TeamLeaderTeamsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
+      <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6 !overflow-visible">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-[280px] flex-1">
-            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">Team Leader Teams</h2>
+            <h2 className="mobile-compact-title text-2xl font-black text-slate-900">{canCreateTeams ? "Team Leader Teams" : "My Teams"}</h2>
             <p className="mobile-hide-copy mt-2 text-sm text-slate-600">
               Manage teams, assign members, and control team geofence based on your granted permissions.
             </p>
@@ -403,6 +475,41 @@ export default function TeamLeaderTeamsPage() {
               {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
               
             </button>
+
+            <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                disabled={loading || downloadingPdf || downloadingExcel}
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+              >
+                {(downloadingPdf || downloadingExcel) ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export
+                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showDownloadMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                  <button
+                    onClick={onDownloadPdf}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                  >
+                    <FileBox size={16} />
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={onDownloadExcel}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                  >
+                    <FileText size={16} />
+                    Download Excel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -615,164 +722,177 @@ export default function TeamLeaderTeamsPage() {
       ) : null}
 
       <div className="light-glow-card-static mobile-compact-panel rounded-[1.9rem] p-6">
-        <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Directory</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Directory</h3>
+          {teams.length > 0 && (
+            <p className="text-xs font-semibold text-slate-400">
+              {startIndex}-{endIndex} of {teams.length}
+            </p>
+          )}
+        </div>
 
         {loading ? (
-          <div className="py-10 flex items-center justify-center gap-2 text-slate-500">
-            <Loader2 className="animate-spin" size={18} />
-            <span className="text-sm font-medium">Loading teams...</span>
+          <div className="py-16 flex items-center justify-center gap-2.5 text-slate-500">
+            <Loader2 className="animate-spin" size={20} />
+            <span className="text-sm font-semibold">Loading teams...</span>
           </div>
         ) : teams.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">No teams found.</p>
+          <div className="py-14 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+              <UsersRound size={28} className="text-slate-400" />
+            </div>
+            <p className="text-base font-bold text-slate-700">No teams yet</p>
+            <p className="mt-1.5 text-sm text-slate-500">Create your first team to get started.</p>
+          </div>
         ) : (
-          <div className="mt-4 space-y-4">
-            <p className="mobile-hide-helper text-xs font-semibold text-slate-500">
-              Showing {startIndex}-{endIndex} of {teams.length} teams
-            </p>
-
-            <div className="grid gap-3 md:hidden">
+          <>
+            <div className="mt-5 grid gap-4">
               {paginatedTeams.map((team) => {
                 const busy = actionTeamId === team.id;
+                const isMine = myTeamIds.has(String(team.id));
 
                 return (
                   <article
-                    key={`mobile-${team.id}`}
-                    className="dashboard-mobile-record-card cursor-pointer hover:bg-slate-50 transition-colors"
-                    onClick={() => router.push(`/team-leader/teams/${team.id}`)}
+                    key={team.id}
+                    onClick={() => router.push(`${rootPath}/teams/${team.id}`)}
+                    className="group light-glow-card cursor-pointer rounded-[1.6rem] p-5 sm:p-6 transition-all duration-300 relative"
                   >
+                    {/* Header: Name + Status */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <Link href={`/team-leader/teams/${team.id}`} onClick={(e) => e.stopPropagation()} className="truncate text-base font-black text-blue-600 hover:underline block">
-                          {team.name}
-                        </Link>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Leader: {team.leaderName || "Unassigned"}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`${rootPath}/teams/${team.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="truncate text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors duration-200"
+                          >
+                            {team.name}
+                          </Link>
+                          {isMine && (
+                            <span className="inline-flex shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-700">
+                              Mine
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span
-                        className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
-                          team.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
+                        className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                          team.isActive
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-200 text-slate-600"
                         }`}
                       >
                         {team.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <ResponsiveInfo label="Members" value={team.memberCount} />
-                      <ResponsiveInfo label="Radius" value={team.attendanceRadius} />
-                      <ResponsiveInfo label="Geo" value={formatLocation(team.location)} />
-                      <ResponsiveInfo label="Created" value={formatDate(team.createdAt)} />
+                    {/* Divider */}
+                    <div className="my-4 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+                    {/* Info Grid */}
+                    <div className="flex flex-wrap gap-4 sm:gap-6">
+                      {/* Leader */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-50 to-orange-100">
+                          <UsersRound size={14} className="text-amber-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">Leader</p>
+                          <p className="truncate text-xs font-bold text-slate-800">{team.leaderName || "Unassigned"}</p>
+                        </div>
+                      </div>
+
+                      {/* Sub-Leader */}
+                      {team.subLeaderName && (
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-50 to-orange-100">
+                            <UsersRound size={14} className="text-amber-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">Sub-Leader</p>
+                            <p className="truncate text-xs font-bold text-slate-800">{team.subLeaderName}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Members */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-indigo-100">
+                          <UsersRound size={14} className="text-blue-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">Members</p>
+                          <p className="text-xs font-bold text-slate-800">{team.memberCount}</p>
+                        </div>
+                      </div>
+
+                      {/* Radius */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-50 to-purple-100">
+                          <LocateFixed size={14} className="text-violet-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">Radius</p>
+                          <p className="text-xs font-bold text-slate-800">{team.attendanceRadius}m</p>
+                        </div>
+                      </div>
+
+                      {/* Geo */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-50 to-emerald-100">
+                          <LocateFixed size={14} className="text-teal-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">Geo</p>
+                          <p className="truncate text-xs font-bold text-slate-800">{formatLocation(team.location)}</p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    {/* Actions */}
+                    <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
                       <ActionButton
                         label={team.isActive ? "Deactivate" : "Activate"}
-                        icon={<ShieldAlert size={14} />}
+                        icon={<ShieldAlert size={13} />}
                         onClick={(e) => { e.stopPropagation(); toggleTeamActive(team); }}
                         disabled={busy || !canUpdateTeams}
                         tone={team.isActive ? "danger" : "default"}
                       />
                       <ActionButton
                         label="Set Geo"
-                        icon={<LocateFixed size={14} />}
+                        icon={<LocateFixed size={13} />}
                         onClick={(e) => { e.stopPropagation(); setTeamLocationFromCurrent(team); }}
                         disabled={busy || !canManageAttendance}
                       />
                       <ActionButton
                         label="Delete"
-                        icon={<Trash2 size={14} />}
+                        icon={<Trash2 size={13} />}
                         onClick={(e) => { e.stopPropagation(); deleteTeam(team); }}
                         disabled={busy || !canDeleteTeams}
                         tone="danger"
                       />
-                      {busy ? <Loader2 size={14} className="animate-spin self-center text-slate-500" /> : null}
+                      {busy && <Loader2 size={14} className="animate-spin text-slate-400 ml-1" />}
                     </div>
                   </article>
                 );
               })}
             </div>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead>
-                  <tr>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Name</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Leader</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Members</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Radius</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Geo Location</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Active</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Created</th>
-                    <th className="px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedTeams.map((team) => {
-                    const busy = actionTeamId === team.id;
-
-                    return (
-                      <tr 
-                        key={team.id}
-                        className="cursor-pointer hover:bg-slate-50 transition-colors"
-                        onClick={() => router.push(`/team-leader/teams/${team.id}`)}
-                      >
-                        <td className="px-3 py-2 font-semibold">
-                          <Link href={`/team-leader/teams/${team.id}`} onClick={(e) => e.stopPropagation()} className="text-blue-600 hover:underline">
-                            {team.name}
-                          </Link>
-                        </td>
-                        <td className="px-3 py-2 text-slate-700">{team.leaderName || "Unassigned"}</td>
-                        <td className="px-3 py-2 text-slate-700">{team.memberCount}</td>
-                        <td className="px-3 py-2 text-slate-700">{team.attendanceRadius}</td>
-                        <td className="px-3 py-2 text-slate-700">{formatLocation(team.location)}</td>
-                        <td className="px-3 py-2 text-slate-700">{team.isActive ? "Yes" : "No"}</td>
-                        <td className="px-3 py-2 text-slate-600">{formatDate(team.createdAt)}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex flex-wrap gap-2">
-                            <ActionButton
-                              label={team.isActive ? "Deactivate" : "Activate"}
-                              icon={<ShieldAlert size={14} />}
-                              onClick={(e) => { e.stopPropagation(); toggleTeamActive(team); }}
-                              disabled={busy || !canUpdateTeams}
-                              tone={team.isActive ? "danger" : "default"}
-                            />
-                            <ActionButton
-                              label="Set Geo"
-                              icon={<LocateFixed size={14} />}
-                              onClick={(e) => { e.stopPropagation(); setTeamLocationFromCurrent(team); }}
-                              disabled={busy || !canManageAttendance}
-                            />
-                            <ActionButton
-                              label="Delete"
-                              icon={<Trash2 size={14} />}
-                              onClick={(e) => { e.stopPropagation(); deleteTeam(team); }}
-                              disabled={busy || !canDeleteTeams}
-                              tone="danger"
-                            />
-                            {busy ? <Loader2 size={14} className="animate-spin text-slate-500" /> : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="mt-6">
+              <PaginationControls
+                page={page}
+                pageSize={pageSize}
+                totalItems={teams.length}
+                totalPages={totalPages}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS}
+                label="teams"
+              />
             </div>
-
-            <PaginationControls
-              page={page}
-              pageSize={pageSize}
-              totalItems={teams.length}
-              totalPages={totalPages}
-              startIndex={startIndex}
-              endIndex={endIndex}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              pageSizeOptions={DASHBOARD_PAGE_SIZE_OPTIONS.TEAMS}
-              label="teams"
-            />
-          </div>
+          </>
         )}
       </div>
     </section>
@@ -795,11 +915,3 @@ function ActionButton({ label, icon, onClick, disabled, tone = "default" }) {
   );
 }
 
-function ResponsiveInfo({ label, value }) {
-  return (
-    <div className="dashboard-detail-tile">
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-800">{value}</p>
-    </div>
-  );
-}

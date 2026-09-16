@@ -502,7 +502,7 @@ export default function OrgAttendancePage() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `attendance-report-${period}.pdf`;
+      anchor.download = `org-attendance-logs-${period}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -520,7 +520,7 @@ export default function OrgAttendancePage() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `attendance-report-${period}.xlsx`;
+      anchor.download = `org-attendance-logs-${period}.xlsx`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);

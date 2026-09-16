@@ -1,8 +1,8 @@
 import * as Location from "expo-location";
 
 const GEOLOCATION_UNSUPPORTED_MESSAGE = "Geolocation is not supported on this device.";
-const GEOLOCATION_DENIED_MESSAGE = "Location access is blocked. Allow it in settings and try again.";
-const GEOLOCATION_UNAVAILABLE_MESSAGE = "Current location is unavailable right now. Check GPS and try again.";
+const GEOLOCATION_DENIED_MESSAGE = "Location access is required to verify your attendance within the designated team geofence. Please allow location access in your device settings and try again.";
+const GEOLOCATION_UNAVAILABLE_MESSAGE = "Your current location could not be determined. Please ensure your GPS is turned on, move to an open area, and try again.";
 
 export const getGeolocationPermissionState = async () => {
   try {

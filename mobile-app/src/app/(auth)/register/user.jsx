@@ -190,13 +190,7 @@ export default function UserRegisterPage() {
           title="Join Your Team"
           description="Register as a member in your organization"
           beforeCard={
-          <Pressable
-            onPress={() => router.back()}
-            className="flex-row items-center gap-2 group">
-            
-              <ChevronLeft size={20} color="#64748b" className="dark:text-slate-300" />
-              <Text className="text-sm font-bold text-slate-500 dark:text-slate-300">Back to Selection</Text>
-            </Pressable>
+          {/* Back button removed */}
           }>
           
           {submitError ?

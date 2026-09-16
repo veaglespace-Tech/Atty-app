@@ -17,11 +17,18 @@ const mapTeamRecord = (team) => {
     description: team.description || "",
     leaderId: team.leaderId || null,
     leaderName: team.leader?.name || null,
+    subLeaderId: team.subLeaderId || null,
+    subLeaderName: team.subLeader?.name || null,
     memberCount: Number(team._count?.members ?? team.members?.length ?? 0),
     memberIds: sortedMembers.map((member) => Number(member.userId)),
     memberNames: sortedMembers
       .map((member) => String(member?.user?.name || "").trim())
       .filter(Boolean),
+    members: sortedMembers.map((member) => ({
+      id: Number(member.userId),
+      name: String(member?.user?.name || "").trim(),
+      role: member?.user?.memberships?.[0]?.role || "MEMBER",
+    })),
     attendanceRadius: Number(team.attendanceRadius || 25),
     longitude: Number.isFinite(team.longitude) ? Number(team.longitude) : null,
     latitude: Number.isFinite(team.latitude) ? Number(team.latitude) : null,

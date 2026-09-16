@@ -59,7 +59,9 @@ import {
 import {
   useUpdateMeMutation,
   useForgotPasswordMutation,
+  useDeleteMyAccountMutation,
 } from "@/services/api/authApi";
+import { registerForPushNotificationsAsync, sendPushTokenToServer } from "@/services/notifications";
 import {
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
@@ -84,7 +86,43 @@ export default function SettingsScreen() {
   const [updateMe, { isLoading }] = useUpdateMeMutation();
   const [forgotPassword, { isLoading: isResetting }] =
     useForgotPasswordMutation();
+  const [deleteAccount, { isLoading: isDeletingAccount }] = useDeleteMyAccountMutation();
   const [activeTab, setActiveTab] = useState("personal");
+
+  const handleEnableNotifications = async () => {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        await sendPushTokenToServer(token);
+        Alert.alert("Success", "Push notifications enabled!");
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to enable notifications.");
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              await deleteAccount().unwrap();
+              dispatch(logout());
+              router.replace("/login");
+            } catch (err) {
+              Alert.alert("Error", err?.data?.message || "Failed to delete account");
+            }
+          } 
+        }
+      ]
+    );
+  };
 
   const [profileImageDataUrl, setProfileImageDataUrl] = useState("");
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
@@ -332,21 +370,7 @@ export default function SettingsScreen() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <View className="px-6 pt-4 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] flex-row items-center gap-3">
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/member/dashboard");
-            }
-          }}
-          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900 active:scale-95 transition-transform"
-        >
-          <ChevronLeft
-            size={20}
-            className="text-slate-700 dark:text-slate-300"
-          />
-        </Pressable>
+        {/* Back button removed */}
         <View className="flex-1 flex-row items-center">
           <Text className="text-xl font-black text-slate-900 dark:text-white truncate">
             Settings
@@ -1044,6 +1068,49 @@ export default function SettingsScreen() {
                   ) : (
                     <Text className="font-bold text-slate-900 dark:text-white text-[15px]">
                       Request Password Reset
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+
+              {/* Notification Settings */}
+              <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-slate-800 mt-6">
+                <Text className="text-base font-black text-slate-900 dark:text-white mb-2">
+                  Notifications
+                </Text>
+                <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-5">
+                  Enable push notifications to stay updated on your device.
+                </Text>
+
+                <Pressable
+                  onPress={handleEnableNotifications}
+                  className="flex-row items-center justify-center py-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 active:bg-blue-100 dark:active:bg-blue-500/20"
+                >
+                  <Text className="font-bold text-blue-600 dark:text-blue-400 text-[15px]">
+                    Enable Push Notifications
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Danger Zone */}
+              <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-rose-200 dark:border-rose-900/50 mt-6">
+                <Text className="text-base font-black text-rose-600 dark:text-rose-500 mb-2">
+                  Danger Zone
+                </Text>
+                <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-5">
+                  Once you delete your account, there is no going back. Please be certain.
+                </Text>
+
+                <Pressable
+                  onPress={handleDeleteAccount}
+                  disabled={isDeletingAccount}
+                  className={`flex-row items-center justify-center py-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 active:bg-rose-100 dark:active:bg-rose-500/20 ${isDeletingAccount ? "opacity-70" : ""}`}
+                >
+                  {isDeletingAccount ? (
+                    <ActivityIndicator color="#e11d48" size="small" />
+                  ) : (
+                    <Text className="font-bold text-rose-600 dark:text-rose-400 text-[15px]">
+                      Delete My Account
                     </Text>
                   )}
                 </Pressable>

@@ -4605,3 +4605,324 @@ exports.deleteSuperAdminLead = asyncHandler(async (req, res) => {
 
   res.status(200).json({ success: true, message: "Lead deleted successfully" });
 });
+
+exports.getAllTeams = asyncHandler(async (req, res) => {
+  const teams = await prisma.team.findMany({
+    where: {
+      deletedAt: null,
+    },
+    include: {
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          organizationCode: true,
+        },
+      },
+      leader: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      subLeader: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      _count: {
+        select: { members: true },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const formattedTeams = teams.map((team) => ({
+    id: team.id,
+    name: team.name,
+    description: team.description,
+    isActive: team.isActive,
+    createdAt: team.createdAt,
+    organizationName: team.organization?.name || "-",
+    organizationCode: team.organization?.organizationCode || "-",
+    organizationId: team.organization?.id || null,
+    leaderName: team.leader?.name || "-",
+    leaderId: team.leader?.id || null,
+    subLeaderName: team.subLeader?.name || "-",
+    subLeaderId: team.subLeader?.id || null,
+    memberCount: team._count?.members || 0,
+  }));
+
+  res.status(200).json({ success: true, data: formattedTeams });
+});
+
+exports.getSuperAdminTeamById = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+
+  const team = await prisma.team.findUnique({
+    where: { id: Number(teamId) },
+    include: {
+      organization: { select: { id: true, name: true, organizationCode: true } },
+      leader: { select: { id: true, name: true, email: true } },
+      subLeader: { select: { id: true, name: true, email: true } },
+      members: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              isActive: true,
+              role: true,
+              memberships: {
+                where: { orgId: undefined },
+                select: { role: true, isActive: true, orgId: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      _count: { select: { members: true } },
+    },
+  });
+
+  if (!team) {
+    res.status(404);
+    throw new Error("Team not found");
+  }
+
+  // Shape members
+  const members = team.members.map((m) => {
+    const orgMembership = m.user?.memberships?.find((mb) => mb.orgId === team.orgId);
+    return {
+      teamMemberId: m.id,
+      userId: m.userId,
+      name: m.user?.name || "",
+      email: m.user?.email || "",
+      role: orgMembership?.role || m.user?.role || "MEMBER",
+      isActive: Boolean(m.user?.isActive),
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      ...team,
+      members,
+    },
+  });
+});
+
+exports.patchSuperAdminTeam = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+  const { name, description, isActive, leaderId, subLeaderId, memberIds } = req.body;
+
+  const team = await prisma.team.findUnique({
+    where: { id: Number(teamId) },
+  });
+
+  if (!team) {
+    res.status(404);
+    throw new Error("Team not found");
+  }
+
+  const updateData = {};
+  if (name !== undefined) updateData.name = String(name).trim();
+  if (description !== undefined) updateData.description = String(description || "").trim();
+  if (isActive !== undefined) updateData.isActive = parseBoolean(isActive, true);
+  if (leaderId !== undefined) updateData.leaderId = leaderId ? Number(leaderId) : null;
+  if (subLeaderId !== undefined) updateData.subLeaderId = subLeaderId ? Number(subLeaderId) : null;
+
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(updateData).length > 0) {
+      await tx.team.update({
+        where: { id: Number(teamId) },
+        data: updateData,
+      });
+    }
+
+    // Sync members if memberIds is provided
+    if (Array.isArray(memberIds)) {
+      const uniqueIds = [...new Set(memberIds.map(Number).filter(Boolean))];
+      await tx.teamMember.deleteMany({ where: { teamId: Number(teamId) } });
+      if (uniqueIds.length > 0) {
+        await tx.teamMember.createMany({
+          data: uniqueIds.map((uid) => ({ teamId: Number(teamId), userId: uid })),
+          skipDuplicates: true,
+        });
+      }
+    }
+  });
+
+  res.status(200).json({ success: true, message: "Team updated successfully" });
+});
+
+exports.deleteSuperAdminTeam = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+
+  const team = await prisma.team.findUnique({
+    where: { id: Number(teamId) },
+  });
+
+  if (!team) {
+    res.status(404);
+    throw new Error("Team not found");
+  }
+
+  await prisma.team.update({
+    where: { id: Number(teamId) },
+    data: { deletedAt: new Date() },
+  });
+
+  res.status(200).json({ success: true, message: "Team deleted successfully" });
+});
+
+const getSuperAdminTeamsPayload = async () => {
+  const teams = await prisma.team.findMany({
+    where: {
+      deletedAt: null,
+    },
+    include: {
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          organizationCode: true,
+        },
+      },
+      leader: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      subLeader: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      _count: {
+        select: { members: true },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 10000,
+  });
+
+  const formattedTeams = teams.map((team, index) => ({
+    entryNo: String(index + 1),
+    id: team.id,
+    name: team.name || "-",
+    description: team.description || "-",
+    isActive: team.isActive,
+    status: team.isActive ? "Active" : "Inactive",
+    organizationName: team.organization?.name || "-",
+    organizationCode: team.organization?.organizationCode || "-",
+    leaderName: team.leader?.name || "-",
+    subLeaderName: team.subLeader?.name || "-",
+    memberCount: String(team._count?.members || 0),
+    radius: String(team.attendanceRadius || 25),
+  }));
+
+  const totals = formattedTeams.reduce(
+    (acc, t) => {
+      acc.totalMembersAssigned += Number(t.memberCount || 0);
+      if (t.leaderName !== "-") acc.teamsWithLeader += 1;
+      return acc;
+    },
+    { teamsWithLeader: 0, totalMembersAssigned: 0 }
+  );
+
+  const summaryCards = [
+    { label: "Total Teams", value: formattedTeams.length },
+    { label: "Total Members Assigned", value: totals.totalMembersAssigned },
+    { label: "Teams With Leader", value: totals.teamsWithLeader },
+  ];
+
+  return { items: formattedTeams, summaryCards };
+};
+
+exports.downloadSuperAdminTeamsPdf = asyncHandler(async (req, res) => {
+  const { buildGenericTablePdf } = require("../utils/pdf-report");
+  const { todayKey } = require("../services/common.service");
+
+  const payload = await getSuperAdminTeamsPayload();
+
+  const subtitleLines = [
+    `Generated: ${todayKey()}`,
+  ];
+
+  const pdfBuffer = await buildGenericTablePdf({
+    title: "GLOBAL TEAMS DETAILS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 25, align: "left" },
+      { key: "organizationName", label: "Organization", width: 90 },
+      { key: "name", label: "Team Name", width: 90 },
+      { key: "leaderName", label: "Leader", width: 80 },
+      { key: "subLeaderName", label: "Sub Leader", width: 80 },
+      { key: "memberCount", label: "Members", width: 45, align: "center" },
+      { key: "status", label: "Status", width: 45, align: "center" },
+      { key: "radius", label: "Radius (m)", width: 50, align: "center" },
+    ],
+    rows: payload.items.map((item) => ({
+      ...item,
+      entryNo: item.entryNo.padStart(3, "0"),
+    })),
+    size: "A4",
+  });
+
+  const filename = `global-teams-${todayKey()}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(pdfBuffer);
+});
+
+exports.downloadSuperAdminTeamsExcel = asyncHandler(async (req, res) => {
+  const { buildExportWorkbookBuffer } = require("../utils/excel-report");
+  const { todayKey } = require("../services/common.service");
+
+  const payload = await getSuperAdminTeamsPayload();
+
+  const subtitleLines = [
+    `Generated: ${todayKey()}`,
+  ];
+
+  const excelBuffer = buildExportWorkbookBuffer({
+    title: "GLOBAL TEAMS DETAILS",
+    subtitleLines,
+    summaryCards: payload.summaryCards,
+    columns: [
+      { key: "entryNo", label: "No.", width: 40 },
+      { key: "organizationName", label: "Organization", width: 120 },
+      { key: "organizationCode", label: "Org Code", width: 80 },
+      { key: "name", label: "Team Name", width: 120 },
+      { key: "leaderName", label: "Leader", width: 100 },
+      { key: "subLeaderName", label: "Sub Leader", width: 100 },
+      { key: "memberCount", label: "Members", width: 60 },
+      { key: "status", label: "Status", width: 70 },
+      { key: "radius", label: "Radius (m)", width: 70 },
+      { key: "description", label: "Description", width: 150 },
+    ],
+    rows: payload.items,
+  });
+
+  const filename = `global-teams-${todayKey()}.xlsx`;
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.status(200).send(excelBuffer);
+});

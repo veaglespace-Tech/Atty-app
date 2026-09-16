@@ -48,7 +48,7 @@ const initializeRolePermissions = async () => {
     }
 
     // 5. Check if default roles are in DB. If not, auto-seed them
-    const defaultRoles = ["SUPER_ADMIN", "ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "MEMBER"];
+    const defaultRoles = ["SUPER_ADMIN", "ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "SUB_TEAM_LEADER", "MEMBER"];
     for (const role of defaultRoles) {
       if (!grouped[role]) {
         const defaults = ROLE_DEFAULT_PERMISSIONS[role] || [];

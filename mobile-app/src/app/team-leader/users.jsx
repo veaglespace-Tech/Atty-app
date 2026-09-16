@@ -67,71 +67,77 @@ export default function TeamLeaderUsersPage(props) {
   };
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
-        <View className="flex-row items-center justify-between mb-4">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Team Members</Text>
-          <Pressable onPress={() => setModalVisible(true)} className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30">
-            <Plus size={20} color={isDark ? "#60a5fa" : "#2563eb"} />
-          </Pressable>
-        </View>
-
-        <View className="flex-row items-center gap-2 mb-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
-          <Search size={16} color={isDark ? "#94a3b8" : "#94a3b8"} style={{marginLeft:8}} />
-          <TextInput
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-            placeholder="Search by name, email..."
-            placeholderTextColor="#94a3b8"
-            className="flex-1 text-sm text-slate-900 dark:text-white font-medium p-1"
-          />
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-          {["ALL", "MEMBER", "TEAM_LEADER"].map(role => (
-            <Pressable 
-              key={role}
-              onPress={() => setRoleFilter(role)}
-              className={`px-4 py-2 rounded-full mr-2 border ${roleFilter === role ? 'bg-slate-800 border-slate-800 dark:bg-white dark:border-white' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
-            >
-              <Text className={`text-xs font-black uppercase tracking-widest ${roleFilter === role ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>
-                {role === "ALL" ? "All Roles" : role.replace("_", " ")}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-
+    <View className="flex-1 bg-[#F8FAFC] dark:bg-[#020617]">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}>
-        
-        {isLoading && users.length === 0 ? (
-          <View className="py-12 items-center justify-center">
-            <ActivityIndicator size="large" color="#2563eb" />
+        contentContainerStyle={{ paddingBottom: 110 }}
+        refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
+      >
+        <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] z-10">
+          <View className="w-full max-w-5xl mx-auto">
+            <View className="flex-row items-center justify-between mb-4 mt-2">
+              <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Team Members</Text>
+              <View className="flex-row items-center gap-1.5">
+                <Pressable 
+                  onPress={() => setModalVisible(true)} 
+                  className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 active:scale-95 border border-slate-200 dark:border-slate-700"
+                >
+                  <Plus size={18} className="text-slate-700 dark:text-slate-300" />
+                </Pressable>
+              </View>
+            </View>
+
+            <View className="flex-row items-center gap-2 mb-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+              <Search size={16} color={isDark ? "#94a3b8" : "#94a3b8"} style={{marginLeft:8}} />
+              <TextInput
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+                placeholder="Search by name, email..."
+                placeholderTextColor="#94a3b8"
+                className="flex-1 text-[13px] text-slate-900 dark:text-white font-medium py-2 px-1"
+              />
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row -mx-5 px-5">
+              {["ALL", "MEMBER", "TEAM_LEADER"].map(role => (
+                <Pressable 
+                  key={role}
+                  onPress={() => setRoleFilter(role)}
+                  className={`px-4 py-2 rounded-full mr-2 border ${roleFilter === role ? 'bg-slate-900 dark:bg-white border-transparent shadow-sm' : 'bg-transparent border-slate-200 dark:border-slate-700'}`}
+                >
+                  <Text className={`text-[12px] font-black uppercase tracking-widest ${roleFilter === role ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>
+                    {role === "ALL" ? "All Roles" : role.replace("_", " ")}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
-        ) : filteredUsers.length === 0 ? (
-          <View className="py-16 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm">
-            <Users size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
-            <Text className="text-xl font-black text-slate-900 dark:text-white mb-2">No members found</Text>
-            <Text className="text-sm font-medium text-slate-500 text-center px-4">
-              {users.length === 0 ? "You have no team members assigned to you." : "No members match your search criteria."}
-            </Text>
-          </View>
-        ) : (
-          <View className="space-y-4">
-            <Text className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">
-              {filteredUsers.length} Members Found
-            </Text>
-            {filteredUsers.map((user, idx) => (
-              <OrgUserTableRow key={user.id} user={user} index={idx} />
-            ))}
-          </View>
-        )}
+        </View>
+
+        <View className="p-4 w-full max-w-5xl mx-auto">
+          {isLoading && users.length === 0 ? (
+            <View className="py-12 items-center justify-center">
+              <ActivityIndicator size="large" color="#2563eb" />
+            </View>
+          ) : filteredUsers.length === 0 ? (
+            <View className="py-16 items-center justify-center bg-white dark:bg-slate-900/80 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm">
+              <Users size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
+              <Text className="text-xl font-black text-slate-900 dark:text-white mb-2">No members found</Text>
+              <Text className="text-sm font-medium text-slate-500 text-center px-4">
+                {users.length === 0 ? "You have no team members assigned to you." : "No members match your search criteria."}
+              </Text>
+            </View>
+          ) : (
+            <View className="space-y-4">
+              <Text className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">
+                {filteredUsers.length} Members Found
+              </Text>
+              {filteredUsers.map((user, idx) => (
+                <OrgUserTableRow key={user.id} user={user} index={idx} />
+              ))}
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* Add User Modal */}

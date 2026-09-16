@@ -232,9 +232,7 @@ export default function SuperAdminUserDetailScreen() {
       {/* Header */}
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
         <View className="flex-row items-center justify-between mb-2">
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
+          {/* Back button removed */}
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">User Details</Text>
           <View className="w-10" />
         </View>

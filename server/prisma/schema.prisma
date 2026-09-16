@@ -488,6 +488,7 @@ model Team {
   id               Int          @id @default(autoincrement())
   orgId            Int
   leaderId         Int?
+  subLeaderId      Int?
   createdById      Int
   name             String
   description      String       @default("")
@@ -502,12 +503,14 @@ model Team {
   posts            Post[]       @relation("PostTeam")
   createdBy        User         @relation("TeamCreatedBy", fields: [createdById], references: [id], map: "Team_createdById_fkey")
   leader           User?        @relation("TeamLeader", fields: [leaderId], references: [id], map: "Team_leaderId_fkey")
+  subLeader        User?        @relation("TeamSubLeader", fields: [subLeaderId], references: [id], map: "Team_subLeaderId_fkey")
   organization     Organization @relation(fields: [orgId], references: [id], map: "Team_orgId_fkey")
   members          TeamMember[]
 
   @@unique([orgId, name], map: "Team_orgId_name_key")
   @@index([createdById], map: "Team_createdById_idx")
   @@index([leaderId], map: "Team_leaderId_idx")
+  @@index([subLeaderId], map: "Team_subLeaderId_idx")
   @@index([orgId, deletedAt], map: "Team_orgId_deletedAt_idx")
   @@map("team")
 }
@@ -572,6 +575,7 @@ model User {
   renewalIntents              SubscriptionRenewalIntent[]
   createdTeams                Team[]                      @relation("TeamCreatedBy")
   teamsLed                    Team[]                      @relation("TeamLeader")
+  teamsSubLed                 Team[]                      @relation("TeamSubLeader")
   teamMemberships             TeamMember[]
   createdBy                   User?                       @relation("UserCreatedBy", fields: [createdById], references: [id], map: "User_createdById_fkey")
   createdUsers                User[]                      @relation("UserCreatedBy")

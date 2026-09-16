@@ -287,13 +287,14 @@ exports.getOrgPosts = asyncHandler(async (req, res) => {
   //   - Global org-wide posts (teamId IS NULL)
   //   - Posts scoped to a team the user is a member/leader of
   let teamFilter = null;
-  if (userRole === "TEAM_LEADER" || userRole === "MEMBER") {
+  if (userRole === "TEAM_LEADER" || userRole === "SUB_TEAM_LEADER" || userRole === "MEMBER") {
     const userTeams = await prisma.team.findMany({
       where: {
         orgId,
         deletedAt: null,
         OR: [
           { leaderId: userId },
+          { subLeaderId: userId },
           { createdById: userId },
           { members: { some: { userId } } },
         ],
@@ -642,7 +643,7 @@ exports.getPostPollResults = asyncHandler(async (req, res) => {
   
   // Verify user has access based on role
   const role = resolveUserRole(req.user);
-  if (!["ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER"].includes(role)) {
+  if (!["ORG_ADMIN", "SUB_ADMIN", "TEAM_LEADER", "SUB_TEAM_LEADER"].includes(role)) {
     res.status(403);
     throw new Error("Not authorized to view detailed poll results");
   }
@@ -682,13 +683,14 @@ exports.getPostPollResults = asyncHandler(async (req, res) => {
 
   // Define team scope if TEAM_LEADER
   let leaderTeamIds = null;
-  if (role === "TEAM_LEADER") {
+  if (role === "TEAM_LEADER" || role === "SUB_TEAM_LEADER") {
     const leaderTeams = await prisma.team.findMany({
       where: {
         orgId,
         deletedAt: null,
         OR: [
           { leaderId: req.user.id },
+          { subLeaderId: req.user.id },
           { createdById: req.user.id },
           { members: { some: { userId: req.user.id } } },
         ]

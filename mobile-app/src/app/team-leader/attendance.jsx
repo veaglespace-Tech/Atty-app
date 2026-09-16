@@ -8,7 +8,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import MyAttendanceCore from "@/components/attendance/MyAttendanceCore";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
-import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange } from "@/utils/date";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange, getYearRange, getAllTimeRange } from "@/utils/date";
 
 const MetricCard = ({ label, value, bgClass, textClass, labelClass }) => (
   <View className={`flex-1 rounded-[24px] p-4 border border-slate-100 dark:border-slate-800 ${bgClass}`}>
@@ -37,6 +37,14 @@ export default function TeamLeaderAttendancePage() {
       toDateStr = range.to;
     } else if (period === "monthly") {
       const range = getMonthRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "yearly") {
+      const range = getYearRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "all") {
+      const range = getAllTimeRange();
       fromDateStr = range.from;
       toDateStr = range.to;
     }

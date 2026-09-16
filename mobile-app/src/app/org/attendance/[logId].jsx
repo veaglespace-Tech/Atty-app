@@ -93,12 +93,7 @@ export default function OrgAttendanceLogDetailPage() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800 flex-row items-center gap-3">
-        <Pressable
-          onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 active:scale-95 transition-transform"
-        >
-          <ArrowLeft size={20} className="text-slate-600 dark:text-slate-400" />
-        </Pressable>
+        {/* Back button removed */}
         <View>
           <Text className="text-xl font-black text-slate-900 dark:text-white">Attendance Details</Text>
           <Text className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">Detailed punch log and verification</Text>

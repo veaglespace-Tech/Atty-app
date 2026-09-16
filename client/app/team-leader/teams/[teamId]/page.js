@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Download,
+  FileBox,
+  FileText,
   Loader2,
   Plus,
   Save,
@@ -24,8 +27,11 @@ import {
   useGetTeamLeaderTeamByIdQuery,
   useGetTeamLeaderUsersQuery,
   usePatchTeamLeaderTeamMutation,
+  useDownloadTeamLeaderTeamsPdfMutation,
+  useDownloadTeamLeaderTeamsExcelMutation,
 } from "@/services/api/teamLeaderApi";
-import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
+import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole, getDashboardRootByRole } from "@/utils/roles";
+import { DASHBOARD_FETCH_LIMITS } from "@/utils/dashboardLimits";
 
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback;
@@ -59,6 +65,56 @@ export default function TeamLeaderTeamDetailPage() {
     leaderId: "",
     memberIds: [],
   });
+  
+  const [downloadTeamsPdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderTeamsPdfMutation();
+  const [downloadTeamsExcel, { isLoading: downloadingExcel }] = useDownloadTeamLeaderTeamsExcelMutation();
+  
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onDownloadPdf = async () => {
+    try {
+      const blob = await downloadTeamsPdf(teamId).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-details-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download PDF"));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      const blob = await downloadTeamsExcel(teamId).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-details-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download Excel"));
+    }
+  };
 
   const {
     data: teamData,
@@ -68,7 +124,7 @@ export default function TeamLeaderTeamDetailPage() {
   } = useGetTeamLeaderTeamByIdQuery(teamId, { skip: !Number.isFinite(teamId) || teamId <= 0 });
 
   const { data: usersData, isLoading: usersLoading } = useGetTeamLeaderUsersQuery(
-    { limit: 500, assignable: true },
+    { limit: DASHBOARD_FETCH_LIMITS.TEAM_LEADER_USERS, assignable: true },
     {
       skip: !canAssignMembers,
     }
@@ -99,7 +155,7 @@ export default function TeamLeaderTeamDetailPage() {
     () =>
       users.filter((user) => {
         const role = normalizeRole(user.role);
-        return [ROLES.MEMBER, ROLES.LIFE_MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN].includes(role) && user.active;
+        return [ROLES.MEMBER, ROLES.LIFE_MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN, ROLES.ORG_ADMIN].includes(role) && user.active;
       }),
     [users]
   );
@@ -121,13 +177,19 @@ export default function TeamLeaderTeamDetailPage() {
     [form.leaderId, leaderOptions]
   );
 
-  const selectedMembers = useMemo(
-    () =>
-      form.memberIds
-        .map((id) => ({ id, user: userMap.get(String(id)) || null }))
-        .filter((item) => item.user),
-    [form.memberIds, userMap]
-  );
+  const displayMembers = useMemo(() => {
+    if (!canAssignMembers) {
+      return team?.members || [];
+    }
+    return form.memberIds
+      .map((id) => {
+        const mappedUser = userMap.get(String(id));
+        if (mappedUser) return { id, name: mappedUser.name, role: mappedUser.role };
+        const existing = team?.members?.find((m) => String(m.id) === String(id));
+        return existing ? { id, name: existing.name, role: existing.role } : null;
+      })
+      .filter(Boolean);
+  }, [form.memberIds, userMap, team, canAssignMembers]);
 
   const filteredLeaders = useMemo(() => {
     const query = leaderSearch.trim().toLowerCase();
@@ -266,7 +328,7 @@ export default function TeamLeaderTeamDetailPage() {
       setError("");
       setMessage("");
       await deleteTeamMutation(team.id).unwrap();
-      router.push("/org/teams");
+      router.push(`${getDashboardRootByRole(authUser?.currentRole)}/teams`);
     } catch (mutationError) {
       setError(getErrorMessage(mutationError, "Failed to delete team"));
     } finally {
@@ -296,7 +358,7 @@ export default function TeamLeaderTeamDetailPage() {
       <section className="space-y-4">
         <button
           type="button"
-          onClick={() => router.push("/org/teams")}
+          onClick={() => router.push(`${getDashboardRootByRole(authUser?.currentRole)}/teams`)}
           className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
         >
           <ArrowLeft size={14} /> Back to Teams
@@ -315,7 +377,7 @@ export default function TeamLeaderTeamDetailPage() {
           <div>
             <button
               type="button"
-              onClick={() => router.push("/org/teams")}
+              onClick={() => router.push(`${getDashboardRootByRole(authUser?.currentRole)}/teams`)}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700"
             >
               <ArrowLeft size={14} /> Back
@@ -324,17 +386,54 @@ export default function TeamLeaderTeamDetailPage() {
             <p className="mt-1 text-sm font-medium text-slate-600">Manage details, team leader and members separately.</p>
           </div>
 
-          {canDeleteTeams ? (
-            <button
-              type="button"
-              onClick={deleteTeam}
-              disabled={deleting}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
-            >
-              {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-              Delete Team
-            </button>
-          ) : null}
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                disabled={downloadingPdf || downloadingExcel}
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+              >
+                {(downloadingPdf || downloadingExcel) ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export Details
+                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showDownloadMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                  <button
+                    onClick={onDownloadPdf}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                  >
+                    <FileBox size={16} />
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={onDownloadExcel}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                  >
+                    <FileText size={16} />
+                    Download Excel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {canDeleteTeams ? (
+              <button
+                type="button"
+                onClick={deleteTeam}
+                disabled={deleting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
+              >
+                {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                Delete Team
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {error ? (
@@ -358,18 +457,16 @@ export default function TeamLeaderTeamDetailPage() {
             Team Details
           </button>
           
-          {canAssignMembers && (
-              <button
-                type="button"
-                onClick={() => setActiveTab("MEMBERS")}
-                className={`brand-btn brand-btn-md justify-center rounded-[1.25rem] ${
-                  activeTab === "MEMBERS" ? "brand-btn-primary" : "brand-btn-secondary"
-                }`}
-              >
-                <Users size={16} />
-                Team Members
-              </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setActiveTab("MEMBERS")}
+            className={`brand-btn brand-btn-md justify-center rounded-[1.25rem] ${
+              activeTab === "MEMBERS" ? "brand-btn-primary" : "brand-btn-secondary"
+            }`}
+          >
+            <Users size={16} />
+            Team Members
+          </button>
         </div>
       </div>
 
@@ -401,6 +498,13 @@ export default function TeamLeaderTeamDetailPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-wide text-slate-500">Team Leader</label>
+              <div className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+                {team.leaderName || "Unassigned"}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-wide text-slate-500">Radius</label>
               <input
@@ -439,17 +543,19 @@ export default function TeamLeaderTeamDetailPage() {
         </div>
         )}
 
-        {activeTab === "MEMBERS" && canAssignMembers && (
+        {activeTab === "MEMBERS" && (
         <div className="space-y-6 pt-2">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Team Members</h3>
-            <button
-              type="button"
-              onClick={() => setIsAddMemberOpen((prev) => !prev)}
-              className="brand-btn brand-btn-primary brand-btn-sm"
-            >
-              <Plus size={14} /> Add Member
-            </button>
+            {canAssignMembers && (
+              <button
+                type="button"
+                onClick={() => setIsAddMemberOpen((prev) => !prev)}
+                className="brand-btn brand-btn-primary brand-btn-sm"
+              >
+                <Plus size={14} /> Add Member
+              </button>
+            )}
           </div>
 
           {isAddMemberOpen && (
@@ -518,42 +624,46 @@ export default function TeamLeaderTeamDetailPage() {
               <h4 className="text-xs font-black uppercase tracking-wide text-slate-500">Current Members Directory ({form.memberIds.length})</h4>
             </div>
             
-            {selectedMembers.length === 0 ? (
+            {displayMembers.length === 0 ? (
               <div className="p-8 text-center text-sm font-medium text-slate-500">
                 No members currently in this team.
               </div>
             ) : (
               <ul className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
-                {selectedMembers.map(({ id, user }) => (
-                  <li key={`current-${id}`} className="flex items-center justify-between px-5 py-4 transition hover:bg-slate-50">
+                {displayMembers.map((member) => (
+                  <li key={`current-${member.id}`} className="flex items-center justify-between px-5 py-4 transition hover:bg-slate-50">
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{user.name}</p>
-                      <p className="text-xs font-medium text-slate-500">{formatRoleLabel(user.role)}</p>
+                      <p className="text-sm font-bold text-slate-900">{member.name}</p>
+                      <p className="text-xs font-medium text-slate-500">{formatRoleLabel(member.role)}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeMember(id)}
-                      className="brand-btn brand-btn-danger brand-btn-sm px-4"
-                    >
-                      <X size={14} /> Remove
-                    </button>
+                    {canAssignMembers && (
+                      <button
+                        type="button"
+                        onClick={() => removeMember(member.id)}
+                        className="brand-btn brand-btn-danger brand-btn-sm px-4"
+                      >
+                        <X size={14} /> Remove
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
           </div>
           
-          <div className="flex justify-end pt-2">
-            <button
-              type="button"
-              onClick={saveMembers}
-              disabled={savingMembers || teamFetching}
-              className="brand-btn brand-btn-primary brand-btn-md"
-            >
-              {savingMembers ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              Save Member Changes
-            </button>
-          </div>
+          {canAssignMembers && (
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={saveMembers}
+                disabled={savingMembers || teamFetching}
+                className="brand-btn brand-btn-primary brand-btn-md"
+              >
+                {savingMembers ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                Save Member Changes
+              </button>
+            </div>
+          )}
         </div>
         )}
       </div>

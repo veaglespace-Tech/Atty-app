@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const superAdminApi = createApi({
   reducerPath: "superAdminApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads", "SACoupons"],
+  tagTypes: ["SADashboard", "SAOrganizations", "SAPlans", "SAAnalytics", "SAPermissions", "SARolePermissions", "SAContacts", "SASettings", "SAPosts", "SuperAdminLeads", "SATeams", "SACoupons"],
   endpoints: (builder) => ({
     getSuperAdminDashboard: builder.query({
       query: () => "/super-admin/dashboard",
@@ -45,6 +45,29 @@ export const superAdminApi = createApi({
     getSuperAdminOrganizationTeams: builder.query({
       query: (organizationId) => `/super-admin/organizations/${organizationId}/teams`,
       providesTags: ["SAOrganizations"],
+    }),
+    getSuperAdminAllTeams: builder.query({
+      query: () => "/super-admin/teams",
+      providesTags: ["SATeams"],
+    }),
+    getSuperAdminTeamById: builder.query({
+      query: (teamId) => `/super-admin/teams/${teamId}`,
+      providesTags: (result, error, id) => [{ type: "SATeams", id }],
+    }),
+    patchSuperAdminTeam: builder.mutation({
+      query: ({ teamId, ...body }) => ({
+        url: `/super-admin/teams/${teamId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["SATeams"],
+    }),
+    deleteSuperAdminTeam: builder.mutation({
+      query: (teamId) => ({
+        url: `/super-admin/teams/${teamId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SATeams"],
     }),
     getSuperAdminLeads: builder.query({
       query: () => "/super-admin/leads",
@@ -336,6 +359,10 @@ export const {
   useGetSuperAdminOrganizationByIdQuery,
   useGetSuperAdminOrganizationUsersQuery,
   useGetSuperAdminOrganizationTeamsQuery,
+  useGetSuperAdminAllTeamsQuery,
+  useGetSuperAdminTeamByIdQuery,
+  usePatchSuperAdminTeamMutation,
+  useDeleteSuperAdminTeamMutation,
   useGetSuperAdminLeadsQuery,
   useDeleteSuperAdminLeadMutation,
   useDownloadSuperAdminOrganizationsPdfMutation,

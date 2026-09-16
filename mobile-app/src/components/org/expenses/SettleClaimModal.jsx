@@ -12,18 +12,18 @@ export default function SettleClaimModal({ visible, onClose, onSuccess, claims =
   const [receiptFile, setReceiptFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      resetForm();
-    }
-  }, [visible]);
-
   const resetForm = () => {
     setClaimNo("");
     setSelectedClaim(null);
     setAmountPaid("");
     setReceiptFile(null);
   };
+
+  useEffect(() => {
+    if (visible) {
+      resetForm();
+    }
+  }, [visible]);
 
   const handleSearch = () => {
     const claim = claims.find(c => c.claimNo === claimNo && c.status === "PENDING");

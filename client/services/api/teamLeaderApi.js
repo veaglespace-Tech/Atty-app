@@ -71,6 +71,48 @@ export const teamLeaderApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    downloadTeamLeaderAttendancePdf: builder.mutation({
+      query: (queryString = "") => ({
+        url: `/team-leader/attendance/pdf${queryString ? `?${queryString}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadTeamLeaderAttendanceExcel: builder.mutation({
+      query: (queryString = "") => ({
+        url: `/team-leader/attendance/excel${queryString ? `?${queryString}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadTeamLeaderTeamsPdf: builder.mutation({
+      query: (teamId) => ({
+        url: `/team-leader/teams/pdf${teamId ? `?teamId=${teamId}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadTeamLeaderTeamsExcel: builder.mutation({
+      query: (teamId) => ({
+        url: `/team-leader/teams/excel${teamId ? `?teamId=${teamId}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadTeamLeaderUsersPdf: builder.mutation({
+      query: (teamId) => ({
+        url: `/team-leader/users/pdf${teamId ? `?teamId=${teamId}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadTeamLeaderUsersExcel: builder.mutation({
+      query: (teamId) => ({
+        url: `/team-leader/users/excel${teamId ? `?teamId=${teamId}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -86,5 +128,11 @@ export const {
   useGetTeamLeaderReportsQuery,
   useDownloadTeamLeaderReportsPdfMutation,
   useDownloadTeamLeaderReportsExcelMutation,
+  useDownloadTeamLeaderAttendancePdfMutation,
+  useDownloadTeamLeaderAttendanceExcelMutation,
+  useDownloadTeamLeaderTeamsPdfMutation,
+  useDownloadTeamLeaderTeamsExcelMutation,
+  useDownloadTeamLeaderUsersPdfMutation,
+  useDownloadTeamLeaderUsersExcelMutation,
 } = teamLeaderApi;
 

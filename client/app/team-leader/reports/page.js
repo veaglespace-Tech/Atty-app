@@ -213,7 +213,7 @@ export default function TeamLeaderReportsPage() {
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
-      anchor.download = `attendance-report-${meta?.period || period}.pdf`
+      anchor.download = `team-report-${meta?.period || period}.pdf`
       document.body.appendChild(anchor)
       anchor.click()
       anchor.remove()
@@ -230,7 +230,7 @@ export default function TeamLeaderReportsPage() {
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
-      anchor.download = `attendance-report-${meta?.period || period}.xlsx`
+      anchor.download = `team-report-${meta?.period || period}.xlsx`
       document.body.appendChild(anchor)
       anchor.click()
       anchor.remove()

@@ -8,7 +8,7 @@ const baseNavItems = [
   { label: "Dashboard", href: "/member/dashboard" },
   // { label: "तिची सुरक्षा", href: "/her-security", target: "_blank" },
   { label: "Attendance", href: "/member/attendance" },
-  { label: "Teams", href: "/member/teams", permission: PERMISSIONS.TEAM.VIEW_ALL },
+  { label: "My Teams", href: "/member/teams" },
   { label: "Instruments", href: "/member/instruments" },
   { label: "Posts", href: "/member/posts", permission: PERMISSIONS.POSTS.CREATE },
   { label: "Reports", href: "/member/reports", permission: PERMISSIONS.REPORTS.VIEW },

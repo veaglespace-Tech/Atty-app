@@ -75,6 +75,24 @@ export const getMonthRange = (date = new Date()) => {
   };
 };
 
+export const getYearRange = (date = new Date()) => {
+  const d = new Date(date);
+  const firstDay = new Date(d.getFullYear(), 0, 1);
+  const lastDay = new Date(d.getFullYear(), 11, 31);
+  
+  return {
+    from: getDateKey(firstDay),
+    to: getDateKey(lastDay),
+  };
+};
+
+export const getAllTimeRange = () => {
+  return {
+    from: "2000-01-01",
+    to: getTodayDateKey(),
+  };
+};
+
 export const formatTimeAgo = (date) => {
   if (!date) return "";
   const time = typeof date === "string" ? new Date(date).getTime() : new Date(date).getTime();

@@ -105,6 +105,12 @@ export const authApi = createApi({
         body: { email },
       }),
     }),
+    deleteMyAccount: builder.mutation({
+      query: () => ({
+        url: "/auth/account",
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
@@ -124,4 +130,5 @@ export const {
   useValidateReferralCodeQuery,
   useJoinOrganizationMutation,
   useCheckEmailMutation,
+  useDeleteMyAccountMutation,
 } = authApi;

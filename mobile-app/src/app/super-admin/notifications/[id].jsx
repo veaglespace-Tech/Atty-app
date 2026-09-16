@@ -50,10 +50,7 @@ export default function NotificationDetailScreen() {
         <Text className="text-sm font-medium text-slate-500 text-center mb-8">
           The notification may have been deleted or you don't have access.
         </Text>
-        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="bg-blue-600 px-6 py-3 rounded-xl flex-row items-center">
-          <ChevronLeft size={16} className="text-white mr-2" />
-          <Text className="text-white font-bold">Go Back</Text>
-        </Pressable>
+        {/* Back button removed */}
       </View>
     );
   }
@@ -66,9 +63,7 @@ export default function NotificationDetailScreen() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0A0F1C]">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#0A0F1C] border-b border-slate-200 dark:border-slate-800 flex-row items-center">
-        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mr-3">
-          <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-        </Pressable>
+        {/* Back button removed */}
         <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Notification Details</Text>
       </View>
 

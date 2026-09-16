@@ -1,4 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 import {
   getMembershipForOrg,
   getUserOrganizationId,
@@ -69,7 +72,36 @@ const normalizeSessionUser = (user) => {
   };
 };
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+const TOKEN_STORAGE_KEY = "token";
+
+const getPersistedToken = async () => {
+  if (Platform.OS === "web") {
+    return AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+  }
+
+  const secureToken = await SecureStore.getItemAsync(TOKEN_STORAGE_KEY);
+  if (secureToken) return secureToken;
+
+  // Migrate any token stored by older app builds out of AsyncStorage.
+  const legacyToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+  if (legacyToken) {
+    await SecureStore.setItemAsync(TOKEN_STORAGE_KEY, legacyToken);
+    await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+  return legacyToken;
+};
+
+const persistToken = async (token) => {
+  if (Platform.OS === "web") {
+    if (token) await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
+    else await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+    return;
+  }
+
+  if (token) await SecureStore.setItemAsync(TOKEN_STORAGE_KEY, token);
+  else await SecureStore.deleteItemAsync(TOKEN_STORAGE_KEY);
+  await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+};
 
 const persistSessionUser = async (user) => {
   if (!user) {
@@ -94,7 +126,7 @@ const persistRedirectPath = async (redirectPath) => {
 export const loadPersistedSession = async () => {
   try {
     const rawUser = await AsyncStorage.getItem("user");
-    const token = await AsyncStorage.getItem("token");
+    const token = await getPersistedToken();
     const user = rawUser ? normalizeSessionUser(JSON.parse(rawUser)) : null;
     
     let redirectPath = null;
@@ -107,14 +139,14 @@ export const loadPersistedSession = async () => {
     }
     
     return { user, token, redirectPath };
-  } catch (error) {
+  } catch (_) {
     return { user: null, token: null, redirectPath: null };
   }
 };
 
 const clearPersistedSession = async () => {
   await AsyncStorage.removeItem("user");
-  await AsyncStorage.removeItem("token");
+  await persistToken(null);
   await AsyncStorage.removeItem("status");
   await AsyncStorage.removeItem("redirectPath");
   await AsyncStorage.removeItem("admin");
@@ -160,7 +192,7 @@ const authSlice = createSlice({
 
       persistSessionUser(nextUser);
       if (action.payload?.token) {
-        AsyncStorage.setItem("token", action.payload.token);
+        persistToken(action.payload.token);
       }
       persistRedirectPath(nextRedirectPath);
     },

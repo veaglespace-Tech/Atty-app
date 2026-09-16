@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator, Alert, Platform } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, Database, Download, Users, Building2, CalendarDays, CreditCard, FileJson, ShieldCheck, HardDrive, AlertTriangle } from "lucide-react-native";
+import { ChevronLeft, Database, Download, Users, Building2, CalendarDays, FileJson, ShieldCheck, HardDrive, AlertTriangle } from "lucide-react-native";
 import { useDownloadDatabaseBackupMutation } from "@/services/api/superAdminApi";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
@@ -10,7 +10,7 @@ const TABLE_INFO = [
   { icon: Building2, label: "Organizations", desc: "Org profiles & settings" },
   { icon: CalendarDays, label: "Attendance", desc: "Full attendance logs" },
 
-  { icon: FileJson, label: "Plans, Posts, Contacts", desc: "Platform content & plans" },
+  { icon: FileJson, label: "Posts & Contacts", desc: "Platform content and contacts" },
   { icon: ShieldCheck, label: "Permissions & Roles", desc: "RBAC role-permission matrix" },
   { icon: HardDrive, label: "Archive & Misc", desc: "Archive data, settings, tokens" },
 ];
@@ -38,9 +38,7 @@ export default function BackupPage() {
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-1 pr-4">
             <View className="self-start bg-blue-500/10 px-3 py-1 rounded-full mb-3 border border-blue-500/20 flex-row items-center">
-              <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="mr-1 py-1">
-                <ChevronLeft size={12} className="text-blue-500" />
-              </Pressable>
+              {/* Back button removed */}
               <Text className="text-[10px] font-black uppercase tracking-widest text-blue-400">Database</Text>
             </View>
             <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Database Backup</Text>

@@ -3,6 +3,7 @@ import SaaSLayoutShell from "@/components/saas/SaaSLayoutShell";
 const navItems = [
   { label: "Dashboard", href: "/super-admin/dashboard" },
   { label: "Organizations", href: "/super-admin/organizations" },
+  { label: "Teams", href: "/super-admin/teams" },
   { label: "Leads", href: "/super-admin/leads" },
   { label: "Attendance", href: "/super-admin/attendance" },
   { label: "Users", href: "/super-admin/users" },

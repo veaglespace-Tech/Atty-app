@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Download,
+  FileBox,
+  FileText,
   Loader2,
   Plus,
   Save,
@@ -24,8 +27,11 @@ import {
   useGetOrgTeamByIdQuery,
   useGetOrgUsersQuery,
   usePatchOrgTeamMutation,
+  useDownloadOrgTeamsPdfMutation,
+  useDownloadOrgTeamsExcelMutation,
 } from "@/services/api/orgApi";
 import { PERMISSIONS, ROLES, formatRoleLabel, hasPermission, normalizeRole } from "@/utils/roles";
+import { DASHBOARD_FETCH_LIMITS } from "@/utils/dashboardLimits";
 
 const getErrorMessage = (error, fallback) =>
   error?.data?.message || error?.error || fallback;
@@ -47,8 +53,10 @@ export default function OrgTeamDetailPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [leaderSearch, setLeaderSearch] = useState("");
+  const [subLeaderSearch, setSubLeaderSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [leaderOpen, setLeaderOpen] = useState(false);
+  const [subLeaderOpen, setSubLeaderOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [form, setForm] = useState({
@@ -57,8 +65,59 @@ export default function OrgTeamDetailPage() {
     attendanceRadius: "25",
     isActive: true,
     leaderId: "",
+    subLeaderId: "",
     memberIds: [],
   });
+
+  const [downloadTeamsPdf, { isLoading: downloadingPdf }] = useDownloadOrgTeamsPdfMutation();
+  const [downloadTeamsExcel, { isLoading: downloadingExcel }] = useDownloadOrgTeamsExcelMutation();
+  
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onDownloadPdf = async () => {
+    try {
+      const blob = await downloadTeamsPdf(teamId).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-details-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download PDF"));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      const blob = await downloadTeamsExcel(teamId).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-details-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to download Excel"));
+    }
+  };
 
   const {
     data: teamData,
@@ -67,7 +126,7 @@ export default function OrgTeamDetailPage() {
     refetch: refetchTeam,
   } = useGetOrgTeamByIdQuery(teamId, { skip: !Number.isFinite(teamId) || teamId <= 0 });
 
-  const { data: usersData, isLoading: usersLoading } = useGetOrgUsersQuery(500, {
+  const { data: usersData, isLoading: usersLoading } = useGetOrgUsersQuery(DASHBOARD_FETCH_LIMITS.ORG_USERS, {
     skip: !canAssignMembers,
   });
 
@@ -87,7 +146,7 @@ export default function OrgTeamDetailPage() {
     () =>
       users.filter((user) => {
         const role = normalizeRole(user.role);
-        return [ROLES.TEAM_LEADER, ROLES.SUB_ADMIN, ROLES.ORG_ADMIN].includes(role) && user.active;
+        return [ROLES.TEAM_LEADER, ROLES.SUB_TEAM_LEADER, ROLES.SUB_ADMIN, ROLES.ORG_ADMIN].includes(role) && user.active;
       }),
     [users]
   );
@@ -96,7 +155,7 @@ export default function OrgTeamDetailPage() {
     () =>
       users.filter((user) => {
         const role = normalizeRole(user.role);
-        return [ROLES.MEMBER, ROLES.LIFE_MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_ADMIN].includes(role) && user.active;
+        return [ROLES.MEMBER, ROLES.LIFE_MEMBER, ROLES.TEAM_LEADER, ROLES.SUB_TEAM_LEADER, ROLES.SUB_ADMIN, ROLES.ORG_ADMIN].includes(role) && user.active;
       }),
     [users]
   );
@@ -109,6 +168,7 @@ export default function OrgTeamDetailPage() {
       attendanceRadius: String(team.attendanceRadius || 25),
       isActive: Boolean(team.isActive),
       leaderId: team.leaderId ? String(team.leaderId) : "",
+      subLeaderId: team.subLeaderId ? String(team.subLeaderId) : "",
       memberIds: Array.isArray(team.memberIds) ? team.memberIds.map((id) => String(id)) : [],
     });
   }, [team]);
@@ -116,6 +176,11 @@ export default function OrgTeamDetailPage() {
   const selectedLeader = useMemo(
     () => leaderOptions.find((user) => String(user.id) === String(form.leaderId)) || null,
     [form.leaderId, leaderOptions]
+  );
+
+  const selectedSubLeader = useMemo(
+    () => leaderOptions.find((user) => String(user.id) === String(form.subLeaderId)) || null,
+    [form.subLeaderId, leaderOptions]
   );
 
   const selectedMembers = useMemo(
@@ -136,6 +201,16 @@ export default function OrgTeamDetailPage() {
     );
   }, [leaderOptions, leaderSearch]);
 
+  const filteredSubLeaders = useMemo(() => {
+    const query = subLeaderSearch.trim().toLowerCase();
+    if (!query) return leaderOptions;
+    return leaderOptions.filter(
+      (user) =>
+        String(user.name || "").toLowerCase().includes(query) ||
+        String(user.email || "").toLowerCase().includes(query)
+    );
+  }, [leaderOptions, subLeaderSearch]);
+
   const filteredMembers = useMemo(() => {
     const query = memberSearch.trim().toLowerCase();
     return memberOptions.filter((user) => {
@@ -153,6 +228,14 @@ export default function OrgTeamDetailPage() {
     setForm((prev) => ({
       ...prev,
       leaderId: String(prev.leaderId) === id ? "" : id,
+    }));
+  };
+
+  const toggleSubLeader = (subLeaderId) => {
+    const id = String(subLeaderId);
+    setForm((prev) => ({
+      ...prev,
+      subLeaderId: String(prev.subLeaderId) === id ? "" : id,
     }));
   };
 
@@ -216,8 +299,9 @@ export default function OrgTeamDetailPage() {
       await patchTeamMutation({
         teamId,
         leaderId: form.leaderId || null,
+        subLeaderId: form.subLeaderId || null,
       }).unwrap();
-      setMessage("Team leader updated");
+      setMessage("Team leaders updated");
       await refetchTeam();
     } catch (mutationError) {
       setError(getErrorMessage(mutationError, "Failed to update team leader"));
@@ -321,17 +405,54 @@ export default function OrgTeamDetailPage() {
             <p className="mt-1 text-sm font-medium text-slate-600">Manage details, team leader and members separately.</p>
           </div>
 
-          {canDeleteTeams ? (
-            <button
-              type="button"
-              onClick={deleteTeam}
-              disabled={deleting}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
-            >
-              {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-              Delete Team
-            </button>
-          ) : null}
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                disabled={downloadingPdf || downloadingExcel}
+                className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+              >
+                {(downloadingPdf || downloadingExcel) ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export Details
+                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showDownloadMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                  <button
+                    onClick={onDownloadPdf}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                  >
+                    <FileBox size={16} />
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={onDownloadExcel}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                  >
+                    <FileText size={16} />
+                    Download Excel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {canDeleteTeams ? (
+              <button
+                type="button"
+                onClick={deleteTeam}
+                disabled={deleting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 sm:w-auto"
+              >
+                {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                Delete Team
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {error ? (
@@ -509,15 +630,76 @@ export default function OrgTeamDetailPage() {
             </div>
           ) : null}
 
-          <button
-            type="button"
-            onClick={saveLeader}
-            disabled={savingLeader || teamFetching}
-            className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
-          >
-            {savingLeader ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
-            Update Leader
-          </button>
+          <div className="mt-8">
+            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Sub-Team Leader</h3>
+            <div className="relative mt-2">
+              <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+              <input
+                value={subLeaderSearch}
+                onFocus={() => setSubLeaderOpen(true)}
+                onChange={(event) => {
+                  setSubLeaderOpen(true);
+                  setSubLeaderSearch(event.target.value);
+                }}
+                placeholder="Search sub-leader"
+                className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setSubLeaderOpen((prev) => !prev)}
+                className="absolute right-2 top-2 text-slate-500"
+              >
+                {subLeaderOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            </div>
+
+            {selectedSubLeader ? (
+              <div className="mt-2 rounded-lg bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700">
+                Selected Sub-Leader: {selectedSubLeader.name}
+              </div>
+            ) : (
+              <div className="mt-2 rounded-lg bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">No sub-leader selected</div>
+            )}
+
+            {subLeaderOpen ? (
+              <div className="mt-2 max-h-48 space-y-1 overflow-auto rounded-lg border border-slate-300 bg-white p-1">
+                {filteredSubLeaders.map((leader) => {
+                  const active = String(form.subLeaderId) === String(leader.id);
+                  return (
+                    <button
+                      key={leader.id}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => toggleSubLeader(leader.id)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${
+                        active
+                          ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <span>{leader.name}</span>
+                      <span className="ml-2 text-xs opacity-80">{formatRoleLabel(leader.role)}</span>
+                    </button>
+                  );
+                })}
+                {filteredSubLeaders.length === 0 ? (
+                  <p className="px-2 py-2 text-xs font-semibold text-slate-500">No sub-leader found</p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-6 pt-2 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={saveLeader}
+              disabled={savingLeader || teamFetching}
+              className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+            >
+              {savingLeader ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
+              Update Leaders
+            </button>
+          </div>
         </div>
         )}
 

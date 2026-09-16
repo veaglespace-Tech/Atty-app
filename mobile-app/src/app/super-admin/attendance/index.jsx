@@ -98,9 +98,7 @@ export default function AttendancePage() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} className="text-slate-900 dark:text-white" />
-          </Pressable>
+          {/* Back button removed */}
           <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Platform Attendance Reports</Text>
           <View className="w-10" />
         </View>
@@ -443,7 +441,7 @@ export default function AttendancePage() {
               <Text className="text-base font-black text-slate-900 dark:text-white">Select Period</Text>
             </View>
             <View className="p-2">
-              {['DAILY', 'WEEKLY', 'MONTHLY'].map((period) => (
+              {['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'ALL'].map((period) => (
                 <TouchableOpacity
                   key={period}
                   className={`p-4 rounded-xl mb-1 flex-row items-center justify-between ${selectedPeriod === period ? 'bg-blue-50 dark:bg-blue-500/10' : ''}`}

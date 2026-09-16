@@ -1,64 +1,43 @@
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { Platform } from "react-native";
 import { logout } from "@/store/slices/authSlice";
-import { normalizeRole, ROLES } from "@/utils/roles";
 import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
 import { router } from "expo-router";
 
-const DEFAULT_LOCAL_WEB_API_URL = "http://127.0.0.1:5000/api";
 const DEFAULT_ANDROID_EMULATOR_API_URL = "http://10.0.2.2:5000/api";
 const DEFAULT_IOS_SIMULATOR_API_URL = "http://127.0.0.1:5000/api";
 const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
 
 const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");
 
-const isLocalHost = (hostname) => {
-  if (!hostname) return false;
-
-  const normalizedHost = String(hostname).toLowerCase().trim();
-
-  return (
-    normalizedHost === "localhost" ||
-    normalizedHost === "0.0.0.0" ||
-    normalizedHost.startsWith("127.") ||
-    normalizedHost.startsWith("10.") ||
-    normalizedHost.startsWith("192.168.") ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalizedHost)
-  );
-};
-
 const resolveApiBaseUrl = () => {
+  const explicitApiUrl = trimTrailingSlash(
+    process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL,
+  );
+
+  if (explicitApiUrl) {
+    return explicitApiUrl;
+  }
+
   if (__DEV__) {
     if (Platform.OS === "web" && typeof window !== "undefined") {
       return `http://${window.location.hostname}:5000/api`;
     }
-    // Updated to point directly to the local server IP for physical devices testing
-    return "http://10.127.159.165:5000/api";
-  }
 
-  const explicitApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL);
-  if (explicitApiUrl) {
-    if (Platform.OS !== "web" && (explicitApiUrl.includes("localhost") || explicitApiUrl.includes("127.0.0.1"))) {
-      return DEFAULT_PRODUCTION_API_URL;
+    if (Platform.OS === "android") {
+      return DEFAULT_ANDROID_EMULATOR_API_URL;
     }
-    return explicitApiUrl;
+
+    if (Platform.OS === "ios") {
+      return DEFAULT_IOS_SIMULATOR_API_URL;
+    }
   }
 
-  const productionApiUrl = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD)
-    || DEFAULT_PRODUCTION_API_URL;
-
-  if (__DEV__) {
-    console.warn("No EXPO_PUBLIC_API_URL provided in .env, falling back to LIVE server.");
-  }
-
-  return productionApiUrl;
+  return trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD) || DEFAULT_PRODUCTION_API_URL;
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
-console.log("[API] Resolved Base URL (Cache Bust):", API_BASE_URL);
-
-const LIVE_SERVER_URL = trimTrailingSlash(process.env.EXPO_PUBLIC_API_URL_PROD) || "https://atty.veaglespace.com/api";
 
 const createBaseQuery = (url, timeoutMs = 120000) => fetchBaseQuery({
   baseUrl: url,
@@ -80,12 +59,7 @@ const createBaseQuery = (url, timeoutMs = 120000) => fetchBaseQuery({
   },
 });
 
-// Use a reasonable 12-second timeout for local query, and 15s for fallback query
-const isLocalServer = API_BASE_URL !== LIVE_SERVER_URL;
-const rawBaseQuery = createBaseQuery(API_BASE_URL, isLocalServer ? 12000 : 15000);
-const fallbackBaseQuery = createBaseQuery(LIVE_SERVER_URL, 15000);
-
-const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
+const rawBaseQuery = createBaseQuery(API_BASE_URL, __DEV__ ? 30000 : 30000);
 
 const resolveRequestUrl = (args) => {
   if (typeof args === "string") return args;
@@ -125,14 +99,7 @@ const handleUnauthorizedSession = (api, args) => {
 };
 
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
-
-  // DYNAMIC FALLBACK: If local server fails to connect or times out, retry with the live server automatically!
-  const isNetworkOrTimeout = result?.error?.status === "FETCH_ERROR" || result?.error?.status === "TIMEOUT_ERROR";
-  if (isNetworkOrTimeout && API_BASE_URL !== LIVE_SERVER_URL) {
-    console.warn("[API] Local server unreachable or timed out. Falling back to live server...");
-    result = await fallbackBaseQuery(args, api, extraOptions);
-  }
+  const result = await rawBaseQuery(args, api, extraOptions);
 
   if (result?.error) {
     const statusCode = Number(result.error.status || result.error.originalStatus || 0);

@@ -212,5 +212,3 @@ module.exports = {
   startServer,
   shutdownServer,
 };
-
-// trigger restart 2

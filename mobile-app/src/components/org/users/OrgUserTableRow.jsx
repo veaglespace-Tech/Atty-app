@@ -4,18 +4,38 @@ import { router } from "expo-router";
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { formatRoleLabel } from "@/utils/roles";
 import { getFullImageUrl } from "@/components/dashboard/MobileDashboardShell";
+import { CheckSquare, Square } from "lucide-react-native";
 
-const OrgUserTableRow = ({ user, index = 0 }) => {
+const OrgUserTableRow = ({ user, index = 0, bulkMode, isSelected, onSelect }) => {
   const [avatarError, setAvatarError] = useState(false);
   const profileUrl = getFullImageUrl(user.profileImageUrl);
 
   return (
     <Animated.View entering={FadeInUp.duration(400).delay(index * 50).springify()}>
       <Pressable
-        onPress={() => router.push(`/org/users/${user.id}`)}
-        className="p-5 bg-white dark:bg-slate-900 mb-3 mx-4 rounded-[24px] shadow-sm border border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80 active:scale-[0.98] transition-all">
+        onPress={() => {
+          if (bulkMode) {
+            onSelect();
+          } else {
+            router.push(`/org/users/${user.id}`);
+          }
+        }}
+        className={`p-5 mb-3 mx-4 rounded-[24px] shadow-sm border active:scale-[0.98] transition-all ${
+          isSelected 
+            ? "bg-blue-50 dark:bg-blue-900/10 border-blue-400 dark:border-blue-600 shadow-blue-500/20" 
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 active:bg-slate-50 dark:active:bg-slate-800/80"
+        }`}>
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-row items-center gap-3.5 flex-1">
+            {bulkMode && (
+              <View className="mr-1">
+                {isSelected ? (
+                  <CheckSquare size={22} className="text-blue-600 dark:text-blue-500" />
+                ) : (
+                  <Square size={22} className="text-slate-300 dark:text-slate-600" />
+                )}
+              </View>
+            )}
             {profileUrl && !avatarError ? (
               <Image
                 source={{ uri: profileUrl }}

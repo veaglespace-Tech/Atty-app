@@ -57,7 +57,7 @@ const buildAttyContext = async (user) => {
     const userRole = resolveUserRole(dbUser, orgId) || "MEMBER";
 
     const teams =
-      userRole === "TEAM_LEADER"
+      userRole === "TEAM_LEADER" || userRole === "SUB_TEAM_LEADER"
         ? dbUser.teamsLed.map((t) => t.name)
         : dbUser.teamMemberships.map((tm) => tm.team.name);
 

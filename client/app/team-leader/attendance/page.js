@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "@/store/slices/notificationSlice";
-import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin } from "lucide-react";
+import { Filter, Loader2, RefreshCcw, LocateFixed, Save, Search, MapPin, Download, FileBox, FileText, ChevronDown } from "lucide-react";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
 import AttendanceStatusBadge from "@/components/attendance/AttendanceStatusBadge";
 import PaginationControls from "@/components/dashboard/PaginationControls";
@@ -11,6 +11,8 @@ import {
   useGetTeamLeaderAttendanceQuery,
   usePatchTeamLeaderTeamMutation,
   useGetTeamLeaderTeamsQuery,
+  useDownloadTeamLeaderAttendancePdfMutation,
+  useDownloadTeamLeaderAttendanceExcelMutation,
 } from "@/services/api/teamLeaderApi";
 import MyAttendancePanel from "@/components/attendance/MyAttendancePanel";
 import useLocalPagination from "@/hooks/useLocalPagination";
@@ -124,6 +126,58 @@ export default function TeamLeaderAttendancePage() {
   const { data: teamsData, isLoading: teamsLoading, refetch: refetchTeams } =
     useGetTeamLeaderTeamsQuery(DASHBOARD_FETCH_LIMITS.TEAM_LEADER_TEAMS);
   const [patchTeamMutation] = usePatchTeamLeaderTeamMutation();
+  const [downloadTeamLeaderAttendancePdf, { isLoading: downloadingPdf }] = useDownloadTeamLeaderAttendancePdfMutation();
+  const [downloadTeamLeaderAttendanceExcel, { isLoading: downloadingExcel }] = useDownloadTeamLeaderAttendanceExcelMutation();
+
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const downloadMenuRef = require('react').useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [downloadMenuRef]);
+
+  const onDownloadPdf = async () => {
+    try {
+      setDownloadError("");
+      const blob = await downloadTeamLeaderAttendancePdf(queryString).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-attendance-logs-${filters.from || todayKey()}-to-${filters.to || todayKey()}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setDownloadError(getErrorMessage(err, "Failed to download PDF."));
+    }
+  };
+
+  const onDownloadExcel = async () => {
+    try {
+      setDownloadError("");
+      const blob = await downloadTeamLeaderAttendanceExcel(queryString).unwrap();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `team-attendance-logs-${filters.from || todayKey()}-to-${filters.to || todayKey()}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setShowDownloadMenu(false);
+    } catch (err) {
+      setDownloadError(getErrorMessage(err, "Failed to download Excel."));
+    }
+  };
 
   const teams = useMemo(() => (Array.isArray(teamsData?.items) ? teamsData.items : []), [teamsData]);
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -446,28 +500,64 @@ export default function TeamLeaderAttendancePage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await refetch();
-              } catch (err) {
-                if (!err?.status) {
-                  dispatch(
-                    addNotification({
-                      type: "error",
-                      message: err?.data?.message || err?.error || "Failed to load team attendance",
-                    })
-                  );
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:shrink-0 lg:max-w-full">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await refetch();
+                } catch (err) {
+                  if (!err?.status) {
+                    dispatch(
+                      addNotification({
+                        type: "error",
+                        message: err?.data?.message || err?.error || "Failed to load team attendance",
+                      })
+                    );
+                  }
                 }
-              }
-            }}
-            disabled={loading}
-            className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-            Refresh
-          </button>
+              }}
+              disabled={loading}
+              className="brand-btn brand-btn-secondary brand-btn-md w-full sm:w-auto"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+              Refresh
+            </button>
+            <div className="relative w-full sm:w-auto" ref={downloadMenuRef}>
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                disabled={loading || downloadingPdf || downloadingExcel}
+                className="brand-btn brand-btn-primary brand-btn-md w-full sm:w-auto"
+              >
+                {(downloadingPdf || downloadingExcel) ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export
+                <ChevronDown size={14} className={`ml-1 opacity-60 transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showDownloadMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-100 bg-white p-1 shadow-xl z-50">
+                  <button
+                    onClick={onDownloadPdf}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                  >
+                    <FileBox size={16} />
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={onDownloadExcel}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-600"
+                  >
+                    <FileText size={16} />
+                    Download Excel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

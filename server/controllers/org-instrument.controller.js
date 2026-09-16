@@ -146,6 +146,14 @@ exports.assignInstrumentToUsers = asyncHandler(async (req, res) => {
     throw new Error("Instrument not found");
   }
 
+  const formatAssetId = (id) => {
+    const strId = String(id).trim();
+    if (strId.toLowerCase().startsWith(instrument.name.toLowerCase() + '-')) {
+      return strId;
+    }
+    return `${instrument.name}-${strId}`;
+  };
+
   let dataToInsert = [];
   if (assignments && assignments.length > 0) {
     if (assignments.some(a => !a.assetId || String(a.assetId).trim() === '')) {
@@ -155,7 +163,7 @@ exports.assignInstrumentToUsers = asyncHandler(async (req, res) => {
     dataToInsert = assignments.map(a => ({
       userId: Number(a.userId),
       instrumentId: Number(instrumentId),
-      assetId: String(a.assetId),
+      assetId: formatAssetId(a.assetId),
     }));
   } else {
     if (!assetId || String(assetId).trim() === '') {
@@ -165,7 +173,7 @@ exports.assignInstrumentToUsers = asyncHandler(async (req, res) => {
     dataToInsert = userIds.map(userId => ({
       userId: Number(userId),
       instrumentId: Number(instrumentId),
-      assetId: String(assetId),
+      assetId: formatAssetId(assetId),
     }));
   }
 
@@ -230,7 +238,13 @@ exports.updateInstrumentAssignment = asyncHandler(async (req, res) => {
     throw new Error("Physical ID / Number is strictly required");
   }
 
-
+  const formatAssetId = (id) => {
+    const strId = String(id).trim();
+    if (strId.toLowerCase().startsWith(instrument.name.toLowerCase() + '-')) {
+      return strId;
+    }
+    return `${instrument.name}-${strId}`;
+  };
 
   await prisma.userInstrument.update({
     where: {
@@ -240,7 +254,7 @@ exports.updateInstrumentAssignment = asyncHandler(async (req, res) => {
       },
     },
     data: {
-      assetId: String(assetId),
+      assetId: formatAssetId(assetId),
     },
   });
 

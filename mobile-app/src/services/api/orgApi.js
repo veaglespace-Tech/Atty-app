@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "ArchivedUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgCoupons", "OrgInstruments", "OrgExpenses", "OrgDepartments", "OrgStock", "OrgClaims"],
+  tagTypes: ["OrgUsers", "ArchivedUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments", "OrgExpenses", "OrgDepartments", "OrgStock", "OrgClaims"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -276,10 +276,6 @@ export const orgApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
-    getOrgCoupons: builder.query({
-      query: () => "/coupons/my-coupons",
-      providesTags: ["OrgCoupons"],
-    }),
     downloadOrgDepartmentsExcel: builder.mutation({
       query: (params = "") => ({
         url: `/org/teams/excel${params ? `?${params}` : ""}`,
@@ -504,7 +500,6 @@ export const {
   useGetOrgRegularizationRequestsQuery,
   useApproveRegularizationRequestMutation,
   useRejectRegularizationRequestMutation,
-  useGetOrgCouponsQuery,
   useGetOrgInstrumentsQuery,
   useCreateOrgInstrumentMutation,
   useUpdateOrgInstrumentMutation,

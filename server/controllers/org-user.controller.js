@@ -297,7 +297,7 @@ exports.getOrgUsers = asyncHandler(async (req, res) => {
     .filter((user) => {
       if (user.role === "SUPER_ADMIN") return false;
       if (requesterRole === "SUB_ADMIN") {
-        return user.role === "MEMBER" || user.role === "TEAM_LEADER";
+        return user.role === "MEMBER" || user.role === "TEAM_LEADER" || user.role === "SUB_TEAM_LEADER" || user.role === "LIFE_MEMBER";
       }
       return true;
     });

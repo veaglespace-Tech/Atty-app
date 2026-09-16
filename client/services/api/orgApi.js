@@ -198,6 +198,20 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgTeams"],
     }),
+    downloadOrgTeamsPdf: builder.mutation({
+      query: (teamId) => ({
+        url: `/org/teams/pdf${teamId ? `?teamId=${teamId}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    downloadOrgTeamsExcel: builder.mutation({
+      query: (teamId) => ({
+        url: `/org/teams/excel${teamId ? `?teamId=${teamId}` : ""}`,
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
     getOrgAttendance: builder.query({
       query: (params = "") => `/org/attendance${params ? `?${params}` : ""}`,
       providesTags: ["OrgAttendance"],
@@ -446,4 +460,6 @@ export const {
   useUnassignOrgDepartmentMutation,
   useDownloadOrgDepartmentsExcelMutation,
   useDownloadOrgDepartmentsPdfMutation,
+  useDownloadOrgTeamsPdfMutation,
+  useDownloadOrgTeamsExcelMutation,
 } = orgApi;

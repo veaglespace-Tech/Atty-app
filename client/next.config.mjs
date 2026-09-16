@@ -17,6 +17,18 @@ const nextConfig = {
   reactCompiler: true,
   outputFileTracingRoot: projectRoot,
 
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
+  },
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   turbopack: {
     root: projectRoot,

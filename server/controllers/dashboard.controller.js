@@ -42,7 +42,7 @@ exports.getStats = asyncHandler(async (req, res) => {
           memberships: {
             some: {
               orgId,
-              role: "TEAM_LEADER",
+              role: { in: ["TEAM_LEADER", "SUB_TEAM_LEADER"] },
               isActive: true,
             },
           },

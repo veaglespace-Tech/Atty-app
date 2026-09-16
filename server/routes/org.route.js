@@ -27,6 +27,8 @@ const {
   createOrgTeam,
   patchOrgTeam,
   deleteOrgTeam,
+  downloadOrgTeamsPdf,
+  downloadOrgTeamsExcel,
 } = require("../controllers/org-team.controller");
 const {
   getOrgAttendance,
@@ -133,6 +135,8 @@ router.patch("/registration-requests/:id/accept", requirePermission(PERMISSIONS.
 router.patch("/registration-requests/:id/reject", requirePermission(PERMISSIONS.USERS.UPDATE_STATUS), rejectRegistrationRequest);
 
 router.get("/teams", getOrgTeams);
+router.get("/teams/pdf", downloadOrgTeamsPdf);
+router.get("/teams/excel", downloadOrgTeamsExcel);
 router.get("/teams/:teamId", getOrgTeamById);
 router.get("/teams/:teamId/members", getOrgTeamMembers);
 router.post("/teams", createOrgTeam);

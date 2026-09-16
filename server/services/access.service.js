@@ -37,15 +37,15 @@ const assertRoleScope = (res, actor, targetRole, orgId = null) => {
   }
 
   if (actorRole === "SUB_ADMIN") {
-    if (normalizedTargetRole !== "MEMBER" && normalizedTargetRole !== "TEAM_LEADER") {
+    if (normalizedTargetRole !== "MEMBER" && normalizedTargetRole !== "TEAM_LEADER" && normalizedTargetRole !== "SUB_TEAM_LEADER") {
       res.status(403);
       throw new Error("Sub admin can only manage members and team leaders");
     }
     return;
   }
 
-  if (actorRole === "TEAM_LEADER") {
-    if (normalizedTargetRole !== "MEMBER") {
+  if (actorRole === "TEAM_LEADER" || actorRole === "SUB_TEAM_LEADER") {
+    if (normalizedTargetRole !== "MEMBER" && normalizedTargetRole !== "LIFE_MEMBER") {
       res.status(403);
       throw new Error("Team leader can only manage member accounts");
     }

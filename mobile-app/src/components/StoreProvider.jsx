@@ -11,14 +11,8 @@ function NotificationSetup({ children }) {
   const responseListener = useRef();
 
   useEffect(() => {
-    // Only register push token if the user is authenticated
-    if (token) {
-      registerForPushNotificationsAsync().then((pushToken) => {
-        if (pushToken) {
-          sendPushTokenToServer(pushToken);
-        }
-      });
-    }
+    // Automatic push notification registration removed for Store compliance.
+    // Users must now manually opt-in via Settings.
   }, [token]);
 
   useEffect(() => {

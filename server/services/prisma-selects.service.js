@@ -168,6 +168,7 @@ const teamListSelect = {
   name: true,
   description: true,
   leaderId: true,
+  subLeaderId: true,
   attendanceRadius: true,
   longitude: true,
   latitude: true,
@@ -175,6 +176,9 @@ const teamListSelect = {
   createdAt: true,
   updatedAt: true,
   leader: {
+    select: teamLeaderSelect,
+  },
+  subLeader: {
     select: teamLeaderSelect,
   },
   _count: {
@@ -192,6 +196,9 @@ const teamDetailSelect = {
       user: {
         select: {
           name: true,
+          memberships: {
+            select: membershipSelect,
+          },
         },
       },
     },

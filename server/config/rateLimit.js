@@ -42,6 +42,7 @@ const roleRateLimiter = rateLimit({
         return 10000;
       case "SUB_ADMIN":
       case "TEAM_LEADER":
+      case "SUB_TEAM_LEADER":
         return 10000;
       case "MEMBER":
       default:

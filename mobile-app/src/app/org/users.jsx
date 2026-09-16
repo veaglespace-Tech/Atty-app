@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import {
-  Search, User, ShieldCheck, Mail, Phone, Plus, RefreshCw, Download, Archive
+  Search, User, ShieldCheck, Mail, Phone, Plus, RefreshCw, Download, Archive, CheckSquare, Square, Trash2, Power, ShieldAlert
 } from "lucide-react-native";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -15,6 +15,8 @@ import {
   useCreateOrgUserMutation,
   useDownloadOrgUsersExcelMutation,
   useDownloadOrgUsersPdfMutation,
+  usePatchOrgUserMutation,
+  useDeleteOrgUserMutation,
 } from "@/services/api/orgApi";
 import {
   ROLES, ORG_MANAGED_ROLE_OPTIONS, PERMISSION_GROUPS,
@@ -49,6 +51,10 @@ export default function OrgUsersPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -65,6 +71,8 @@ export default function OrgUsersPage() {
   const [createUserMutation] = useCreateOrgUserMutation();
   const [downloadPdf, { isLoading: downloadingPdf }] = useDownloadOrgUsersPdfMutation();
   const [downloadExcel, { isLoading: downloadingExcel }] = useDownloadOrgUsersExcelMutation();
+  const [patchOrgUserMutation] = usePatchOrgUserMutation();
+  const [deleteOrgUserMutation] = useDeleteOrgUserMutation();
 
   const users = Array.isArray(usersData?.items) ? usersData.items : [];
   const summary = Array.isArray(usersData?.summary) ? usersData.summary : [];
@@ -136,6 +144,72 @@ export default function OrgUsersPage() {
         ? prev.permissions.filter((p) => p !== permission)
         : [...prev.permissions, permission],
     }));
+  };
+
+  const toggleSelectUser = (userId) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleBulkBlock = async () => {
+    if (!selectedUserIds.length) return;
+    try {
+      setBulkLoading(true);
+      await Promise.all(
+        selectedUserIds.map((id) => patchOrgUserMutation({ userId: id, active: false }).unwrap())
+      );
+      setMessage(`Successfully blocked ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to block selected users"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkUnblock = async () => {
+    if (!selectedUserIds.length) return;
+    try {
+      setBulkLoading(true);
+      await Promise.all(
+        selectedUserIds.map((id) => patchOrgUserMutation({ userId: id, active: true }).unwrap())
+      );
+      setMessage(`Successfully unblocked ${selectedUserIds.length} user(s).`);
+      setSelectedUserIds([]);
+      refetch();
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to unblock selected users"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedUserIds.length) return;
+    Alert.alert("Confirm Delete", `Are you sure you want to delete/archive ${selectedUserIds.length} selected user(s)?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setBulkLoading(true);
+            await Promise.all(
+              selectedUserIds.map((id) => deleteOrgUserMutation({ userId: id, reason: "Bulk deleted by Admin" }).unwrap())
+            );
+            setMessage(`Successfully archived ${selectedUserIds.length} user(s).`);
+            setSelectedUserIds([]);
+            refetch();
+          } catch (err) {
+            setError(getErrorMessage(err, "Failed to delete selected users"));
+          } finally {
+            setBulkLoading(false);
+          }
+        },
+      },
+    ]);
   };
 
   const resetForm = () => {
@@ -212,66 +286,88 @@ export default function OrgUsersPage() {
           <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-6">
             Directory keeps core fields simple. Click a user row to open full profile and actions.
           </Text>
-          <View className="flex-row items-center gap-3">
-            <Pressable
-              onPress={() => setCreateOpen(true)}
-              className="flex-1 h-11 flex-row items-center justify-center gap-2 bg-blue-500 dark:bg-blue-600 rounded-[18px] shadow-sm shadow-blue-500/20 active:scale-95 transition-transform">
-              <Plus size={18} color="#fff" />
-              <Text className="text-white text-sm font-bold">New Member</Text>
-            </Pressable>
-            <Pressable
-              onPress={refetch}
-              className="h-11 w-11 items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[18px] active:scale-95 transition-transform">
-              <RefreshCw size={18} className="text-slate-700 dark:text-slate-300" />
-            </Pressable>
-            {(actorRole === ROLES.ORG_ADMIN || actorRole === ROLES.SUPER_ADMIN) && (
+          <View className="flex-row flex-wrap items-center gap-3">
+            {/* Primary Actions */}
+            <View className="flex-row items-center gap-3 flex-1 min-w-[240px]">
+              <Pressable
+                onPress={() => setCreateOpen(true)}
+                className="flex-1 h-11 flex-row items-center justify-center gap-2 bg-blue-500 dark:bg-blue-600 rounded-[18px] shadow-sm shadow-blue-500/20 active:scale-95 transition-transform">
+                <Plus size={18} color="#fff" />
+                <Text className="text-white text-sm font-bold" numberOfLines={1}>New Member</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  const next = !bulkMode;
+                  setBulkMode(next);
+                  if (!next) setSelectedUserIds([]);
+                }}
+                className={`flex-1 h-11 flex-row items-center justify-center border rounded-[18px] active:scale-95 transition-transform gap-2 ${
+                  bulkMode || selectedUserIds.length > 0
+                    ? "bg-blue-500 border-blue-500"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                }`}
+              >
+                <CheckSquare size={18} className={bulkMode || selectedUserIds.length > 0 ? "text-white" : "text-blue-600 dark:text-blue-400"} />
+                <Text className={`text-sm font-bold ${bulkMode || selectedUserIds.length > 0 ? "text-white" : "text-blue-600 dark:text-blue-400"}`} numberOfLines={1}>
+                  {bulkMode || selectedUserIds.length > 0 ? "Exit Bulk" : "Bulk Select"}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Secondary/Icon Actions */}
+            <View className="flex-row items-center gap-3">
+              <Pressable
+                onPress={refetch}
+                className="h-11 w-11 items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[18px] active:scale-95 transition-transform">
+                <RefreshCw size={18} className="text-slate-700 dark:text-slate-300" />
+              </Pressable>
               <Pressable
                 onPress={() => router.push("/org/users/archived")}
                 className="h-11 w-11 items-center justify-center bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 rounded-[18px] active:scale-95 transition-transform">
                 <Archive size={18} className="text-rose-600 dark:text-rose-400" />
               </Pressable>
-            )}
-            <Pressable
-              onPress={() => {
-                if (filteredUsers.length === 0) {
-                  Alert.alert("No Data", "There are no users to export.");
-                  return;
-                }
-                
-                Alert.alert(
-                  "Export Users",
-                  "Choose export format:",
-                  [
-                    {
-                      text: "PDF",
-                      onPress: async () => {
-                        try {
-                          const blob = await downloadPdf().unwrap();
-                          await downloadAndShareBlob(blob, 'users.pdf');
-                        } catch (err) {
-                          Alert.alert("Export Failed", "Could not generate PDF.");
+              <Pressable
+                onPress={() => {
+                  if (filteredUsers.length === 0) {
+                    Alert.alert("No Data", "There are no users to export.");
+                    return;
+                  }
+                  
+                  Alert.alert(
+                    "Export Users",
+                    "Choose export format:",
+                    [
+                      {
+                        text: "PDF",
+                        onPress: async () => {
+                          try {
+                            const blob = await downloadPdf().unwrap();
+                            await downloadAndShareBlob(blob, 'users.pdf');
+                          } catch (err) {
+                            Alert.alert("Export Failed", "Could not generate PDF.");
+                          }
                         }
-                      }
-                    },
-                    {
-                      text: "Excel",
-                      onPress: async () => {
-                        try {
-                          const blob = await downloadExcel().unwrap();
-                          await downloadAndShareBlob(blob, 'users.xlsx');
-                        } catch (err) {
-                          Alert.alert("Export Failed", "Could not generate Excel.");
+                      },
+                      {
+                        text: "Excel",
+                        onPress: async () => {
+                          try {
+                            const blob = await downloadExcel().unwrap();
+                            await downloadAndShareBlob(blob, 'users.xlsx');
+                          } catch (err) {
+                            Alert.alert("Export Failed", "Could not generate Excel.");
+                          }
                         }
-                      }
-                    },
-                    { text: "Cancel", style: "cancel" }
-                  ]
-                );
-              }}
-              disabled={downloadingPdf || downloadingExcel}
-              className={`h-11 w-11 items-center justify-center border rounded-[18px] active:scale-95 transition-transform ${downloadingPdf || downloadingExcel ? 'bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
-              <Download size={18} className={downloadingPdf || downloadingExcel ? "text-slate-400" : "text-slate-700 dark:text-slate-300"} />
-            </Pressable>
+                      },
+                      { text: "Cancel", style: "cancel" }
+                    ]
+                  );
+                }}
+                disabled={downloadingPdf || downloadingExcel}
+                className={`h-11 w-11 items-center justify-center border rounded-[18px] active:scale-95 transition-transform ${downloadingPdf || downloadingExcel ? 'bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                <Download size={18} className={downloadingPdf || downloadingExcel ? "text-slate-400" : "text-slate-700 dark:text-slate-300"} />
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -374,6 +470,48 @@ export default function OrgUsersPage() {
           </View>
         ) : null}
 
+        {selectedUserIds.length > 0 && (
+          <View className="mx-4 mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-2xl shadow-sm">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-sm font-bold text-slate-800 dark:text-white">
+                {selectedUserIds.length} user(s) selected
+              </Text>
+              <Pressable
+                onPress={() => setSelectedUserIds([])}
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl"
+              >
+                <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">Clear</Text>
+              </Pressable>
+            </View>
+            <View className="flex-row flex-wrap gap-2">
+              <Pressable
+                onPress={handleBulkUnblock}
+                disabled={bulkLoading}
+                className="flex-row items-center gap-1.5 bg-blue-600 px-3 py-2 rounded-xl"
+              >
+                <Power size={14} color="#fff" />
+                <Text className="text-xs font-bold text-white">Unblock</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleBulkBlock}
+                disabled={bulkLoading}
+                className="flex-row items-center gap-1.5 bg-rose-600 px-3 py-2 rounded-xl"
+              >
+                <ShieldAlert size={14} color="#fff" />
+                <Text className="text-xs font-bold text-white">Block</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleBulkDelete}
+                disabled={bulkLoading}
+                className="flex-row items-center gap-1.5 bg-red-600 px-3 py-2 rounded-xl"
+              >
+                <Trash2 size={14} color="#fff" />
+                <Text className="text-xs font-bold text-white">Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {/* USER LIST */}
         <View className="mt-8 mb-8">
           {filteredUsers.length === 0 ? (
@@ -384,7 +522,14 @@ export default function OrgUsersPage() {
           ) : (
             <View>
               {filteredUsers.map((user, idx) => (
-                <OrgUserTableRow key={user.id} user={user} index={idx} />
+                <OrgUserTableRow 
+                  key={user.id} 
+                  user={user} 
+                  index={idx} 
+                  bulkMode={bulkMode}
+                  isSelected={selectedUserIds.includes(user.id)}
+                  onSelect={() => toggleSelectUser(user.id)}
+                />
               ))}
             </View>
           )}

@@ -3,6 +3,7 @@ const ROLE_ROUTE_PREFIX = Object.freeze({
   ORG_ADMIN: "/org",
   SUB_ADMIN: "/org",
   TEAM_LEADER: "/team-leader",
+  SUB_TEAM_LEADER: "/team-leader",
   MEMBER: "/member",
   LIFE_MEMBER: "/member",
 });
@@ -15,6 +16,8 @@ const LEGACY_ROLE_MAP = Object.freeze({
   TEAMLEADER: "TEAM_LEADER",
   TEAM_LEADER: "TEAM_LEADER",
   TEAMLEAD: "TEAM_LEADER",
+  SUB_TEAM_LEADER: "SUB_TEAM_LEADER",
+  SUBTEAMLEADER: "SUB_TEAM_LEADER",
   MEMBER: "MEMBER",
   LIFE_MEMBER: "LIFE_MEMBER",
   LIFEMEMBER: "LIFE_MEMBER",
@@ -28,6 +31,7 @@ const ALL_ROLES = Object.freeze([
   "ORG_ADMIN",
   "SUB_ADMIN",
   "TEAM_LEADER",
+  "SUB_TEAM_LEADER",
   "MEMBER",
   "LIFE_MEMBER",
 ]);
@@ -36,6 +40,7 @@ const ORG_SCOPED_ROLES = Object.freeze([
   "ORG_ADMIN",
   "SUB_ADMIN",
   "TEAM_LEADER",
+  "SUB_TEAM_LEADER",
   "MEMBER",
   "LIFE_MEMBER",
 ]);

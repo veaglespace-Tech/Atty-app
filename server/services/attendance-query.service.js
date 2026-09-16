@@ -208,7 +208,7 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
     throw err;
   }
 
-  const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "custom"]);
+  const REPORT_PERIODS = new Set(["daily", "weekly", "monthly", "yearly", "custom", "all"]);
   const CUSTOM_REPORT_MIN_DAYS = 1;
   const CUSTOM_REPORT_MAX_DAYS = 364;
   const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -231,6 +231,18 @@ const buildUserAttendancePayload = async ({ userId, orgId, period, fromInput, to
     rangeFrom = dateKey(from);
     rangeTo = today;
     periodLabel = "Weekly";
+  } else if (normalizedPeriod === "yearly") {
+    const from = new Date(now);
+    from.setDate(from.getDate() - 364);
+    rangeFrom = dateKey(from);
+    rangeTo = today;
+    periodLabel = "Yearly";
+  } else if (normalizedPeriod === "all") {
+    const from = new Date(now);
+    from.setFullYear(from.getFullYear() - 10);
+    rangeFrom = dateKey(from);
+    rangeTo = today;
+    periodLabel = "All Time";
   } else if (normalizedPeriod === "custom") {
     rangeFrom = toDateKey(fromInput);
     rangeTo = toDateKey(toInput);

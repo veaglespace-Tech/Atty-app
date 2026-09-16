@@ -19,83 +19,15 @@ import { getErrorMessage } from "@/utils/formValidation";
 const sectionCardClassName = "light-glow-card-static rounded-[1.9rem] p-6 sm:p-8";
 const fieldClassName = "dashboard-field-control";
 
-const NumberCombobox = ({ value, onChange, placeholder = "0-999" }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(value || "");
-  const [prevValue, setPrevValue] = useState(value);
-  const wrapperRef = useRef(null);
-
-  if (value !== prevValue) {
-    setPrevValue(value);
-    setSearchTerm(value || "");
-  }
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-        onChange(searchTerm);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [searchTerm, onChange]);
-
-  const filteredOptions = useMemo(() => {
-    const all = Array.from({ length: 1000 }, (_, i) => i.toString());
-    if (!searchTerm) return all;
-    return all.filter(n => n.includes(searchTerm));
-  }, [searchTerm]);
-
+const AssetIdInput = ({ value, onChange, placeholder = "Enter ID / Number" }) => {
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-[120px]">
-      <div className="relative">
-        <input
-          type="text"
-          inputMode="numeric"
-          className={`${fieldClassName} !py-1.5 !pl-3 !pr-8 !text-sm w-full font-medium`}
-          placeholder={placeholder}
-          value={searchTerm}
-          onFocus={() => setIsOpen(true)}
-          onChange={(e) => {
-            let val = e.target.value.replace(/[^0-9]/g, '');
-            if (val !== "") val = parseInt(val, 10).toString();
-            if (val !== "" && parseInt(val) > 999) val = "999";
-            setSearchTerm(val);
-            onChange(val);
-            setIsOpen(true);
-          }}
-        />
-        <div 
-          className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <ChevronDown size={14} />
-        </div>
-      </div>
-      {isOpen && (
-        <div className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-800">
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className="w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white transition-colors"
-                onClick={() => {
-                  setSearchTerm(opt);
-                  onChange(opt);
-                  setIsOpen(false);
-                }}
-              >
-                {opt}
-              </button>
-            ))
-          ) : (
-            <div className="px-3 py-2 text-sm text-slate-500 text-center italic">No match</div>
-          )}
-        </div>
-      )}
-    </div>
+    <input
+      type="text"
+      className={`${fieldClassName} !py-1.5 !px-3 !text-sm w-full max-w-[150px] font-medium`}
+      placeholder={placeholder}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+    />
   );
 };
 
@@ -139,6 +71,10 @@ export default function OrgInstrumentsPage() {
 
   const instruments = useMemo(() => instrumentsData?.items || [], [instrumentsData]);
   const users = useMemo(() => usersData?.items || [], [usersData]);
+
+  const selectedInstrument = useMemo(() => {
+    return instruments.find((i) => String(i.id) === String(selectedInstrumentId));
+  }, [instruments, selectedInstrumentId]);
 
   // --- ASSIGNMENT LOGIC ---
   const filteredUsers = useMemo(() => {
@@ -603,8 +539,13 @@ export default function OrgInstrumentsPage() {
                           <div className="mt-3 pt-3 border-t border-blue-100 dark:border-blue-800/50">
                             <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
                               Assign ID / Number <span className="text-red-500">*</span>
+                              {selectedInstrument && (
+                                <span className="normal-case tracking-normal opacity-70 ml-1 font-medium text-[10px]">
+                                  (Will be saved as {selectedInstrument.name}-#)
+                                </span>
+                              )}
                             </label>
-                            <NumberCombobox
+                            <AssetIdInput
                               value={selectedUsers[user.id] || ""}
                               onChange={(val) => updateAssetId(user.id, val)}
                             />
@@ -704,7 +645,7 @@ export default function OrgInstrumentsPage() {
                               
                               {editingAssignment?.userId === user.id && editingAssignment?.instrumentId === inst.id && (
                                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 w-full">
-                                  <NumberCombobox
+                                  <AssetIdInput
                                     value={editingAssetId}
                                     onChange={setEditingAssetId}
                                   />

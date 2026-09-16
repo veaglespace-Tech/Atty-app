@@ -184,10 +184,7 @@ export default function OrgUserDetailPage() {
   if (!user) {
     return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950 p-5">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-4">
-          <ArrowLeft size={18} color="#64748b" />
-          <Text className="text-sm font-bold text-slate-600 dark:text-slate-400">Back to Users</Text>
-        </Pressable>
+          {/* Back button removed */}
         <View className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
           <Text className="text-sm font-semibold text-amber-700 dark:text-amber-300">User not found.</Text>
         </View>
@@ -199,10 +196,7 @@ export default function OrgUserDetailPage() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-2 mb-3">
-          <ArrowLeft size={18} color="#64748b" />
-          <Text className="text-sm font-bold text-slate-600 dark:text-slate-400">Back</Text>
-        </Pressable>
+        {/* Back button removed */}
         <View className="flex-row items-center gap-4">
           {user.profileImageUrl ? (
             <Image source={{ uri: user.profileImageUrl }} style={{ width: 56, height: 56, borderRadius: 20 }} resizeMode="cover" />

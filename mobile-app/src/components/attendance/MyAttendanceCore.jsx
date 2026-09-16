@@ -7,7 +7,7 @@ import { usePunchInMutation, usePunchOutMutation, useRequestRegularizationMutati
 import AttendanceFaceCaptureModal from "@/components/attendance/AttendanceFaceCaptureModal";
 import RegularizationModal from "@/components/attendance/RegularizationModal";
 import AttendanceSelfieProofLinks from "@/components/attendance/AttendanceSelfieProofLinks";
-import { getTodayDateKey, getDateKey, getWeekRange, getMonthRange } from "@/utils/date";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange, getYearRange, getAllTimeRange } from "@/utils/date";
 import { useDownloadMemberAttendancePdfMutation, useDownloadMemberAttendanceExcelMutation } from "@/services/api/memberApi";
 import AppDatePicker from "@/components/ui/AppDatePicker";
 import useLocalPagination from "@/hooks/useLocalPagination";
@@ -79,6 +79,14 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
     if (filterType === "MONTHLY") {
       const { from, to } = getMonthRange(today);
       return { from, to, limit: 730 };
+    }
+    if (filterType === "YEARLY") {
+      const range = getYearRange(today);
+      return { from: range.from, to: range.to, limit: 730 };
+    }
+    if (filterType === "ALL") {
+      const range = getAllTimeRange();
+      return { from: range.from, to: range.to, limit: 730 };
     }
     if (filterType === "CUSTOM") {
       return { from: getDateKey(customRange.from), to: getDateKey(customRange.to), limit: 730 };
@@ -431,7 +439,7 @@ export default function MyAttendanceCore({ user, isEmbedded = false, showActions
         
         {!isDashboard && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-            {["ALL", "DAILY", "WEEKLY", "MONTHLY", "CUSTOM"].map((opt) => (
+            {["ALL", "DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM"].map((opt) => (
               <Pressable
                 key={opt}
                 onPress={() => setFilterType(opt)}

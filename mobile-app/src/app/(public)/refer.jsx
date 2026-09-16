@@ -107,9 +107,6 @@ export default function PartnerReferralDashboard() {
                   <Text className="text-lg font-black text-slate-900 dark:text-white mb-1">{org.name}</Text>
                   <Text className="text-sm font-medium text-slate-500 mb-3">{org.orgAdmin?.name || "-"} ({org.orgAdmin?.email})</Text>
                   <View className="flex-row items-center justify-between">
-                    <View className="bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 rounded-lg">
-                      <Text className="text-xs font-bold text-blue-700 dark:text-blue-400">{org.plan?.name || "No Plan"}</Text>
-                    </View>
                     <Text className="text-xs font-semibold text-slate-400">
                       {new Date(org.createdAt).toLocaleDateString()}
                     </Text>

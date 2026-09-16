@@ -25,8 +25,8 @@ const HeaderBadges = ({ user, isDark }) => {
 
   if (!user) return null;
 
-  const unreadCount = notificationsData?.notifications?.filter(n => !n.isRead)?.length || 0;
-  const pendingRequestsCount = regData?.data?.filter(r => r.status === 'PENDING')?.length || 0;
+  const unreadCount = notificationsData?.meta?.unreadCount || 0;
+  const pendingRequestsCount = Array.isArray(regData?.data) ? regData.data.filter(r => r.status === 'PENDING').length : 0;
 
   const reqPath = role === ROLES.TEAM_LEADER ? `/team-leader/requests` : `/org/registration-requests`;
 
@@ -111,7 +111,7 @@ const getTabsForRole = (user) => {
       { title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" },
       { title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" },
       { title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" },
-      { title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" },
+
       { title: "Funds & Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" },
       { title: "Workspace", icon: <Building2 {...commonIconProps} />, href: "workspace" },
       { title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" }
@@ -158,9 +158,7 @@ const getTabsForRole = (user) => {
       tabs.push({ title: "Funds & Expenses", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
     }
 
-    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION?.VIEW || "SUBSCRIPTION.VIEW")) {
-      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
-    }
+
 
     tabs.push({ title: "Settings", icon: <Settings {...commonIconProps} />, href: "settings" });
 
@@ -188,9 +186,7 @@ const getTabsForRole = (user) => {
     if (hasPermission(user, PERMISSIONS.REPORTS.VIEW)) {
       tabs.push({ title: "Reports", icon: <FileBarChart {...commonIconProps} />, href: "reports" });
     }
-    if (hasPermission(user, PERMISSIONS.SUBSCRIPTION?.VIEW || "SUBSCRIPTION.VIEW")) {
-      tabs.push({ title: "Subscription", icon: <CreditCard {...commonIconProps} />, href: "subscription" });
-    }
+
     if (hasPermission(user, PERMISSIONS.EXPENSES.MANAGE)) {
       tabs.push({ title: "Expenses & Claims", icon: <CreditCard {...commonIconProps} />, href: "expenses" });
     }
@@ -204,11 +200,11 @@ const getTabsForRole = (user) => {
   const memberTabs = [
     { title: "Dashboard", icon: <BarChart3 {...commonIconProps} />, href: "dashboard" },
     { title: "My Attendance", icon: <CalendarCheck2 {...commonIconProps} />, href: "attendance" },
+    { title: "My Teams", icon: <Users {...commonIconProps} />, href: "teams" },
   ];
 
   if (hasPermission(user, PERMISSIONS.TEAM.VIEW_ALL) || hasPermission(user, PERMISSIONS.TEAM.VIEW_OWN)) {
     memberTabs.push({ title: "Departments", icon: <Building2 {...commonIconProps} />, href: "departments" });
-    memberTabs.push({ title: "Teams", icon: <Component {...commonIconProps} />, href: "teams" });
   }
 
   memberTabs.push({ title: "Instruments", icon: <Music {...commonIconProps} />, href: "instruments" });
@@ -251,6 +247,9 @@ export default function MobileDashboardShell({ children }) {
 
   const [avatarError, setAvatarError] = useState(false);
   const [logoError, setLogoError] = useState(false);
+
+  const { data: notificationsData } = useGetOrgNotificationsQuery(undefined, { skip: !user });
+  const unreadCount = notificationsData?.meta?.unreadCount || 0;
 
   const onLogout = () => {
     dispatch(logout());
@@ -476,7 +475,7 @@ export default function MobileDashboardShell({ children }) {
                       className="flex-row items-center justify-between p-3 rounded-2xl active:bg-blue-50/80 dark:active:bg-slate-800/80 active:scale-95 transition-all">
                       <View className="flex-row items-center gap-4">
                         <View
-                          className="w-10 h-10 rounded-xl items-center justify-center"
+                          className="w-10 h-10 rounded-xl items-center justify-center relative"
                           style={{
                             backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
                             borderWidth: 1,
@@ -484,6 +483,11 @@ export default function MobileDashboardShell({ children }) {
                           }}
                         >
                           {tab.icon}
+                          {tab.href === 'notifications' && unreadCount > 0 && (
+                            <View className="absolute -top-1.5 -right-1.5 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 border-2 border-white dark:border-slate-900 z-10">
+                              <Text className="text-white text-[9px] font-bold">{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                            </View>
+                          )}
                         </View>
                         <Text
                           className="text-[15px] font-bold"

@@ -5,13 +5,15 @@ import {  ChevronLeft, FileText, Download, Calendar, X, FileBox, FileBarChart, U
 import { useColorScheme } from "nativewind";
 import { useGetTeamLeaderReportsQuery, useGetTeamLeaderAttendanceQuery, useDownloadTeamLeaderReportsPdfMutation, useDownloadTeamLeaderReportsExcelMutation, useGetTeamLeaderTeamsQuery } from "@/services/api/teamLeaderApi";
 import { useSelector } from "react-redux";
-import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange } from "@/utils/date";
+import { getDateKey, getTodayDateKey, getWeekRange, getMonthRange, getYearRange, getAllTimeRange } from "@/utils/date";
 import { downloadAndShareBlob } from "@/utils/downloadMobile";
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+  { value: "all", label: "All Time" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -54,6 +56,14 @@ export default function TeamLeaderReportsPage(props) {
       toDateStr = range.to;
     } else if (period === "monthly") {
       const range = getMonthRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "yearly") {
+      const range = getYearRange(today);
+      fromDateStr = range.from;
+      toDateStr = range.to;
+    } else if (period === "all") {
+      const range = getAllTimeRange();
       fromDateStr = range.from;
       toDateStr = range.to;
     } else if (period === "custom") {
@@ -190,60 +200,62 @@ export default function TeamLeaderReportsPage(props) {
   }
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <View className="px-5 pt-4 pb-4 bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 z-20 shadow-sm">
-        <View className="flex-row items-center justify-between mb-4">
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <ChevronLeft size={20} color={isDark ? "#ffffff" : "#0f172a"} />
-          </Pressable>
-          <Text className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Team Reports</Text>
-          <Pressable 
-            onPress={() => canDownload ? setShowDownloadModal(true) : Alert.alert("Locked", "Download is only available on paid plans.")} 
-            className={`h-10 w-10 items-center justify-center rounded-full ${canDownload ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800 opacity-50'}`}
-          >
-            <Download size={20} className={canDownload ? "text-blue-600 dark:text-blue-400" : "text-slate-400"} />
-          </Pressable>
-        </View>
-
-        <Pressable 
-          onPress={() => setShowPeriodModal(true)}
-          className="flex-row items-center justify-between bg-slate-100 dark:bg-slate-800 p-3 rounded-xl"
-        >
-          <View className="flex-row items-center gap-2">
-            <Calendar size={16} className="text-slate-500" />
-            <Text className="text-sm font-bold text-slate-700 dark:text-slate-300">
-              {period === 'custom' ? `${customRange.from} to ${customRange.to}` : PERIOD_OPTIONS.find(p => p.value === period)?.label}
-            </Text>
-          </View>
-          <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400">Change</Text>
-        </Pressable>
-
-        {teams.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ gap: 8 }}>
-            <Pressable 
-              onPress={() => setSelectedTeamId("")}
-              className={`px-3 py-1.5 rounded-full border ${selectedTeamId === "" ? 'bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
-            >
-              <Text className={`text-[11px] font-bold ${selectedTeamId === "" ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>All My Teams</Text>
-            </Pressable>
-            {teams.map(t => (
-              <Pressable
-                key={t.id}
-                onPress={() => setSelectedTeamId(t.id)}
-                className={`px-3 py-1.5 rounded-full border ${selectedTeamId === t.id ? 'bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
-              >
-                <Text className={`text-[11px] font-bold ${selectedTeamId === t.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{t.name}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        )}
-      </View>
-
+    <View className="flex-1 bg-[#F8FAFC] dark:bg-[#020617]">
       <ScrollView 
         className="flex-1" 
-        contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={isLoading || isFetching} onRefresh={refetch} tintColor="#2563eb" />}
       >
+        <View className="px-5 pt-4 pb-4 bg-white dark:bg-[#020617] z-20">
+          <View className="w-full max-w-5xl mx-auto">
+            <View className="flex-row items-center justify-between mb-4 mt-2">
+              <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Team Reports</Text>
+              <View className="flex-row items-center gap-1.5">
+                <Pressable 
+                  onPress={() => canDownload ? setShowDownloadModal(true) : Alert.alert("Locked", "Download is only available on paid plans.")} 
+                  className={`h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 active:scale-95 ${canDownload ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-100 dark:bg-slate-800 opacity-50'}`}
+                >
+                  <Download size={18} className={canDownload ? "text-slate-700 dark:text-slate-300" : "text-slate-400"} />
+                </Pressable>
+              </View>
+            </View>
+
+            <Pressable 
+              onPress={() => setShowPeriodModal(true)}
+              className="flex-row items-center justify-between bg-slate-100 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/50 dark:border-slate-700/50"
+            >
+              <View className="flex-row items-center gap-2">
+                <Calendar size={16} className="text-slate-500" />
+                <Text className="text-[13px] font-bold text-slate-700 dark:text-slate-300">
+                  {period === 'custom' ? `${customRange.from} to ${customRange.to}` : PERIOD_OPTIONS.find(p => p.value === period)?.label}
+                </Text>
+              </View>
+              <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400">Change</Text>
+            </Pressable>
+
+            {teams.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4 -mx-5 px-5" contentContainerStyle={{ gap: 8 }}>
+                <Pressable 
+                  onPress={() => setSelectedTeamId("")}
+                  className={`px-4 py-2 rounded-full border ${selectedTeamId === "" ? 'bg-slate-900 dark:bg-white border-transparent shadow-sm' : 'bg-transparent border-slate-200 dark:border-slate-700'}`}
+                >
+                  <Text className={`text-[12px] font-black ${selectedTeamId === "" ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>All My Teams</Text>
+                </Pressable>
+                {teams.map(t => (
+                  <Pressable
+                    key={t.id}
+                    onPress={() => setSelectedTeamId(t.id)}
+                    className={`px-4 py-2 rounded-full border ${selectedTeamId === t.id ? 'bg-slate-900 dark:bg-white border-transparent shadow-sm' : 'bg-transparent border-slate-200 dark:border-slate-700'}`}
+                  >
+                    <Text className={`text-[12px] font-black ${selectedTeamId === t.id ? 'text-white dark:text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>{t.name}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+
+        <View className="p-4 w-full max-w-5xl mx-auto">
         <View className="flex-row flex-wrap justify-between gap-y-3 mb-6">
           <MetricCard label="Members" value={summaryMap.get("Members") || 0} icon={<Users size={16} className="text-indigo-500" />} />
           <MetricCard label="Present" value={summaryMap.get("Present Days") || 0} icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
@@ -311,6 +323,7 @@ export default function TeamLeaderReportsPage(props) {
             ))}
           </View>
         )}
+        </View>
       </ScrollView>
 
       {/* Period Modal */}

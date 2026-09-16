@@ -48,6 +48,12 @@ const {
   exportAllSuperAdminUsersExcel,
   getSuperAdminLeads,
   deleteSuperAdminLead,
+  getAllTeams,
+  getSuperAdminTeamById,
+  patchSuperAdminTeam,
+  deleteSuperAdminTeam,
+  downloadSuperAdminTeamsPdf,
+  downloadSuperAdminTeamsExcel,
 } = require("../controllers/super-admin.controller");
 const {
   getPermissions,
@@ -117,6 +123,14 @@ router.get("/payments/:paymentId", getSuperAdminPaymentById);
 router.patch("/payments/:paymentId", updateSuperAdminPayment);
 router.delete("/payments/:paymentId", deleteSuperAdminPayment);
 router.get("/analytics", getSuperAdminAnalytics);
+
+// Team Management
+router.get("/teams", getAllTeams);
+router.get("/teams/pdf", downloadSuperAdminTeamsPdf);
+router.get("/teams/excel", downloadSuperAdminTeamsExcel);
+router.get("/teams/:teamId", getSuperAdminTeamById);
+router.patch("/teams/:teamId", patchSuperAdminTeam);
+router.delete("/teams/:teamId", deleteSuperAdminTeam);
 
 router.get("/settings", getSystemSettings);
 router.patch("/settings", updateSystemSetting);

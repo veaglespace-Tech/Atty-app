@@ -99,6 +99,11 @@ export default function MemberAttendancePage() {
       fromDate.setDate(today.getDate() - 29);
       return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
     }
+    if (filterType === "YEARLY") {
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - 364);
+      return { from: getDateKey(fromDate), to: getTodayDateKey(), limit: 100 };
+    }
     if (filterType === "CUSTOM") {
       return { from: customRange.from || undefined, to: customRange.to || undefined, limit: 100 };
     }
@@ -454,6 +459,7 @@ export default function MemberAttendancePage() {
                 <option value="DAILY">Daily</option>
                 <option value="WEEKLY">Weekly</option>
                 <option value="MONTHLY">Monthly</option>
+                <option value="YEARLY">Yearly</option>
                 <option value="CUSTOM">Custom Date</option>
               </select>
             </div>
@@ -475,6 +481,20 @@ export default function MemberAttendancePage() {
               </div>
             )}
             
+            {["ALL", "DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM"].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setFilterType(opt)}
+                className={`px-4 py-2 text-xs font-bold rounded-full transition-colors ${
+                  filterType === opt
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+
             <DownloadMenuButton
               onDownloadPdf={handleDownloadPdf}
               onDownloadExcel={handleDownloadExcel}

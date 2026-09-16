@@ -145,8 +145,8 @@ export default function AttendanceFaceCaptureModal({
 
           {!hasPermission ? (
             <View className="mb-4 items-center justify-center rounded-2xl bg-slate-100 p-6 dark:bg-slate-800">
-              <Text className="mb-4 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
-                ATTY uses the camera to capture member photos and perform face recognition attendance.
+              <Text className="mb-4 text-center text-sm font-medium leading-6 text-slate-500 dark:text-slate-400">
+                ATTY requires camera access to capture live selfies for secure face recognition during attendance verification. Please grant camera permission to proceed.
               </Text>
               <Button variant="outline" onPress={requestPermission}>
                 <Text>Continue</Text>

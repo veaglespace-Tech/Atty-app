@@ -16,7 +16,7 @@ try {
       priority: Notifications.AndroidNotificationPriority?.HIGH ?? 4,
     }),
   });
-} catch (error) {
+} catch (_) {
   console.warn('[Notifications] expo-notifications is not available (expected in Expo Go SDK 53+).');
 }
 
@@ -85,7 +85,6 @@ export async function registerForPushNotificationsAsync() {
       projectId,
     });
     token = pushTokenData?.data;
-    console.log('[Notifications] Expo Push Token obtained:', token);
   } catch (e) {
     console.warn('[Notifications] Error fetching push token:', e.message);
   }
@@ -117,7 +116,7 @@ export async function sendPushTokenToServer(pushToken) {
       const text = await res.text();
       console.warn('[Notifications] Failed to save push token to server:', res.status, text);
     } else {
-      console.log('[Notifications] SUCCESS: Push token registered on server');
+      console.info('[Notifications] Push token registered.');
     }
   } catch (error) {
     console.error('[Notifications] Failed to send push token to server:', error);

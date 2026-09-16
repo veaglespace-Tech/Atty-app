@@ -1,10 +1,9 @@
 import { formatName } from "@/utils/nameFormat";
 import { memo, useState } from "react";
 import { View, Text, Pressable, ScrollView, Modal } from "react-native";
-import { Image } from "expo-image";
 import { Link, usePathname, useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
-import { LayoutDashboard, LogIn, UserPlus, Menu, X, ChevronRight, LogOut } from "lucide-react-native";
+import { LayoutDashboard, LogIn, Menu, X, ChevronRight, LogOut } from "lucide-react-native";
 import { logout } from "@/store/slices/authSlice";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useUserSignOutMutation } from "@/services/api/authApi";
@@ -15,7 +14,6 @@ import AnimatedLogo from "./AnimatedLogo";
 
 const NAV_LINKS = [
 { href: "/", label: "Home" },
-{ href: "/pricing", label: "Pricing" },
 { href: "/about", label: "About" },
 { href: "/contact", label: "Contact" }];
 

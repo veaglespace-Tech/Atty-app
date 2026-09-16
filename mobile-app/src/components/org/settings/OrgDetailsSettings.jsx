@@ -6,6 +6,26 @@ import { useAuthSession } from "@/hooks/useAuthSession";
 import { setCurrentUser } from "@/store/slices/authSlice";
 import { useUpdateOrgDetailsMutation } from "@/services/api/orgApi";
 
+const InputField = ({ label, value, onChangeText, placeholder, keyboardType = "default", multiline = false, icon: Icon }) => (
+  <View className="mb-4">
+    <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">{label}</Text>
+    <View className={`flex-row ${multiline ? 'items-start' : 'items-center'} bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5`}>
+      {Icon && <Icon size={16} className={`text-slate-400 mr-3 ${multiline ? 'mt-0.5' : ''}`} />}
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
+        placeholder={placeholder}
+        placeholderTextColor="#94a3b8"
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={multiline ? 2 : 1}
+        textAlignVertical={multiline ? "top" : "center"}
+      />
+    </View>
+  </View>
+);
+
 export default function OrgDetailsSettings() {
   const dispatch = useDispatch();
   const { user } = useAuthSession();
@@ -55,25 +75,6 @@ export default function OrgDetailsSettings() {
     }
   };
 
-  const InputField = ({ label, value, onChangeText, placeholder, keyboardType = "default", multiline = false, icon: Icon }) => (
-    <View className="mb-4">
-      <Text className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1 mb-1.5">{label}</Text>
-      <View className={`flex-row ${multiline ? 'items-start' : 'items-center'} bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5`}>
-        {Icon && <Icon size={16} className={`text-slate-400 mr-3 ${multiline ? 'mt-0.5' : ''}`} />}
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          className="flex-1 text-sm font-semibold text-slate-900 dark:text-white"
-          placeholder={placeholder}
-          placeholderTextColor="#94a3b8"
-          keyboardType={keyboardType}
-          multiline={multiline}
-          numberOfLines={multiline ? 2 : 1}
-          textAlignVertical={multiline ? "top" : "center"}
-        />
-      </View>
-    </View>
-  );
 
   return (
     <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 mb-6 shadow-sm border border-slate-200 dark:border-slate-800">

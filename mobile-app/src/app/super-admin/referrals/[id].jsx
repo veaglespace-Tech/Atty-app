@@ -52,12 +52,7 @@ export default function ReferralPartnerDetailsPage() {
       {/* Native-style App Header */}
       <View className="px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <View className="flex-row items-center">
-          <Pressable 
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/super-admin/dashboard')} 
-            className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 mr-3 active:opacity-70 active:scale-95"
-          >
-            <ChevronLeft size={22} className="text-slate-900 dark:text-white" />
-          </Pressable>
+          {/* Back button removed */}
           <View className="flex-1">
             <Text className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
               {partner ? `${partner.name}'s Referrals` : "Partner Referrals"}

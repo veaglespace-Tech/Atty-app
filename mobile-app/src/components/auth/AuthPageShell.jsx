@@ -2,6 +2,7 @@
 import { View, Text, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import * as WebBrowser from 'expo-web-browser';
 import {  ArrowLeft  } from "lucide-react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { useColorScheme } from "nativewind";import SectionEyebrow from "@/components/SectionEyebrow";
@@ -40,14 +41,7 @@ export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassN
 
   return (
     <View className={authPageShellClassName}>
-      <SafeAreaView style={{ position: 'absolute', top: 16, left: 16, zIndex: 50 }}>
-        <Pressable 
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/')} 
-          className="h-10 w-10 items-center justify-center rounded-full bg-white/80 dark:bg-slate-800/80 shadow-sm border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform"
-        >
-          <ArrowLeft size={20} color={isDark ? "#cbd5e1" : "#334155"} />
-        </Pressable>
-      </SafeAreaView>
+      {/* Back button removed */}
 
       <View className={cn("w-full self-center", maxWidthClassName)}>
         <Animated.View entering={FadeInUp.duration(600).springify()} className={cn(authCardClassName, cardClassName)}>
@@ -73,6 +67,12 @@ export default function AuthPageShell({ maxWidthClassName="max-w-md", cardClassN
             {children}
 
             {footer ? <View className="mt-10 items-center">{footer}</View> : null}
+
+            <Pressable onPress={() => WebBrowser.openBrowserAsync('https://www.veaglespace.com/privacy-policy')} className="mt-8 items-center">
+              <Text className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                By continuing, you agree to our <Text className="text-blue-500 underline">Privacy Policy</Text>
+              </Text>
+            </Pressable>
           </View>
         </Animated.View>
       </View>

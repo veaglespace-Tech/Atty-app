@@ -10,6 +10,7 @@ const ROLE_PRIORITY = Object.freeze({
   MEMBER: 1,
   LIFE_MEMBER: 1,
   TEAM_LEADER: 2,
+  SUB_TEAM_LEADER: 2,
   SUB_ADMIN: 3,
   ORG_ADMIN: 4,
   SUPER_ADMIN: 5,
