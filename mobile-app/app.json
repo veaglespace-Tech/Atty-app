@@ -2,7 +2,7 @@
   "expo": {
     "name": "ATTY",
     "slug": "atty",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/new-app-icon.png",
     "scheme": "mobileapp",
@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./assets/images/new-app-icon.png",
       "bundleIdentifier": "com.veaglespace.atty",
-      "buildNumber": "6",
+      "buildNumber": "8",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ATTY uses the camera to capture attendance selfies for face recognition verification and profile photo updates."
