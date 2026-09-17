@@ -1,1 +1,34 @@
 service-account-key.json
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+android/
+ios/
+
+# Credentials
+*.jks
+*.p12
+*.key
+*.mobileprovision
+
+# Build Artifacts
+*.apk
+*.aab
+*.ipa
+*.zip
+*-extracted/
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS
+.DS_Store
