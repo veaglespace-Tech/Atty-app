@@ -1,0 +1,1 @@
+const fs = require('fs'); const file = 'node_modules/react-native-css-interop/dist/runtime/native/render-component.js'; let content = fs.readFileSync(file, 'utf8'); content = content.replace(/function stringify\([\s\S]*?^}/m, 'function stringify(object) { return [Props]; }'); fs.writeFileSync(file, content);
